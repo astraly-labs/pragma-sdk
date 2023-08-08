@@ -1,9 +1,10 @@
 import logging
 from typing import Optional
 
-from pragma.core.abis import ORACLE_ABI, PUBLISHER_REGISTRY_ABI, SUMMARY_STATS_ABI
+from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
 from pragma.core.utils import get_client_from_network
+from pragma.core.types import CHAIN_IDS
 from pragma.core.mixins import (
     NonceMixin,
     OracleMixin,
@@ -16,7 +17,7 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 logger = logging.getLogger(__name__)
 
 class PragmaClient(
-    NonceMixin, OracleMixin, PublisherRegistryMixin, RandomnessMixin, TransactionMixin
+    NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin
 ):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
@@ -36,14 +37,13 @@ class PragmaClient(
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
         """
-        self.network_config = NETWORKS[network]
         self.network = network
 
         self.client = get_client_from_network(network)
 
         if account_contract_address and account_private_key:
             self._setup_account_client(
-                self.network_config.chain_id,
+                CHAIN_IDS[network],
                 account_private_key,
                 account_contract_address,
             )
@@ -57,13 +57,15 @@ class PragmaClient(
         provider = self.account if self.account else self.client
         self.oracle = Contract(
             address=self.contract_addresses_config.oracle_proxy_address,
-            abi=ORACLE_ABI,
+            abi=ABIS["pragma_Oracle"],
             provider=provider,
+            cairo_version=1
         )
         self.publisher_registry = Contract(
             address=self.contract_addresses_config.publisher_registry_address,
-            abi=PUBLISHER_REGISTRY_ABI,
+            abi=ABIS["pragma_PublisherRegistry"],
             provider=provider,
+            cairo_version=1
         )
 
     async def get_balance(self, account_contract_address, token_address=None):
@@ -105,6 +107,7 @@ class PragmaClient(
         provider = self.account if self.account else self.client
         self.stats = Contract(
             address=stats_contract_address,
-            abi=SUMMARY_STATS_ABI,
+            abi=ABIS["pragma_SummaryStats"],
             provider=provider,
+            cairo_version=1
         )

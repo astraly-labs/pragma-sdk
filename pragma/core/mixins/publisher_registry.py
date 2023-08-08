@@ -13,21 +13,21 @@ class PublisherRegistryMixin:
     publisher_registry: Contract
 
     async def get_all_publishers(self) -> List[str]:
-        result = await self.publisher_registry.get_all_publishers.call()
-        return result.publishers
+        (publishers,) = await self.publisher_registry.functions["get_all_publishers"].call()
+        return publishers
 
     async def get_publisher_address(self, publisher) -> str:
-        result = await self.publisher_registry.get_publisher_address.call(publisher)
-        return result.publisher_address
+        (address,) = await self.publisher_registry.functions["get_publisher_address"].call(publisher)
+        return address
 
     async def get_publisher_sources(self, publisher) -> List[str]:
-        result = await self.publisher_registry.get_publisher_sources.call(publisher)
-        return result.sources
+        (sources,) = await self.publisher_registry.functions["get_publisher_sources"].call(publisher)
+        return sources
 
     async def add_publisher(
         self, publisher: str, publisher_address: int, max_fee=int(1e16)
     ) -> InvokeResult:
-        invocation = await self.publisher_registry.add_publisher.invoke(
+        invocation = await self.publisher_registry.functions["add_publisher"].invoke(
             str_to_felt(publisher),
             publisher_address,
             max_fee=max_fee,
@@ -37,7 +37,7 @@ class PublisherRegistryMixin:
     async def add_source_for_publisher(
         self, publisher: str, source: str, max_fee=int(1e16)
     ) -> InvokeResult:
-        invocation = await self.publisher_registry.add_source_for_publisher.invoke(
+        invocation = await self.publisher_registry.functions["add_source_for_publisher"].invoke(
             str_to_felt(publisher),
             str_to_felt(source),
             max_fee=max_fee,
@@ -47,7 +47,7 @@ class PublisherRegistryMixin:
     async def add_sources_for_publisher(
         self, publisher: str, sources: List[str], max_fee=int(1e16)
     ) -> InvokeResult:
-        invocation = await self.publisher_registry.add_sources_for_publisher.invoke(
+        invocation = await self.publisher_registry.functions["add_sources_for_publisher"].invoke(
             str_to_felt(publisher),
             [str_to_felt(source) for source in sources],
             max_fee=max_fee,
@@ -57,7 +57,7 @@ class PublisherRegistryMixin:
     async def update_publisher_address(
         self, publisher: str, publisher_address: int, max_fee=int(1e16)
     ) -> InvokeResult:
-        invocation = await self.publisher_registry.update_publisher_address.invoke(
+        invocation = await self.publisher_registry.functions["update_publisher_address"].invoke(
             str_to_felt(publisher),
             publisher_address,
             max_fee=max_fee,
