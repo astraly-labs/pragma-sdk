@@ -241,6 +241,7 @@ class OracleMixin:
         )
         return invocation
 
+    @deprecated
     async def set_future_checkpoint(
         self,
         pair_id: int,
@@ -252,14 +253,14 @@ class OracleMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.set_future_checkpoint.invoke(
-            pair_id,
-            expiry_timestamp,
+        invocation = await self.oracle.functions["set_checkpoint"].invoke(
+            DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
         )
         return invocation
 
+    # TODO: Fix future checkpoints
     async def set_future_checkpoints(
         self,
         pair_ids: List[int],
@@ -277,7 +278,7 @@ class OracleMixin:
             ix = 0
             while ix < len(pair_ids):
                 pair_ids_subset = pair_ids[ix : ix + pagination]
-                invocation = await self.oracle.set_future_checkpoints.invoke(
+                invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
@@ -289,7 +290,7 @@ class OracleMixin:
                     f"Set future checkpoints for {len(pair_ids_subset)} pair IDs with transaction {hex(invocation.hash)}"
                 )
         else:
-            invocation = await self.oracle.set_future_checkpoints.invoke(
+            invocation = await self.oracle.functions["set_checkpoints"].invoke(
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
@@ -314,7 +315,10 @@ class OracleMixin:
             while ix < len(pair_ids):
                 pair_ids_subset = pair_ids[ix : ix + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
-                    pair_ids_subset,
+                    [
+                        DataType(DataTypes.SPOT, pair_id, None).serialize()
+                        for pair_id in pair_ids_subset
+                    ],
                     aggregation_mode.serialize(),
                     max_fee=max_fee,
                 )
@@ -325,7 +329,10 @@ class OracleMixin:
                 )
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
-                pair_ids,
+                [
+                    DataType(DataTypes.SPOT, pair_id, None).serialize()
+                    for pair_id in pair_ids
+                ],
                 aggregation_mode.serialize(),
                 max_fee=max_fee,
             )
