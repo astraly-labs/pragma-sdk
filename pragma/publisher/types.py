@@ -30,6 +30,7 @@ class PublisherFetchError:
     def serialize(self):
         return self.message
 
+
 class UnsupportedAssetError:
     message: str
 

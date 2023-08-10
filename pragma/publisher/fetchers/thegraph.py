@@ -5,6 +5,7 @@ from typing import List
 
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import GenericEntry
 from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherInterfaceT

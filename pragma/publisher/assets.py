@@ -1,8 +1,9 @@
 from typing import Dict, List, Tuple, Union
 
-from pragma.core.utils import key_for_asset
-from pragma.core.types import AssetType
 from typing_extensions import TypedDict
+
+from pragma.core.types import AssetType
+from pragma.core.utils import key_for_asset
 from pragma.publisher.types import UnsupportedAssetError
 
 
@@ -11,11 +12,13 @@ class PragmaSpotAsset(TypedDict):
     pair: Tuple[str, str]
     decimals: int
 
+
 class PragmaFutureAsset(TypedDict):
     type: str
     pair: Tuple[str, str]
     expiry_timestamp: str
     decimals: int
+
 
 class PragmaOnchainDetail(TypedDict):
     asset_name: str
@@ -83,13 +86,15 @@ _PRAGMA_FUTURE_ASSET_BY_KEY: Dict[str, PragmaFutureAsset] = {
     if asset["type"] == "FUTURE"
 }
 
-_PRAGMA_ALL_ASSET_BY_KEY: Dict[str, PragmaAsset] ={
-    key_for_asset(asset): asset
-    for asset in PRAGMA_ALL_ASSETS
+_PRAGMA_ALL_ASSET_BY_KEY: Dict[str, PragmaAsset] = {
+    key_for_asset(asset): asset for asset in PRAGMA_ALL_ASSETS
 }
 
+
 # TODO: Add support for option asset type
-def get_asset_spec_for_pair_id_by_type(pair_id: str, asset_type: AssetType) -> PragmaAsset:
+def get_asset_spec_for_pair_id_by_type(
+    pair_id: str, asset_type: AssetType
+) -> PragmaAsset:
     if asset_type == "SPOT":
         return get_spot_asset_spec_for_pair_id(pair_id)
     elif asset_type == "FUTURE":
@@ -103,10 +108,12 @@ def get_spot_asset_spec_for_pair_id(pair_id: str) -> PragmaSpotAsset:
         raise ValueError(f"Pair ID not found: {pair_id}")
     return _PRAGMA_ASSET_BY_KEY[pair_id]
 
+
 def get_future_asset_spec_for_pair_id(pair_id: str) -> PragmaFutureAsset:
     if pair_id not in _PRAGMA_FUTURE_ASSET_BY_KEY:
         raise ValueError(f"Pair ID not found: {pair_id}")
     return _PRAGMA_FUTURE_ASSET_BY_KEY[pair_id]
+
 
 def get_asset_spec_for_pair_id(pair_id: str) -> PragmaAsset:
     if pair_id not in _PRAGMA_ALL_ASSET_BY_KEY:

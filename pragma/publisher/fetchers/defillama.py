@@ -5,6 +5,7 @@ from typing import Dict, List
 
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
@@ -36,8 +37,7 @@ ASSET_MAPPING: Dict[str, str] = {
 
 class DefillamaFetcher(PublisherInterfaceT):
     BASE_URL: str = (
-        "https://coins.llama.fi/prices/current/coingecko:{pair_id}"
-        "?searchWidth=5m"
+        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=5m"
     )
 
     SOURCE: str = "DEFILLAMA"

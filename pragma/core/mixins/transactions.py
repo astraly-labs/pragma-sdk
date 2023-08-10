@@ -1,7 +1,8 @@
-from pragma.core.contract import Contract
 from starknet_py.net.client import Client
 from starknet_py.net.client_models import Call
 from starkware.starknet.public.abi import get_selector_from_name
+
+from pragma.core.contract import Contract
 
 
 class TransactionMixin:

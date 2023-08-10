@@ -3,8 +3,10 @@ from __future__ import annotations
 import abc
 from typing import Dict, List, Optional, Tuple, Union
 
-from pragma.core.utils import felt_to_str, str_to_felt
 from web3 import Web3
+
+from pragma.core.utils import felt_to_str, str_to_felt
+
 
 class Entry(abc.ABC):
     @abc.abstractmethod
@@ -46,6 +48,7 @@ class BaseEntry:
         self.timestamp = timestamp
         self.source = source
         self.publisher = publisher
+
 
 class SpotEntry(Entry):
     base: BaseEntry
@@ -173,13 +176,15 @@ class SpotEntry(Entry):
 
 
 class FutureEntry(Entry):
-    base : BaseEntry
+    base: BaseEntry
     pair_id: int
     price: int
     expiry_timestamp: int
-    volume :int 
+    volume: int
 
-    def __init__(self, timestamp, source, publisher, pair_id, price, expiry_timestamp, volume):
+    def __init__(
+        self, timestamp, source, publisher, pair_id, price, expiry_timestamp, volume
+    ):
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
 

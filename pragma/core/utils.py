@@ -1,11 +1,15 @@
 import logging
+
 from starknet_py.net.full_node_client import FullNodeClient
+
 from pragma.core.types import RPC_URLS
 
 logger = logging.getLogger(__name__)
 
+
 def get_client_from_network(network: str) -> FullNodeClient:
     return FullNodeClient(node_url=RPC_URLS[network])
+
 
 def str_to_felt(text):
     if text.upper() != text:

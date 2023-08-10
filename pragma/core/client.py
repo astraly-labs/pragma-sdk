@@ -1,24 +1,24 @@
 import logging
 from typing import Optional
 
+from starknet_py.net.account.account import Account
+from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
+
 from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
-from pragma.core.utils import get_client_from_network
-from pragma.core.types import CHAIN_IDS
 from pragma.core.mixins import (
     NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,
     TransactionMixin,
 )
-from starknet_py.net.account.account import Account
-from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
+from pragma.core.types import CHAIN_IDS
+from pragma.core.utils import get_client_from_network
 
 logger = logging.getLogger(__name__)
 
-class PragmaClient(
-    NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin
-):
+
+class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
@@ -59,13 +59,13 @@ class PragmaClient(
             address=self.contract_addresses_config.oracle_proxy_address,
             abi=ABIS["pragma_Oracle"],
             provider=provider,
-            cairo_version=1
+            cairo_version=1,
         )
         self.publisher_registry = Contract(
             address=self.contract_addresses_config.publisher_registry_address,
             abi=ABIS["pragma_PublisherRegistry"],
             provider=provider,
-            cairo_version=1
+            cairo_version=1,
         )
 
     async def get_balance(self, account_contract_address, token_address=None):
@@ -109,5 +109,5 @@ class PragmaClient(
             address=stats_contract_address,
             abi=ABIS["pragma_SummaryStats"],
             provider=provider,
-            cairo_version=1
+            cairo_version=1,
         )

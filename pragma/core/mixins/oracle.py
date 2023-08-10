@@ -2,19 +2,27 @@ import collections
 import logging
 from typing import List, Optional
 
-from pragma.core.contract import Contract
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode
-from pragma.core.utils import str_to_felt
+from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
+
+from pragma.core.contract import Contract
+from pragma.core.entry import FutureEntry, SpotEntry
+from pragma.core.types import AggregationMode, DataType, DataTypes
+from pragma.core.utils import str_to_felt
 
 logger = logging.getLogger(__name__)
 
 OracleResponse = collections.namedtuple(
     "OracleResponse",
-    ["price", "decimals", "last_updated_timestamp", "num_sources_aggregated"],
+    [
+        "price",
+        "decimals",
+        "last_updated_timestamp",
+        "num_sources_aggregated",
+        "expiration_timestamp",
+    ],
 )
 
 
@@ -23,6 +31,7 @@ class OracleMixin:
     client: Client
     account: Account
 
+    @deprecated
     async def publish_spot_entry(
         self,
         pair_id: int,
@@ -37,18 +46,24 @@ class OracleMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.publish_spot_entry.invoke(
-            {
-                "pair_id": pair_id,
-                "value": value,
-                "timestamp": timestamp,
-                "source": source,
-                "publisher": publisher,
+        invocation = await self.oracle.functions["publish_data"].invoke(
+            new_entry={
+                "SpotEntry": {
+                    "base": {
+                        "timestamp": timestamp,
+                        "source": source,
+                        "publisher": publisher,
+                    },
+                    "price": value,
+                    "pair_id": pair_id,
+                    "volume": volume,
+                }
             },
             max_fee=max_fee,
         )
         return invocation
 
+    @deprecated
     async def publish_many(
         self,
         entries: List[any],
@@ -65,9 +80,8 @@ class OracleMixin:
             ix = 0
             while ix < len(serialized_spot_entries):
                 entries_subset = serialized_spot_entries[ix : ix + pagination]
-                invocation = await self.oracle.publish_spot_entries.invoke(
-                    entries_subset,
-                    callback=self.track_nonce,
+                invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                    new_entries=[{"Spot": entry} for entry in entries_subset],
                     max_fee=max_fee,
                 )
                 ix += pagination
@@ -77,8 +91,9 @@ class OracleMixin:
                     f"Sent {len(entries_subset)} updated spot entries with transaction {hex(invocation.hash)}"
                 )
         elif len(serialized_spot_entries) > 0:
-            invocation = await self.oracle.publish_spot_entries.invoke(
-                serialized_spot_entries, max_fee=max_fee
+            invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
+                max_fee=max_fee,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
@@ -91,9 +106,8 @@ class OracleMixin:
             ix = 0
             while ix < len(serialized_future_entries):
                 entries_subset = serialized_future_entries[ix : ix + pagination]
-                invocation = await self.oracle.publish_future_entries.invoke(
-                    entries_subset,
-                    callback=self.track_nonce,
+                invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                    new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
                 )
                 ix += pagination
@@ -103,8 +117,9 @@ class OracleMixin:
                     f"Sent {len(entries_subset)} updated future entries with transaction {hex(invocation.hash)}"
                 )
         elif len(serialized_future_entries) > 0:
-            invocation = await self.oracle.publish_future_entries.invoke(
-                serialized_future_entries, max_fee=max_fee
+            invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                new_entries=[{"Future": entry} for entry in serialized_future_entries],
+                max_fee=max_fee,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
@@ -114,14 +129,17 @@ class OracleMixin:
 
         return invocations
 
-    async def get_entries(self, pair_id, sources=[]) -> List[SpotEntry]:
+    @deprecated
+    async def get_spot_entries(self, pair_id, sources=[]) -> List[SpotEntry]:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
             )
-        response = await self.oracle.get_spot_entries.call(pair_id, sources)
+        response = await self.oracle.functions["get_data_entries_for_sources"].call(
+            DataType(DataTypes.SPOT, pair_id, None).serialize(), sources
+        )
 
         return [SpotEntry.from_dict(entry) for entry in response.entries]
 
@@ -138,13 +156,15 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         if sources is None:
-            response = await self.oracle.get_spot.call(
-                pair_id,
-                aggregation_mode.value,
+            (response,) = await self.oracle.functions["get_data"].call(
+                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                aggregation_mode.serialize(),
             )
         else:
-            response = await self.oracle.get_spot_for_sources.call(
-                pair_id, aggregation_mode.value, sources
+            (response,) = await self.oracle.functions["get_data_for_sources"].call(
+                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                aggregation_mode.serialize(),
+                sources,
             )
 
         return OracleResponse(
@@ -152,6 +172,7 @@ class OracleMixin:
             response.decimals,
             response.last_updated_timestamp,
             response.num_sources_aggregated,
+            response.expiration_timestamp,
         )
 
     async def get_future(
@@ -159,8 +180,7 @@ class OracleMixin:
         pair_id,
         expiry_timestamp,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        # TODO Add sources on the oracle contract and then in the client here
-        # sources=None,
+        sources=None,
     ) -> OracleResponse:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -169,20 +189,27 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
 
-        response = await self.oracle.get_future.call(
-            pair_id,
-            expiry_timestamp,
-            aggregation_mode.value,
-        )
+        if sources is None:
+            (response,) = await self.oracle.functions["get_data"].call(
+                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                aggregation_mode.serialize(),
+            )
+        else:
+            (response,) = await self.oracle.functions["get_data_for_sources"].call(
+                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                aggregation_mode.serialize(),
+                sources,
+            )
 
         return OracleResponse(
             response.price,
             response.decimals,
             response.last_updated_timestamp,
             response.num_sources_aggregated,
+            response.expiration_timestamp,
         )
 
-    async def get_spot_decimals(self, pair_id) -> int:
+    async def get_decimals(self, pair_id, data_type: DataType) -> int:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -190,26 +217,26 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
 
-        response = await self.oracle.get_spot_decimals.call(
-            pair_id,
+        (response,) = await self.oracle.functions["get_decimals"].call(
+            data_type.serialize()
         )
 
         return response
 
+    @deprecated
     async def set_checkpoint(
         self,
         pair_id: int,
-        aggregation_mode: int = str_to_felt("MEDIAN"),
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.set_checkpoint.invoke(
-            pair_id,
-            aggregation_mode,
-            callback=self.track_nonce,
+        invocation = await self.oracle.functions["set_checkpoint"].invoke(
+            DataType(DataTypes.SPOT, pair_id, None).serialize(),
+            aggregation_mode.serialize(),
             max_fee=max_fee,
         )
         return invocation
@@ -218,7 +245,7 @@ class OracleMixin:
         self,
         pair_id: int,
         expiry_timestamp: int,
-        aggregation_mode: int = str_to_felt("MEDIAN"),
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
@@ -228,7 +255,7 @@ class OracleMixin:
         invocation = await self.oracle.set_future_checkpoint.invoke(
             pair_id,
             expiry_timestamp,
-            aggregation_mode,
+            aggregation_mode.serialize(),
             max_fee=max_fee,
         )
         return invocation
@@ -237,7 +264,7 @@ class OracleMixin:
         self,
         pair_ids: List[int],
         expiry_timestamps: List[int],
-        aggregation_mode: int = str_to_felt("MEDIAN"),
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         max_fee=int(1e16),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
@@ -253,8 +280,7 @@ class OracleMixin:
                 invocation = await self.oracle.set_future_checkpoints.invoke(
                     pair_ids_subset,
                     expiry_timestamps,
-                    aggregation_mode,
-                    callback=self.track_nonce,
+                    aggregation_mode.serialize(),
                     max_fee=max_fee,
                 )
                 ix += pagination
@@ -266,7 +292,7 @@ class OracleMixin:
             invocation = await self.oracle.set_future_checkpoints.invoke(
                 pair_ids,
                 expiry_timestamps,
-                aggregation_mode,
+                aggregation_mode.serialize(),
                 max_fee=max_fee,
             )
 
@@ -275,7 +301,7 @@ class OracleMixin:
     async def set_checkpoints(
         self,
         pair_ids: List[int],
-        aggregation_mode: int = str_to_felt("MEDIAN"),
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         max_fee=int(1e18),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
@@ -289,8 +315,7 @@ class OracleMixin:
                 pair_ids_subset = pair_ids[ix : ix + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     pair_ids_subset,
-                    aggregation_mode,
-                    # callback=self.track_nonce,
+                    aggregation_mode.serialize(),
                     max_fee=max_fee,
                 )
                 ix += pagination
@@ -301,8 +326,7 @@ class OracleMixin:
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
                 pair_ids,
-                aggregation_mode,
-                # callback=self.track_nonce,
+                aggregation_mode.serialize(),
                 max_fee=max_fee,
             )
 

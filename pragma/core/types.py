@@ -1,52 +1,49 @@
 import os
-from enum import IntEnum, unique
-from typing import List, Literal
+from enum import Enum, IntEnum, unique
+from typing import List, Literal, Optional
 
-from pragma.core.utils import str_to_felt
 from starknet_py.net.full_node_client import FullNodeClient
 
-NETWORK = os.getenv("NETWORK") or "sharingan"
+from pragma.core.utils import str_to_felt
+
+NETWORK = os.getenv("NETWORK") or "devnet"
 
 ADDRESS = int
 HEX_STR = str
 
 # Network Types
-STAGING = "staging"
+DEVNET = "devnet"
 TESTNET = "testnet"
-INTEGRATION = "integration"
 MAINNET = "mainnet"
 SHARINGAN = "sharingan"
 PRAGMA_TESTNET = "pragma_testnet"
 
-Network = Literal["staging", "testnet", "integration", "mainnet", "sharingan", "pragma_testnet"]
+Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet"]
 
 CHAIN_IDS = {
-    INTEGRATION: 1536727068981429685321,
     SHARINGAN: 1536727068981429685321,
     TESTNET: 1536727068981429685321,
     MAINNET: 23448594291968334,
-    PRAGMA_TESTNET: 8908953246943201047421899664489
+    PRAGMA_TESTNET: 8908953246943201047421899664489,
 }
 
 STARKSCAN_URLS = {
-    "mainnet": "https://starkscan.co",
-    "testnet": "https://testnet.starkscan.co",
-    "testnet2": "https://testnet-2.starkscan.co",
-    "devnet": "https://devnet.starkscan.co",
-    "sharingan": "https://sharingan-explorer.madara.zone",
-    "pragma_testnet": "https://testnet.pragmaoracle.com/explorer",
+    MAINNET: "https://starkscan.co",
+    TESTNET: "https://testnet.starkscan.co",
+    DEVNET: "https://devnet.starkscan.co",
+    SHARINGAN: "https://sharingan-explorer.madara.zone",
+    PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
 }
 
 if not os.getenv("RPC_KEY") and NETWORK in ["mainnet", "testnet", "testnet2"]:
     raise ValueError(f"RPC_KEY env variable is required when targeting {NETWORK}")
 
 RPC_URLS = {
-    "mainnet": f"https://starknet-mainnet.infura.io/v3/{os.getenv('RPC_KEY')}",
-    "testnet": f"https://starknet-goerli.infura.io/v3/{os.getenv('RPC_KEY')}",
-    "testnet2": f"https://starknet-goerli2.infura.io/v3/{os.getenv('RPC_KEY')}",
-    "devnet": "http://127.0.0.1:5050/rpc",
-    "sharingan": "https://sharingan.madara.zone",
-    "pragma_testnet": "https://testnet.pragmaoracle.com/rpc"
+    MAINNET: f"https://starknet-mainnet.infura.io/v3/{os.getenv('RPC_KEY')}",
+    TESTNET: f"https://starknet-goerli.infura.io/v3/{os.getenv('RPC_KEY')}",
+    DEVNET: "http://127.0.0.1:5050/rpc",
+    SHARINGAN: "https://sharingan.madara.zone",
+    PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/rpc",
 }
 
 RPC_CLIENT = FullNodeClient(node_url=RPC_URLS[NETWORK])
@@ -54,11 +51,14 @@ RPC_CLIENT = FullNodeClient(node_url=RPC_URLS[NETWORK])
 AssetType = Literal["SPOT", "FUTURE", "OPTION"]
 
 
-# aggregation mode enum
 @unique
-class AggregationMode(IntEnum):
-    MEDIAN = 84959893733710  # str_to_felt("MEDIAN")
-    AVERAGE = 18390729218934597 # str_to_felt("AVERAGE")
+class AggregationMode(Enum):
+    MEDIAN = "Median"
+    AVERAGE = "Mean"
+    ERROR = "Error"
+
+    def serialize(self):
+        return {self.value: None}
 
 
 class Currency:
@@ -139,4 +139,33 @@ class Pair:
             "id": self.id,
             "quote_currency_id": self.quote_currency_id,
             "base_currency_id": self.base_currency_id,
+        }
+
+
+DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
+
+
+class DataType:
+    data_type: DataTypes
+    pair_id: int
+    expiration_timestamp: Optional[int]
+
+    def __init__(self, data_type, pair_id, expiration_timestamp):
+        if type(pair_id) == str:
+            pair_id = str_to_felt(pair_id)
+        self.pair_id = pair_id
+
+        self.data_type = DataTypes(data_type)
+
+    def serialize(self) -> dict:
+        if self.data_type == DataTypes.SPOT:
+            return {"SpotEntry": self.pair_id}
+        if self.data_type == DataTypes.FUTURE:
+            return {"FutureEntry": (self.pair_id, self.expiration_timestamp)}
+
+    def to_dict(self) -> dict:
+        return {
+            "pair_id": self.id,
+            "expiration_timestamp": self.expiration_timestamp,
+            "data_type": self.data_type.name,
         }

@@ -1,14 +1,15 @@
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import FutureEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.assets import PragmaAsset, PragmaFutureAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +36,11 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
             result = await resp.json(content_type="application/json")
-            for element in result: 
-                if selection in element['symbol']:
-                    volume_arr.append((element['symbol'],element['volume']))
+            for element in result:
+                if selection in element["symbol"]:
+                    volume_arr.append((element["symbol"], element["volume"]))
             return volume_arr
-    
+
     def fetch_volume_sync(self, asset):
         pair = asset["pair"]
         url = f"{self.VOLUME_URL}"
@@ -51,11 +52,11 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                 f"No data found for {'/'.join(pair)} from Binance"
             )
         result = resp.json()
-        for element in result: 
-            if selection in element['symbol']:
-                volume_arr.append((element['symbol'],element['volume']))
+        for element in result:
+            if selection in element["symbol"]:
+                volume_arr.append((element["symbol"], element["volume"]))
         return volume_arr
-    
+
     async def _fetch_pair(
         self, asset: PragmaFutureAsset, session: ClientSession
     ) -> Union[FutureEntry, PublisherFetchError]:
@@ -70,7 +71,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                 )
             result = await resp.json(content_type="application/json")
             for element in result:
-                if selection in element['symbol']:
+                if selection in element["symbol"]:
                     filtered_data.append(element)
             volume_arr = await self.fetch_volume(asset, session)
             return self._construct(asset, filtered_data, volume_arr)
@@ -84,13 +85,17 @@ class BinanceFutureFetcher(PublisherInterfaceT):
         resp = requests.get(url)
         filtered_data = []
         if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Binance")
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Binance"
+            )
         result = resp.json(content_type="application/json")
         if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Binance")
-        data_arr = result['symbols']
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Binance"
+            )
+        data_arr = result["symbols"]
         for element in data_arr:
-            if selection in element['symbol']:
+            if selection in element["symbol"]:
                 filtered_data.append(element)
         volume_arr = self.fetch_volume_sync(asset)
         return self._construct(asset, filtered_data, volume_arr)
@@ -121,39 +126,43 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                 entries.append(future_entries)
         return entries
 
-    def retreive_volume(self,asset, volume_arr): 
-        for list_asset, list_vol in volume_arr: 
-            if asset == list_asset: 
+    def retreive_volume(self, asset, volume_arr):
+        for list_asset, list_vol in volume_arr:
+            if asset == list_asset:
                 return list_vol
         return 0
-    
+
     def _construct(self, asset, result, volume_arr) -> List[FutureEntry]:
         pair = asset["pair"]
         result_len = len(result)
         selection = f"{pair[0]}{pair[1]}"
         result_arr = []
-        for i in range(0, result_len): 
+        for i in range(0, result_len):
             data = result[i]
             timestamp = int(data["time"])
             price = float(data["markPrice"])
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
-            volume = float(self.retreive_volume(data['symbol'], volume_arr))
+            volume = float(self.retreive_volume(data["symbol"], volume_arr))
             volume_int = int(volume)
-            if data['symbol']==selection: 
+            if data["symbol"] == selection:
                 expiry_timestamp = 0
             else:
-                date_part = data['symbol'].split('_')[1]
-                expiry_date = datetime.strptime(date_part, '%y%m%d')
-                expiry_date = expiry_date.replace(hour=8, minute=0, second=0, tzinfo=timezone.utc)
+                date_part = data["symbol"].split("_")[1]
+                expiry_date = datetime.strptime(date_part, "%y%m%d")
+                expiry_date = expiry_date.replace(
+                    hour=8, minute=0, second=0, tzinfo=timezone.utc
+                )
                 expiry_timestamp = int(expiry_date.timestamp())
-            result_arr.append(FutureEntry(
-                pair_id=pair_id,
-                price=price_int,
-                volume=volume_int,
-                timestamp=int(timestamp/1000),
-                source=self.SOURCE,
-                publisher=self.publisher,
-                expiry_timestamp=expiry_timestamp*1000,
-            ))
+            result_arr.append(
+                FutureEntry(
+                    pair_id=pair_id,
+                    price=price_int,
+                    volume=volume_int,
+                    timestamp=int(timestamp / 1000),
+                    source=self.SOURCE,
+                    publisher=self.publisher,
+                    expiry_timestamp=expiry_timestamp * 1000,
+                )
+            )
         return result_arr

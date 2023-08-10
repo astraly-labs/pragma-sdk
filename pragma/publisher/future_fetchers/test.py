@@ -1,6 +1,8 @@
 import logging
+
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import FutureEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.assets import PragmaAsset, PragmaFutureAsset
@@ -16,31 +18,26 @@ assets = [
     {"type": "FUTURE", "pair": ("BTC", "USDT"), "decimals": 8},
     {"type": "FUTURE", "pair": ("ETH", "USDT"), "decimals": 8},
 ]
-publisher = 'PRAGMA'
+publisher = "PRAGMA"
 
-async def fetch_expiry_timestamp( asset,id,session):
+
+async def fetch_expiry_timestamp(asset, id, session):
     pair = asset["pair"]
     url = f"{TIMESTAMP_URL}?instType=FUTURES&instId={id}"
     async with session.get(url) as resp:
         if resp.status == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from OKX"
-            )
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
         result = await resp.json(content_type="application/json")
-        if (
-            result["code"] == "51001"
-            or result["msg"] == "Instrument ID does not exist"
-        ):
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from OKX"
-            )
+        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
         return result["data"][0]["expTime"]
+
 
 async def construct_future_entry(asset, result, publisher, session):
     result_arr = []
     result_len = len(result["data"])
     pair = asset["pair"]
-    for i in range(0,result_len):
+    for i in range(0, result_len):
         data = result["data"][i]
         timestamp = int(data["ts"])
         price = float(data["last"])
@@ -49,18 +46,21 @@ async def construct_future_entry(asset, result, publisher, session):
         volume = float(data["volCcy24h"])
         volume_int = int(volume)
         expiry_timestamp = await fetch_expiry_timestamp(asset, data["instId"], session)
-        result_arr.append(FutureEntry(
-        pair_id=pair_id,
-        price=price_int,
-        volume=volume_int,
-        timestamp=timestamp,
-        source=SOURCE,
-        publisher=publisher,
-        expiry_timestamp=expiry_timestamp,
-    ))
+        result_arr.append(
+            FutureEntry(
+                pair_id=pair_id,
+                price=price_int,
+                volume=volume_int,
+                timestamp=timestamp,
+                source=SOURCE,
+                publisher=publisher,
+                expiry_timestamp=expiry_timestamp,
+            )
+        )
     logger.info(f"Fetched future for {'/'.join(pair)} from OKX")
 
     return result_arr
+
 
 async def fetch_future_pair(asset, session, publisher):
     pair = asset["pair"]
@@ -68,17 +68,10 @@ async def fetch_future_pair(asset, session, publisher):
 
     async with session.get(url) as resp:
         if resp.status == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from OKX"
-            )
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
         result = await resp.json(content_type="application/json")
-        if (
-            result["code"] == "51001"
-            or result["msg"] == "Instrument ID does not exist"
-        ):
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from OKX"
-            )
+        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
         return await construct_future_entry(asset, result, publisher, session)
 
 
@@ -106,6 +99,7 @@ def print_future_entry(entry):
     print(f"Expiry timestamp: {entry.expiry_timestamp}")
     print("---")
 
+
 def print_futures(entries):
     for entry in entries:
         if isinstance(entry, PublisherFetchError):
@@ -113,9 +107,12 @@ def print_futures(entries):
         else:
             print_future_entry(entry)
 
+
+import asyncio
+
 # Running the async function
 import aiohttp
-import asyncio
+
 
 async def run():
     async with aiohttp.ClientSession() as session:
@@ -123,5 +120,6 @@ async def run():
         entries = await fetch_futures(assets, session, publisher)
         # Print the fetched futures
         print_futures(entries)
+
 
 asyncio.run(run())

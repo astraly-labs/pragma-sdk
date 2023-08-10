@@ -4,6 +4,7 @@ from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import FutureEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.assets import PragmaAsset, PragmaFutureAsset
@@ -13,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class ByBitFutureFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://api.bybit.com/derivatives/v3/public/tickers?category=linear&symbol="
+    BASE_URL: str = (
+        "https://api.bybit.com/derivatives/v3/public/tickers?category=linear&symbol="
+    )
     SOURCE: str = "BYBIT"
 
     publisher: str
@@ -54,7 +57,10 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from BYBIT")
         result = resp.json(content_type="application/json")
-        if result["retCode"] == "51001" or result["retMsg"] == "Instrument ID does not exist":
+        if (
+            result["retCode"] == "51001"
+            or result["retMsg"] == "Instrument ID does not exist"
+        ):
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from BYBIT")
 
         return self._construct(asset, result)
@@ -92,11 +98,11 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         logger.info(f"Fetched future for {'/'.join(pair)} from BYBIT")
 
         return FutureEntry(
-        pair_id=pair_id,
-        price=price_int,
-        volume=volume_int,
-        timestamp=timestamp,
-        source=self.SOURCE,
-        publisher=self.publisher,
-        expiry_timestamp=expiry_timestamp,
-    )
+            pair_id=pair_id,
+            price=price_int,
+            volume=volume_int,
+            timestamp=timestamp,
+            source=self.SOURCE,
+            publisher=self.publisher,
+            expiry_timestamp=expiry_timestamp,
+        )

@@ -4,6 +4,7 @@ from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
+
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
@@ -13,11 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class KaikoFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://us.market-api.kaiko.io/v2/data/trades.v1/spot_direct_exchange_rate"
+    BASE_URL: str = (
+        "https://us.market-api.kaiko.io/v2/data/trades.v1/spot_direct_exchange_rate"
+    )
     SOURCE: str = "KAIKO"
     payload = {
-        'interval': '2m',
-        'page_size': '1',
+        "interval": "2m",
+        "page_size": "1",
     }
 
     publisher: str

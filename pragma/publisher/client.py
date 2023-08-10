@@ -2,8 +2,9 @@ import asyncio
 from typing import List
 
 import aiohttp
+
 from pragma.core.client import PragmaClient
-from pragma.core.entry import SpotEntry, FutureEntry
+from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.publisher.types import PublisherInterfaceT
 
 
