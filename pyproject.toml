@@ -1,14 +1,7 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.isort]
-profile = "black"
-
 [tool.poetry]
 name = "pragma"
 version = "1.0.0"
-authors = ["Pragma <contact@pragmaoracle.com>"]
+authors = ["0xevolve <matthias@pragmaoracle.com>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
 homepage = "https://pragmaoracle.com"
@@ -19,11 +12,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+exclude = ["pragma/tests/*", "pragma/**/*_test.py"]
 packages = [
   {include = "pragma"},
-  {include = "core", from = "pragma"},
-  {include = "publisher", from = "pragma"},
-  {include = "test", from = "pragma"},
 ]
 
 [tool.poetry.dependencies]
@@ -36,7 +27,39 @@ deprecated = "^1.2.14"
 [tool.poetry.dev-dependencies]
 black = "*"
 flake8 = "*"
+
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
 autoflake = "^2.2.0"
+pytest = "^7.2.2"
+poethepoet = "^0.21.1"
+coverage = "^7.2.1"
+pytest-asyncio = "^0.21.1"
+pylint = "2.17.4"
+setuptools = "^68.0.0"
+pytest-mock = "^3.6.1"
+pytest-xdist = "^3.2.1"
+pyright = "^1.1.298"
+pytest-cov = "^4.0.0"
+pytest-rerunfailures = "^12.0"
 
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "build",
+    "Cython",
+]
+
+build-backend = "setuptools.build_meta"
+
+
+[tool.black]
+target-version = ["py38"]
+extend-exclude = """
+crypto-cpp
+"""
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true

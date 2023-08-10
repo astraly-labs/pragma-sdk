@@ -1,0 +1,44 @@
+# pylint: disable=redefined-outer-name
+
+import pytest
+import pytest_asyncio
+from starknet_py.common import (
+    create_casm_class,
+    create_compiled_contract,
+    create_sierra_compiled_contract,
+)
+from starknet_py.constants import FEE_CONTRACT_ADDRESS
+from starknet_py.contract import Contract
+from starknet_py.hash.casm_class_hash import compute_casm_class_hash
+from starknet_py.net.account.base_account import BaseAccount
+from starknet_py.net.udc_deployer.deployer import Deployer
+
+from pragma.tests.constants import MAX_FEE, MOCK_COMPILED_DIR
+from pragma.tests.utils import read_contract
+
+
+async def declare_account(account: BaseAccount, compiled_account_contract: str) -> int:
+    """
+    Declares a specified account.
+    """
+
+    declare_tx = await account.sign_declare_transaction(
+        compiled_contract=compiled_account_contract,
+        max_fee=MAX_FEE,
+    )
+    resp = await account.client.declare(transaction=declare_tx)
+    await account.client.wait_for_tx(resp.transaction_hash)
+
+    return resp.class_hash
+
+
+@pytest_asyncio.fixture(scope="package")
+async def account_with_validate_deploy_class_hash(
+    pre_deployed_account_with_validate_deploy: BaseAccount,
+) -> int:
+    compiled_contract = read_contract(
+        "account_with_validate_deploy_compiled.json", directory=MOCK_COMPILED_DIR
+    )
+    return await declare_account(
+        pre_deployed_account_with_validate_deploy, compiled_contract
+    )

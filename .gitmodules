@@ -1,0 +1,3 @@
+[submodule "pragma-oracle"]
+	path = pragma-oracle
+	url = https://github.com/Astraly-Labs/pragma-oracle.git
