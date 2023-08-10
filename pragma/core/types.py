@@ -1,5 +1,5 @@
 import os
-from enum import Enum, IntEnum, unique
+from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
