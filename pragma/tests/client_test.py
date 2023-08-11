@@ -6,7 +6,7 @@ from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.hash.storage import get_storage_var_address
 
-from pragma.tests.constants import U128_MAX, U256_MAX
+from pragma.tests.constants import MOCK_COMPILED_DIR, U128_MAX, U256_MAX
 from pragma.tests.utils import read_contract
 
 

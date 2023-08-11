@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # Taken from starknet_py tests : https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
 
+import sys
 from typing import List, Tuple
 
 import pytest
@@ -106,6 +107,23 @@ async def address_and_private_key(
 
 
 @pytest.fixture(scope="package")
+def gateway_account(
+    address_and_private_key: Tuple[str, str], gateway_client: GatewayClient
+) -> Account:
+    """
+    Returns a new Account created with GatewayClient.
+    """
+    address, private_key = address_and_private_key
+
+    return Account(
+        address=address,
+        client=gateway_client,
+        key_pair=KeyPair.from_private_key(int(private_key, 0)),
+        chain=StarknetChainId.TESTNET,
+    )
+
+
+@pytest.fixture(scope="package")
 def full_node_account(
     address_and_private_key: Tuple[str, str], full_node_client: FullNodeClient
 ) -> BaseAccount:
@@ -123,7 +141,16 @@ def full_node_account(
 
 
 def net_to_base_accounts() -> List[str]:
-    accounts = ["full_node_account"]
+    if "--client=gateway" in sys.argv:
+        return ["gateway_account"]
+    if "--client=full_node" in sys.argv:
+        return ["full_node_account"]
+
+    accounts = ["gateway_account"]
+    nets = ["--net=integration", "--net=testnet", "testnet", "integration"]
+
+    if set(nets).isdisjoint(sys.argv):
+        accounts.extend(["full_node_account"])
     return accounts
 
 

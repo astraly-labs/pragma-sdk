@@ -42,3 +42,36 @@ async def account_with_validate_deploy_class_hash(
     return await declare_account(
         pre_deployed_account_with_validate_deploy, compiled_contract
     )
+
+
+@pytest.fixture(scope="package")
+def fee_contract(gateway_account: BaseAccount) -> Contract:
+    """
+    Returns an instance of the fee contract. It is used to transfer tokens.
+    """
+    abi = [
+        {
+            "inputs": [
+                {"name": "recipient", "type": "felt"},
+                {"name": "amount", "type": "Uint256"},
+            ],
+            "name": "transfer",
+            "outputs": [{"name": "success", "type": "felt"}],
+            "type": "function",
+        },
+        {
+            "members": [
+                {"name": "low", "offset": 0, "type": "felt"},
+                {"name": "high", "offset": 1, "type": "felt"},
+            ],
+            "name": "Uint256",
+            "size": 2,
+            "type": "struct",
+        },
+    ]
+
+    return Contract(
+        address=FEE_CONTRACT_ADDRESS,
+        abi=abi,
+        provider=gateway_account,
+    )
