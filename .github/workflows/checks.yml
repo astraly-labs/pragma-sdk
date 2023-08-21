@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --without py39-dev
+          poetry install
 
       - name: Check poetry.lock
         run: |
@@ -93,7 +93,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --without py39-dev
+          poetry install
 
       # ====================== CONTRACTS v1 ====================== #
 
@@ -193,7 +193,7 @@ jobs:
 
       - name: Install python 3.9 requirements
         run: |
-          poetry export -f requirements.txt --only=py39-dev --without-hashes --output requirements.txt
+          poetry export -f requirements.txt --without-hashes --output requirements.txt
           pip install -r requirements.txt
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -204,7 +204,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --without py39-dev
+          poetry install
 
       # ====================== RUN TESTS ====================== #
 
