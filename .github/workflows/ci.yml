@@ -59,6 +59,9 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
+      
+      # ====================== SETUP ====================== #
+
       - uses: actions/checkout@v3
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
@@ -87,6 +90,53 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: make setup
+
+      # ====================== CAIRO SETUP ====================== #
+
+      - name: Install rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+      - name: Clone Cairo1 compiler repository
+        uses: actions/checkout@v3
+        with:
+          repository: starkware-libs/cairo
+          persist-credentials: false
+          ref: v2.1.0
+          path: cairo
+
+      - name: Cache rust dependencies
+        id: cache-rust
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build compiler
+        if: steps.cache-rust.outputs.cache-hit != 'true'
+        working-directory: ./cairo
+        run: |
+          cargo build
+
+      - name: Build starknet-compile
+        working-directory: ./cairo
+        run: |
+          cargo run --bin starknet-compile -- --version
+          cargo run --bin starknet-sierra-compile -- --version
+
+      - name: Create manifest file
+        run: |
+          readlink -f cairo/Cargo.toml >> starknet_py/tests/e2e/manifest-path
+      
+      # ---------------------------------------------------------- #
+      # ........................RUN-TESTS......................... #
+      # ---------------------------------------------------------- #
+
       - name: Run tests
         run: make test-no-log
       - name: Upload coverage report to codecov
