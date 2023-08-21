@@ -123,8 +123,9 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
     publishers = await pragma_client.get_all_publishers()
     assert publishers == []
 
-    # Add new publisher
-    invoke_res = await contract.functions["increase_balance"].invoke(
-        amount=100, auto_estimate=True
-    )
-    await invoke_res.wait_for_acceptance()
+    PUBLISHER_NAME = "PUBLISHER_1"
+
+    await pragma_client.add_publisher(PUBLISHER_NAME)
+
+    publishers = await pragma_client.get_all_publishers()
+    assert publishers == [PUBLISHER_NAME]
