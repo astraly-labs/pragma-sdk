@@ -51,45 +51,53 @@ DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY = "0xcd613e30d8f16adf91b7584a2265b1f5"
 
 MAX_FEE = int(1e16)
 
-currencies = [
-    Currency("USD", 8, 1, 0, 0),
+CURRENCIES = [
+    Currency("USD", 8, True, 0, 0),
     Currency(
         "BTC",
         18,
+        True,
         0,
+        0,
+    ),
+    Currency(
+        "WBTC",
+        8,
+        False,
         0x03FE2B97C1FD336E750087D68B9B867997FD64A2661FF3CA5A7C771641E8E7AC,
         0x2260FAC5E5542A773AA44FBCFEDF7C193BC2C599,
     ),
     Currency(
         "ETH",
         18,
-        0,
+        False,
         0x049D36570D4E46F48E99674BD3FCC84644DDD6B96F7C741B1562B82F9E004DC7,
         0x0000000000000000000000000000000000000000,
     ),
     Currency(
         "USDC",
         6,
-        0,
+        False,
         0x053C91253BC9682C04929CA02ED00B3E423F6710D2EE7E0D5EBB06F3ECF368A8,
         0xA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48,
     ),
     Currency(
         "USDT",
         6,
-        0,
+        False,
         0x068F5C6A61780768455DE69077E07E89787839BF8166DECFBF92B645209C0FB8,
         0xDAC17F958D2EE523A2206206994597C13D831EC7,
     ),
     Currency(
         "DAI",
         18,
-        0,
+        False,
         0x001108CDBE5D82737B9057590ADAF97D34E74B5452F0628161D237746B6FE69E,
         0x6B175474E89094C44DA98B954EEDEAC495271D0F,
     ),
 ]
-pairs = [
+
+PAIRS = [
     Pair("ETH/USD", "ETH", "USD"),
     Pair("BTC/USD", "BTC", "USD"),
     Pair("USDC/USD", "USDC", "USD"),

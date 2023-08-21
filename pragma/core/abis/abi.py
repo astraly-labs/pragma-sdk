@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -35,5 +36,9 @@ CONTRACTS_NAMES = [
     "pragma_Oracle",
     "pragma_PublisherRegistry",
     "pragma_SummaryStats",
+    "pragma_YieldCurve",
 ]
-ABIS = [get_abi(contract_name) for contract_name in CONTRACTS_NAMES]
+ABIS = {
+    contract_name: json.loads(get_abi(contract_name))
+    for contract_name in CONTRACTS_NAMES
+}

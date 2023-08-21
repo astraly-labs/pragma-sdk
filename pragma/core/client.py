@@ -12,9 +12,16 @@ from pragma.core.mixins import (
     PublisherRegistryMixin,
     TransactionMixin,
 )
-from pragma.core.types import CHAIN_IDS, ContractAddresses, get_client_from_network
+from pragma.core.types import (
+    CHAIN_IDS,
+    CONTRACT_ADDRESSES,
+    ContractAddresses,
+    get_client_from_network,
+)
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin):
@@ -28,6 +35,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
+        port: Optional[int] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -35,10 +43,11 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
+        :param port: Optional port to interact with local node. Will default to 5050.
         """
         self.network = network
 
-        self.client = get_client_from_network(network)
+        self.client = get_client_from_network(network, port=port)
 
         if account_contract_address and account_private_key:
             self._setup_account_client(
@@ -72,7 +81,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
             address=account_contract_address,
             client=self.client,
             key_pair=KeyPair.from_private_key(1),
-            chain=self.network_config.chain_id,
+            chain=CHAIN_IDS[self.network],
         )
         balance = await client.get_balance(token_address)
         return balance
@@ -81,6 +90,9 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         self._setup_account_client(chain_id, private_key, account_contract_address)
 
     def _setup_account_client(self, chain_id, private_key, account_contract_address):
+        if type(private_key) == str:
+            private_key = int(private_key, 16)
+
         self.signer = StarkCurveSigner(
             account_contract_address,
             KeyPair.from_private_key(private_key),

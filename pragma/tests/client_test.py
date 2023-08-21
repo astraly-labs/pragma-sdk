@@ -1,4 +1,5 @@
 from typing import Tuple
+from urllib.parse import urlparse
 
 import pytest
 import pytest_asyncio
@@ -9,13 +10,15 @@ from starknet_py.net.account.base_account import BaseAccount
 
 from pragma.core.client import PragmaClient
 from pragma.core.types import ContractAddresses
+from pragma.core.utils import str_to_felt
 from pragma.tests.constants import (
+    CURRENCIES,
+    DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
     MOCK_COMPILED_DIR,
+    PAIRS,
     U128_MAX,
     U256_MAX,
-    currencies,
-    pairs,
 )
 from pragma.tests.utils import read_contract
 
@@ -59,11 +62,14 @@ async def declare_deploy_oracle(
     await declare_result.wait_for_acceptance()
 
     # Deploy Oracle
-    currencies = [currency.serialize() for currency in currencies]
-    pairs = [pair.serialize() for pair in pairs]
+    currencies = [currency.to_dict() for currency in CURRENCIES]
+    pairs = [pair.to_dict() for pair in PAIRS]
+
+    print(currencies, pairs)
 
     deploy_result = await declare_result.deploy(
         constructor_args=[
+            account.address,
             deploy_result_registry.deployed_contract.address,
             currencies,
             pairs,
@@ -85,14 +91,25 @@ async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
 @pytest_asyncio.fixture(scope="package", name="pragma_client")
 # pylint: disable=redefined-outer-name
 async def pragma_client(
-    contracts: (Contract, Contract), account: BaseAccount
+    contracts: (Contract, Contract),
+    account: BaseAccount,
+    network,
+    address_and_private_key: Tuple[str, str],
 ) -> PragmaClient:
     oracle, registry = contracts
+    address, private_key = address_and_private_key
+
+    # Parse port from network url
+    port = urlparse(network).port
+
+    print(account.address, address)
+
     return PragmaClient(
         network="devnet",
-        account_contract_address=account.address,
-        account_private_key=DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
+        account_contract_address=address,
+        account_private_key=private_key,
         contract_addresses_config=ContractAddresses(registry.address, oracle.address),
+        port=port,
     )
 
 
@@ -108,10 +125,10 @@ async def test_client_setup(
     contracts: (Contract, Contract), pragma_client: PragmaClient, account: BaseAccount
 ):
     oracle, registry = contracts
-    assert pragma_client.account_address == account.address
+    assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()
-    assert pragma_client.get_balance() == account_balance
+    assert await pragma_client.get_balance(account.address) == account_balance
 
     assert pragma_client.oracle is not None
     assert pragma_client.publisher_registry is not None
@@ -124,8 +141,13 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
     assert publishers == []
 
     PUBLISHER_NAME = "PUBLISHER_1"
+    PUBLISHER_ADDRESS = 123
 
-    await pragma_client.add_publisher(PUBLISHER_NAME)
+    res = await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
+    await res.wait_for_acceptance()
 
     publishers = await pragma_client.get_all_publishers()
-    assert publishers == [PUBLISHER_NAME]
+    assert publishers == [str_to_felt(PUBLISHER_NAME)]
+
+    publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
+    assert publisher_address == PUBLISHER_ADDRESS

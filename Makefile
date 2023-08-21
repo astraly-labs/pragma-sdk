@@ -4,13 +4,13 @@ check:
 setup:
 	poetry install
 
-test-no-log:
-	poetry run pytest tests -n logical
+test-devnet:
+	poetry run pytest --net=devnet --disable-warnings -s --client=full_node
 
 format:
 	poetry run black pragma/
 	poetry run isort pragma/
-	poetry run autoflake . -r
+	poetry run autoflake . -r -cd -i
 
 format-check:
 	poetry run black pragma/ --check

@@ -1,13 +1,17 @@
+import logging
 import os
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.gateway_client import GatewayClient
 
 from pragma.core.utils import str_to_felt
 
-NETWORK = os.getenv("NETWORK") or "devnet"
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 ADDRESS = int
 HEX_STR = str
@@ -21,7 +25,10 @@ PRAGMA_TESTNET = "pragma_testnet"
 
 Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet"]
 
+AssetType = Literal["SPOT", "FUTURE", "OPTION"]
+
 CHAIN_IDS = {
+    DEVNET: 1536727068981429685321,
     SHARINGAN: 1536727068981429685321,
     TESTNET: 1536727068981429685321,
     MAINNET: 23448594291968334,
@@ -36,30 +43,38 @@ STARKSCAN_URLS = {
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
 }
 
-if not os.getenv("RPC_KEY") and NETWORK in ["mainnet", "testnet", "testnet2"]:
-    raise ValueError(f"RPC_KEY env variable is required when targeting {NETWORK}")
 
-RPC_URLS = {
-    MAINNET: f"https://starknet-mainnet.infura.io/v3/{os.getenv('RPC_KEY')}",
-    TESTNET: f"https://starknet-goerli.infura.io/v3/{os.getenv('RPC_KEY')}",
-    DEVNET: "http://127.0.0.1:5050/rpc",
-    SHARINGAN: "https://sharingan.madara.zone",
-    PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/rpc",
-}
+def get_rpc_url(network=TESTNET, rpc_key=None, port=5050):
+    rpc_key = rpc_key if rpc_key is not None else os.getenv("RPC_KEY")
 
-RPC_CLIENT = FullNodeClient(node_url=RPC_URLS[NETWORK])
+    if network == TESTNET:
+        return f"https://starknet-goerli.infura.io/v3/{rpc_key}"
+    if network == MAINNET:
+        return f"https://starknet-mainnet.infura.io/v3/{rpc_key}"
+    if network == SHARINGAN:
+        return "https://sharingan.madara.zone"
+    if network == PRAGMA_TESTNET:
+        return "https://testnet.pragmaoracle.com/rpc"
+    if network == DEVNET:
+        logger.info(f"DEVNET PORT {port} ℹ️")
+        return f"http://127.0.0.1:{port}/rpc"
 
-AssetType = Literal["SPOT", "FUTURE", "OPTION"]
 
-
-def get_client_from_network(network: str) -> FullNodeClient:
-    return FullNodeClient(node_url=RPC_URLS[network])
+def get_client_from_network(network: str, port=5050):
+    # return FullNodeClient(node_url=get_rpc_url(network, port=port))
+    return GatewayClient(net=f"http://localhost:{port}")
 
 
 @dataclass
 class ContractAddresses:
     publisher_registry_address: int
     oracle_proxy_address: int
+
+
+CONTRACT_ADDRESSES = {
+    TESTNET: ContractAddresses(0, 0),
+    MAINNET: ContractAddresses(0, 0),
+}
 
 
 @unique
@@ -75,7 +90,7 @@ class AggregationMode(Enum):
 class Currency:
     id: int
     decimals: int
-    is_abstract_currency: int
+    is_abstract_currency: bool
     starknet_address: int
     ethereum_address: int
 
@@ -93,8 +108,8 @@ class Currency:
 
         self.decimals = decimals
 
-        if type(is_abstract_currency) == bool:
-            is_abstract_currency = int(is_abstract_currency)
+        if type(is_abstract_currency) == int:
+            is_abstract_currency = bool(is_abstract_currency)
         self.is_abstract_currency = is_abstract_currency
 
         if starknet_address is None:
