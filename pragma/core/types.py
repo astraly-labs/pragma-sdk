@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
 
@@ -49,6 +50,16 @@ RPC_URLS = {
 RPC_CLIENT = FullNodeClient(node_url=RPC_URLS[NETWORK])
 
 AssetType = Literal["SPOT", "FUTURE", "OPTION"]
+
+
+def get_client_from_network(network: str) -> FullNodeClient:
+    return FullNodeClient(node_url=RPC_URLS[network])
+
+
+@dataclass
+class ContractAddresses:
+    publisher_registry_address: int
+    oracle_proxy_address: int
 
 
 @unique

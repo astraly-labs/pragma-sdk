@@ -1,6 +1,9 @@
+import os
 from pathlib import Path
 
 from starknet_py.common import create_sierra_compiled_contract
+
+BUILD_DIR = Path(os.path.dirname(__file__))
 
 
 def get_artifact(contract_name):

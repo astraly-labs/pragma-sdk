@@ -12,8 +12,7 @@ from pragma.core.mixins import (
     PublisherRegistryMixin,
     TransactionMixin,
 )
-from pragma.core.types import CHAIN_IDS
-from pragma.core.utils import get_client_from_network
+from pragma.core.types import CHAIN_IDS, ContractAddresses, get_client_from_network
 
 logger = logging.getLogger(__name__)
 

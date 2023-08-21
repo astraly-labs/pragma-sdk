@@ -49,7 +49,7 @@ def start_devnet():
 
 
 def start_devnet_command_unix(devnet_port: int) -> List[str]:
-    return [
+    command = [
         "poetry",
         "run",
         "starknet-devnet",
@@ -63,6 +63,7 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         *get_compiler_manifest(),
     ]
+    return command
 
 
 def start_devnet_command_windows(devnet_port: int) -> List[str]:
