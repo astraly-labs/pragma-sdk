@@ -1,9 +1,39 @@
-# default python virtual environment name
-.venv/
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-.pytest_cache/
+*$py.class
 
-pragma/tests/manifest-path
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+/pragma/tests/manifest-path
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/

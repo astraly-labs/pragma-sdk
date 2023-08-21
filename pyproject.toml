@@ -44,6 +44,16 @@ pyright = "^1.1.298"
 pytest-cov = "^4.0.0"
 pytest-rerunfailures = "^12.0"
 
+[tool.poe.tasks]
+lint = "pylint pragma"
+format.shell = "isort . && black ."
+format_check.shell = "isort --check . && black --check ."
+format_diff.shell = "isort --diff . && black --diff ."
+typecheck = "pyright pragma"
+test_ci = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
+compile_contracts = "bash pragma/tests/mock/compile_contracts.sh"
+circular_imports_check.shell = "poetry run pytest circular.py"
+
 [build-system]
 requires = [
     "setuptools",
@@ -55,12 +65,30 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 
+[tool.coverage.run]
+source = ["pragma"]
+
+[tool.coverage.report]
+omit = ["*_test.py", "pragma/tests/*"]
+skip_empty = true
+
+
 [tool.black]
 target-version = ["py38"]
 extend-exclude = """
 crypto-cpp
+pragma-oracle
 """
 
 [tool.isort]
 profile = "black"
 skip_gitignore = true
+
+[tool.pyright]
+include = ["pragma/"]
+exclude = [
+    "**/__pycache__",
+    "pragma/tests/docs",
+    "pragma-oracle/*",
+]
+stubPath = ""  # fix "not a valid directory" error
