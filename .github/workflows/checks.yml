@@ -105,11 +105,12 @@ jobs:
           key: ${{ runner.os }}-contracts-${{ hashFiles('pragma-oracle/src', 'poetry.lock') }}
 
       - uses: software-mansion/setup-scarb@v1
-      
+
       - name: Compile contracts
         if: steps.cache-contracts.outputs.cache-hit != 'true'
+        working-directory: pragma-oracle
         run: |
-          poetry run poe compile_contracts
+          scarb build
 
       - name: Upload contracts
         uses: actions/upload-artifact@v3
@@ -178,7 +179,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: contract-artifacts
-          path: starknet_py/tests/e2e/mock/
+          path: pragma-oracle/target
 
       - uses: actions/setup-python@v4
         with:

@@ -51,7 +51,6 @@ format_check.shell = "isort --check . && black --check ."
 format_diff.shell = "isort --diff . && black --diff ."
 typecheck = "pyright pragma"
 test_ci = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
-compile_contracts = "bash pragma/tests/mock/compile_contracts.sh"
 circular_imports_check.shell = "poetry run pytest circular.py"
 
 [build-system]
