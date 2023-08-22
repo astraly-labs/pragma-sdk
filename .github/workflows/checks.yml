@@ -103,8 +103,8 @@ jobs:
         id: cache-contracts
         uses: actions/cache@v3
         with:
-          path: pragma-oracle/target
-          key: ${{ runner.os }}-contracts-${{ hashFiles('pragma-oracle/src', 'poetry.lock') }}
+          path: ./pragma-oracle/target
+          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
 
       - uses: software-mansion/setup-scarb@v1
 
@@ -118,7 +118,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: contract-artifacts
-          path: pragma-oracle/target
+          path: ./pragma-oracle/target
 
       # ====================== CAIRO SETUP ====================== #
 
@@ -181,7 +181,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: contract-artifacts
-          path: pragma-oracle/target
+          path: ./pragma-oracle/target
 
       - uses: actions/setup-python@v4
         with:
