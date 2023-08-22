@@ -104,8 +104,9 @@ jobs:
           path: pragma-oracle/target
           key: ${{ runner.os }}-contracts-${{ hashFiles('pragma-oracle/src', 'poetry.lock') }}
 
+      - uses: software-mansion/setup-scarb@v1
+      
       - name: Compile contracts
-        uses: software-mansion/setup-scarb@v1
         if: steps.cache-contracts.outputs.cache-hit != 'true'
         run: |
           poetry run poe compile_contracts

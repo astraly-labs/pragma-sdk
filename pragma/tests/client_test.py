@@ -143,11 +143,36 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
     PUBLISHER_NAME = "PUBLISHER_1"
     PUBLISHER_ADDRESS = 123
 
-    res = await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
-    await res.wait_for_acceptance()
+    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
 
     publishers = await pragma_client.get_all_publishers()
     assert publishers == [str_to_felt(PUBLISHER_NAME)]
 
     publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
     assert publisher_address == PUBLISHER_ADDRESS
+
+    SOURCE_1 = "SOURCE_1"
+
+    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_1)
+    
+    sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
+    assert sources == [str_to_felt(SOURCE_1)]
+
+    SOURCE_2 = "SOURCE_2"
+    SOURCE_3 = "SOURCE_3"
+
+    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, [SOURCE_2, SOURCE_3])
+    
+    sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
+    assert sources == [str_to_felt(source) for source in (SOURCE_1, SOURCE_2, SOURCE_3)]
+
+# @pytest.mark.asyncio
+# async def test_client_publisher_mixin_update_address(pragma_client: PragmaClient, contracts):
+#     oracle, registry = contracts
+
+#     PUBLISHER_ADDRESS_NEW = 456
+#     await pragma_client.update_publisher_address(PUBLISHER_NAME, PUBLISHER_ADDRESS_NEW)
+    
+#     publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
+#     assert publisher_address == PUBLISHER_ADDRESS_NEW
+    
