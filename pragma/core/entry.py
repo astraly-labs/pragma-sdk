@@ -242,3 +242,53 @@ class FutureEntry(Entry):
             if isinstance(entry, FutureEntry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
+
+
+class GenericEntry(Entry):
+    base: BaseEntry
+    key: int
+    value: int
+
+    def __init__(
+        self,
+        timestamp: int,
+        source: Union[str, int],
+        publisher: Union[str, int],
+        key: Union[str, int],
+        value: int,
+    ):
+        if type(publisher) == str:
+            publisher = str_to_felt(publisher)
+
+        if type(source) == str:
+            source = str_to_felt(source)
+
+        if type(key) == str:
+            key = str_to_felt(key)
+
+        self.base = BaseEntry(timestamp, source, publisher)
+        self.key = key
+        self.value = value
+
+    def serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": self.base.source,
+                "publisher": self.base.publisher,
+            },
+            "key": self.key,
+            "value": self.value,
+        }
+
+    def to_tuple(self):
+        return (
+            self.base.timestamp,
+            self.base.source,
+            self.base.publisher,
+            self.key,
+            self.value,
+        )
+
+    def __repr__(self):
+        return f'GenericEntry(key="{felt_to_str(self.key)}", value={self.value}, timestamp={self.base.timestamp}, source="{felt_to_str(self.base.source)}", publisher="{felt_to_str(self.base.publisher)}")'

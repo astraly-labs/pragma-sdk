@@ -34,7 +34,7 @@ class CexFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
                 )
-            result = await resp.json(content_type="text/json")
+            result = await resp.json()
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
@@ -51,7 +51,7 @@ class CexFetcher(PublisherInterfaceT):
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-        result = resp.json(content_type="text/json")
+        result = resp.json()
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
 
