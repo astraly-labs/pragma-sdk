@@ -1,0 +1,236 @@
+name: Checks
+
+on:
+  push:
+    branches:
+      - master
+      - development
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  # ---------------------------------------------------------- #
+  # ...................LINT-FORMAT-TYPECHECK.................. #
+  # ---------------------------------------------------------- #
+
+  lint-format-typecheck:
+    name: Lint - Format - Typecheck
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config installer.modern-installation false
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Check poetry.lock
+        run: |
+          poetry lock --check
+
+      - name: Lint
+        run: |
+          poetry run poe lint
+
+      - name: Format
+        run: |
+          poetry run poe format_check
+
+      - name: Typecheck
+        run: |
+          poetry run poe typecheck
+
+  # ---------------------------------------------------------- #
+  # .......................SETUP-TESTS........................ #
+  # ---------------------------------------------------------- #
+
+  setup-tests:
+    name: Setup Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.9" ]
+    steps:
+
+      # ====================== SETUP ====================== #
+
+      - uses: actions/checkout@v3
+        with: 
+          submodules: 'true'
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: 'pip'
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config installer.modern-installation false
+
+      - name: Install python 3.9 requirements
+        run: |
+          poetry export -f requirements.txt --without-hashes --output requirements.txt
+          pip install -r requirements.txt
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      # ====================== CONTRACTS v1 ====================== #
+
+      - name: Cache contracts
+        id: cache-contracts
+        uses: actions/cache@v3
+        with:
+          path: ./pragma-oracle/target
+          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
+
+      - uses: software-mansion/setup-scarb@v1
+
+      - name: Compile contracts
+        if: steps.cache-contracts.outputs.cache-hit != 'true'
+        working-directory: ./pragma-oracle
+        run: |
+          scarb build
+
+      - name: Upload contracts
+        uses: actions/upload-artifact@v3
+        with:
+          name: contract-artifacts
+          path: ./pragma-oracle/target
+
+      # ====================== CAIRO SETUP ====================== #
+
+      - name: Install rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+      - name: Clone Cairo1 compiler repository
+        uses: actions/checkout@v3
+        with:
+          repository: starkware-libs/cairo
+          persist-credentials: false
+          ref: v2.1.0
+          path: cairo
+
+      - name: Cache rust dependencies
+        id: cache-rust
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build compiler
+        if: steps.cache-rust.outputs.cache-hit != 'true'
+        working-directory: ./cairo
+        run: |
+          cargo build
+
+      - name: Build starknet-compile
+        working-directory: ./cairo
+        run: |
+          cargo run --bin starknet-compile -- --version
+          cargo run --bin starknet-sierra-compile -- --version
+
+      - name: Create manifest file
+        run: |
+          readlink -f cairo/Cargo.toml >> pragma/tests/manifest-path
+
+  # ---------------------------------------------------------- #
+  # ........................RUN-TESTS......................... #
+  # ---------------------------------------------------------- #
+
+  run-tests:
+    name: Tests
+    needs: setup-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.9" ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Download contracts
+        uses: actions/download-artifact@v3
+        with:
+          name: contract-artifacts
+          path: ./pragma-oracle/target
+      
+      - name: List directories
+        run: ls -al
+        
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: 'pip'
+
+      # ====================== SETUP PYTHON ====================== #
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config installer.modern-installation false
+
+      - name: Install python 3.9 requirements
+        run: |
+          poetry export -f requirements.txt --without-hashes --output requirements.txt
+          pip install -r requirements.txt
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      # ====================== RUN TESTS ====================== #
+
+      - name: Check circular imports
+        run: |
+          poetry run poe circular_imports_check
+
+      - name: Run tests
+        run: |
+          poetry run poe test_ci
+
+      - name: Generate coverage in XML
+        run: |
+          poetry run coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

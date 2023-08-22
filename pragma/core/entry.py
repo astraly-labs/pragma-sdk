@@ -125,26 +125,20 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def serialize_evm(self) -> Dict[str, str]:
-        return {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": Web3.toBytes(text=felt_to_str(self.base.source)),
-                "publisher": Web3.toBytes(text=felt_to_str(self.base.publisher)),
-            },
-            "pairId": Web3.toBytes(text=felt_to_str(self.pair_id)),
-            "price": self.price,
-            "volume": self.volume,
-        }
+    def set_publisher(self, publisher) -> self:
+        self.base.publisher = publisher
+        return self
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
+        base = dict(entry_dict["base"])
         return SpotEntry(
-            entry_dict["base"]["pair_id"],
+            entry_dict["pair_id"],
             entry_dict["price"],
-            entry_dict["timestamp"],
-            entry_dict["base"]["source"],
-            entry_dict["base"]["publisher"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+            volume=entry_dict["volume"],
         )
 
     @staticmethod
@@ -153,18 +147,6 @@ class SpotEntry(Entry):
         # TODO (rlkelly): log errors
         serialized_entries = [
             entry.serialize()
-            for entry in entries
-            # TODO (rlkelly): This needs to be much more resilient to publish errors
-            if isinstance(entry, SpotEntry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
-
-    @staticmethod
-    def serialize_entries_evm(entries: List[SpotEntry]) -> List[Dict[str, int]]:
-        """serialize entries to a List of dictionaries"""
-        # TODO (rlkelly): log errors
-        serialized_entries = [
-            entry.serialize_evm()
             for entry in entries
             # TODO (rlkelly): This needs to be much more resilient to publish errors
             if isinstance(entry, SpotEntry)
@@ -245,7 +227,7 @@ class FutureEntry(Entry):
             },
             "pair_id": self.pair_id,
             "price": self.price,
-            "expiry_timestamp": self.expiry_timestamp,
+            "expiration_timestamp": self.expiry_timestamp,
             "volume": self.volume,
         }
 
