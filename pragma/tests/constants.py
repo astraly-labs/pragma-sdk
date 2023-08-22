@@ -28,6 +28,11 @@ MOCK_DIR = Path(os.path.dirname(__file__)) / "mock"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 
+print("Current Directory:", os.getcwd())
+print("SUBMODULE_DIR:", SUBMODULE_DIR)
+print("MOCK_DIR:", MOCK_DIR)
+print("CONTRACTS_COMPILED_DIR:", CONTRACTS_COMPILED_DIR)
+
 
 # -------------------------------- TESTNET -------------------------------------
 
