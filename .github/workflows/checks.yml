@@ -185,10 +185,9 @@ jobs:
           name: contract-artifacts
           path: ./pragma-oracle/target
       
-      - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: ./pragma-oracle/target
-
+      - name: List directories
+        run: ls -al
+        
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
