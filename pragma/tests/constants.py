@@ -6,7 +6,23 @@ from pragma.core.types import Currency, Pair
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1
 
-SUBMODULE_DIR = Path(os.path.dirname(__file__)) / "../../pragma-oracle"
+
+def find_repo_root(start_directory: Path) -> Path:
+    """Finds the root directory of the repo by walking up the directory tree
+    and looking for a known file at the repo root.
+    """
+    current_directory = start_directory
+    while current_directory != current_directory.parent:  # Stop at filesystem root
+        if (current_directory / "pyproject.toml").is_file():
+            return current_directory
+        current_directory = current_directory.parent
+    raise ValueError("Repository root not found!")
+
+
+current_file_directory = Path(__file__).parent
+repo_root = find_repo_root(current_file_directory)
+
+SUBMODULE_DIR = repo_root / "pragma-oracle"
 MOCK_DIR = Path(os.path.dirname(__file__)) / "mock"
 
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"

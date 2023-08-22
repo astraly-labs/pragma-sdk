@@ -25,6 +25,9 @@ def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
     if directory is None:
         directory = CONTRACTS_COMPILED_DIR
 
+    if not directory.exists():
+        raise ValueError(f"Directory {directory} does not exist!")
+
     return (directory / file_name).read_text("utf-8")
 
 
