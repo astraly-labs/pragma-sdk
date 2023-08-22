@@ -2468,6 +2468,25 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "requests-mock"
+version = "1.11.0"
+description = "Mock out responses from the requests package"
+optional = false
+python-versions = "*"
+files = [
+    {file = "requests-mock-1.11.0.tar.gz", hash = "sha256:ef10b572b489a5f28e09b708697208c4a3b2b89ef80a9f01584340ea357ec3c4"},
+    {file = "requests_mock-1.11.0-py2.py3-none-any.whl", hash = "sha256:f7fae383f228633f6bececebdab236c478ace2284d6292c6e7e2867b9ab74d15"},
+]
+
+[package.dependencies]
+requests = ">=2.3,<3"
+six = "*"
+
+[package.extras]
+fixture = ["fixtures"]
+test = ["fixtures", "mock", "purl", "pytest", "requests-futures", "sphinx", "testtools"]
+
+[[package]]
 name = "rlp"
 version = "3.0.0"
 description = "A package for Recursive Length Prefix encoding and decoding"
@@ -2992,4 +3011,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.10"
-content-hash = "690a1c2ce43572378602de8fc408a9f2839d175557892ec0f17f2fe63f52c382"
+content-hash = "142439ac288e01d7de42427ecffb10ce7f028af0403bfb181213364a24f0309e"
