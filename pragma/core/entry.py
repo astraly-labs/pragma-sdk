@@ -125,18 +125,6 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def serialize_evm(self) -> Dict[str, str]:
-        return {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": Web3.toBytes(text=felt_to_str(self.base.source)),
-                "publisher": Web3.toBytes(text=felt_to_str(self.base.publisher)),
-            },
-            "pairId": Web3.toBytes(text=felt_to_str(self.pair_id)),
-            "price": self.price,
-            "volume": self.volume,
-        }
-
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
         return SpotEntry(
@@ -153,18 +141,6 @@ class SpotEntry(Entry):
         # TODO (rlkelly): log errors
         serialized_entries = [
             entry.serialize()
-            for entry in entries
-            # TODO (rlkelly): This needs to be much more resilient to publish errors
-            if isinstance(entry, SpotEntry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
-
-    @staticmethod
-    def serialize_entries_evm(entries: List[SpotEntry]) -> List[Dict[str, int]]:
-        """serialize entries to a List of dictionaries"""
-        # TODO (rlkelly): log errors
-        serialized_entries = [
-            entry.serialize_evm()
             for entry in entries
             # TODO (rlkelly): This needs to be much more resilient to publish errors
             if isinstance(entry, SpotEntry)

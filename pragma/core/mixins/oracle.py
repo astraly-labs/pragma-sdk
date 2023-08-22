@@ -48,7 +48,7 @@ class OracleMixin:
             )
         invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
-                "SpotEntry": {
+                "Spot": {
                     "base": {
                         "timestamp": timestamp,
                         "source": source,
@@ -167,12 +167,14 @@ class OracleMixin:
                 sources,
             )
 
+        response = dict(response)
+
         return OracleResponse(
-            response.price,
-            response.decimals,
-            response.last_updated_timestamp,
-            response.num_sources_aggregated,
-            response.expiration_timestamp,
+            response["price"],
+            response["decimals"],
+            response["last_updated_timestamp"],
+            response["num_sources_aggregated"],
+            response["expiration_timestamp"],
         )
 
     async def get_future(

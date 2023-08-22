@@ -1,3 +1,4 @@
+import time
 from typing import Tuple
 from urllib.parse import urlparse
 
@@ -154,7 +155,7 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
     SOURCE_1 = "SOURCE_1"
 
     await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_1)
-    
+
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(SOURCE_1)]
 
@@ -162,9 +163,42 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
     SOURCE_3 = "SOURCE_3"
 
     await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, [SOURCE_2, SOURCE_3])
-    
+
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(source) for source in (SOURCE_1, SOURCE_2, SOURCE_3)]
+
+
+@pytest.mark.asyncio
+async def test_client_oracle_mixin(pragma_client: PragmaClient, contracts):
+    oracle, registry = contracts
+
+    # Add PRAGMA as Publisher
+    PUBLISHER_NAME = "PRAGMA"
+    PUBLISHER_ADDRESS = pragma_client.account_address()
+
+    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
+
+    publishers = await pragma_client.get_all_publishers()
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(PUBLISHER_NAME)]
+
+    # Add PRAGMA as Source for PRAGMA Publisher
+    SOURCE_1 = "PRAGMA"
+    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_1)
+
+    # Publish SPOT Entry
+    BTC_PAIR = str_to_felt("BTC/USD")
+    timestamp = int(time.time())
+    await pragma_client.publish_spot_entry(
+        BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME
+    )
+
+    # Get SPOT
+    res = await pragma_client.get_spot(BTC_PAIR)
+    assert res.price == 100
+    assert res.num_sources_aggregated == 1
+    assert res.last_updated_timestamp == timestamp
+    assert res.decimals == 8
+
 
 # @pytest.mark.asyncio
 # async def test_client_publisher_mixin_update_address(pragma_client: PragmaClient, contracts):
@@ -172,7 +206,6 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
 
 #     PUBLISHER_ADDRESS_NEW = 456
 #     await pragma_client.update_publisher_address(PUBLISHER_NAME, PUBLISHER_ADDRESS_NEW)
-    
+
 #     publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
 #     assert publisher_address == PUBLISHER_ADDRESS_NEW
-    

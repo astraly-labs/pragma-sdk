@@ -55,7 +55,7 @@ CURRENCIES = [
     Currency("USD", 8, True, 0, 0),
     Currency(
         "BTC",
-        18,
+        8,
         True,
         0,
         0,
@@ -100,6 +100,7 @@ CURRENCIES = [
 PAIRS = [
     Pair("ETH/USD", "ETH", "USD"),
     Pair("BTC/USD", "BTC", "USD"),
+    Pair("WTC/USD", "WTC", "USD"),
     Pair("USDC/USD", "USDC", "USD"),
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
