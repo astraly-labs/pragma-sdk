@@ -74,9 +74,9 @@ skip_empty = true
 
 [tool.black]
 target-version = ["py38"]
+exclude = "pragma-oracle"
 extend-exclude = """
 crypto-cpp
-pragma-oracle
 """
 
 [tool.isort]

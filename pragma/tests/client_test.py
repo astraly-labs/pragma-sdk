@@ -229,6 +229,7 @@ async def test_client_oracle_mixin(pragma_client: PragmaClient, contracts):
     # Returns correct entries
     entries = await pragma_client.get_spot_entries(ETH_PAIR, sources=[])
 
+    entry = spot_entry_2.set_publisher(0)
     assert entries == [spot_entry_2]
 
     # Return correct price aggregated

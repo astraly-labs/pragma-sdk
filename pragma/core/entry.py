@@ -125,6 +125,10 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
+    def set_publisher(self, publisher) -> self:
+        self.base.publisher = publisher
+        return self
+
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
         base = dict(entry_dict["base"])
@@ -134,6 +138,7 @@ class SpotEntry(Entry):
             base["timestamp"],
             base["source"],
             base["publisher"],
+            volume=entry_dict["volume"],
         )
 
     @staticmethod
