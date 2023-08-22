@@ -8,9 +8,11 @@ from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.hash.storage import get_storage_var_address
 from starknet_py.net.account.base_account import BaseAccount
+from starknet_py.net.client_errors import ClientError
 
 from pragma.core.client import PragmaClient
-from pragma.core.types import ContractAddresses
+from pragma.core.entry import FutureEntry, SpotEntry
+from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 from pragma.tests.constants import (
     CURRENCIES,
@@ -199,13 +201,83 @@ async def test_client_oracle_mixin(pragma_client: PragmaClient, contracts):
     assert res.last_updated_timestamp == timestamp
     assert res.decimals == 8
 
+    # Get Decimals
+    decimals = await pragma_client.get_decimals(
+        DataType(DataTypes.SPOT, BTC_PAIR, None)
+    )
 
-# @pytest.mark.asyncio
-# async def test_client_publisher_mixin_update_address(pragma_client: PragmaClient, contracts):
-#     oracle, registry = contracts
+    # Publish many SPOT entries
+    ETH_PAIR = str_to_felt("ETH/USD")
+    spot_entry_1 = SpotEntry(ETH_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, 10)
+    spot_entry_2 = SpotEntry(
+        ETH_PAIR, 200, timestamp + 10, SOURCE_1, PUBLISHER_NAME, 20
+    )
 
-#     PUBLISHER_ADDRESS_NEW = 456
-#     await pragma_client.update_publisher_address(PUBLISHER_NAME, PUBLISHER_ADDRESS_NEW)
+    await pragma_client.publish_many([spot_entry_1, spot_entry_2])
 
-#     publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
-#     assert publisher_address == PUBLISHER_ADDRESS_NEW
+    # Fails for UNKNOWN source
+    UNKNOWN_SOURCE = "UNKNOWN"
+    try:
+        await pragma_client.get_spot_entries(
+            ETH_PAIR, sources=[str_to_felt(UNKNOWN_SOURCE)]
+        )
+    except ClientError as err:
+        err_msg = f"Execution was reverted; failure reason: [0x4e6f206461746120656e74727920666f756e64]"
+        if not err_msg in err.message:
+            raise err
+
+    # Returns correct entries
+    entries = await pragma_client.get_spot_entries(ETH_PAIR, sources=[])
+
+    assert entries == [spot_entry_2]
+
+    # Return correct price aggregated
+    res = await pragma_client.get_spot(ETH_PAIR)
+    assert res.price == 200
+    assert res.num_sources_aggregated == 1
+    assert res.last_updated_timestamp == timestamp + 10
+    assert res.decimals == 8
+    # assert res.volume == 20
+
+    # Add new source and check aggregation
+    SOURCE_2 = "PRAGMA_2"
+    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_2)
+    spot_entry_1 = SpotEntry(ETH_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, 10)
+
+
+@pytest.mark.asyncio
+async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts):
+    oracle, registry = contracts
+
+    # Checks
+    PUBLISHER_NAME = "PRAGMA"
+    publishers = await pragma_client.get_all_publishers()
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(PUBLISHER_NAME)]
+
+    SOURCE_1 = "PRAGMA"
+
+    BTC_PAIR = str_to_felt("BTC/USD")
+    timestamp = int(time.time())
+    expiry_timestamp = timestamp + 1000
+    future_entry_1 = FutureEntry(
+        timestamp, SOURCE_1, PUBLISHER_NAME, BTC_PAIR, 1000, expiry_timestamp, 10000
+    )
+    future_entry_2 = FutureEntry(
+        timestamp + 100,
+        SOURCE_1,
+        PUBLISHER_NAME,
+        BTC_PAIR,
+        2000,
+        expiry_timestamp,
+        20000,
+    )
+
+    await pragma_client.publish_many([future_entry_1, future_entry_2])
+
+    # Get FUTURE
+    res = await pragma_client.get_future(BTC_PAIR, expiry_timestamp)
+    assert res.price == 2000
+    assert res.num_sources_aggregated == 1
+    assert res.last_updated_timestamp == timestamp + 100
+    assert res.decimals == 8
+    assert res.expiration_timestamp == expiry_timestamp

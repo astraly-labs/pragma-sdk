@@ -137,11 +137,11 @@ class OracleMixin:
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
             )
-        response = await self.oracle.functions["get_data_entries_for_sources"].call(
+        (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
             DataType(DataTypes.SPOT, pair_id, None).serialize(), sources
         )
-
-        return [SpotEntry.from_dict(entry) for entry in response.entries]
+        entries = response[0]
+        return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
     async def get_spot(
         self,
@@ -203,22 +203,17 @@ class OracleMixin:
                 sources,
             )
 
+        response = dict(response)
+
         return OracleResponse(
-            response.price,
-            response.decimals,
-            response.last_updated_timestamp,
-            response.num_sources_aggregated,
-            response.expiration_timestamp,
+            response["price"],
+            response["decimals"],
+            response["last_updated_timestamp"],
+            response["num_sources_aggregated"],
+            response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, pair_id, data_type: DataType) -> int:
-        if isinstance(pair_id, str):
-            pair_id = str_to_felt(pair_id)
-        elif not isinstance(pair_id, int):
-            raise TypeError(
-                "Pair ID must be string (will be converted to felt) or integer"
-            )
-
+    async def get_decimals(self, data_type: DataType) -> int:
         (response,) = await self.oracle.functions["get_decimals"].call(
             data_type.serialize()
         )

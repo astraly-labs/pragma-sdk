@@ -127,12 +127,13 @@ class SpotEntry(Entry):
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
+        base = dict(entry_dict["base"])
         return SpotEntry(
-            entry_dict["base"]["pair_id"],
+            entry_dict["pair_id"],
             entry_dict["price"],
-            entry_dict["timestamp"],
-            entry_dict["base"]["source"],
-            entry_dict["base"]["publisher"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
         )
 
     @staticmethod
@@ -221,7 +222,7 @@ class FutureEntry(Entry):
             },
             "pair_id": self.pair_id,
             "price": self.price,
-            "expiry_timestamp": self.expiry_timestamp,
+            "expiration_timestamp": self.expiry_timestamp,
             "volume": self.volume,
         }
 

@@ -181,9 +181,14 @@ class DataType:
     def __init__(self, data_type, pair_id, expiration_timestamp):
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
+        elif not isinstance(pair_id, int):
+            raise TypeError(
+                "Pair ID must be string (will be converted to felt) or integer"
+            )
         self.pair_id = pair_id
 
         self.data_type = DataTypes(data_type)
+        self.expiration_timestamp = expiration_timestamp
 
     def serialize(self) -> dict:
         if self.data_type == DataTypes.SPOT:
