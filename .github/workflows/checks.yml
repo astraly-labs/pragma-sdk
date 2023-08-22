@@ -176,12 +176,18 @@ jobs:
         python-version: [ "3.9" ]
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
 
       - name: Download contracts
         uses: actions/download-artifact@v3
         with:
           name: contract-artifacts
           path: ./pragma-oracle/target
+      
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: ./pragma-oracle/target
 
       - uses: actions/setup-python@v4
         with:
