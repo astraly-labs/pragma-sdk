@@ -160,7 +160,7 @@ jobs:
 
       - name: Create manifest file
         run: |
-          readlink -f cairo/Cargo.toml >> pragma/tests/manifest-path
+          readlink -f cairo/Cargo.toml >> ./pragma/tests/manifest-path
 
   # ---------------------------------------------------------- #
   # ........................RUN-TESTS......................... #
@@ -186,7 +186,7 @@ jobs:
           path: ./pragma-oracle/target
       
       - name: List directories
-        run: ls -al
+        run: ls -alR
         
       - uses: actions/setup-python@v4
         with:
