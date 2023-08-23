@@ -114,12 +114,6 @@ jobs:
         run: |
           scarb build
 
-      - name: Upload contracts
-        uses: actions/upload-artifact@v3
-        with:
-          name: contract-artifacts
-          path: ./pragma-oracle/target
-
       # ====================== CAIRO SETUP ====================== #
 
       - name: Install rust
@@ -162,75 +156,8 @@ jobs:
         run: |
           readlink -f ./cairo/Cargo.toml >> ./pragma/tests/manifest-path
 
-      - name: Upload manifest-path
-        uses: actions/upload-artifact@v3
-        with:
-          name: manifest-path
-          path: ./pragma/tests/manifest-path
-      
       - name: List directories
-        working-directory: ./pragma
         run: ls -R
-
-  # ---------------------------------------------------------- #
-  # ........................RUN-TESTS......................... #
-  # ---------------------------------------------------------- #
-
-  run-tests:
-    name: Tests
-    needs: setup-tests
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [ "3.9" ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-
-      - name: Download contracts
-        uses: actions/download-artifact@v3
-        with:
-          name: contract-artifacts
-          path: ./pragma-oracle/target
-
-      - name: Download manifest-path
-        uses: actions/download-artifact@v3
-        with:
-          name: manifest-path
-          path: ./pragma/tests/
-      
-      - name: List directories
-        run: ls -alR
-        
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-          cache: 'pip'
-
-      # ====================== SETUP PYTHON ====================== #
-
-      - name: Install poetry
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry config installer.modern-installation false
-
-      - name: Install python 3.9 requirements
-        run: |
-          poetry export -f requirements.txt --without-hashes --output requirements.txt
-          pip install -r requirements.txt
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
-
-      - name: Install dependencies
-        run: |
-          poetry install
 
       # ====================== RUN TESTS ====================== #
 
