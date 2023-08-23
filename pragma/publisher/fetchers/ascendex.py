@@ -35,7 +35,7 @@ class AscendexFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Ascendex"
                 )
-            result = await resp.json(content_type="application/json")
+            result = await resp.json()
             if result["code"] == "100002" and result["reason"] == "DATA_NOT_AVAILABLE":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Ascendex"
@@ -54,7 +54,7 @@ class AscendexFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Ascendex"
             )
-        result = resp.json(content_type="application/json")
+        result = resp.json()
         if result["code"] == "100002" and result["reason"] == "DATA_NOT_AVAILABLE":
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Ascendex"
@@ -81,6 +81,10 @@ class AscendexFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

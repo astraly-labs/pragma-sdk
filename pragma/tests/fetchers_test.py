@@ -9,6 +9,7 @@ from aioresponses import aioresponses
 from pragma.core.entry import SpotEntry
 from pragma.publisher.assets import PRAGMA_ALL_ASSETS
 from pragma.publisher.fetchers import (
+    AscendexFetcher,
     BitstampFetcher,
     CexFetcher,
     CoinbaseFetcher,
@@ -61,6 +62,19 @@ FETCHER_CONFIGS = {
         "expected_result": [
             SpotEntry("BTC/USD", 2602820500003, 12345, "COINBASE", PUBLISHER_NAME),
             SpotEntry("ETH/USD", 164399499999, 12345, "COINBASE", PUBLISHER_NAME),
+        ],
+    },
+    "AscendexFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "ascendex.json",
+        "fetcher_class": AscendexFetcher,
+        "name": "Ascendex",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD", 2602650000000, 12345, "ASCENDEX", PUBLISHER_NAME, volume=9
+            ),
+            SpotEntry(
+                "ETH/USD", 164369999999, 12345, "ASCENDEX", PUBLISHER_NAME, volume=123
+            ),
         ],
     },
 }
