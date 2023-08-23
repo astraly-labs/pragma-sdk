@@ -15,6 +15,10 @@ class PublisherInterfaceT(abc.ABC):
     def fetch_sync(self) -> List[Any]:
         ...
 
+    @abc.abstractmethod
+    def format_url(self, quote_asset, base_asset) -> str:
+        ...
+
     async def _fetch(self):
         async with aiohttp.ClientSession() as session:
             data = await self.fetch(session)

@@ -77,6 +77,10 @@ class CexFetcher(PublisherInterfaceT):
             entries.append(self._fetch_pair_sync(asset))
         return entries
 
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}/{quote_asset}/{base_asset}"
+        return url
+
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
 
