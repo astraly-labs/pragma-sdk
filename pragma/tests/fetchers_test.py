@@ -14,6 +14,7 @@ from pragma.publisher.fetchers import (
     CexFetcher,
     CoinbaseFetcher,
     DefillamaFetcher,
+    KaikoFetcher,
 )
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import MOCK_DIR
@@ -74,6 +75,29 @@ FETCHER_CONFIGS = {
             ),
             SpotEntry(
                 "ETH/USD", 164369999999, 12345, "ASCENDEX", PUBLISHER_NAME, volume=123
+            ),
+        ],
+    },
+    "KaikoFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "kaiko.json",
+        "fetcher_class": KaikoFetcher,
+        "name": "Kaiko",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                2601601000000,
+                1692782303,
+                "KAIKO",
+                PUBLISHER_NAME,
+                volume=414884,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                164315580431,
+                1692782453,
+                "KAIKO",
+                PUBLISHER_NAME,
+                volume=4504710943,
             ),
         ],
     },
