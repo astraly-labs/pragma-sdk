@@ -161,6 +161,12 @@ jobs:
       - name: Create manifest file
         run: |
           readlink -f ./cairo/Cargo.toml >> ./pragma/tests/manifest-path
+
+      - name: Upload manifest-path
+        uses: actions/upload-artifact@v3
+        with:
+          name: manifest-path
+          path: ./pragma/tests/manifest-path
       
       - name: List directories
         working-directory: ./pragma
@@ -188,6 +194,12 @@ jobs:
         with:
           name: contract-artifacts
           path: ./pragma-oracle/target
+
+      - name: Download manifest-path
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest-path
+          path: ./pragma/tests/manifest-path
       
       - name: List directories
         run: ls -alR
