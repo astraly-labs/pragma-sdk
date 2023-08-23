@@ -54,11 +54,11 @@ jobs:
           poetry run poe typecheck
 
   # ---------------------------------------------------------- #
-  # .......................SETUP-TESTS........................ #
+  # .........................TESTS............................ #
   # ---------------------------------------------------------- #
 
-  setup-tests:
-    name: Setup Tests
+  tests:
+    name: Run Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
