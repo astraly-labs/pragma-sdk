@@ -160,7 +160,11 @@ jobs:
 
       - name: Create manifest file
         run: |
-          readlink -f cairo/Cargo.toml >> ./pragma/tests/manifest-path
+          readlink -f ./cairo/Cargo.toml >> ./pragma/tests/manifest-path
+      
+      - name: List directories
+        working-directory: ./pragma
+        run: ls -R
 
   # ---------------------------------------------------------- #
   # ........................RUN-TESTS......................... #
