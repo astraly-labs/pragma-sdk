@@ -57,7 +57,7 @@ class BitstampFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    async def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
+    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
@@ -65,6 +65,10 @@ class BitstampFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}/{quote_asset.lower()}{base_asset.lower()}"
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

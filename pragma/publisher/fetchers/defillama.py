@@ -59,12 +59,20 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
+        if pair[1] != "USD":
+            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
         url = self.BASE_URL.format(pair_id=pair_id)
 
-        async with session.get(
-            url, headers=self.headers, raise_for_status=True
-        ) as resp:
+        async with session.get(url, headers=self.headers) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama"
+                )
             result = await resp.json()
+            if not result["coins"]:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama"
+                )
             return self._construct(asset, result)
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
@@ -74,11 +82,20 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
+        if pair[1] != "USD":
+            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
         url = self.BASE_URL.format(pair_id=pair_id)
 
         resp = requests.get(url, headers=self.headers)
-        resp.raise_for_status()
+        if resp.status_code == 404:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama"
+            )
         result = resp.json()
+        if not result["coins"]:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama"
+            )
         return self._construct(asset, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
@@ -98,6 +115,11 @@ class DefillamaFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        pair_id = ASSET_MAPPING.get(quote_asset)
+        url = self.BASE_URL.format(pair_id=pair_id)
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

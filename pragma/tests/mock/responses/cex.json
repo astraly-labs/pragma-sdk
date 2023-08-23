@@ -1,0 +1,28 @@
+{
+	"BTC": {
+		"timestamp": "1692717096",
+		"low": "25888.1",
+		"high": "26184.5",
+		"last": "26012.1",
+		"volume": "1.81043893",
+		"volume30d": "133.25786539",
+		"bid": 26012,
+		"ask": 26015.1,
+		"priceChange": "-57.3",
+		"priceChangePercentage": "-0.22",
+		"pair": "BTC:USD"
+	},
+	"ETH": {
+		"timestamp": "1692724899",
+		"low": "1633.45",
+		"high": "1671.55",
+		"last": "1639.21",
+		"volume": "56.54796900",
+		"volume30d": "1855.22877800",
+		"bid": 1638.87,
+		"ask": 1639.21,
+		"priceChange": "-21.87",
+		"priceChangePercentage": "-1.32",
+		"pair": "ETH:USD"
+	}
+}

@@ -25,7 +25,7 @@ class KaikoFetcher(PublisherInterfaceT):
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, api_key: str):
+    def __init__(self, assets: List[PragmaAsset], publisher, api_key: str = ""):
         self.assets = assets
         self.publisher = publisher
         self.headers = {"X-Api-Key": api_key}
@@ -40,7 +40,7 @@ class KaikoFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
                 )
-            result = await resp.json(content_type="application/json")
+            result = await resp.json()
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
@@ -57,7 +57,7 @@ class KaikoFetcher(PublisherInterfaceT):
         resp = requests.get(url, headers=self.headers, params=self.payload)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
-        result = resp.json(content_type="application/json")
+        result = resp.json()
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
 
@@ -83,13 +83,22 @@ class KaikoFetcher(PublisherInterfaceT):
             entries.append(self._fetch_pair_sync(asset))
         return entries
 
+    def format_url(self, quote_asset, base_asset):
+        url = (
+            f"{self.BASE_URL}/{quote_asset.lower()}/{base_asset.lower()}"
+            + "?interval=2m&page_size=1"
+        )
+        return url
+
     def _construct(self, asset, result) -> SpotEntry:
         data = result["data"][0]
         pair = asset["pair"]
 
-        timestamp = int(int(data["timestamp"]) / 1000)
+        timestamp = int(result["timestamp"])
         price = float(data["price"])
         price_int = int(price * (10 ** asset["decimals"]))
+        volume = float(data["volume"])
+        volume_int = int(volume * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Kaiko")
@@ -99,5 +108,6 @@ class KaikoFetcher(PublisherInterfaceT):
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,
+            volume=volume_int,
             publisher=self.publisher,
         )

@@ -34,7 +34,7 @@ class CexFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
                 )
-            result = await resp.json(content_type="text/json")
+            result = await resp.json()
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
@@ -51,7 +51,7 @@ class CexFetcher(PublisherInterfaceT):
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-        result = resp.json(content_type="text/json")
+        result = resp.json()
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
 
@@ -76,6 +76,10 @@ class CexFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}/{quote_asset}/{base_asset}"
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

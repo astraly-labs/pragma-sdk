@@ -27,19 +27,28 @@ class CoinbaseFetcher(PublisherInterfaceT):
     async def _fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        currency = asset["pair"][1]
+        pair = asset["pair"]
+        currency = pair[1]
 
         async with session.get(self.BASE_URL + currency) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Coinbase"
+                )
             result = await resp.json()
             return self._construct(asset, result)
 
     def _fetch_pair_sync(
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
-        currency = asset["pair"][1]
+        pair = asset["pair"]
+        currency = pair[1]
 
         resp = requests.get(self.BASE_URL + currency)
-        resp.raise_for_status()
+        if resp.status_code == 404:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Coinbase"
+            )
 
         result = resp.json()
         return self._construct(asset, result)
@@ -65,6 +74,10 @@ class CoinbaseFetcher(PublisherInterfaceT):
 
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = self.BASE_URL + base_asset
+        return url
 
     def _construct(self, asset, result) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
