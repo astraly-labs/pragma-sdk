@@ -143,7 +143,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
             volume = float(self.retreive_volume(data["symbol"], volume_arr))
-            volume_int = int(volume)
+            volume_int = int(volume * (10 ** asset["decimals"]))
             if data["symbol"] == selection:
                 expiry_timestamp = 0
             else:

@@ -126,3 +126,8 @@ PAIRS = [
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
 ]
+
+SAMPLE_ASSETS = [
+    {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+]

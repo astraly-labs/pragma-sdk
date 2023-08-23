@@ -95,6 +95,10 @@ class GeminiFetcher(PublisherInterfaceT):
             entries.append(self._fetch_pair_sync(asset))
         return entries
 
+    def format_url(self, quote_asset, base_asset):
+        url = self.BASE_URL + "/pricefeed"
+        return url
+
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
 

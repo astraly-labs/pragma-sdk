@@ -95,7 +95,7 @@ class AscendexFetcher(PublisherInterfaceT):
         price = (ask + bid) / 2.0
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = int(float(data["volume"]))
+        volume = int(float(data["volume"]) * (10 ** asset["decimals"]))
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Ascendex")
 

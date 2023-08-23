@@ -44,7 +44,7 @@ async def construct_future_entry(asset, result, publisher, session):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
-        volume_int = int(volume)
+        volume_int = int(volume * (10 ** asset["decimals"]))
         expiry_timestamp = await fetch_expiry_timestamp(asset, data["instId"], session)
         result_arr.append(
             FutureEntry(

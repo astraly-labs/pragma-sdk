@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import List, Union
 
@@ -35,12 +36,25 @@ class KaikoFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
+
         async with session.get(url, headers=self.headers, params=self.payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
                 )
-            result = await resp.json()
+
+            if resp.status == 403:
+                return PublisherFetchError(
+                    f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+                )
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"KAIKO: Unexpected content type: {content_type}")
+
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
@@ -55,9 +69,18 @@ class KaikoFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
 
         resp = requests.get(url, headers=self.headers, params=self.payload)
+
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
-        result = resp.json()
+
+        if resp.status_code == 403:
+            return PublisherFetchError(
+                f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+            )
+
+        text = resp.text
+        result = json.loads(text)
+
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
 

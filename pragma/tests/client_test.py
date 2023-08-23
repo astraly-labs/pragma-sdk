@@ -14,12 +14,15 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
+from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.fetchers import CexFetcher
 from pragma.tests.constants import (
     CURRENCIES,
     DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
     MOCK_COMPILED_DIR,
     PAIRS,
+    SAMPLE_ASSETS,
     U128_MAX,
     U256_MAX,
 )
@@ -68,8 +71,6 @@ async def declare_deploy_oracle(
     currencies = [currency.to_dict() for currency in CURRENCIES]
     pairs = [pair.to_dict() for pair in PAIRS]
 
-    print(currencies, pairs)
-
     deploy_result = await declare_result.deploy(
         constructor_args=[
             account.address,
@@ -104,8 +105,6 @@ async def pragma_client(
 
     # Parse port from network url
     port = urlparse(network).port
-
-    print(account.address, address)
 
     return PragmaClient(
         network="devnet",

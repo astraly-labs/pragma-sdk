@@ -58,7 +58,6 @@ def get_rpc_url(network=TESTNET, rpc_key=None, port=5050):
     if network == PRAGMA_TESTNET:
         return "https://testnet.pragmaoracle.com/rpc"
     if network == DEVNET:
-        logger.info(f"DEVNET PORT {port} ℹ️")
         return f"http://127.0.0.1:{port}/rpc"
 
 

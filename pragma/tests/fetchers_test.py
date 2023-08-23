@@ -15,14 +15,11 @@ from pragma.publisher.fetchers import (
     CoinbaseFetcher,
     DefillamaFetcher,
     KaikoFetcher,
+    OkxFetcher,
 )
 from pragma.publisher.types import PublisherFetchError
-from pragma.tests.constants import MOCK_DIR
+from pragma.tests.constants import MOCK_DIR, SAMPLE_ASSETS
 
-SAMPLE_ASSETS = [
-    {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
-]
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
 # Define fetcher configurations
@@ -32,8 +29,22 @@ FETCHER_CONFIGS = {
         "fetcher_class": CexFetcher,
         "name": "CEX",
         "expected_result": [
-            SpotEntry("BTC/USD", 2601210000000, 1692717096, "CEX", PUBLISHER_NAME),
-            SpotEntry("ETH/USD", 163921000000, 1692724899, "CEX", PUBLISHER_NAME),
+            SpotEntry(
+                "BTC/USD",
+                2601210000000,
+                1692717096,
+                "CEX",
+                PUBLISHER_NAME,
+                volume=181043893,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                163921000000,
+                1692724899,
+                "CEX",
+                PUBLISHER_NAME,
+                volume=5654796900,
+            ),
         ],
     },
     "DefillamaFetcher": {
@@ -71,10 +82,43 @@ FETCHER_CONFIGS = {
         "name": "Ascendex",
         "expected_result": [
             SpotEntry(
-                "BTC/USD", 2602650000000, 12345, "ASCENDEX", PUBLISHER_NAME, volume=9
+                "BTC/USD",
+                2602650000000,
+                12345,
+                "ASCENDEX",
+                PUBLISHER_NAME,
+                volume=978940000,
             ),
             SpotEntry(
-                "ETH/USD", 164369999999, 12345, "ASCENDEX", PUBLISHER_NAME, volume=123
+                "ETH/USD",
+                164369999999,
+                12345,
+                "ASCENDEX",
+                PUBLISHER_NAME,
+                volume=12318800000,
+            ),
+        ],
+    },
+    "OkxFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "okx.json",
+        "fetcher_class": OkxFetcher,
+        "name": "OKX",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                2640240000000,
+                1692829724112,
+                "OKX",
+                PUBLISHER_NAME,
+                volume=1838238980000,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                167372000000,
+                1692829751109,
+                "OKX",
+                PUBLISHER_NAME,
+                volume=18534136460000,
             ),
         ],
     },

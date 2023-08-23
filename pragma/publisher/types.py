@@ -34,6 +34,9 @@ class PublisherFetchError:
     def __eq__(self, other):
         return self.message == other.message
 
+    def __repr__(self):
+        return self.message
+
     def serialize(self):
         return self.message
 
