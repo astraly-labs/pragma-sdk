@@ -18,11 +18,14 @@ SAMPLE_ASSETS = [
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
 
-@pytest.mark.asyncio
-async def test_cex_fetcher():
+@pytest.fixture
+def mock_data():
     with open(MOCK_DIR / "responses" / "cex.json", "r") as f:
-        mock_data = json.load(f)
+        return json.load(f)
 
+
+@pytest.mark.asyncio
+async def test_cex_fetcher(mock_data):
     with aioresponses() as mock:
         # Mocking the expected call for BTC/USD
         mock.get(
@@ -48,10 +51,7 @@ async def test_cex_fetcher():
 
 
 @pytest.mark.asyncio
-async def test_cex_fetcher_404_error():
-    with open(MOCK_DIR / "responses" / "cex.json", "r") as f:
-        mock_data = json.load(f)
-
+async def test_cex_fetcher_404_error(mock_data):
     with aioresponses() as mock:
         # Mocking a successful call for BTC/USD
         mock.get(
@@ -75,10 +75,7 @@ async def test_cex_fetcher_404_error():
         assert result == expected_result
 
 
-def test_cex_fetcher_sync_success():
-    with open(MOCK_DIR / "responses" / "cex.json", "r") as f:
-        mock_data = json.load(f)
-
+def test_cex_fetcher_sync_success(mock_data):
     with requests_mock.Mocker() as m:
         m.get("https://cex.io/api/ticker/BTC/USD", json=mock_data["BTC"])
         m.get("https://cex.io/api/ticker/ETH/USD", json=mock_data["ETH"])
@@ -88,6 +85,22 @@ def test_cex_fetcher_sync_success():
 
         expected_result = [
             SpotEntry("BTC/USD", 2601210000000, 1692717096, "CEX", PUBLISHER_NAME),
+            SpotEntry("ETH/USD", 163921000000, 1692724899, "CEX", PUBLISHER_NAME),
+        ]
+
+        assert result == expected_result
+
+
+def test_cex_fetcher_sync_404(mock_data):
+    with requests_mock.Mocker() as m:
+        m.get("https://cex.io/api/ticker/BTC/USD", status_code=404)
+        m.get("https://cex.io/api/ticker/ETH/USD", json=mock_data["ETH"])
+
+        fetcher = CexFetcher(SAMPLE_ASSETS, PUBLISHER_NAME)
+        result = fetcher.fetch_sync()
+
+        expected_result = [
+            PublisherFetchError("No data found for BTC/USD from CEX"),
             SpotEntry("ETH/USD", 163921000000, 1692724899, "CEX", PUBLISHER_NAME),
         ]
 
