@@ -92,7 +92,7 @@ class AscendexFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
         ask = float(data["ask"][0])
         bid = float(data["bid"][0])
-        price = (float(data["ask"][0]) + float(data["bid"][0])) / 2.0
+        price = (ask + bid) / 2.0
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = int(float(data["volume"]))

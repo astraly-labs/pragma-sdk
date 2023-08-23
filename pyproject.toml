@@ -52,7 +52,7 @@ format.shell = "isort . && black ."
 format_check.shell = "isort --check . && black --check ."
 format_diff.shell = "isort --diff . && black --diff ."
 typecheck = "pyright pragma"
-test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
+test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py -s"
 test_ci_fetchers = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/fetchers_test.py"
 circular_imports_check.shell = "poetry run pytest circular.py"
 
