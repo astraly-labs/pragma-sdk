@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 
 import aiohttp
 import pytest
@@ -7,7 +8,12 @@ from aioresponses import aioresponses
 
 from pragma.core.entry import SpotEntry
 from pragma.publisher.assets import PRAGMA_ALL_ASSETS
-from pragma.publisher.fetchers import CexFetcher, DefillamaFetcher
+from pragma.publisher.fetchers import (
+    BitstampFetcher,
+    CexFetcher,
+    CoinbaseFetcher,
+    DefillamaFetcher,
+)
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import MOCK_DIR
 
@@ -39,6 +45,24 @@ FETCHER_CONFIGS = {
             SpotEntry("ETH/USD", 164507000000, 1692779707, "DEFILLAMA", PUBLISHER_NAME),
         ],
     },
+    "BitstampFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "bitstamp.json",
+        "fetcher_class": BitstampFetcher,
+        "name": "Bitstamp",
+        "expected_result": [
+            SpotEntry("BTC/USD", 2602100000000, 1692781034, "BITSTAMP", PUBLISHER_NAME),
+            SpotEntry("ETH/USD", 164250000000, 1692780986, "BITSTAMP", PUBLISHER_NAME),
+        ],
+    },
+    "CoinbaseFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "coinbase.json",
+        "fetcher_class": CoinbaseFetcher,
+        "name": "Coinbase",
+        "expected_result": [
+            SpotEntry("BTC/USD", 2602820500003, 12345, "COINBASE", PUBLISHER_NAME),
+            SpotEntry("ETH/USD", 164399499999, 12345, "COINBASE", PUBLISHER_NAME),
+        ],
+    },
 }
 
 
@@ -53,6 +77,7 @@ def mock_data(fetcher_config):
         return json.load(f)
 
 
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
 async def test_async_fetcher(fetcher_config, mock_data):
     with aioresponses() as mock:
@@ -96,6 +121,7 @@ async def test_async_fetcher_404_error(mock_data, fetcher_config):
         assert result == expected_result
 
 
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_fetcher_sync_success(fetcher_config, mock_data):
     with requests_mock.Mocker() as m:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
