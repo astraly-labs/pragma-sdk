@@ -112,6 +112,7 @@ jobs:
         if: steps.cache-contracts.outputs.cache-hit != 'true'
         working-directory: ./pragma-oracle
         run: |
+          scarb version
           scarb build
 
       # ====================== CAIRO SETUP ====================== #
