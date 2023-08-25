@@ -131,3 +131,8 @@ SAMPLE_ASSETS = [
     {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
 ]
+
+SAMPLE_FUTURE_ASSETS = [
+    {"type": "FUTURE", "pair": ("BTC", "USD"), "decimals": 8},
+    {"type": "FUTURE", "pair": ("ETH", "USD"), "decimals": 8},
+]

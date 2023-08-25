@@ -20,8 +20,9 @@ class KaikoFetcher(PublisherInterfaceT):
     )
     SOURCE: str = "KAIKO"
     payload = {
-        "interval": "2m",
+        "interval": "5m",
         "page_size": "1",
+        "extrapolate_missing_values": "true",
     }
 
     publisher: str
@@ -109,7 +110,7 @@ class KaikoFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         url = (
             f"{self.BASE_URL}/{quote_asset.lower()}/{base_asset.lower()}"
-            + "?interval=2m&page_size=1"
+            + "?extrapolate_missing_values=true&interval=5m&page_size=1"
         )
         return url
 

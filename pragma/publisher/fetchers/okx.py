@@ -100,7 +100,7 @@ class OkxFetcher(PublisherInterfaceT):
         pair = asset["pair"]
         data = result["data"][0]
 
-        timestamp = int(data["ts"])
+        timestamp = int(int(data["ts"]) / 1000)
         price = float(data["last"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)

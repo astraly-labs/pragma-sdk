@@ -65,7 +65,6 @@ class SpotEntry(Entry):
         publisher: Union[str, int],
         volume: Optional[int] = 0,
     ) -> None:
-        # TODO: This should be network agnostic
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
 
@@ -165,7 +164,14 @@ class FutureEntry(Entry):
     volume: int
 
     def __init__(
-        self, timestamp, source, publisher, pair_id, price, expiry_timestamp, volume
+        self,
+        pair_id: Union[str, int],
+        price: int,
+        timestamp: int,
+        source: Union[str, int],
+        publisher: Union[str, int],
+        expiry_timestamp: int,
+        volume: Optional[int] = 0,
     ):
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
@@ -242,6 +248,9 @@ class FutureEntry(Entry):
             if isinstance(entry, FutureEntry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
+
+    def __repr__(self):
+        return f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", price={self.price}, timestamp={self.base.timestamp}, source="{felt_to_str(self.base.source)}", publisher="{felt_to_str(self.base.publisher)}, volume={self.volume}, expiry_timestamp={self.expiry_timestamp})")'
 
 
 class GenericEntry(Entry):

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import List, Union
 
@@ -29,14 +30,21 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         self, asset: PragmaFutureAsset, session: ClientSession
     ) -> Union[FutureEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}{pair[0]}{pair[1]}"
+        url = self.format_url(pair[0], pair[1])
 
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from BYBIT"
                 )
-            result = await resp.json(content_type="application/json")
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"BYBIT: Unexpected content type: {content_type}")
+
             if (
                 result["retCode"] == "51001"
                 or result["retMsg"] == "Instrument ID does not exist"
@@ -51,12 +59,15 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         self, asset: PragmaFutureAsset
     ) -> Union[FutureEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}{pair[0]}{pair[1]}"
+        url = self.format_url(pair[0], pair[1])
 
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from BYBIT")
-        result = resp.json(content_type="application/json")
+
+        text = resp.text
+        result = json.loads(text)
+
         if (
             result["retCode"] == "51001"
             or result["retMsg"] == "Instrument ID does not exist"
@@ -84,6 +95,10 @@ class ByBitFutureFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}{quote_asset}{base_asset}"
+        return url
 
     def _construct(self, asset, result) -> FutureEntry:
         pair = asset["pair"]

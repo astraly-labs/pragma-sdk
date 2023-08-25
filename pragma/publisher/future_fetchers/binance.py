@@ -125,7 +125,10 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                 entries.append(future_entries)
         return entries
 
-    def retreive_volume(self, asset, volume_arr):
+    def format_url(self, quote_asset, base_asset):
+        return self.BASE_URL
+
+    def retrieve_volume(self, asset, volume_arr):
         for list_asset, list_vol in volume_arr:
             if asset == list_asset:
                 return list_vol
@@ -142,7 +145,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             price = float(data["markPrice"])
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
-            volume = float(self.retreive_volume(data["symbol"], volume_arr))
+            volume = float(self.retrieve_volume(data["symbol"], volume_arr))
             volume_int = int(volume * (10 ** asset["decimals"]))
             if data["symbol"] == selection:
                 expiry_timestamp = 0
