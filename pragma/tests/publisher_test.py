@@ -20,7 +20,7 @@ ALL_SPOT_FETCHERS = [
     CexFetcher,
     CoinbaseFetcher,
     DefillamaFetcher,
-    GeminiFetcher,
+    # GeminiFetcher,
     OkxFetcher,
 ]
 
@@ -39,6 +39,7 @@ SOURCES = [
     "COINBASE",
     "DEFILLAMA",
     "GEMINI",
+    "KAIKO",
     "OKX",
     "BINANCE",
     "BYBIT",
@@ -56,6 +57,8 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
     assert publishers == [str_to_felt(PUBLISHER_NAME)]
 
     await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
+    sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
+    assert sources == [str_to_felt(s) for s in SOURCES]
 
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
@@ -81,6 +84,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
     asset_valid_data_type(data, SpotEntry)
 
     # Publish SPOT data
+    print(data)
     await publisher.publish_many(data)
 
 

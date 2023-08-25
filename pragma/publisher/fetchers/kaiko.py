@@ -20,7 +20,7 @@ class KaikoFetcher(PublisherInterfaceT):
     )
     SOURCE: str = "KAIKO"
     payload = {
-        "interval": "5m",
+        "interval": "1d",
         "page_size": "1",
         "extrapolate_missing_values": "true",
     }
@@ -110,7 +110,7 @@ class KaikoFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         url = (
             f"{self.BASE_URL}/{quote_asset.lower()}/{base_asset.lower()}"
-            + "?extrapolate_missing_values=true&interval=5m&page_size=1"
+            + "?extrapolate_missing_values=true&interval=1d&page_size=1"
         )
         return url
 
@@ -122,7 +122,7 @@ class KaikoFetcher(PublisherInterfaceT):
         price = float(data["price"])
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume"])
-        volume_int = int(volume * (10 ** asset["decimals"]))
+        volume_int = int(volume * (10 ** asset["decimals"]))  # 24h volume
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Kaiko")

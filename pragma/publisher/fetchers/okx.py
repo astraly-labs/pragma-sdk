@@ -105,7 +105,8 @@ class OkxFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
-        volume_int = int(volume * (10 ** asset["decimals"]))
+        # Volume should be denominated in base asset
+        volume_int = int(volume * price(10 ** asset["decimals"]))
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from OKX")
 

@@ -8,7 +8,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
 from pragma.core.contract import Contract
-from pragma.core.entry import FutureEntry, SpotEntry
+from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 
@@ -40,7 +40,7 @@ class OracleMixin:
         source: int,
         publisher: int,
         volume: int = 0,
-        max_fee: int = int(1e18),
+        max_fee: int = int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -63,12 +63,11 @@ class OracleMixin:
         )
         return invocation
 
-    @deprecated
     async def publish_many(
         self,
-        entries: List[any],
+        entries: List[Entry],
         pagination: Optional[int] = 40,
-        max_fee=int(1e18),
+        max_fee=int(1e16),
     ) -> List[InvokeResult]:
         if len(entries) == 0:
             logger.warning("Skipping publishing as entries array is empty")
@@ -300,7 +299,7 @@ class OracleMixin:
         self,
         pair_ids: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
+        max_fee=int(1e16),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:

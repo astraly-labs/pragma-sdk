@@ -99,7 +99,8 @@ class CexFetcher(PublisherInterfaceT):
         price = float(result["last"])
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(result["volume"])
-        volume_int = int(volume * (10 ** asset["decimals"]))
+        # 24h volume denominated in quote asset which we denominate in base asset
+        volume_int = int(volume * price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from CEX")
