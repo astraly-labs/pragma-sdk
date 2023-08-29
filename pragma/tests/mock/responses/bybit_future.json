@@ -1,0 +1,72 @@
+{
+	"BTC": {
+		"retCode": 0,
+		"retMsg": "OK",
+		"result": {
+			"category": "linear",
+			"list": [
+				{
+					"symbol": "BTCUSD",
+					"bidPrice": "25898.50",
+					"askPrice": "25899.00",
+					"lastPrice": "25899.00",
+					"lastTickDirection": "PlusTick",
+					"prevPrice24h": "26141.00",
+					"price24hPcnt": "-0.009257",
+					"highPrice24h": "26289.50",
+					"lowPrice24h": "25750.00",
+					"prevPrice1h": "25912.00",
+					"markPrice": "25901.93",
+					"indexPrice": "25908.14",
+					"openInterest": "457574912",
+					"turnover24h": "16183.1437",
+					"volume24h": "421181110",
+					"fundingRate": "0.0001",
+					"nextFundingTime": "1693008000000",
+					"predictedDeliveryPrice": "",
+					"basisRate": "",
+					"deliveryFeeRate": "",
+					"deliveryTime": "0",
+					"openInterestValue": "17665.67"
+				}
+			]
+		},
+		"retExtInfo": {},
+		"time": 1692982428509
+	},
+	"ETH": {
+		"retCode": 0,
+		"retMsg": "OK",
+		"result": {
+			"category": "linear",
+			"list": [
+				{
+					"symbol": "ETHUSD",
+					"bidPrice": "1640.25",
+					"askPrice": "1640.30",
+					"lastPrice": "1640.25",
+					"lastTickDirection": "MinusTick",
+					"prevPrice24h": "1650.90",
+					"price24hPcnt": "-0.006451",
+					"highPrice24h": "1677.15",
+					"lowPrice24h": "1633.50",
+					"prevPrice1h": "1646.05",
+					"markPrice": "1640.63",
+					"indexPrice": "1641.53",
+					"openInterest": "189068925",
+					"turnover24h": "33975.0748",
+					"volume24h": "56108213",
+					"fundingRate": "0.0001",
+					"nextFundingTime": "1693008000000",
+					"predictedDeliveryPrice": "",
+					"basisRate": "",
+					"deliveryFeeRate": "",
+					"deliveryTime": "0",
+					"openInterestValue": "115241.66"
+				}
+			]
+		},
+		"retExtInfo": {},
+		"time": 1692982480693
+	}
+}

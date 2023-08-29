@@ -13,7 +13,8 @@ from starknet_py.hash.casm_class_hash import compute_casm_class_hash
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.udc_deployer.deployer import Deployer
 
-from pragma.tests.constants import MAX_FEE, MOCK_COMPILED_DIR
+from pragma.core.abis import MOCK_COMPILED_DIR
+from pragma.tests.constants import MAX_FEE
 from pragma.tests.utils import read_contract
 
 

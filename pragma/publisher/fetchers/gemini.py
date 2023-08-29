@@ -6,9 +6,9 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,10 @@ class GeminiFetcher(PublisherInterfaceT):
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
+
+    def format_url(self, quote_asset, base_asset):
+        url = self.BASE_URL + "/pricefeed"
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

@@ -1,38 +1,16 @@
 import os
-from pathlib import Path
 
+from pragma.core.abis import CONTRACTS_COMPILED_DIR, MOCK_DIR, SUBMODULE_DIR
 from pragma.core.types import Currency, Pair
 
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1
 
 
-def find_repo_root(start_directory: Path) -> Path:
-    """Finds the root directory of the repo by walking up the directory tree
-    and looking for a known file at the repo root.
-    """
-    current_directory = start_directory
-    while current_directory != current_directory.parent:  # Stop at filesystem root
-        if (current_directory / "pyproject.toml").is_file():
-            return current_directory
-        current_directory = current_directory.parent
-    raise ValueError("Repository root not found!")
-
-
-current_file_directory = Path(__file__).parent
-repo_root = find_repo_root(current_file_directory)
-
-SUBMODULE_DIR = repo_root / "pragma-oracle"
-MOCK_DIR = Path(os.path.dirname(__file__)) / "mock"
-
-CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
-MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
-
 print("Current Directory:", os.getcwd())
 print("SUBMODULE_DIR:", SUBMODULE_DIR)
 print("MOCK_DIR:", MOCK_DIR)
 print("CONTRACTS_COMPILED_DIR:", CONTRACTS_COMPILED_DIR)
-
 
 # -------------------------------- TESTNET -------------------------------------
 
@@ -125,4 +103,14 @@ PAIRS = [
     Pair("USDC/USD", "USDC", "USD"),
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
+]
+
+SAMPLE_ASSETS = [
+    {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+]
+
+SAMPLE_FUTURE_ASSETS = [
+    {"type": "FUTURE", "pair": ("BTC", "USD"), "decimals": 8},
+    {"type": "FUTURE", "pair": ("ETH", "USD"), "decimals": 8},
 ]

@@ -37,3 +37,6 @@ cover/
 
 # pytype static type analyzer
 .pytype/
+
+# Devnet state
+devnet.pkl

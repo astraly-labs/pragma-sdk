@@ -8,7 +8,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
 from pragma.core.contract import Contract
-from pragma.core.entry import FutureEntry, SpotEntry
+from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 
@@ -63,10 +63,9 @@ class OracleMixin:
         )
         return invocation
 
-    @deprecated
     async def publish_many(
         self,
-        entries: List[any],
+        entries: List[Entry],
         pagination: Optional[int] = 40,
         max_fee=int(1e18),
     ) -> List[InvokeResult]:
@@ -142,6 +141,23 @@ class OracleMixin:
         )
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
+
+    @deprecated
+    async def get_future_entries(
+        self, pair_id, expiration_timestamp, sources=[]
+    ) -> List[FutureEntry]:
+        if isinstance(pair_id, str):
+            pair_id = str_to_felt(pair_id)
+        elif not isinstance(pair_id, int):
+            raise TypeError(
+                "Pair ID must be string (will be converted to felt) or integer"
+            )
+        (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
+            DataType(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
+            sources,
+        )
+        entries = response[0]
+        return [FutureEntry.from_dict(dict(entry.value)) for entry in entries]
 
     async def get_spot(
         self,
@@ -225,7 +241,7 @@ class OracleMixin:
         self,
         pair_id: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -244,7 +260,7 @@ class OracleMixin:
         pair_id: int,
         expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -263,7 +279,7 @@ class OracleMixin:
         pair_ids: List[int],
         expiry_timestamps: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:

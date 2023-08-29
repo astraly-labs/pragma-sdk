@@ -1,13 +1,14 @@
 import asyncio
+import json
 import logging
 from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,14 @@ class OkxFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from OKX"
                 )
-            result = await resp.json(content_type="application/json")
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"OKX: Unexpected content type: {content_type}")
+
             if (
                 result["code"] == "51001"
                 or result["msg"] == "Instrument ID does not exist"
@@ -52,9 +60,13 @@ class OkxFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?instId={pair[0]}-{pair[1]}-SWAP"
 
         resp = requests.get(url)
+
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-        result = resp.json(content_type="application/json")
+
+        text = resp.text
+        result = json.loads(text)
+
         if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
 
@@ -80,23 +92,26 @@ class OkxFetcher(PublisherInterfaceT):
             entries.append(self._fetch_pair_sync(asset))
         return entries
 
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.BASE_URL}?instId={quote_asset}-{base_asset}-SWAP"
+        return url
+
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"][0]
 
-        timestamp = int(data["ts"])
+        timestamp = int(int(data["ts"]) / 1000)
         price = float(data["last"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
-        volume_int = int(volume)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from OKX")
 
         return SpotEntry(
             pair_id=pair_id,
             price=price_int,
-            volume=volume_int,
+            volume=volume,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,

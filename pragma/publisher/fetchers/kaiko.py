@@ -1,13 +1,14 @@
 import asyncio
+import json
 import logging
 from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,9 @@ class KaikoFetcher(PublisherInterfaceT):
     )
     SOURCE: str = "KAIKO"
     payload = {
-        "interval": "2m",
+        "interval": "1d",
         "page_size": "1",
+        "extrapolate_missing_values": "true",
     }
 
     publisher: str
@@ -35,12 +37,25 @@ class KaikoFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
+
         async with session.get(url, headers=self.headers, params=self.payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
                 )
-            result = await resp.json()
+
+            if resp.status == 403:
+                return PublisherFetchError(
+                    f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+                )
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"KAIKO: Unexpected content type: {content_type}")
+
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kaiko"
@@ -55,9 +70,18 @@ class KaikoFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
 
         resp = requests.get(url, headers=self.headers, params=self.payload)
+
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
-        result = resp.json()
+
+        if resp.status_code == 403:
+            return PublisherFetchError(
+                f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+            )
+
+        text = resp.text
+        result = json.loads(text)
+
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
 
@@ -86,7 +110,7 @@ class KaikoFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         url = (
             f"{self.BASE_URL}/{quote_asset.lower()}/{base_asset.lower()}"
-            + "?interval=2m&page_size=1"
+            + "?extrapolate_missing_values=true&interval=1d&page_size=1"
         )
         return url
 
@@ -98,7 +122,6 @@ class KaikoFetcher(PublisherInterfaceT):
         price = float(data["price"])
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume"])
-        volume_int = int(volume * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Kaiko")
@@ -108,6 +131,6 @@ class KaikoFetcher(PublisherInterfaceT):
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,
-            volume=volume_int,
+            volume=volume,
             publisher=self.publisher,
         )

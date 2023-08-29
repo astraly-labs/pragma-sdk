@@ -64,7 +64,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
     def _setup_contracts(self):
         provider = self.account if self.account else self.client
         self.oracle = Contract(
-            address=self.contract_addresses_config.oracle_proxy_address,
+            address=self.contract_addresses_config.oracle_proxy_addresss,
             abi=ABIS["pragma_Oracle"],
             provider=provider,
             cairo_version=1,

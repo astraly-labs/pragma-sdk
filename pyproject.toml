@@ -26,6 +26,7 @@ typer = "0.6.1"
 deprecated = "^1.2.14"
 aioresponses = "^0.7.4"
 requests-mock = "^1.11.0"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -52,7 +53,8 @@ format.shell = "isort . && black ."
 format_check.shell = "isort --check . && black --check ."
 format_diff.shell = "isort --diff . && black --diff ."
 typecheck = "pyright pragma"
-test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py -s"
+test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
+test_ci_publisher = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/publisher_test.py -s"
 test_ci_fetchers = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/fetchers_test.py"
 circular_imports_check.shell = "poetry run pytest circular.py"
 

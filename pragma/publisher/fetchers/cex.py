@@ -1,13 +1,14 @@
 import asyncio
+import json
 import logging
 from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,14 @@ class CexFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
                 )
-            result = await resp.json()
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"CEX: Unexpected content type: {content_type}")
+
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from CEX"
@@ -51,7 +59,10 @@ class CexFetcher(PublisherInterfaceT):
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-        result = resp.json()
+
+        text = resp.text
+        result = json.loads(text)
+
         if "error" in result and result["error"] == "Invalid Symbols Pair":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
 
@@ -87,6 +98,7 @@ class CexFetcher(PublisherInterfaceT):
         timestamp = int(result["timestamp"])
         price = float(result["last"])
         price_int = int(price * (10 ** asset["decimals"]))
+        volume = float(result["volume"])
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from CEX")
@@ -95,6 +107,7 @@ class CexFetcher(PublisherInterfaceT):
             pair_id=pair_id,
             price=price_int,
             timestamp=timestamp,
+            volume=volume,
             source=self.SOURCE,
             publisher=self.publisher,
         )
