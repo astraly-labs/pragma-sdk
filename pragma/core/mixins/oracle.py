@@ -40,7 +40,7 @@ class OracleMixin:
         source: int,
         publisher: int,
         volume: int = 0,
-        max_fee: int = int(1e16),
+        max_fee: int = int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -67,7 +67,7 @@ class OracleMixin:
         self,
         entries: List[Entry],
         pagination: Optional[int] = 40,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
     ) -> List[InvokeResult]:
         if len(entries) == 0:
             logger.warning("Skipping publishing as entries array is empty")
@@ -241,7 +241,7 @@ class OracleMixin:
         self,
         pair_id: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -260,7 +260,7 @@ class OracleMixin:
         pair_id: int,
         expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -279,7 +279,7 @@ class OracleMixin:
         pair_ids: List[int],
         expiry_timestamps: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:
@@ -316,7 +316,7 @@ class OracleMixin:
         self,
         pair_ids: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e16),
+        max_fee=int(1e18),
         pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:

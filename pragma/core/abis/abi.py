@@ -26,9 +26,11 @@ MOCK_DIR = repo_root / "pragma/tests" / "mock"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 
+BUILD_DIR = Path(os.path.dirname(__file__))
+
 
 def get_artifact(contract_name):
-    return CONTRACTS_COMPILED_DIR / f"{contract_name}.json"
+    return BUILD_DIR / f"{contract_name}.json"
 
 
 def get_alias(contract_name):
@@ -36,11 +38,11 @@ def get_alias(contract_name):
 
 
 def get_sierra_artifact(contract_name):
-    return CONTRACTS_COMPILED_DIR / f"{contract_name}.sierra.json"
+    return BUILD_DIR / f"{contract_name}.sierra.json"
 
 
 def get_casm_artifact(contract_name):
-    return CONTRACTS_COMPILED_DIR / f"{contract_name}.casm.json"
+    return BUILD_DIR / f"{contract_name}.casm.json"
 
 
 def get_abi(contract_name):

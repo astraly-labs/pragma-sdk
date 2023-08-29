@@ -197,7 +197,7 @@ class FutureEntry(Entry):
         source: Union[str, int],
         publisher: Union[str, int],
         expiry_timestamp: int,
-        volume: Optional[int] = 0,
+        volume: Optional[float] = 0,
         autoscale_volume: bool = True,
     ):
         if type(pair_id) == str:

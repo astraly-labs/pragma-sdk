@@ -108,14 +108,13 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volume24h"])
-        volume_int = int(volume * (10 ** asset["decimals"]))
         expiry_timestamp = int(data["deliveryTime"])
         logger.info(f"Fetched future for {'/'.join(pair)} from BYBIT")
 
         return FutureEntry(
             pair_id=pair_id,
             price=price_int,
-            volume=volume_int,
+            volume=volume,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,

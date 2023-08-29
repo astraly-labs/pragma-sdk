@@ -5,11 +5,9 @@ from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
-
-from pragma.core.utils import str_to_felt
-
 from starknet_py.net.gateway_client import GatewayClient
 
+from pragma.core.utils import str_to_felt
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
