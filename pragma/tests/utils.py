@@ -15,7 +15,8 @@ from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.udc_deployer.deployer import _get_random_salt
 
-from pragma.tests.constants import CONTRACTS_COMPILED_DIR, MAX_FEE
+from pragma.core.abis.abi import CONTRACTS_COMPILED_DIR
+from pragma.tests.constants import MAX_FEE
 
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:

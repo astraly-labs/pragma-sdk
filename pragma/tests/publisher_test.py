@@ -92,20 +92,12 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
 
     # Publish SPOT data
     print(data)
-    await publisher.publish_many(data)
+    await publisher.publish_many(data, pagination=10)
 
 
 @pytest.mark.asyncio
 async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
     PUBLISHER_ADDRESS = pragma_client.account_address()
-
-    # Add PRAGMA as Publisher
-    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
-
-    publishers = await pragma_client.get_all_publishers()
-    assert publishers == [str_to_felt(PUBLISHER_NAME)]
-
-    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
 
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
@@ -122,11 +114,11 @@ async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
 
     data = await publisher.fetch()
 
-    # asset_valid_data_type(data, FutureEntry)
+    asset_valid_data_type(data, FutureEntry)
 
     data = publisher.fetch_sync()
 
-    # asset_valid_data_type(data, FutureEntry)
+    asset_valid_data_type(data, FutureEntry)
 
     # Publish FUTURE data
     data = [d for d in data if isinstance(d, FutureEntry)]
@@ -136,14 +128,6 @@ async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
 @pytest.mark.asyncio
 async def test_publisher_client_all_assets(pragma_client: PragmaClient, contracts):
     PUBLISHER_ADDRESS = pragma_client.account_address()
-
-    # Add PRAGMA as Publisher
-    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
-
-    publishers = await pragma_client.get_all_publishers()
-    assert publishers == [str_to_felt(PUBLISHER_NAME)]
-
-    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
 
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client

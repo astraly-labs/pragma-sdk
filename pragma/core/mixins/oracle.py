@@ -142,6 +142,23 @@ class OracleMixin:
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
+    @deprecated
+    async def get_future_entries(
+        self, pair_id, expiration_timestamp, sources=[]
+    ) -> List[FutureEntry]:
+        if isinstance(pair_id, str):
+            pair_id = str_to_felt(pair_id)
+        elif not isinstance(pair_id, int):
+            raise TypeError(
+                "Pair ID must be string (will be converted to felt) or integer"
+            )
+        (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
+            DataType(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
+            sources,
+        )
+        entries = response[0]
+        return [FutureEntry.from_dict(dict(entry.value)) for entry in entries]
+
     async def get_spot(
         self,
         pair_id,

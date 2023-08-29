@@ -52,6 +52,14 @@ class BaseEntry:
 
 
 class SpotEntry(Entry):
+
+    """
+    Represents a Spot Entry.
+
+    ⚠️ By default, the constructor will autoscale the provided volume to be quoted in the base asset.
+    This behavior can be overwritten witht the `autoscale_volume` parameter.
+    """
+
     base: BaseEntry
     pair_id: int
     price: int
@@ -65,6 +73,7 @@ class SpotEntry(Entry):
         source: Union[str, int],
         publisher: Union[str, int],
         volume: Optional[float] = 0,
+        autoscale_volume: bool = True,
     ) -> None:
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
@@ -79,10 +88,13 @@ class SpotEntry(Entry):
         self.pair_id = pair_id
         self.price = price
 
-        asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
-        decimals = asset["decimals"]
+        if autoscale_volume:
+            asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
+            decimals = asset["decimals"]
 
-        self.volume = int(volume * price * 10**decimals)
+            self.volume = int(volume * price * 10**decimals)
+        else:
+            self.volume = volume
 
     def __eq__(self, other):
         if isinstance(other, SpotEntry):
@@ -143,6 +155,7 @@ class SpotEntry(Entry):
             base["source"],
             base["publisher"],
             volume=entry_dict["volume"],
+            autoscale_volume=False,
         )
 
     @staticmethod
@@ -162,6 +175,14 @@ class SpotEntry(Entry):
 
 
 class FutureEntry(Entry):
+
+    """
+    Represents a Future Entry.
+
+    ⚠️ By default, the constructor will autoscale the provided volume to be quoted in the base asset.
+    This behavior can be overwritten witht the `autoscale_volume` parameter.
+    """
+
     base: BaseEntry
     pair_id: int
     price: int
@@ -177,6 +198,7 @@ class FutureEntry(Entry):
         publisher: Union[str, int],
         expiry_timestamp: int,
         volume: Optional[int] = 0,
+        autoscale_volume: bool = True,
     ):
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
@@ -191,7 +213,14 @@ class FutureEntry(Entry):
         self.pair_id = pair_id
         self.price = price
         self.expiry_timestamp = expiry_timestamp
-        self.volume = volume
+
+        if autoscale_volume:
+            asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "FUTURE")
+            decimals = asset["decimals"]
+
+            self.volume = int(volume * price * 10**decimals)
+        else:
+            self.volume = volume
 
     def __eq__(self, other):
         if isinstance(other, FutureEntry):
@@ -241,6 +270,20 @@ class FutureEntry(Entry):
             "expiration_timestamp": self.expiry_timestamp,
             "volume": self.volume,
         }
+
+    @staticmethod
+    def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
+        base = dict(entry_dict["base"])
+        return FutureEntry(
+            entry_dict["pair_id"],
+            entry_dict["price"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+            entry_dict["expiration_timestamp"],
+            volume=entry_dict["volume"],
+            autoscale_volume=False,
+        )
 
     @staticmethod
     def serialize_entries(entries: List[FutureEntry]) -> List[Dict[str, int]]:
