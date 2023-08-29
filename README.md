@@ -4,9 +4,11 @@
 
 [![Checks](https://github.com/Astraly-Labs/pragma-sdk/actions/workflows/checks.yml/badge.svg)](https://github.com/Astraly-Labs/pragma-sdk/actions/workflows/checks.yml)
 
+[![Package](https://img.shields.io/pypi/v/pragma-sdk)](https://pypi.org/project/pragma-sdk/)
+
 ---
 
-**Pragma SDK, written in python.**
+**Pragma SDK, written in Python.**
 
 One can leverage this SDK to interact with Pragma on Starknet.
 This SDK should also be used by Data Providers willing to push data on Pragma contracts.
