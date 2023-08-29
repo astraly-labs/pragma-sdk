@@ -1,5 +1,5 @@
 import abc
-from typing import Any, List
+from typing import Any, List, Literal
 
 import aiohttp
 from aiohttp import ClientSession
@@ -36,16 +36,6 @@ class PublisherFetchError:
 
     def __repr__(self):
         return self.message
-
-    def serialize(self):
-        return self.message
-
-
-class UnsupportedAssetError:
-    message: str
-
-    def __init__(self, message: str):
-        self.message = message
 
     def serialize(self):
         return self.message

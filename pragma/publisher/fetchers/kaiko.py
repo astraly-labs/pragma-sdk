@@ -6,9 +6,9 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -122,7 +122,6 @@ class KaikoFetcher(PublisherInterfaceT):
         price = float(data["price"])
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume"])
-        volume_int = int(volume * (10 ** asset["decimals"]))  # 24h volume
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Kaiko")
@@ -132,6 +131,6 @@ class KaikoFetcher(PublisherInterfaceT):
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,
-            volume=volume_int,
+            volume=volume,
             publisher=self.publisher,
         )

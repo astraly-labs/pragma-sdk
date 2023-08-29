@@ -6,9 +6,9 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -95,8 +95,7 @@ class AscendexFetcher(PublisherInterfaceT):
         price = (ask + bid) / 2.0
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        # Volume is in quote asset so we need to convert it to base asset using price
-        volume = int(float(data["volume"]) * price * (10 ** asset["decimals"]))
+        volume = float(data["volume"])
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from Ascendex")
 

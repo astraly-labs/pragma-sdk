@@ -19,12 +19,16 @@ def felt_to_str(felt):
     return bytes.decode("utf-8")
 
 
+def log_entry(entry, logger=logger):
+    logger.info(f"Entry: {entry.serialize()}")
+
+
 def currency_pair_to_pair_id(quote, base):
     return f"{quote}/{base}".upper()
 
 
-def log_entry(entry, logger=logger):
-    logger.info(f"Entry: {entry.serialize()}")
+def key_for_asset(asset):
+    return asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
 
 
 def pair_id_for_asset(asset):
@@ -32,7 +36,3 @@ def pair_id_for_asset(asset):
         asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
     )
     return pair_id
-
-
-def key_for_asset(asset):
-    return asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])

@@ -6,8 +6,8 @@ import pytest
 import requests_mock
 from aioresponses import aioresponses
 
+from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.publisher.assets import PRAGMA_ALL_ASSETS
 from pragma.publisher.fetchers import (
     AscendexFetcher,
     BitstampFetcher,
@@ -40,7 +40,7 @@ FETCHER_CONFIGS = {
                 1692717096,
                 "CEX",
                 PUBLISHER_NAME,
-                volume=181043893,
+                volume=1.81043893,
             ),
             SpotEntry(
                 "ETH/USD",
@@ -48,7 +48,7 @@ FETCHER_CONFIGS = {
                 1692724899,
                 "CEX",
                 PUBLISHER_NAME,
-                volume=5654796900,
+                volume=56.54796900,
             ),
         ],
     },
@@ -92,7 +92,7 @@ FETCHER_CONFIGS = {
                 12345,
                 "ASCENDEX",
                 PUBLISHER_NAME,
-                volume=978940000,
+                volume=9.7894,
             ),
             SpotEntry(
                 "ETH/USD",
@@ -100,7 +100,7 @@ FETCHER_CONFIGS = {
                 12345,
                 "ASCENDEX",
                 PUBLISHER_NAME,
-                volume=12318800000,
+                volume=123.188,
             ),
         ],
     },
@@ -115,7 +115,7 @@ FETCHER_CONFIGS = {
                 1692829724,
                 "OKX",
                 PUBLISHER_NAME,
-                volume=1838238980000,
+                volume=18382.3898,
             ),
             SpotEntry(
                 "ETH/USD",
@@ -123,7 +123,7 @@ FETCHER_CONFIGS = {
                 1692829751,
                 "OKX",
                 PUBLISHER_NAME,
-                volume=18534136460000,
+                volume=185341.3646,
             ),
         ],
     },
@@ -138,7 +138,7 @@ FETCHER_CONFIGS = {
                 1692782303,
                 "KAIKO",
                 PUBLISHER_NAME,
-                volume=414884,
+                volume=0.00414884,
             ),
             SpotEntry(
                 "ETH/USD",
@@ -146,7 +146,7 @@ FETCHER_CONFIGS = {
                 1692782453,
                 "KAIKO",
                 PUBLISHER_NAME,
-                volume=4504710943,
+                volume=45.04710943999999,
             ),
         ],
     },

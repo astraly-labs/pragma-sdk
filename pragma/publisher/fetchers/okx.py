@@ -6,9 +6,9 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -105,15 +105,13 @@ class OkxFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
-        # Volume should be denominated in base asset
-        volume_int = int(volume * price(10 ** asset["decimals"]))
 
         logger.info(f"Fetched price {price} for {'/'.join(pair)} from OKX")
 
         return SpotEntry(
             pair_id=pair_id,
             price=price_int,
-            volume=volume_int,
+            volume=volume,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,

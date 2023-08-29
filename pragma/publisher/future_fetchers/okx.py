@@ -1,12 +1,13 @@
+import json
 import logging
 from typing import List, Union
 
 import requests
 from aiohttp import ClientSession
 
+from pragma.core.assets import PragmaAsset, PragmaFutureAsset
 from pragma.core.entry import FutureEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.assets import PragmaAsset, PragmaFutureAsset
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,13 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from OKX"
                 )
-            result = await resp.json(content_type="application/json")
+
+            content_type = resp.content_type
+            if content_type and "json" in content_type:
+                text = await resp.text()
+                result = json.loads(text)
+            else:
+                raise ValueError(f"OKX: Unexpected content type: {content_type}")
 
             if (
                 result["code"] == "51001"
@@ -91,7 +98,8 @@ class OkxFutureFetcher(PublisherInterfaceT):
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
 
-        result = resp.json(content_type="text/json")
+        text = resp.text
+        result = json.loads(text)
 
         if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")

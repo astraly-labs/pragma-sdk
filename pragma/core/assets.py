@@ -1,10 +1,11 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Literal, Tuple, Union
 
 from typing_extensions import TypedDict
 
-from pragma.core.types import AssetType
+from pragma.core.types import UnsupportedAssetError
 from pragma.core.utils import key_for_asset
-from pragma.publisher.types import UnsupportedAssetError
+
+AssetType = Literal["SPOT", "FUTURE", "OPTION"]
 
 
 class PragmaSpotAsset(TypedDict):
@@ -73,6 +74,7 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     },
 ]
 
+
 _PRAGMA_ASSET_BY_KEY: Dict[str, PragmaSpotAsset] = {
     key_for_asset(asset): asset
     for asset in PRAGMA_ALL_ASSETS
@@ -103,18 +105,21 @@ def get_asset_spec_for_pair_id_by_type(
 
 
 def get_spot_asset_spec_for_pair_id(pair_id: str) -> PragmaSpotAsset:
-    if pair_id not in _PRAGMA_ASSET_BY_KEY:
-        raise ValueError(f"Pair ID not found: {pair_id}")
-    return _PRAGMA_ASSET_BY_KEY[pair_id]
+    try:
+        return _PRAGMA_ASSET_BY_KEY[pair_id]
+    except KeyError as e:
+        raise KeyError(f"Pair ID not found {pair_id}")
 
 
 def get_future_asset_spec_for_pair_id(pair_id: str) -> PragmaFutureAsset:
-    if pair_id not in _PRAGMA_FUTURE_ASSET_BY_KEY:
-        raise ValueError(f"Pair ID not found: {pair_id}")
-    return _PRAGMA_FUTURE_ASSET_BY_KEY[pair_id]
+    try:
+        return _PRAGMA_FUTURE_ASSET_BY_KEY[pair_id]
+    except KeyError as e:
+        raise KeyError(f"Pair ID not found {pair_id}")
 
 
 def get_asset_spec_for_pair_id(pair_id: str) -> PragmaAsset:
-    if pair_id not in _PRAGMA_ALL_ASSET_BY_KEY:
-        raise ValueError(f"Pair ID not found: {pair_id}")
-    return _PRAGMA_ALL_ASSET_BY_KEY[pair_id]
+    try:
+        return _PRAGMA_ALL_ASSET_BY_KEY[pair_id]
+    except KeyError as e:
+        raise KeyError(f"Pair ID not found {pair_id}")

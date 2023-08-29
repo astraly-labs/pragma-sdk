@@ -5,11 +5,9 @@ from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.gateway_client import GatewayClient
 
 from pragma.core.utils import str_to_felt
-
-# from starknet_py.net.gateway_client import GatewayClient
-
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -26,8 +24,6 @@ SHARINGAN = "sharingan"
 PRAGMA_TESTNET = "pragma_testnet"
 
 Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet"]
-
-AssetType = Literal["SPOT", "FUTURE", "OPTION"]
 
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
@@ -62,14 +58,14 @@ def get_rpc_url(network=TESTNET, rpc_key=None, port=5050):
 
 
 def get_client_from_network(network: str, port=5050):
-    return FullNodeClient(node_url=get_rpc_url(network, port=port))
-    # return GatewayClient(net=f"http://localhost:{port}")
+    return GatewayClient(net=f"http://localhost:{port}")
+    # return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
 @dataclass
 class ContractAddresses:
     publisher_registry_address: int
-    oracle_proxy_address: int
+    oracle_proxy_addresss: int
 
 
 CONTRACT_ADDRESSES = {
@@ -201,3 +197,13 @@ class DataType:
             "expiration_timestamp": self.expiration_timestamp,
             "data_type": self.data_type.name,
         }
+
+
+class UnsupportedAssetError:
+    message: str
+
+    def __init__(self, message: str):
+        self.message = message
+
+    def serialize(self):
+        return self.message

@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from web3 import Web3
 
+from pragma.core.assets import AssetType, get_asset_spec_for_pair_id_by_type
 from pragma.core.utils import felt_to_str, str_to_felt
 
 
@@ -63,7 +64,7 @@ class SpotEntry(Entry):
         timestamp: int,
         source: Union[str, int],
         publisher: Union[str, int],
-        volume: Optional[int] = 0,
+        volume: Optional[float] = 0,
     ) -> None:
         if type(pair_id) == str:
             pair_id = str_to_felt(pair_id)
@@ -77,7 +78,11 @@ class SpotEntry(Entry):
         self.base = BaseEntry(timestamp, source, publisher)
         self.pair_id = pair_id
         self.price = price
-        self.volume = volume
+
+        asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
+        decimals = asset["decimals"]
+
+        self.volume = int(volume * price * 10**decimals)
 
     def __eq__(self, other):
         if isinstance(other, SpotEntry):

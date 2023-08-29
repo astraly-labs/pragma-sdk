@@ -46,6 +46,12 @@ class PragmaPublisherClient(PragmaClient):
     def add_fetcher(self, fetcher: PublisherInterfaceT):
         self.fetchers.append(fetcher)
 
+    def update_fetchers(self, fetchers: List[PublisherInterfaceT]):
+        self.fetchers = fetchers
+
+    def get_fetchers(self):
+        return self.fetchers
+
     async def fetch(self, filter_exceptions=True, return_exceptions=True) -> List[any]:
         tasks = []
         timeout = aiohttp.ClientTimeout(total=10)  # 10 seconds per request
