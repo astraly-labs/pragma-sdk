@@ -37,5 +37,28 @@ jobs:
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          skip-existing: true
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  upload_docker:
+    name: Build and publish Docker image
+    needs: [upload_pypi]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Extract package version
+        run: |
+          export $(grep -v '^#' .env | xargs)
+          export PRAGMA_PACKAGE_VERSION=$(grep 'version' pyproject.toml | grep -e '[0-9][0-9a-zA-Z]*[-.a-z0-9]*' -o)
+          echo $PRAGMA_PACKAGE_VERSION
+
+      - name: Build image
+        run: docker build . --target production --build-arg PRAGMA_PACKAGE_VERSION=${PRAGMA_PACKAGE_VERSION} -t astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
+
+      - name: Push image
+        env:
+          DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+        run: |
+          echo $DOCKER_ACCESS_TOKEN | docker login -u ${DOCKER_LOGIN} --password-stdin
+          docker push astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
