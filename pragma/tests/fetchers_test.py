@@ -165,7 +165,7 @@ FUTURE_FETCHER_CONFIGS = {
                 "BYBIT",
                 PUBLISHER_NAME,
                 0,
-                volume=42118111000000000,
+                volume=float(421181110),
             ),
             FutureEntry(
                 "ETH/USD",
@@ -174,7 +174,7 @@ FUTURE_FETCHER_CONFIGS = {
                 "BYBIT",
                 PUBLISHER_NAME,
                 0,
-                volume=5610821300000000,
+                volume=float(56108213),
             ),
         ],
     },

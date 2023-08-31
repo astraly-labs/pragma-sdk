@@ -107,6 +107,8 @@ jobs:
           key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
 
       - uses: software-mansion/setup-scarb@v1
+        with:
+          tool-versions: pragma-oracle/.tool-versions
 
       - name: Compile contracts
         if: steps.cache-contracts.outputs.cache-hit != 'true'
