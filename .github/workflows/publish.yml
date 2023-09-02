@@ -55,7 +55,7 @@ jobs:
           echo $PRAGMA_PACKAGE_VERSION
 
       - name: Build image
-        run: docker build . --target production --build-arg PRAGMA_PACKAGE_VERSION=${$PRAGMA_PACKAGE_VERSION} -t astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
+        run: docker build . --target production --build-arg PRAGMA_PACKAGE_VERSION=$PRAGMA_PACKAGE_VERSION -t astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
 
       - name: Push image
         env:
