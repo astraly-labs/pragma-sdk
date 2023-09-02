@@ -12,6 +12,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+include = ["pragma"]
 exclude = ["pragma/tests/*", "pragma/**/*_test.py"]
 packages = [
   {include = "pragma"},
@@ -19,7 +20,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-"starknet.py" = "0.18.0a0"
+"starknet.py" = "0.18.1"
 cairo-lang = "^0.12"
 starknet-devnet = "^0.5.5"
 typer = "0.6.1"
