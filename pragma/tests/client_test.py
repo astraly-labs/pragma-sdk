@@ -10,7 +10,6 @@ from starknet_py.hash.storage import get_storage_var_address
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.client_errors import ClientError
 
-from pragma.core.abis.abi import MOCK_COMPILED_DIR
 from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
@@ -21,6 +20,7 @@ from pragma.tests.constants import (
     CURRENCIES,
     DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
+    MOCK_COMPILED_DIR,
     PAIRS,
     SAMPLE_ASSETS,
     U128_MAX,
