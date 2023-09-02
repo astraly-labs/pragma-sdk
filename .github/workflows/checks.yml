@@ -117,6 +117,16 @@ jobs:
           scarb -V
           scarb build
 
+      - name: Check ABIs are up-to-date
+        run: |
+          # Find and compare *.sierra.json files in both directories
+          for file in $(find ./pragma-oracle/target/dev -type f -name "*.sierra.json"); do
+            # Extract the relative path of the file for comparison
+            rel_path=${file#./pragma-oracle/target/dev}
+            # Use diff to compare the file with its counterpart in the SDK directory
+            diff "$file" "pragma/core/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma/core/abis/" && exit 1) 
+          done
+          
       # ====================== CAIRO SETUP ====================== #
 
       - name: Install rust
