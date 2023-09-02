@@ -16,6 +16,7 @@ from starknet_py.transaction_errors import (
     TransactionFailedError,
     TransactionNotReceivedError,
     TransactionRejectedError,
+    TransactionRevertedError,
 )
 
 
