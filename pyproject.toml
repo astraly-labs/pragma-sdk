@@ -59,6 +59,9 @@ test_ci_publisher = "coverage run -m pytest --net=devnet --client=full_node -v -
 test_ci_fetchers = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/fetchers_test.py"
 circular_imports_check.shell = "poetry run pytest circular.py"
 
+[tool.poetry.build]
+generate-setup-file = true
+
 [build-system]
 requires = [
     "setuptools",
