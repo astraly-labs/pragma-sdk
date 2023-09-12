@@ -77,7 +77,6 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             else:
                 raise ValueError(f"Binance: Unexpected content type: {content_type}")
 
-            print(result)
             for element in result:
                 if selection in element["symbol"]:
                     filtered_data.append(element)
@@ -100,13 +99,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
         text = resp.text
         result = json.loads(text)
 
-        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance"
-            )
-
-        data_arr = result["symbols"]
-        for element in data_arr:
+        for element in result:
             if selection in element["symbol"]:
                 filtered_data.append(element)
 
@@ -163,12 +156,16 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             if data["symbol"] == selection:
                 expiry_timestamp = 0
             else:
-                date_part = data["symbol"].split("_")[1]
-                expiry_date = datetime.strptime(date_part, "%y%m%d")
-                expiry_date = expiry_date.replace(
-                    hour=8, minute=0, second=0, tzinfo=timezone.utc
-                )
-                expiry_timestamp = int(expiry_date.timestamp())
+                date_arr = data["symbol"].split("_")
+                if len(date_arr) > 1:
+                    date_part = date_arr[1]
+                    expiry_date = datetime.strptime(date_part, "%y%m%d")
+                    expiry_date = expiry_date.replace(
+                        hour=8, minute=0, second=0, tzinfo=timezone.utc
+                    )
+                    expiry_timestamp = int(expiry_date.timestamp())
+                else:
+                    expiry_timestamp = int(0)
             result_arr.append(
                 FutureEntry(
                     pair_id=pair_id,

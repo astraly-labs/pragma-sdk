@@ -136,3 +136,8 @@ SAMPLE_FUTURE_ASSETS = [
     {"type": "FUTURE", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "FUTURE", "pair": ("ETH", "USD"), "decimals": 8},
 ]
+
+SAMPLE_ONCHAIN_ASSETS = [
+    {"type": "SPOT", "pair": ("R", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
+]
