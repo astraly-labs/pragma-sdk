@@ -23,12 +23,13 @@ ALL_SPOT_FETCHERS = [
     DefillamaFetcher,
     # GeminiFetcher,
     OkxFetcher,
+    GeckoTerminalFetcher
 ]
 
 ALL_FUTURE_FETCHERS = [
     OkxFutureFetcher,
-    # BinanceFutureFetcher,
-    # ByBitFutureFetcher
+    BinanceFutureFetcher,
+    ByBitFutureFetcher
 ]
 
 ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS
@@ -48,6 +49,7 @@ SOURCES = [
     "OKX",
     "BINANCE",
     "BYBIT",
+    "GECKOTERMINAL"
 ]
 
 

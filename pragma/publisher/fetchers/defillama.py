@@ -31,6 +31,9 @@ ASSET_MAPPING: Dict[str, str] = {
     "XRP": "ripple",
     "MATIC": "matic-network",
     "AAVE": "aave",
+    "R": "r",
+    "LORDS": "lords",
+    "wstETH": "wrapped-steth",
 }
 
 
