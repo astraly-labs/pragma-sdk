@@ -4,6 +4,7 @@ from .cex import CexFetcher
 from .coinbase import CoinbaseFetcher
 from .coingecko import CoingeckoFetcher
 from .defillama import DefillamaFetcher
+from .gecko import GeckoTerminalFetcher
 from .gemini import GeminiFetcher
 from .kaiko import KaikoFetcher
 from .okx import OkxFetcher

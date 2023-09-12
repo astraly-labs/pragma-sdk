@@ -1,0 +1,80 @@
+{
+	"R": {
+		"data": {
+			"id": "eth_0x183015a9ba6ff60230fdeadc3f43b3d788b13e21",
+			"type": "token",
+			"attributes": {
+				"address": "0x183015a9ba6ff60230fdeadc3f43b3d788b13e21",
+				"name": "R Stablecoin",
+				"symbol": "R",
+				"coingecko_coin_id": "r",
+				"decimals": 18,
+				"total_supply": "23869109480286905483367343.0",
+				"price_usd": "0.98898157",
+				"fdv_usd": "23606109",
+				"total_reserve_in_usd": "22937693.850874916980212423131642",
+				"volume_usd": {
+					"h24": "1264558.5626824791626951720608214185"
+				},
+				"market_cap_usd": "23593880.9310739"
+			},
+			"relationships": {
+				"top_pools": {
+					"data": [
+						{
+							"id": "eth_0x20a61b948e33879ce7f23e535cc7baa3bc66c5a9",
+							"type": "pool"
+						},
+						{
+							"id": "eth_0x380aabe019ed2a9c2d632b51eddd30fd804d0fad",
+							"type": "pool"
+						},
+						{
+							"id": "eth_0x190ed02adaf1ef8039fcd3f006b42553467d5045",
+							"type": "pool"
+						}
+					]
+				}
+			}
+		}
+	},
+	"WBTC": {
+		"data": {
+			"id": "eth_0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+			"type": "token",
+			"attributes": {
+				"address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+				"name": "Wrapped BTC",
+				"symbol": "WBTC",
+				"coingecko_coin_id": "wrapped-bitcoin",
+				"decimals": 8,
+				"total_supply": "16287487174305.0",
+				"price_usd": "25804.68",
+				"fdv_usd": "4202934292",
+				"total_reserve_in_usd": "184288556.34495533603311786222811325300154",
+				"volume_usd": {
+					"h24": "90241580.528001091809493184"
+				},
+				"market_cap_usd": "4202781126.42639"
+			},
+			"relationships": {
+				"top_pools": {
+					"data": [
+						{
+							"id": "eth_0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
+							"type": "pool"
+						},
+						{
+							"id": "eth_0x4585fe77225b41b697c938b018e2ac67ac5a20c0",
+							"type": "pool"
+						},
+						{
+							"id": "eth_0xd51a44d3fae010294c616388b506acda1bfaae46",
+							"type": "pool"
+						}
+					]
+				}
+			}
+		}
+	}
+}
