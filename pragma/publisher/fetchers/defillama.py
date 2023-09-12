@@ -33,7 +33,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "AAVE": "aave",
     "R": "r",
     "LORDS": "lords",
-    "wstETH": "wrapped-steth",
+    "WSTETH": "wrapped-steth",
 }
 
 
