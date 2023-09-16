@@ -121,7 +121,7 @@ CURRENCIES = [
 PAIRS = [
     Pair("ETH/USD", "ETH", "USD"),
     Pair("BTC/USD", "BTC", "USD"),
-    Pair("WTC/USD", "WTC", "USD"),
+    Pair("WBTC/USD", "WBTC", "USD"),
     Pair("USDC/USD", "USDC", "USD"),
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
