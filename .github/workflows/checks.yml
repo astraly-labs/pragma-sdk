@@ -179,9 +179,12 @@ jobs:
           poetry run poe circular_imports_check
 
       - name: Run tests
+        env:
+          KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
         run: |
           poetry run poe test_ci_client
           poetry run poe test_ci_fetchers
+          poetry run poe test_ci_publisher
 
       - name: Generate coverage in XML
         run: |

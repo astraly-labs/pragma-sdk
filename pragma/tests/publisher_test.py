@@ -23,20 +23,17 @@ ALL_SPOT_FETCHERS = [
     DefillamaFetcher,
     # GeminiFetcher,
     OkxFetcher,
-    GeckoTerminalFetcher
+    GeckoTerminalFetcher,
 ]
 
-ALL_FUTURE_FETCHERS = [
-    OkxFutureFetcher,
-    BinanceFutureFetcher,
-    ByBitFutureFetcher
-]
+ALL_FUTURE_FETCHERS = [OkxFutureFetcher, BinanceFutureFetcher, ByBitFutureFetcher]
 
 ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS
 
 load_dotenv()
 
 PUBLISHER_NAME = "PRAGMA"
+PAGINATION = 40
 
 SOURCES = [
     "ASCENDEX",
@@ -49,7 +46,7 @@ SOURCES = [
     "OKX",
     "BINANCE",
     "BYBIT",
-    "GECKOTERMINAL"
+    "GECKOTERMINAL",
 ]
 
 
@@ -94,7 +91,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
 
     # Publish SPOT data
     print(data)
-    await publisher.publish_many(data, pagination=3)
+    await publisher.publish_many(data, pagination=PAGINATION)
 
 
 @pytest.mark.asyncio
@@ -125,7 +122,7 @@ async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
     # Publish FUTURE data
     data = [d for d in data if isinstance(d, FutureEntry)]
     print(data)
-    await publisher.publish_many(data, pagination=3)
+    await publisher.publish_many(data, pagination=PAGINATION)
 
 
 @pytest.mark.asyncio
@@ -165,7 +162,7 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient, contract
 
     data = [d for d in data if isinstance(d, Entry)]
     print(data)
-    await publisher.publish_many(data, pagination=3)
+    await publisher.publish_many(data, pagination=PAGINATION)
 
 
 def asset_valid_data_type(data, data_type: Entry):
