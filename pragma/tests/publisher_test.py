@@ -26,7 +26,11 @@ ALL_SPOT_FETCHERS = [
     GeckoTerminalFetcher,
 ]
 
-ALL_FUTURE_FETCHERS = [OkxFutureFetcher, BinanceFutureFetcher, ByBitFutureFetcher]
+ALL_FUTURE_FETCHERS = [
+    OkxFutureFetcher,
+    # BinanceFutureFetcher,
+    # ByBitFutureFetcher
+]
 
 ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS
 
