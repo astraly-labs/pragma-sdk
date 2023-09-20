@@ -39,7 +39,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
     ):
         """
         Client for interacting with Pragma on Starknet.
-        :param network: Target network for the client. Can be a string with URL, one of ``"mainnet"``, ``"testnet"``, ``"local"`` or ``"integration""``
+        :param network: Target network for the client. Can be a URL string, or one of ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``
         :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.

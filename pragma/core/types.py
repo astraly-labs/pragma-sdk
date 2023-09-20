@@ -8,8 +8,6 @@ from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import str_to_felt
 
-# from starknet_py.net.gateway_client import GatewayClient
-
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -44,13 +42,9 @@ STARKSCAN_URLS = {
 }
 
 
-def get_rpc_url(network=TESTNET, rpc_key=None, port=5050):
-    rpc_key = rpc_key if rpc_key is not None else os.getenv("RPC_KEY")
-
-    if network == TESTNET:
-        return f"https://starknet-goerli.infura.io/v3/{rpc_key}"
-    if network == MAINNET:
-        return f"https://starknet-mainnet.infura.io/v3/{rpc_key}"
+def get_rpc_url(network=PRAGMA_TESTNET, port=5050):
+    if network.startswith("http"):
+        return network
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
@@ -60,7 +54,6 @@ def get_rpc_url(network=TESTNET, rpc_key=None, port=5050):
 
 
 def get_client_from_network(network: str, port=5050):
-    # return GatewayClient(net=f"http://localhost:{port}")
     return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
