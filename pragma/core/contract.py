@@ -1,5 +1,6 @@
 import asyncio
 from typing import Callable, Optional, Tuple
+from warnings import warn
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
@@ -98,7 +99,7 @@ async def wait_for_received(
     if retries <= 0:
         raise ValueError("Argument retries has to be greater than 0.")
     if wait_for_accept is not None:
-        warnings.warn(
+        warn(
             "Parameter `wait_for_accept` has been deprecated - since Starknet 0.12.0, transactions in a PENDING"
             " block have status ACCEPTED_ON_L2."
         )
