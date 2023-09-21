@@ -185,36 +185,75 @@ FUTURE_FETCHER_CONFIGS = {
         ],
     },
     "OkxFutureFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "okx_future.json",
+        "mock_file": MOCK_DIR / "responses" / "okx_future" / "ticker.json",
         "fetcher_class": OkxFutureFetcher,
         "name": "OKX",
-        "other_mock_fns": {
-            "format_expiry_timestamp_url": {
-                "kwargs": {
-                    "BTC": {"id": "BTC-USD-230922"},
-                    "ETH": {"id": "ETH-USD-240329"},
-                },
-                "mock_file": MOCK_DIR / "responses" / "okx_future_timestamp.json",
-            }
-        },
+        "other_mock_fns": [
+            {
+                "format_expiry_timestamp_url": {
+                    "kwargs": {
+                        "BTC": {"id": "BTC-USD-230922"},
+                        "ETH": {"id": "ETH-USD-230922"},
+                    },
+                    "mock_file": MOCK_DIR
+                    / "responses"
+                    / "okx_future"
+                    / "timestamp_230922.json",
+                }
+            },
+            {
+                "format_expiry_timestamp_url": {
+                    "kwargs": {
+                        "BTC": {"id": "BTC-USD-230929"},
+                        "ETH": {"id": "ETH-USD-230929"},
+                    },
+                    "mock_file": MOCK_DIR
+                    / "responses"
+                    / "okx_future"
+                    / "timestamp_230929.json",
+                }
+            },
+        ],
         "expected_result": [
             FutureEntry(
-                "BTC/USD",
-                2589900000000,
-                1692982428,
-                "OKX",
-                PUBLISHER_NAME,
-                0,
-                volume=float(421181110),
+                pair_id="BTC/USD",
+                price=2664490000000,
+                timestamp=1695293953,
+                source="OKX",
+                publisher=PUBLISHER_NAME,
+                volume=73224927992200000700416,
+                expiry_timestamp=1695369600000,
+                autoscale_volume=False,
             ),
             FutureEntry(
-                "ETH/USD",
-                2589900000000,
-                1692982428,
-                "OKX",
-                PUBLISHER_NAME,
-                0,
-                volume=float(421181110),
+                pair_id="BTC/USD",
+                price=2666120000000,
+                timestamp=1695293953,
+                source="OKX",
+                publisher=PUBLISHER_NAME,
+                volume=271979672734799985901568,
+                expiry_timestamp=1695974400000,
+                autoscale_volume=False,
+            ),
+            FutureEntry(
+                pair_id="ETH/USD",
+                price=159390000000,
+                timestamp=1695293986,
+                source="OKX",
+                publisher=PUBLISHER_NAME,
+                volume=36278392896900000907264,
+                expiry_timestamp=1695369600000,
+                autoscale_volume=False,
+            ),
+            FutureEntry(
+                pair_id="ETH/USD",
+                price=159092000000,
+                timestamp=1695293987,
+                source="OKX",
+                publisher=PUBLISHER_NAME,
+                volume=98295299247559996866560,
+                expiry_timestamp=1695974400000,
+                autoscale_volume=False,
             ),
         ],
     },
@@ -365,6 +404,8 @@ async def test_async_future_fetcher(future_fetcher_config, mock_future_data):
             SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
         )
 
+        other_mock_fns = future_fetcher_config.get("other_mock_fns", {})
+
         # Mocking the expected call for assets
         for asset in SAMPLE_FUTURE_ASSETS:
             quote_asset = asset["pair"][0]
@@ -372,9 +413,20 @@ async def test_async_future_fetcher(future_fetcher_config, mock_future_data):
             url = fetcher.format_url(quote_asset, base_asset)
             mock.get(url, status=200, payload=mock_future_data[quote_asset])
 
+            # fetchers such as OkxFutureFetcher and BinanceFutureFetcher
+            # have other API endpoints that must be mocked
+            if other_mock_fns:
+                for mock_fn in other_mock_fns:
+                    [*fn], [*val] = zip(*mock_fn.items())
+                    fn, val = fn[0], val[0]
+                    url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
+                    with open(val["mock_file"], "r") as f:
+                        mock_file = json.load(f)
+                    mock.get(url, status=200, payload=mock_file[quote_asset])
+
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
-        print(result)
+
         assert result == future_fetcher_config["expected_result"]
 
 
@@ -424,7 +476,9 @@ def test_future_fetcher_sync_success(future_fetcher_config, mock_future_data):
             # fetchers such as OkxFutureFetcher and BinanceFutureFetcher
             # have other API endpoints that must be mocked
             if other_mock_fns:
-                for fn, val in other_mock_fns.items():
+                for mock_fn in other_mock_fns:
+                    [*fn], [*val] = zip(*mock_fn.items())
+                    fn, val = fn[0], val[0]
                     url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
                     with open(val["mock_file"], "r") as f:
                         mock_file = json.load(f)
