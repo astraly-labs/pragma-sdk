@@ -184,6 +184,40 @@ FUTURE_FETCHER_CONFIGS = {
             ),
         ],
     },
+    "OkxFutureFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "okx_future.json",
+        "fetcher_class": OkxFutureFetcher,
+        "name": "OKX",
+        "other_mock_fns": {
+            "format_expiry_timestamp_url": {
+                "kwargs": {
+                    "BTC": {"id": "BTC-USD-230922"},
+                    "ETH": {"id": "ETH-USD-240329"},
+                },
+                "mock_file": MOCK_DIR / "responses" / "okx_future_timestamp.json",
+            }
+        },
+        "expected_result": [
+            FutureEntry(
+                "BTC/USD",
+                2589900000000,
+                1692982428,
+                "OKX",
+                PUBLISHER_NAME,
+                0,
+                volume=float(421181110),
+            ),
+            FutureEntry(
+                "ETH/USD",
+                2589900000000,
+                1692982428,
+                "OKX",
+                PUBLISHER_NAME,
+                0,
+                volume=float(421181110),
+            ),
+        ],
+    },
 }
 
 ONCHAIN_FETCHER_CONFIGS = {
@@ -378,12 +412,23 @@ def test_future_fetcher_sync_success(future_fetcher_config, mock_future_data):
             SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
         )
 
+        other_mock_fns = future_fetcher_config.get("other_mock_fns", {})
+
         # Mocking the expected call for assets
         for asset in SAMPLE_FUTURE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
             m.get(url, json=mock_future_data[quote_asset])
+
+            # fetchers such as OkxFutureFetcher and BinanceFutureFetcher
+            # have other API endpoints that must be mocked
+            if other_mock_fns:
+                for fn, val in other_mock_fns.items():
+                    url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
+                    with open(val["mock_file"], "r") as f:
+                        mock_file = json.load(f)
+                    m.get(url, json=mock_file[quote_asset])
 
         result = fetcher.fetch_sync()
 

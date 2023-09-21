@@ -41,9 +41,12 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 )
             return result["data"][0]["expTime"]
 
+    def format_expiry_timestamp_url(self, id):
+        return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={id}"
+
     def fetch_sync_expiry_timestamp(self, asset, id):
         pair = asset["pair"]
-        url = f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={id}"
+        url = self.format_expiry_timestamp_url(id)
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
