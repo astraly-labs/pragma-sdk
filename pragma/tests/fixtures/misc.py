@@ -2,7 +2,6 @@
 
 
 import pytest
-from starknet_py.net.models.typed_data import TypedData
 
 
 def pytest_addoption(parser):
@@ -49,27 +48,6 @@ def pytest_collection_modifyitems(config, items):
         )
         if should_not_run:
             item.add_marker(pytest.mark.skip())
-
-
-@pytest.fixture(
-    params=[
-        "typed_data_example.json",
-        "typed_data_felt_array_example.json",
-        "typed_data_long_string_example.json",
-        "typed_data_struct_array_example.json",
-    ],
-)
-def typed_data(request) -> TypedData:
-    """
-    Returns TypedData dictionary example.
-    """
-    file_name = getattr(request, "param")
-    file_path = TYPED_DATA_DIR / file_name
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        typed_data = json.load(file)
-
-    return typed_data
 
 
 @pytest.fixture(name="tx_receipt_full_node_path", scope="package")
