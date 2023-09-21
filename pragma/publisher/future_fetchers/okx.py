@@ -25,7 +25,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
 
     async def fetch_expiry_timestamp(self, asset, id, session):
         pair = asset["pair"]
-        url = f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={id}"
+        url = self.format_expiry_timestamp_url(id)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
