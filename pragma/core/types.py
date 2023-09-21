@@ -42,9 +42,13 @@ STARKSCAN_URLS = {
 }
 
 
-def get_rpc_url(network=PRAGMA_TESTNET, port=5050):
+def get_rpc_url(network=TESTNET, port=5050):
     if network.startswith("http"):
         return network
+    if network == TESTNET:
+        return "https://starknet-testnet.public.blastapi.io"
+    if network == MAINNET:
+        return "https://starknet-mainnet.public.blastapi.io"
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
