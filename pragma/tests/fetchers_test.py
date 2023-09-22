@@ -138,14 +138,15 @@ def other_mock_endpoints(future_fetcher_config):
         return []
 
     responses = []
-    for asset in ("BTC", "ETH"):
+    for asset in SAMPLE_FUTURE_ASSETS:
+        quote_asset = asset["pair"][0]
         for mock_fn in other_mock_fns:
             [*fn], [*val] = zip(*mock_fn.items())
             fn, val = fn[0], val[0]
-            url = getattr(fetcher, fn)(**val["kwargs"][asset])
+            url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
             with open(val["mock_file"], "r") as f:
                 mock_file = json.load(f)
-            responses.append({"url": url, "json": mock_file[asset]})
+            responses.append({"url": url, "json": mock_file[quote_asset]})
     return responses
 
 
