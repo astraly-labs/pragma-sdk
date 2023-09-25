@@ -1,0 +1,74 @@
+{
+    "BTC": {
+        "code": "0",
+        "data": [
+            {
+                "alias": "this_week",
+                "baseCcy": "",
+                "category": "1",
+                "ctMult": "1",
+                "ctType": "inverse",
+                "ctVal": "100",
+                "ctValCcy": "USD",
+                "expTime": "1695369600000",
+                "instFamily": "BTC-USD",
+                "instId": "BTC-USD-230922",
+                "instType": "FUTURES",
+                "lever": "125",
+                "listTime": "1694160600545",
+                "lotSz": "1",
+                "maxIcebergSz": "1000000.0000000000000000",
+                "maxLmtSz": "1000000",
+                "maxMktSz": "10000",
+                "maxStopSz": "10000",
+                "maxTriggerSz": "1000000.0000000000000000",
+                "maxTwapSz": "1000000.0000000000000000",
+                "minSz": "1",
+                "optType": "",
+                "quoteCcy": "",
+                "settleCcy": "BTC",
+                "state": "live",
+                "stk": "",
+                "tickSz": "0.1",
+                "uly": "BTC-USD"
+            }
+        ],
+        "msg": ""
+    },
+    "ETH": {
+        "code": "0",
+        "data": [
+            {
+                "alias": "this_week",
+                "baseCcy": "",
+                "category": "1",
+                "ctMult": "1",
+                "ctType": "inverse",
+                "ctVal": "10",
+                "ctValCcy": "USD",
+                "expTime": "1695369600000",
+                "instFamily": "ETH-USD",
+                "instId": "ETH-USD-230922",
+                "instType": "FUTURES",
+                "lever": "125",
+                "listTime": "1694160600549",
+                "lotSz": "1",
+                "maxIcebergSz": "1000000.0000000000000000",
+                "maxLmtSz": "1000000",
+                "maxMktSz": "100000",
+                "maxStopSz": "100000",
+                "maxTriggerSz": "1000000.0000000000000000",
+                "maxTwapSz": "1000000.0000000000000000",
+                "minSz": "1",
+                "optType": "",
+                "quoteCcy": "",
+                "settleCcy": "ETH",
+                "state": "live",
+                "stk": "",
+                "tickSz": "0.01",
+                "uly": "ETH-USD"
+            }
+        ],
+        "msg": ""
+    }
+}

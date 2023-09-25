@@ -6,211 +6,20 @@ import pytest
 import requests_mock
 from aioresponses import aioresponses
 
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.publisher.fetchers import (
-    AscendexFetcher,
-    BitstampFetcher,
-    CexFetcher,
-    CoinbaseFetcher,
-    DefillamaFetcher,
-    GeckoTerminalFetcher,
-    KaikoFetcher,
-    OkxFetcher,
-)
-from pragma.publisher.future_fetchers import (
-    BinanceFutureFetcher,
-    ByBitFutureFetcher,
-    OkxFutureFetcher,
-)
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
-    MOCK_DIR,
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
     SAMPLE_ONCHAIN_ASSETS,
 )
 
+from pragma.tests.fetcher_configs import (
+    FETCHER_CONFIGS,
+    FUTURE_FETCHER_CONFIGS,
+    ONCHAIN_FETCHER_CONFIGS,
+)
+
 PUBLISHER_NAME = "TEST_PUBLISHER"
-
-# Define fetcher configurations
-FETCHER_CONFIGS = {
-    "CexFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "cex.json",
-        "fetcher_class": CexFetcher,
-        "name": "CEX",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2601210000000,
-                1692717096,
-                "CEX",
-                PUBLISHER_NAME,
-                volume=1.81043893,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                163921000000,
-                1692724899,
-                "CEX",
-                PUBLISHER_NAME,
-                volume=56.54796900,
-            ),
-        ],
-    },
-    "DefillamaFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "defillama.json",
-        "fetcher_class": DefillamaFetcher,
-        "name": "Defillama",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD", 2604800000000, 1692779346, "DEFILLAMA", PUBLISHER_NAME
-            ),
-            SpotEntry("ETH/USD", 164507000000, 1692779707, "DEFILLAMA", PUBLISHER_NAME),
-        ],
-    },
-    "BitstampFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "bitstamp.json",
-        "fetcher_class": BitstampFetcher,
-        "name": "Bitstamp",
-        "expected_result": [
-            SpotEntry("BTC/USD", 2602100000000, 1692781034, "BITSTAMP", PUBLISHER_NAME),
-            SpotEntry("ETH/USD", 164250000000, 1692780986, "BITSTAMP", PUBLISHER_NAME),
-        ],
-    },
-    "CoinbaseFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "coinbase.json",
-        "fetcher_class": CoinbaseFetcher,
-        "name": "Coinbase",
-        "expected_result": [
-            SpotEntry("BTC/USD", 2602820500003, 12345, "COINBASE", PUBLISHER_NAME),
-            SpotEntry("ETH/USD", 164399499999, 12345, "COINBASE", PUBLISHER_NAME),
-        ],
-    },
-    "AscendexFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "ascendex.json",
-        "fetcher_class": AscendexFetcher,
-        "name": "Ascendex",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2602650000000,
-                12345,
-                "ASCENDEX",
-                PUBLISHER_NAME,
-                volume=9.7894,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                164369999999,
-                12345,
-                "ASCENDEX",
-                PUBLISHER_NAME,
-                volume=123.188,
-            ),
-        ],
-    },
-    "OkxFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "okx.json",
-        "fetcher_class": OkxFetcher,
-        "name": "OKX",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2640240000000,
-                1692829724,
-                "OKX",
-                PUBLISHER_NAME,
-                volume=18382.3898,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                167372000000,
-                1692829751,
-                "OKX",
-                PUBLISHER_NAME,
-                volume=185341.3646,
-            ),
-        ],
-    },
-    "KaikoFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "kaiko.json",
-        "fetcher_class": KaikoFetcher,
-        "name": "Kaiko",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2601601000000,
-                1692782303,
-                "KAIKO",
-                PUBLISHER_NAME,
-                volume=0.00414884,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                164315580431,
-                1692782453,
-                "KAIKO",
-                PUBLISHER_NAME,
-                volume=45.04710943999999,
-            ),
-        ],
-    },
-}
-
-FUTURE_FETCHER_CONFIGS = {
-    "ByBitFutureFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "bybit_future.json",
-        "fetcher_class": ByBitFutureFetcher,
-        "name": "BYBIT",
-        "expected_result": [
-            FutureEntry(
-                "BTC/USD",
-                2589900000000,
-                1692982428,
-                "BYBIT",
-                PUBLISHER_NAME,
-                0,
-                volume=float(421181110),
-            ),
-            FutureEntry(
-                "ETH/USD",
-                164025000000,
-                1692982480,
-                "BYBIT",
-                PUBLISHER_NAME,
-                0,
-                volume=float(56108213),
-            ),
-        ],
-    },
-}
-
-ONCHAIN_FETCHER_CONFIGS = {
-    "GeckoTerminalFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "gecko.json",
-        "fetcher_class": GeckoTerminalFetcher,
-        "name": "GeckoTerminal",
-        "expected_result": [
-            SpotEntry(
-                "R/USD",
-                98898157,
-                12345,
-                "GECKOTERMINAL",
-                PUBLISHER_NAME,
-                volume=1264558.5626824791626951720608214185,
-            ),
-            SpotEntry(
-                "WBTC/USD",
-                2580468000000,
-                12345,
-                "GECKOTERMINAL",
-                PUBLISHER_NAME,
-                volume=90241580.528001091809493184,
-            ),
-        ],
-    },
-}
 
 # %% SPOT
 
@@ -318,6 +127,30 @@ def future_fetcher_config(request):
 
 
 @pytest.fixture
+def other_mock_endpoints(future_fetcher_config):
+    # fetchers such as OkxFutureFetcher and BinanceFutureFetcher
+    # have other API endpoints that must be mocked
+    fetcher = future_fetcher_config["fetcher_class"](
+        SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
+    )
+    other_mock_fns = future_fetcher_config.get("other_mock_fns", {})
+    if not other_mock_fns:
+        return []
+
+    responses = []
+    for asset in SAMPLE_FUTURE_ASSETS:
+        quote_asset = asset["pair"][0]
+        for mock_fn in other_mock_fns:
+            [*fn], [*val] = zip(*mock_fn.items())
+            fn, val = fn[0], val[0]
+            url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
+            with open(val["mock_file"], "r") as f:
+                mock_file = json.load(f)
+            responses.append({"url": url, "json": mock_file[quote_asset]})
+    return responses
+
+
+@pytest.fixture
 def mock_future_data(future_fetcher_config):
     with open(future_fetcher_config["mock_file"], "r") as f:
         return json.load(f)
@@ -325,7 +158,9 @@ def mock_future_data(future_fetcher_config):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
-async def test_async_future_fetcher(future_fetcher_config, mock_future_data):
+async def test_async_future_fetcher(
+    future_fetcher_config, mock_future_data, other_mock_endpoints
+):
     with aioresponses() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
@@ -338,9 +173,13 @@ async def test_async_future_fetcher(future_fetcher_config, mock_future_data):
             url = fetcher.format_url(quote_asset, base_asset)
             mock.get(url, status=200, payload=mock_future_data[quote_asset])
 
+        if other_mock_endpoints:
+            for e in other_mock_endpoints:
+                mock.get(e["url"], status=200, payload=e["json"])
+
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
-        print(result)
+
         assert result == future_fetcher_config["expected_result"]
 
 
@@ -372,8 +211,10 @@ async def test_async_future_fetcher_404_error(future_fetcher_config):
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
-def test_future_fetcher_sync_success(future_fetcher_config, mock_future_data):
-    with requests_mock.Mocker() as m:
+def test_future_fetcher_sync_success(
+    future_fetcher_config, mock_future_data, other_mock_endpoints
+):
+    with requests_mock.Mocker() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
         )
@@ -383,7 +224,11 @@ def test_future_fetcher_sync_success(future_fetcher_config, mock_future_data):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, json=mock_future_data[quote_asset])
+            mock.get(url, json=mock_future_data[quote_asset])
+
+        if other_mock_endpoints:
+            for e in other_mock_endpoints:
+                mock.get(e["url"], json=e["json"])
 
         result = fetcher.fetch_sync()
 
