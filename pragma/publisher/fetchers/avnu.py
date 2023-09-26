@@ -105,7 +105,6 @@ class AvnuFetcher(PublisherInterfaceT):
             base_token=address_1,
             sell_amount=hex(10**decimals),
         )
-        print(url)
 
         resp = requests.get(url, headers=self.headers)
         if resp.status_code == 500:
@@ -153,6 +152,20 @@ class AvnuFetcher(PublisherInterfaceT):
         )
         return url
 
+    async def format_url_async(self, quote_asset, base_asset):
+        address_0 = ASSET_MAPPING.get(quote_asset)
+        address_1 = ASSET_MAPPING.get(base_asset)
+        if address_0 is None or address_1 is None:
+            return PublisherFetchError(
+                f"Unknown price pair, do not know how to query AVNU for {quote_asset}/{base_asset}"
+            )
+
+        decimals = await self._fetch_decimals(address_0)
+        url = self.BASE_URL.format(
+            quote_token=address_0, base_token=address_1, sell_amount=hex(10**decimals)
+        )
+        return url
+
     # TODO: Aggregate DEXs data based on liquidity/volume data
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
@@ -168,7 +181,6 @@ class AvnuFetcher(PublisherInterfaceT):
 
         # Aggregate mid prices
         price = sum(mid_prices) / len(mid_prices)
-        print(mid_prices, price)
         price_int = int(price * (10 ** asset["decimals"]))
 
         timestamp = int(time.time())

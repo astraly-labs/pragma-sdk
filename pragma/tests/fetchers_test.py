@@ -44,7 +44,14 @@ async def test_async_fetcher(fetcher_config, mock_data):
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
+
+            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
+            if fetcher_config['name'] == "AVNU":
+                mock.get(url, status=200, payload=mock_data[quote_asset])
+                url = await fetcher.format_url_async(quote_asset, base_asset)
+            else:
+                url = fetcher.format_url(quote_asset, base_asset)
+            
             mock.get(url, status=200, payload=mock_data[quote_asset])
 
         async with aiohttp.ClientSession() as session:
@@ -60,7 +67,11 @@ async def test_async_fetcher_404_error(fetcher_config):
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
+            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
+            if fetcher_config['name'] == "AVNU":
+                url = await fetcher.format_url_async(quote_asset, base_asset)
+            else:
+                url = fetcher.format_url(quote_asset, base_asset)
             mock.get(url, status=404)
 
         async with aiohttp.ClientSession() as session:
@@ -87,7 +98,6 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            print(url)
             m.get(url, json=mock_data[quote_asset])
 
         result = fetcher.fetch_sync()
