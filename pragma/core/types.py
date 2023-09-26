@@ -8,7 +8,6 @@ from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import str_to_felt
 
-
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

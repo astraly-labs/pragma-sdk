@@ -12,7 +12,6 @@ from pragma.tests.constants import (
     SAMPLE_FUTURE_ASSETS,
     SAMPLE_ONCHAIN_ASSETS,
 )
-
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,

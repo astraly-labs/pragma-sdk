@@ -1,0 +1,102 @@
+{
+	"BTC": [
+		{
+			"sellTokenAddress": "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+			"sellAmount": "0x5f5e100",
+			"sellAmountInUsd": 26234.0,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0xc0f1fc264f98b00000",
+			"buyAmountInUsd": 3558.4004,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4073b",
+			"sourceName": "JediSwap",
+			"priceRatioUsd": -8643.592
+		},
+		{
+			"sellTokenAddress": "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+			"sellAmount": "0x5f5e100",
+			"sellAmountInUsd": 26234.0,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x8638ca7fec3fa00000",
+			"buyAmountInUsd": 2475.3914,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4073b",
+			"sourceName": "10kSwap",
+			"priceRatioUsd": -9056.419
+		},
+		{
+			"sellTokenAddress": "0x3fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+			"sellAmount": "0x5f5e100",
+			"sellAmountInUsd": 26234.0,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x600198a862a40c000",
+			"buyAmountInUsd": 110.662415,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4073b",
+			"sourceName": "SithSwap",
+			"priceRatioUsd": -9957.817
+		}
+	],
+	"ETH": [
+		{
+			"sellTokenAddress": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+			"sellAmount": "0xde0b6b3a7640000",
+			"sellAmountInUsd": 1589.13,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x5603391b2159400000",
+			"buyAmountInUsd": 1585.7843,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4072a",
+			"sourceName": "Ekubo",
+			"priceRatioUsd": -21.05371
+		},
+		{
+			"sellTokenAddress": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+			"sellAmount": "0xde0b6b3a7640000",
+			"sellAmountInUsd": 1589.13,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x55767d901dc7700000",
+			"buyAmountInUsd": 1575.649,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4072a",
+			"sourceName": "JediSwap",
+			"priceRatioUsd": -84.83203
+		},
+		{
+			"sellTokenAddress": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+			"sellAmount": "0xde0b6b3a7640000",
+			"sellAmountInUsd": 1589.13,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x55438299df1ec40000",
+			"buyAmountInUsd": 1571.9775,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4072a",
+			"sourceName": "MySwap",
+			"priceRatioUsd": -107.93652
+		},
+		{
+			"sellTokenAddress": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+			"sellAmount": "0xde0b6b3a7640000",
+			"sellAmountInUsd": 1589.13,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x55345f186ea6440000",
+			"buyAmountInUsd": 1570.8873,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4072a",
+			"sourceName": "10kSwap",
+			"priceRatioUsd": -114.796875
+		},
+		{
+			"sellTokenAddress": "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+			"sellAmount": "0xde0b6b3a7640000",
+			"sellAmountInUsd": 1589.13,
+			"buyTokenAddress": "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+			"buyAmount": "0x542f059b72ca200000",
+			"buyAmountInUsd": 1552.0653,
+			"chainId": "0x534e5f4d41494e",
+			"blockNumber": "0x4072a",
+			"sourceName": "SithSwap",
+			"priceRatioUsd": -233.23926
+		}
+	]
+}
