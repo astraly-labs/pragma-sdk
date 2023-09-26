@@ -14,6 +14,7 @@ from pragma.core.mixins import (
 )
 from pragma.core.types import (
     CHAIN_IDS,
+    CHAIN_ID_TO_NETWORK,
     CONTRACT_ADDRESSES,
     ContractAddresses,
     get_client_from_network,
@@ -45,19 +46,21 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
         """
-        self.network = network
 
         self.client = get_client_from_network(network, port=port)
+        
+        chain_id = self.client.get_chain_id()
+        self.network = CHAIN_ID_TO_NETWORK.get(chain_id, "testnet")
 
         if account_contract_address and account_private_key:
             self._setup_account_client(
-                CHAIN_IDS[network],
+                CHAIN_IDS[self.network],
                 account_private_key,
                 account_contract_address,
             )
 
         if not contract_addresses_config:
-            contract_addresses_config = CONTRACT_ADDRESSES[network]
+            contract_addresses_config = CONTRACT_ADDRESSES[self.network]
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 

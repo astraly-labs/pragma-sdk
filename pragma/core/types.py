@@ -32,6 +32,8 @@ CHAIN_IDS = {
     PRAGMA_TESTNET: 8908953246943201047421899664489,
 }
 
+CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
+
 STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
     TESTNET: "https://testnet.starkscan.co",
