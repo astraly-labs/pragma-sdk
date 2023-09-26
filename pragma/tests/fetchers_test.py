@@ -87,6 +87,7 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
+            print(url)
             m.get(url, json=mock_data[quote_asset])
 
         result = fetcher.fetch_sync()

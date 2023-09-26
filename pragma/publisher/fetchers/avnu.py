@@ -5,6 +5,8 @@ from typing import Dict, List
 
 import requests
 from aiohttp import ClientSession
+from starknet_py.hash.selector import get_selector_from_name
+from starknet_py.net.client_models import Call
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.client import PragmaClient
@@ -17,17 +19,19 @@ logger = logging.getLogger(__name__)
 # TODO: Is there a better way ?
 ASSET_MAPPING: Dict[str, str] = {
     "ETH": "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    "USDC": "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    "USDC": "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
+    "USD": "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",  # FIXME: Unsafe
     "USDT": "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
     "DAI": "0x00da114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
     "WBTC": "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",
+    "BTC": "0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac",  # FIXME: Unsafe
     "WSTETH": "0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2",
     "LORDS": "0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
 }
 
 
 class AvnuFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://starknet.api.avnu.fi/webjars/swagger-ui/index.html#/Swap/getPrices?sellTokenAddress={quote_token}&buyTokenAddress={base_token}&sellAmount={sell_amount}"
+    BASE_URL: str = "https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={quote_token}&buyTokenAddress={base_token}&sellAmount={sell_amount}"
 
     SOURCE: str = "AVNU"
     headers = {
@@ -45,10 +49,6 @@ class AvnuFetcher(PublisherInterfaceT):
     ) -> SpotEntry:
         pair = asset["pair"]
 
-        # TODO: Not safe enough
-        if pair[1] == "USD":
-            pair[1] = "USDC"
-
         address_0 = ASSET_MAPPING.get(pair[0])
         address_1 = ASSET_MAPPING.get(pair[1])
         if address_0 is None or address_1 is None:
@@ -60,7 +60,7 @@ class AvnuFetcher(PublisherInterfaceT):
         if pair[1] == "EUR":
             return PublisherFetchError(f"Base asset not supported : {pair[1]}")
 
-        decimals = self._fetch_decimals(address_0, sync=False)
+        decimals = await self._fetch_decimals(address_0)
         url = self.BASE_URL.format(
             quote_token=address_0,
             base_token=address_1,
@@ -72,6 +72,12 @@ class AvnuFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"Internal Server Error for {'/'.join(pair)} from AVNU"
                 )
+
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from AVNU"
+                )
+
             result = await resp.json()
             if len(result) == 0:
                 return PublisherFetchError(
@@ -81,10 +87,6 @@ class AvnuFetcher(PublisherInterfaceT):
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
-
-        # TODO: Not safe enough
-        if pair[1] == "USD":
-            pair[1] = "USDC"
 
         address_0 = ASSET_MAPPING.get(pair[0])
         address_1 = ASSET_MAPPING.get(pair[1])
@@ -97,18 +99,21 @@ class AvnuFetcher(PublisherInterfaceT):
         if pair[1] == "EUR":
             return PublisherFetchError(f"Base asset not supported : {pair[1]}")
 
-        decimals = self._fetch_decimals(address_0, sync=True)
+        decimals = self._fetch_decimals_sync(address_0)
         url = self.BASE_URL.format(
             quote_token=address_0,
             base_token=address_1,
             sell_amount=hex(10**decimals),
         )
+        print(url)
 
         resp = requests.get(url, headers=self.headers)
         if resp.status_code == 500:
             return PublisherFetchError(
                 f"Internal Server Error for {'/'.join(pair)} from AVNU"
             )
+        if resp.status_code == 404:
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from AVNU")
 
         result = resp.json()
         if len(result) == 0:
@@ -142,7 +147,7 @@ class AvnuFetcher(PublisherInterfaceT):
                 f"Unknown price pair, do not know how to query AVNU for {quote_asset}/{base_asset}"
             )
 
-        decimals = self._fetch_decimals(address_0, sync=False)
+        decimals = self._fetch_decimals_sync(address_0)
         url = self.BASE_URL.format(
             quote_token=address_0, base_token=address_1, sell_amount=hex(10**decimals)
         )
@@ -154,15 +159,16 @@ class AvnuFetcher(PublisherInterfaceT):
 
         mid_prices = []
         for dex in result:
-            sell_amount_in_usd = float(result["sellAmountInUsd"])
-            buy_amount_in_usd = float(result["buyAmountInUsd"])
+            sell_amount_in_usd = float(dex["sellAmountInUsd"])
+            # buy_amount_in_usd = float(dex["buyAmountInUsd"])
 
             # Take the mid price
-            mid_price = float((sell_amount_in_usd + buy_amount_in_usd) / 2)
-            mid_prices.append(mid_price)
+            # mid_price = float((sell_amount_in_usd + buy_amount_in_usd) / 2)
+            mid_prices.append(sell_amount_in_usd)
 
         # Aggregate mid prices
         price = sum(mid_prices) / len(mid_prices)
+        print(mid_prices, price)
         price_int = int(price * (10 ** asset["decimals"]))
 
         timestamp = int(time.time())
@@ -178,7 +184,7 @@ class AvnuFetcher(PublisherInterfaceT):
             publisher=self.publisher,
         )
 
-    async def _fetch_decimals(self, address: str, sync=False) -> int:
+    async def _fetch_decimals(self, address: str) -> int:
         pragma_client = PragmaClient(network="mainnet")
 
         # Create a call to function "decimals" at address `address`
@@ -189,9 +195,21 @@ class AvnuFetcher(PublisherInterfaceT):
         )
 
         # Pass the created call to Client.call_contract
-        if sync:
-            [decimals] = pragma_client.client.call_contract_sync(call)
-        else:
-            [decimals] = await pragma_client.client.call_contract(call)
+        [decimals] = await pragma_client.client.call_contract(call)
+
+        return decimals
+
+    def _fetch_decimals_sync(self, address: str) -> int:
+        pragma_client = PragmaClient(network="mainnet")
+
+        # Create a call to function "decimals" at address `address`
+        call = Call(
+            to_addr=address,
+            selector=get_selector_from_name("decimals"),
+            calldata=[],
+        )
+
+        # Pass the created call to Client.call_contract
+        [decimals] = pragma_client.client.call_contract_sync(call)
 
         return decimals
