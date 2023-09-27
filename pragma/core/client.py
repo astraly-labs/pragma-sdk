@@ -48,7 +48,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         """
 
         self.client = get_client_from_network(network, port=port)
-        
+
         chain_id = self.client.get_chain_id()
         self.network = CHAIN_ID_TO_NETWORK.get(chain_id, "testnet")
 
