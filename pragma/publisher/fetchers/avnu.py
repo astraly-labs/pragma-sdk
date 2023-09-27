@@ -49,23 +49,7 @@ class AvnuFetcher(PublisherInterfaceT):
     ) -> SpotEntry:
         pair = asset["pair"]
 
-        address_0 = ASSET_MAPPING.get(pair[0])
-        address_1 = ASSET_MAPPING.get(pair[1])
-        if address_0 is None or address_1 is None:
-            return PublisherFetchError(
-                f"Unknown price pair, do not know how to query AVNU for {pair}"
-            )
-
-        # Not supported because there is no EUR stablecoin on Starknet
-        if pair[1] == "EUR":
-            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
-
-        decimals = await self._fetch_decimals(address_0)
-        url = self.BASE_URL.format(
-            quote_token=address_0,
-            base_token=address_1,
-            sell_amount=hex(10**decimals),
-        )
+        url = await self.format_url_async(pair[0], pair[1])
 
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 500:
@@ -196,9 +180,10 @@ class AvnuFetcher(PublisherInterfaceT):
             publisher=self.publisher,
         )
 
-    async def _fetch_decimals(self, address: str) -> int:
-        pragma_client = PragmaClient(network="mainnet")
+    def _pragma_client(self):
+        return PragmaClient(network="mainnet")
 
+    async def _fetch_decimals(self, address: str) -> int:
         # Create a call to function "decimals" at address `address`
         call = Call(
             to_addr=address,
@@ -207,8 +192,7 @@ class AvnuFetcher(PublisherInterfaceT):
         )
 
         # Pass the created call to Client.call_contract
-        [decimals] = await pragma_client.client.call_contract(call)
-
+        [decimals] = await self._pragma_client().client.call_contract(call)
         return decimals
 
     def _fetch_decimals_sync(self, address: str) -> int:

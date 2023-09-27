@@ -87,5 +87,5 @@ def run_devnet() -> Generator[str, None, None]:
     Runs devnet instance once per module and returns it's address.
     """
     devnet_port, proc = start_devnet()
-    yield f"http://localhost:{devnet_port}"
+    yield f"http://127.0.0.1:{devnet_port}"
     proc.kill()
