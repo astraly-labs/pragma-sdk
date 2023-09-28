@@ -4,8 +4,7 @@ from urllib.parse import urlparse
 
 import pytest
 import pytest_asyncio
-import requests_mock
-from aioresponses import aioresponses
+
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.client_errors import ClientError
@@ -325,12 +324,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
 
 
 def test_client_with_http_network():
-    with aioresponses() as mock:
-        mock.post(
-            url="http://test.rpc/rpc",
-            payload={"id": 1, "jsonrpc": "2.0", "result": "0x534e5f474f45524c49"},
-        )
-        client = PragmaClient(
-            network="http://test.rpc/rpc",
-        )
-        assert client.network == "testnet"
+    client = PragmaClient(
+        network="http://test.rpc/rpc",
+        chain_name="testnet"
+    )
+    assert client.network == "testnet"

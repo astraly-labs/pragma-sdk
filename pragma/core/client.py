@@ -38,6 +38,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
+        chain_name: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -46,11 +47,11 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
+        :param chain_name: A str-representation of the chain if a URL string is given for `network`.
+            Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
         self.client: FullNodeClient = get_client_from_network(network, port=port)
-        chain_id = self.client.get_chain_id_sync()
-        self.network = hex_to_chain_id(chain_id)
-
+        self.network = network if not network.startswith("http") else chain_name
         if account_contract_address and account_private_key:
             self._setup_account_client(
                 CHAIN_IDS[self.network],
