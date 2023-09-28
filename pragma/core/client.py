@@ -19,7 +19,6 @@ from pragma.core.types import (
     ContractAddresses,
     get_client_from_network,
 )
-from pragma.core.utils import hex_to_chain_id
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
