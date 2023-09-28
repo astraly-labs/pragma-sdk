@@ -196,8 +196,6 @@ class AvnuFetcher(PublisherInterfaceT):
         return decimals
 
     def _fetch_decimals_sync(self, address: str) -> int:
-        pragma_client = PragmaClient(network="mainnet")
-
         # Create a call to function "decimals" at address `address`
         call = Call(
             to_addr=address,
@@ -206,6 +204,6 @@ class AvnuFetcher(PublisherInterfaceT):
         )
 
         # Pass the created call to Client.call_contract
-        [decimals] = pragma_client.client.call_contract_sync(call)
+        [decimals] = self._pragma_client().client.call_contract_sync(call)
 
         return decimals

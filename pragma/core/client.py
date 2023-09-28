@@ -13,8 +13,8 @@ from pragma.core.mixins import (
     TransactionMixin,
 )
 from pragma.core.types import (
-    CHAIN_IDS,
     CHAIN_ID_TO_NETWORK,
+    CHAIN_IDS,
     CONTRACT_ADDRESSES,
     ContractAddresses,
     get_client_from_network,
@@ -49,7 +49,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
 
         self.client = get_client_from_network(network, port=port)
 
-        chain_id = self.client.get_chain_id()
+        chain_id = self.client.get_chain_id_sync()
         self.network = CHAIN_ID_TO_NETWORK.get(chain_id, "testnet")
 
         if account_contract_address and account_private_key:
