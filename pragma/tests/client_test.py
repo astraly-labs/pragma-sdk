@@ -4,9 +4,9 @@ from urllib.parse import urlparse
 
 import pytest
 import pytest_asyncio
-from starknet_py.cairo.felt import decode_shortstring
+import requests_mock
+from aioresponses import aioresponses
 from starknet_py.contract import Contract, DeclareResult, DeployResult
-from starknet_py.hash.storage import get_storage_var_address
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.client_errors import ClientError
 
@@ -14,17 +14,9 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
-from pragma.publisher.client import PragmaPublisherClient
-from pragma.publisher.fetchers import CexFetcher
 from pragma.tests.constants import (
     CURRENCIES,
-    DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
-    DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
-    MOCK_COMPILED_DIR,
     PAIRS,
-    SAMPLE_ASSETS,
-    U128_MAX,
-    U256_MAX,
 )
 from pragma.tests.utils import read_contract
 
@@ -105,7 +97,6 @@ async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
 # pylint: disable=redefined-outer-name
 async def pragma_client(
     contracts: (Contract, Contract),
-    account: BaseAccount,
     network,
     address_and_private_key: Tuple[str, str],
 ) -> PragmaClient:
@@ -331,3 +322,15 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
     assert res.num_sources_aggregated == 2
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
+
+
+def test_client_with_http_network():
+    with aioresponses() as mock:
+        mock.post(
+            url="http://test.rpc/rpc",
+            payload={"id": 1, "jsonrpc": "2.0", "result": "0x534e5f474f45524c49"},
+        )
+        client = PragmaClient(
+            network="http://test.rpc/rpc",
+        )
+        assert client.network == "testnet"

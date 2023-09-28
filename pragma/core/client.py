@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from starknet_py.net.account.account import Account
+from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.abis import ABIS
@@ -18,6 +19,7 @@ from pragma.core.types import (
     ContractAddresses,
     get_client_from_network,
 )
+from pragma.core.utils import hex_to_chain_id
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -45,19 +47,19 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
         """
-        self.network = network
-
-        self.client = get_client_from_network(network, port=port)
+        self.client: FullNodeClient = get_client_from_network(network, port=port)
+        chain_id = self.client.get_chain_id_sync()
+        self.network = hex_to_chain_id(chain_id)
 
         if account_contract_address and account_private_key:
             self._setup_account_client(
-                CHAIN_IDS[network],
+                CHAIN_IDS[self.network],
                 account_private_key,
                 account_contract_address,
             )
 
         if not contract_addresses_config:
-            contract_addresses_config = CONTRACT_ADDRESSES[network]
+            contract_addresses_config = CONTRACT_ADDRESSES[self.network]
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 

@@ -1,6 +1,5 @@
 import logging
 
-from starknet_py.net.full_node_client import FullNodeClient
 
 logger = logging.getLogger(__name__)
 
@@ -36,3 +35,12 @@ def pair_id_for_asset(asset):
         asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
     )
     return pair_id
+
+
+def hex_to_chain_id(hex):
+    hex = hex.removeprefix("0x")
+    chain_id = bytes.fromhex(hex)
+    return {
+        "SN_GOERLI": "testnet",
+        "SN_MAIN": "mainnet"
+    }.get(chain_id, "testnet")
