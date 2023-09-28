@@ -1,6 +1,5 @@
 import logging
 
-from starknet_py.net.full_node_client import FullNodeClient
 
 logger = logging.getLogger(__name__)
 

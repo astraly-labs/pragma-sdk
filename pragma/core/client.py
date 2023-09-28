@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from starknet_py.net.account.account import Account
+from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.abis import ABIS
@@ -36,6 +37,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
+        chain_name: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -44,20 +46,22 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
+        :param chain_name: A str-representation of the chain if a URL string is given for `network`.
+            Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
-        self.network = network
-
-        self.client = get_client_from_network(network, port=port)
-
+        self.client: FullNodeClient = get_client_from_network(network, port=port)
+        if network.startswith("http") and chain_name is None:
+            raise Exception(f"Network provided is a URL: {network} but `chain_name` is not provided.")
+        self.network = network if not(network.startswith("http") and chain_name) else chain_name
         if account_contract_address and account_private_key:
             self._setup_account_client(
-                CHAIN_IDS[network],
+                CHAIN_IDS[self.network],
                 account_private_key,
                 account_contract_address,
             )
 
         if not contract_addresses_config:
-            contract_addresses_config = CONTRACT_ADDRESSES[network]
+            contract_addresses_config = CONTRACT_ADDRESSES[self.network]
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 
