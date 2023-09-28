@@ -324,8 +324,19 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
 
 
 def test_client_with_http_network():
-    client = PragmaClient(
+    client_with_chain_name = PragmaClient(
         network="http://test.rpc/rpc",
         chain_name="testnet"
     )
-    assert client.network == "testnet"
+    assert client_with_chain_name.network == "testnet"
+
+    client_with_chain_name_only = PragmaClient(chain_name="devnet")
+    # default value of network is testnet
+    assert client_with_chain_name_only.network == "testnet"
+
+    with pytest.raises(Exception) as e:
+        _ = PragmaClient(
+            network="http://test.rpc/rpc"
+        )
+        assert "`chain_name` is not provided" in str(e)
+
