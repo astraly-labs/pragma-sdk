@@ -8,7 +8,6 @@ from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import str_to_felt
 
-
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,6 +31,8 @@ CHAIN_IDS = {
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
 }
+
+CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
 
 STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
@@ -68,6 +69,7 @@ class ContractAddresses:
 
 
 CONTRACT_ADDRESSES = {
+    DEVNET: ContractAddresses(0, 0),
     TESTNET: ContractAddresses(
         1879860257230188794072258684440329704554817846629170083629504759694981156907,
         2771562156282025154643998054480061423405497639137376305590169894519994140346,

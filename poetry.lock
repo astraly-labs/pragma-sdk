@@ -155,13 +155,13 @@ tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "astroid"
-version = "2.15.6"
+version = "2.15.8"
 description = "An abstract syntax tree for Python with inference support."
 optional = false
 python-versions = ">=3.7.2"
 files = [
-    {file = "astroid-2.15.6-py3-none-any.whl", hash = "sha256:389656ca57b6108f939cf5d2f9a2a825a3be50ba9d589670f393236e0a03b91c"},
-    {file = "astroid-2.15.6.tar.gz", hash = "sha256:903f024859b7c7687d7a7f3a3f73b17301f8e42dfd9cc9df9d4418172d3e2dbd"},
+    {file = "astroid-2.15.8-py3-none-any.whl", hash = "sha256:1aa149fc5c6589e3d0ece885b4491acd80af4f087baafa3fb5203b113e68cd3c"},
+    {file = "astroid-2.15.8.tar.gz", hash = "sha256:6c107453dffee9055899705de3c9ead36e74119cee151e5a9aaf7f0b0e020a6a"},
 ]
 
 [package.dependencies]
@@ -383,12 +383,12 @@ files = [
 
 [[package]]
 name = "cairo-lang"
-version = "0.12.0"
+version = "0.12.2"
 description = "Compiler and runner for the Cairo language"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "cairo-lang-0.12.0.zip", hash = "sha256:9a02a079116e8595387beff46e82779fe43152269752063f6969742ee27ef105"},
+    {file = "cairo-lang-0.12.2.zip", hash = "sha256:5dc5f2ffc1f56385f56a5db526f5008830bcc8638a084812fcbff7735f7e6e43"},
 ]
 
 [package.dependencies]
@@ -396,8 +396,10 @@ aiohttp = "*"
 cachetools = "*"
 ecdsa = "*"
 eth-hash = {version = "*", extras = ["pycryptodome"]}
+execnet = "*"
 fastecdsa = "*"
 frozendict = "*"
+gprof2dot = "*"
 lark = "*"
 marshmallow = ">=3.2.1"
 marshmallow-dataclass = ">=7.1.0"
@@ -409,6 +411,8 @@ pipdeptree = "*"
 prometheus-client = "*"
 pytest = "*"
 pytest-asyncio = "*"
+pytest-profiling = "*"
+pytest-xdist = "*"
 PyYAML = "*"
 sympy = "*"
 typeguard = "<3.0.0"
@@ -1227,6 +1231,17 @@ files = [
     {file = "frozenlist-1.4.0-cp39-cp39-win32.whl", hash = "sha256:19488c57c12d4e8095a922f328df3f179c820c212940a498623ed39160bc3c2f"},
     {file = "frozenlist-1.4.0-cp39-cp39-win_amd64.whl", hash = "sha256:6221d84d463fb110bdd7619b69cb43878a11d51cbb9394ae3105d082d5199167"},
     {file = "frozenlist-1.4.0.tar.gz", hash = "sha256:09163bdf0b2907454042edb19f887c6d33806adc71fbd54afc14908bfdc22251"},
+]
+
+[[package]]
+name = "gprof2dot"
+version = "2022.7.29"
+description = "Generate a dot graph from the output of several profilers."
+optional = false
+python-versions = ">=2.7"
+files = [
+    {file = "gprof2dot-2022.7.29-py2.py3-none-any.whl", hash = "sha256:f165b3851d3c52ee4915eb1bd6cca571e5759823c2cd0f71a79bda93c2dc85d6"},
+    {file = "gprof2dot-2022.7.29.tar.gz", hash = "sha256:45b4d298bd36608fccf9511c3fd88a773f7a1abc04d6cd39445b11ba43133ec5"},
 ]
 
 [[package]]
@@ -2114,13 +2129,13 @@ testutils = ["gitpython (>3)"]
 
 [[package]]
 name = "pyright"
-version = "1.1.327"
+version = "1.1.329"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.327-py3-none-any.whl", hash = "sha256:3462cda239e9140276238bbdbd0b59d77406f1c2e14d8cb8c20c8e25639c6b3c"},
-    {file = "pyright-1.1.327.tar.gz", hash = "sha256:ba74148ad64f22020dbbed6781c4bdb38ecb8a7ca90dc3c87a4f08d1c0e11592"},
+    {file = "pyright-1.1.329-py3-none-any.whl", hash = "sha256:c16f88a7ac14ddd0513e62fec56d69c37e3c6b412161ad16aa23a9c7e3dabaf4"},
+    {file = "pyright-1.1.329.tar.gz", hash = "sha256:5baf82ff5ecb8c8b3ac400e8536348efbde0b94a09d83d5b440c0d143fd151a8"},
 ]
 
 [package.dependencies]
@@ -2240,6 +2255,25 @@ pytest = ">=5.0"
 
 [package.extras]
 dev = ["pre-commit", "pytest-asyncio", "tox"]
+
+[[package]]
+name = "pytest-profiling"
+version = "1.7.0"
+description = "Profiling plugin for py.test"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytest-profiling-1.7.0.tar.gz", hash = "sha256:93938f147662225d2b8bd5af89587b979652426a8a6ffd7e73ec4a23e24b7f29"},
+    {file = "pytest_profiling-1.7.0-py2.py3-none-any.whl", hash = "sha256:999cc9ac94f2e528e3f5d43465da277429984a1c237ae9818f8cfd0b06acb019"},
+]
+
+[package.dependencies]
+gprof2dot = "*"
+pytest = "*"
+six = "*"
+
+[package.extras]
+tests = ["pytest-virtualenv"]
 
 [[package]]
 name = "pytest-rerunfailures"
@@ -2559,17 +2593,17 @@ files = [
 
 [[package]]
 name = "starknet-devnet"
-version = "0.5.5"
+version = "0.6.3"
 description = "A local testnet for Starknet"
 optional = false
 python-versions = ">=3.9,<3.10"
 files = [
-    {file = "starknet_devnet-0.5.5-py3-none-any.whl", hash = "sha256:1c7710c887fe4c36f620297f9ac1c39b1ebaa8809e7b982089d09de274e67a2f"},
-    {file = "starknet_devnet-0.5.5.tar.gz", hash = "sha256:ccaae99ce84921f680dc6cabb6632d492860d202d154c08ff62414aab7678f97"},
+    {file = "starknet_devnet-0.6.3-py3-none-any.whl", hash = "sha256:1df586bb40096c3ddb333f2b9f05045183d1058055cedb99334ef4d85f411fa8"},
+    {file = "starknet_devnet-0.6.3.tar.gz", hash = "sha256:b31ecb9912ab092fe59c26c044719ab6cfea60b2416cdb519077e82d1f9829e0"},
 ]
 
 [package.dependencies]
-cairo-lang = "0.12.0"
+cairo-lang = "0.12.2"
 cloudpickle = ">=2.1.0,<2.2.0"
 crypto-cpp-py = ">=1.4.0,<1.5.0"
 Flask = {version = ">=2.0.3,<2.1.0", extras = ["async"]}
@@ -2579,6 +2613,7 @@ jsonschema = ">=4.17.0,<4.18.0"
 marshmallow = ">=3.17.0,<3.18.0"
 marshmallow-dataclass = ">=8.4,<8.5"
 poseidon-py = ">=0.1.3,<0.2.0"
+pyyaml = ">=6.0.1,<6.1.0"
 typing-extensions = ">=4.3.0,<4.4.0"
 web3 = ">=6.0.0,<6.1.0"
 Werkzeug = ">=2.0.3,<2.1.0"
@@ -2718,13 +2753,13 @@ typing-extensions = ">=3.7.4"
 
 [[package]]
 name = "urllib3"
-version = "2.0.4"
+version = "2.0.5"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.4-py3-none-any.whl", hash = "sha256:de7df1803967d2c2a98e4b11bb7d6bd9210474c46e8a0401514e3a42a75ebde4"},
-    {file = "urllib3-2.0.4.tar.gz", hash = "sha256:8d22f86aae8ef5e410d4f539fde9ce6b2113a001bb4d189e0aed70642d602b11"},
+    {file = "urllib3-2.0.5-py3-none-any.whl", hash = "sha256:ef16afa8ba34a1f989db38e1dbbe0c302e4289a47856990d0682e374563ce35e"},
+    {file = "urllib3-2.0.5.tar.gz", hash = "sha256:13abf37382ea2ce6fb744d4dad67838eec857c9f4f57009891805e0b5e123594"},
 ]
 
 [package.extras]
@@ -3034,4 +3069,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.10"
-content-hash = "ac7f1ed1f6c44025ab95e825b6ac53924c352492e86210b30fb405613deaf143"
+content-hash = "8bf49da115a7582319d3ce1a9394e3edab3d2a4c46cd3040dbc70211eca648ad"

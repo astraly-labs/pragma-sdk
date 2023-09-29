@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 
 import pytest
 import pytest_asyncio
-
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.client_errors import ClientError
@@ -13,10 +12,7 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
-from pragma.tests.constants import (
-    CURRENCIES,
-    PAIRS,
-)
+from pragma.tests.constants import CURRENCIES, PAIRS
 from pragma.tests.utils import read_contract
 
 PUBLISHER_NAME = "PRAGMA"
@@ -325,8 +321,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
 
 def test_client_with_http_network():
     client_with_chain_name = PragmaClient(
-        network="http://test.rpc/rpc",
-        chain_name="testnet"
+        network="http://test.rpc/rpc", chain_name="testnet"
     )
     assert client_with_chain_name.network == "testnet"
 
@@ -335,8 +330,5 @@ def test_client_with_http_network():
     assert client_with_chain_name_only.network == "testnet"
 
     with pytest.raises(Exception) as e:
-        _ = PragmaClient(
-            network="http://test.rpc/rpc"
-        )
+        _ = PragmaClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(e)
-

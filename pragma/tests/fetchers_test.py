@@ -1,27 +1,69 @@
 import json
+import subprocess
+import time
 from unittest import mock
 
 import aiohttp
 import pytest
 import requests_mock
 from aioresponses import aioresponses
+from starknet_py.net.client import Client
 
+from pragma.core.client import PragmaClient
+from pragma.publisher.fetchers.avnu import AvnuFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
     SAMPLE_ONCHAIN_ASSETS,
 )
-
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,
     ONCHAIN_FETCHER_CONFIGS,
 )
+from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
 # %% SPOT
+
+
+@pytest.fixture(scope="module")
+def forked_client(module_mocker, pytestconfig) -> Client:
+    """
+    This module-scope fixture prepares a forked starknet-dev
+    client for e2e testing.
+
+    :return: a starknet Client
+    """
+    net = pytestconfig.getoption("--net")
+    port = get_available_port()
+    command = [
+        "poetry",
+        "run",
+        "starknet-devnet",
+        "--fork-network",
+        "alpha-mainnet",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+        "--accounts",  # deploys specified number of accounts
+        str(1),
+        "--seed",  # generates same accounts each time
+        str(1),
+        *get_compiler_manifest(),
+    ]
+    subprocess.Popen(command)
+    time.sleep(10)
+    pragma_client = PragmaClient(net, port=port)
+    module_mocker.patch.object(
+        AvnuFetcher,
+        "_pragma_client",
+        return_value=pragma_client,
+    )
+    return pragma_client.client
 
 
 @pytest.fixture(params=FETCHER_CONFIGS.values())
@@ -37,15 +79,21 @@ def mock_data(fetcher_config):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
-async def test_async_fetcher(fetcher_config, mock_data):
-    with aioresponses() as mock:
+async def test_async_fetcher(fetcher_config, mock_data, forked_client):
+    # we only want to mock the external fetcher APIs and not the RPC
+    with aioresponses(passthrough=[forked_client.url]) as mock:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
+
+            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
+            if fetcher_config["name"] == "AVNU":
+                url = await fetcher.format_url_async(quote_asset, base_asset)
+            else:
+                url = fetcher.format_url(quote_asset, base_asset)
             mock.get(url, status=200, payload=mock_data[quote_asset])
 
         async with aiohttp.ClientSession() as session:
@@ -54,14 +102,18 @@ async def test_async_fetcher(fetcher_config, mock_data):
 
 
 @pytest.mark.asyncio
-async def test_async_fetcher_404_error(fetcher_config):
-    with aioresponses() as mock:
+async def test_async_fetcher_404_error(mocker, fetcher_config, forked_client):
+    with aioresponses(passthrough=[forked_client.url]) as mock:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
+            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
+            if fetcher_config["name"] == "AVNU":
+                url = await fetcher.format_url_async(quote_asset, base_asset)
+            else:
+                url = fetcher.format_url(quote_asset, base_asset)
             mock.get(url, status=404)
 
         async with aiohttp.ClientSession() as session:

@@ -14,6 +14,7 @@ from pragma.core.mixins import (
     TransactionMixin,
 )
 from pragma.core.types import (
+    CHAIN_ID_TO_NETWORK,
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
     ContractAddresses,
@@ -51,8 +52,12 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         """
         self.client: FullNodeClient = get_client_from_network(network, port=port)
         if network.startswith("http") and chain_name is None:
-            raise Exception(f"Network provided is a URL: {network} but `chain_name` is not provided.")
-        self.network = network if not(network.startswith("http") and chain_name) else chain_name
+            raise Exception(
+                f"Network provided is a URL: {network} but `chain_name` is not provided."
+            )
+        self.network = (
+            network if not (network.startswith("http") and chain_name) else chain_name
+        )
         if account_contract_address and account_private_key:
             self._setup_account_client(
                 CHAIN_IDS[self.network],

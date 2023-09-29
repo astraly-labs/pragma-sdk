@@ -1,14 +1,6 @@
 from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.publisher.fetchers.ascendex import AscendexFetcher
-from pragma.publisher.fetchers.bitstamp import BitstampFetcher
-from pragma.publisher.fetchers.cex import CexFetcher
-from pragma.publisher.fetchers.coinbase import CoinbaseFetcher
-from pragma.publisher.fetchers.defillama import DefillamaFetcher
-from pragma.publisher.fetchers.gecko import GeckoTerminalFetcher
-from pragma.publisher.fetchers.kaiko import KaikoFetcher
-from pragma.publisher.fetchers.okx import OkxFetcher
-from pragma.publisher.future_fetchers.bybit import ByBitFutureFetcher
-from pragma.publisher.future_fetchers.okx import OkxFutureFetcher
+from pragma.publisher.fetchers import *
+from pragma.publisher.future_fetchers import *
 from pragma.tests.constants import MOCK_DIR
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
@@ -133,6 +125,27 @@ FETCHER_CONFIGS = {
                 "KAIKO",
                 PUBLISHER_NAME,
                 volume=45.04710943999999,
+            ),
+        ],
+    },
+    "AvnuFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "avnu.json",
+        "fetcher_class": AvnuFetcher,
+        "name": "AVNU",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                2623400000000,
+                12345,
+                "AVNU",
+                PUBLISHER_NAME,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                158913000000,
+                12345,
+                "AVNU",
+                PUBLISHER_NAME,
             ),
         ],
     },
