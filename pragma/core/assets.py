@@ -95,34 +95,35 @@ _PRAGMA_ALL_ASSET_BY_KEY: Dict[str, PragmaAsset] = {
 }
 
 
-# TODO: Add support for option asset type
+# TODO (#000): Add support for option asset type
 def get_asset_spec_for_pair_id_by_type(
     pair_id: str, asset_type: AssetType
 ) -> PragmaAsset:
     if asset_type == "SPOT":
         return get_spot_asset_spec_for_pair_id(pair_id)
-    elif asset_type == "FUTURE":
+
+    if asset_type == "FUTURE":
         return get_future_asset_spec_for_pair_id(pair_id)
-    else:
-        raise UnsupportedAssetError("Only SPOT & FUTURE are supported for now.")
+
+    raise UnsupportedAssetError("Only SPOT & FUTURE are supported for now.")
 
 
 def get_spot_asset_spec_for_pair_id(pair_id: str) -> PragmaSpotAsset:
     try:
         return _PRAGMA_ASSET_BY_KEY[pair_id]
-    except KeyError as e:
-        raise KeyError(f"Pair ID not found {pair_id}")
+    except KeyError as exception:
+        raise KeyError(f"Pair ID not found {pair_id}") from exception
 
 
 def get_future_asset_spec_for_pair_id(pair_id: str) -> PragmaFutureAsset:
     try:
         return _PRAGMA_FUTURE_ASSET_BY_KEY[pair_id]
-    except KeyError as e:
-        raise KeyError(f"Pair ID not found {pair_id}")
+    except KeyError as exception:
+        raise KeyError(f"Pair ID not found {pair_id}") from exception
 
 
 def get_asset_spec_for_pair_id(pair_id: str) -> PragmaAsset:
     try:
         return _PRAGMA_ALL_ASSET_BY_KEY[pair_id]
-    except KeyError as e:
-        raise KeyError(f"Pair ID not found {pair_id}")
+    except KeyError as exception:
+        raise KeyError(f"Pair ID not found {pair_id}") from exception

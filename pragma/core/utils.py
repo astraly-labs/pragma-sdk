@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 def str_to_felt(text):
     if text.upper() != text:
-        logger.warning(f"Converting lower to uppercase for str_to_felt: {text}")
+        logger.warning("Converting lower to uppercase for str_to_felt: %s", text)
         text = text.upper()
     b_text = bytes(text, "utf-8")
     return int.from_bytes(b_text, "big")
@@ -13,12 +13,12 @@ def str_to_felt(text):
 
 def felt_to_str(felt):
     num_bytes = (felt.bit_length() + 7) // 8
-    bytes = felt.to_bytes(num_bytes, "big")
-    return bytes.decode("utf-8")
+    bytes_ = felt.to_bytes(num_bytes, "big")
+    return bytes_.decode("utf-8")
 
 
-def log_entry(entry, logger=logger):
-    logger.info(f"Entry: {entry.serialize()}")
+def log_entry(entry):
+    logger.info("Entry: %s", entry.serialize())
 
 
 def currency_pair_to_pair_id(quote, base):

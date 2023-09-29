@@ -1,12 +1,14 @@
 # pylint: disable=redefined-outer-name
-# Taken from starknet_py tests : https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
+"""
+Taken from starknet_py tests :
+https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
+"""
 
 import sys
 from typing import List, Tuple
 
 import pytest
 import pytest_asyncio
-from starknet_py.contract import Contract
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
 from starknet_py.net.account.base_account import BaseAccount

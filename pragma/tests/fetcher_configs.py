@@ -1,3 +1,4 @@
+# pylint: disable=wildcard-import, unused-wildcard-import
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.publisher.fetchers import *
 from pragma.publisher.future_fetchers import *
@@ -185,8 +186,8 @@ FUTURE_FETCHER_CONFIGS = {
             {
                 "format_expiry_timestamp_url": {
                     "kwargs": {
-                        "BTC": {"id": "BTC-USD-230922"},
-                        "ETH": {"id": "ETH-USD-230922"},
+                        "BTC": {"instrument_id": "BTC-USD-230922"},
+                        "ETH": {"instrument_id": "ETH-USD-230922"},
                     },
                     "mock_file": MOCK_DIR
                     / "responses"
@@ -197,8 +198,8 @@ FUTURE_FETCHER_CONFIGS = {
             {
                 "format_expiry_timestamp_url": {
                     "kwargs": {
-                        "BTC": {"id": "BTC-USD-230929"},
-                        "ETH": {"id": "ETH-USD-230929"},
+                        "BTC": {"instrument_id": "BTC-USD-230929"},
+                        "ETH": {"instrument_id": "ETH-USD-230929"},
                     },
                     "mock_file": MOCK_DIR
                     / "responses"

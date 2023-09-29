@@ -7,12 +7,12 @@ from starknet_py.net.client_models import TransactionReceipt, TransactionStatus
 class NonceMixin:
     client: Client
     account_contract_address: Optional[int]
-    nonce_status: Dict[int, TransactionStatus] = dict()
-    nonce_dict: Dict[int, int] = dict()
+    nonce_status: Dict[int, TransactionStatus] = {}
+    nonce_dict: Dict[int, int] = {}
     pending_nonce: Optional[int] = None
 
     async def _get_nonce(self) -> int:
-        self.update_nonce_dict()
+        await self.update_nonce_dict()
         self.cleanup_nonce_dict()
 
         if self.pending_nonce:

@@ -59,7 +59,7 @@ class CoinbaseFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Coinbase for non-spot asset {asset}")
+                logger.debug("Skipping Coinbase for non-spot asset %s", asset)
                 continue
 
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
@@ -69,7 +69,7 @@ class CoinbaseFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Coinbase for non-spot asset {asset}")
+                logger.debug("Skipping Coinbase for non-spot asset %s", asset)
                 continue
 
             entries.append(self._fetch_pair_sync(asset))
@@ -89,7 +89,7 @@ class CoinbaseFetcher(PublisherInterfaceT):
             price_int = int(price * (10 ** asset["decimals"]))
             timestamp = int(time.time())
 
-            logger.info(f"Fetched price {price} for {pair_id} from Coinbase")
+            logger.info("Fetched price %d for %s from Coinbase", price, pair_id)
 
             return SpotEntry(
                 pair_id=pair_id,

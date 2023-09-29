@@ -23,9 +23,9 @@ class OkxFutureFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
 
-    async def fetch_expiry_timestamp(self, asset, id, session):
+    async def fetch_expiry_timestamp(self, asset, instrument_id, session):
         pair = asset["pair"]
-        url = self.format_expiry_timestamp_url(id)
+        url = self.format_expiry_timestamp_url(instrument_id)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -41,12 +41,12 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 )
             return result["data"][0]["expTime"]
 
-    def format_expiry_timestamp_url(self, id):
-        return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={id}"
+    def format_expiry_timestamp_url(self, instrument_id):
+        return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-    def fetch_sync_expiry_timestamp(self, asset, id):
+    def fetch_sync_expiry_timestamp(self, asset, instrument_id):
         pair = asset["pair"]
-        url = self.format_expiry_timestamp_url(id)
+        url = self.format_expiry_timestamp_url(instrument_id)
         resp = requests.get(url)
         if resp.status_code == 404:
             return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
@@ -118,11 +118,11 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 )
         return future_entries
 
-    def fetch_sync(self):
+    def fetch_sync(self) -> List[Union[FutureEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping OKX for non-future asset {asset}")
+                logger.debug("Skipping OKX for non-future asset %s", asset)
                 continue
             future_entries = self._fetch_pair_sync(asset)
             if isinstance(future_entries, list):
@@ -131,11 +131,13 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 entries.append(future_entries)
         return entries
 
-    async def fetch(self, session: ClientSession):
+    async def fetch(
+        self, session: ClientSession
+    ) -> List[Union[FutureEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping OKX for non-future asset {asset}")
+                logger.debug("Skipping OKX for non-future asset %s", asset)
                 continue
             future_entries = await self._fetch_pair(asset, session)
             if isinstance(future_entries, list):
@@ -144,7 +146,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
                 entries.append(future_entries)
         return entries
 
-    def format_url(self, quote_asset, base_asset):
+    def format_url(self, quote_asset, base_asset) -> str:
         url = f"{self.BASE_URL}?instType=FUTURES&uly={quote_asset}-{base_asset}"
         return url
 
@@ -155,7 +157,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
-        logger.info(f"Fetched future for {'/'.join(pair)} from OKX")
+        logger.info("Fetched future for %s from OKX", '/'.join(pair))
 
         return FutureEntry(
             pair_id=pair_id,

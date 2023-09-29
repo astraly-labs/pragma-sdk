@@ -101,7 +101,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping {self.SOURCE} for non-spot asset {asset}")
+                logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -110,13 +110,13 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping {self.SOURCE} for non-spot asset {asset}")
+                logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
 
     def format_url(self, quote_asset, base_asset):
-        pool = ASSET_MAPPING.get(quote_asset)
+        pool = ASSET_MAPPING[quote_asset]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
@@ -131,7 +131,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
 
         pair_id = currency_pair_to_pair_id(*pair)
-        logger.info(f"Fetched price {price} for {pair_id} from GeckoTerminal")
+        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair_id)
 
         return SpotEntry(
             pair_id=pair_id,

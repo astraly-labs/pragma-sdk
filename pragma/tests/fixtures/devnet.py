@@ -1,4 +1,7 @@
-# Taken from https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
+"""
+Taken from
+https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
+"""
 
 import os
 import socket
@@ -54,7 +57,7 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
         "run",
         "starknet-devnet",
         "--host",
-        "localhost",
+        "127.0.0.1",
         "--port",
         str(devnet_port),
         "--accounts",  # deploys specified number of accounts

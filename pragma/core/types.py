@@ -1,5 +1,4 @@
 import logging
-import os
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 ADDRESS = int
-HEX_STR = str
+HEX_STR = str  # pylint: disable=invalid-name
 
 # Network Types
 DEVNET = "devnet"
@@ -56,6 +55,7 @@ def get_rpc_url(network=TESTNET, port=5050):
         return "https://testnet.pragmaoracle.com/rpc"
     if network == DEVNET:
         return f"http://127.0.0.1:{port}/rpc"
+    raise ClientException("Must provide a network name or an RPC URL.")
 
 
 def get_client_from_network(network: str, port=5050):
@@ -99,19 +99,19 @@ class Currency:
 
     def __init__(
         self,
-        id,
+        id_,
         decimals,
         is_abstract_currency,
         starknet_address=None,
         ethereum_address=None,
     ):
-        if type(id) == str:
-            id = str_to_felt(id)
-        self.id = id
+        if isinstance(id_, str):
+            id_ = str_to_felt(id_)
+        self.id = id_  # pylint: disable=invalid-name
 
         self.decimals = decimals
 
-        if type(is_abstract_currency) == int:
+        if isinstance(is_abstract_currency, int):
             is_abstract_currency = bool(is_abstract_currency)
         self.is_abstract_currency = is_abstract_currency
 
@@ -143,20 +143,20 @@ class Currency:
 
 
 class Pair:
-    id: int
+    id_: int
     quote_currency_id: int
     base_currency_id: int
 
-    def __init__(self, id, quote_currency_id, base_currency_id):
-        if type(id) == str:
-            id = str_to_felt(id)
-        self.id = id
+    def __init__(self, id_, quote_currency_id, base_currency_id):
+        if isinstance(id_, str):
+            id_ = str_to_felt(id_)
+        self.id = id_  # pylint: disable=invalid-name
 
-        if type(quote_currency_id) == str:
+        if isinstance(quote_currency_id, str):
             quote_currency_id = str_to_felt(quote_currency_id)
         self.quote_currency_id = quote_currency_id
 
-        if type(base_currency_id) == str:
+        if isinstance(base_currency_id, str):
             base_currency_id = str_to_felt(base_currency_id)
         self.base_currency_id = base_currency_id
 
@@ -180,7 +180,7 @@ class DataType:
     expiration_timestamp: Optional[int]
 
     def __init__(self, data_type, pair_id, expiration_timestamp):
-        if type(pair_id) == str:
+        if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
             raise TypeError(
@@ -196,16 +196,18 @@ class DataType:
             return {"SpotEntry": self.pair_id}
         if self.data_type == DataTypes.FUTURE:
             return {"FutureEntry": (self.pair_id, self.expiration_timestamp)}
+        return {}
 
     def to_dict(self) -> dict:
         return {
-            "pair_id": self.id,
+            "pair_id": self.pair_id,
             "expiration_timestamp": self.expiration_timestamp,
             "data_type": self.data_type.name,
         }
 
 
-class UnsupportedAssetError:
+
+class BasePragmaException(Exception):
     message: str
 
     def __init__(self, message: str):
@@ -213,3 +215,11 @@ class UnsupportedAssetError:
 
     def serialize(self):
         return self.message
+
+
+class UnsupportedAssetError(BasePragmaException):
+    pass
+
+
+class ClientException(BasePragmaException):
+    pass

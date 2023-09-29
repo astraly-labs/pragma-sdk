@@ -110,7 +110,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping Binance for non-future asset {asset}")
+                logger.debug("Skipping Binance for non-future asset %s", asset)
                 continue
             future_entries = self._fetch_pair_sync(asset)
             if isinstance(future_entries, list):
@@ -123,7 +123,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping Binance for non-future asset {asset}")
+                logger.debug("Skipping Binance for non-future asset %s", asset)
                 continue
             future_entries = await self._fetch_pair(asset, session)
             if isinstance(future_entries, list):
@@ -135,7 +135,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         return self.BASE_URL
 
-    def retrieve_volume(self, asset, volume_arr):
+    def retrieve_volume(self, asset, volume_arr):  # pylint: disable=no-self-use
         for list_asset, list_vol in volume_arr:
             if asset == list_asset:
                 return list_vol
@@ -143,17 +143,14 @@ class BinanceFutureFetcher(PublisherInterfaceT):
 
     def _construct(self, asset, result, volume_arr) -> List[FutureEntry]:
         pair = asset["pair"]
-        result_len = len(result)
-        selection = f"{pair[0]}{pair[1]}"
         result_arr = []
-        for i in range(0, result_len):
-            data = result[i]
+        for data in result:
             timestamp = int(data["time"])
             price = float(data["markPrice"])
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
             volume = float(self.retrieve_volume(data["symbol"], volume_arr))
-            if data["symbol"] == selection:
+            if data["symbol"] == f"{pair[0]}{pair[1]}":
                 expiry_timestamp = 0
             else:
                 date_arr = data["symbol"].split("_")

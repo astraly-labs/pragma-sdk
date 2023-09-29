@@ -1,17 +1,16 @@
 import logging
+from sys import stdout
 
 logger = logging.getLogger(__name__)
 
 
 def get_stream_logger():
-    import sys
-
     logger.setLevel(logging.DEBUG)
-    streamHandler = logging.StreamHandler(sys.stdout)
+    stream_handler = logging.StreamHandler(stdout)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    streamHandler.setFormatter(formatter)
-    logger.addHandler(streamHandler)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
 
     return logger

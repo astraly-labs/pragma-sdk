@@ -28,7 +28,9 @@ class TheGraphFetcher(PublisherInterfaceT):
     ) -> GenericEntry:
         if asset["source"] == "AAVE":
             url_slug = "aave/protocol-v2"
-            query = f"query {{reserves(where: {{id: \"{asset['detail']['asset_address']}\"}}) {{name isActive isFrozen {asset['detail']['metric']}}}}}"
+            query = (f"query "
+                     f"{{reserves(where: {{id: \"{asset['detail']['asset_address']}\"}}) "
+                     f"{{name isActive isFrozen {asset['detail']['metric']}}}}}")
             input_decimals = 27
         else:
             raise ValueError(
@@ -46,7 +48,9 @@ class TheGraphFetcher(PublisherInterfaceT):
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> GenericEntry:
         if asset["source"] == "AAVE":
             url_slug = "aave/protocol-v2"
-            query = f"query {{reserves(where: {{id: \"{asset['detail']['asset_address']}\"}}) {{name isActive isFrozen {asset['detail']['metric']}}}}}"
+            query = (f"query {{reserves(where: "
+                     f"{{id: \"{asset['detail']['asset_address']}\"}}) "
+                     f"{{name isActive isFrozen {asset['detail']['metric']}}}}}")
             input_decimals = 27
         else:
             raise ValueError(
@@ -62,7 +66,7 @@ class TheGraphFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "ONCHAIN":
-                logger.debug(f"Skipping The Graph for non-on-chain asset {asset}")
+                logger.debug("Skipping The Graph for non-on-chain asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -71,7 +75,7 @@ class TheGraphFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "ONCHAIN":
-                logger.debug(f"Skipping The Graph for non-on-chain asset {asset}")
+                logger.debug("Skipping The Graph for non-on-chain asset %s", asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -90,7 +94,7 @@ class TheGraphFetcher(PublisherInterfaceT):
         value_int = int(value * (10 ** (asset["decimals"] - input_decimals)))
         timestamp = int(time.time())
 
-        logger.info(f"Fetched data {value_int} for {key} from The Graph")
+        logger.info("Fetched data %s for %s from The Graph", value_int, key)
 
         return GenericEntry(
             key=key,

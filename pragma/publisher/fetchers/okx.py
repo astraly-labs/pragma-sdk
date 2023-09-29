@@ -78,7 +78,7 @@ class OkxFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping OKX for non-spot asset {asset}")
+                logger.debug("Skipping OKX for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -87,7 +87,7 @@ class OkxFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping OKX for non-spot asset {asset}")
+                logger.debug("Skipping OKX for non-spot asset %s", asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -106,7 +106,7 @@ class OkxFetcher(PublisherInterfaceT):
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
 
-        logger.info(f"Fetched price {price} for {'/'.join(pair)} from OKX")
+        logger.info("Fetched price %d for %s from OKX", price, '/'.join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

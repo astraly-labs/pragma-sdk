@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import json
 import subprocess
 import time
@@ -18,13 +20,17 @@ from pragma.tests.constants import (
     SAMPLE_ONCHAIN_ASSETS,
 )
 from pragma.tests.fetcher_configs import (
-    FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,
+    PUBLISHER_NAME,
+)
+from pragma.tests.fetcher_configs import (
     ONCHAIN_FETCHER_CONFIGS,
+    FETCHER_CONFIGS,
 )
 from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
+
 
 # %% SPOT
 
@@ -55,7 +61,7 @@ def forked_client(module_mocker, pytestconfig) -> Client:
         str(1),
         *get_compiler_manifest(),
     ]
-    subprocess.Popen(command)
+    subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)
     pragma_client = PragmaClient(net, port=port)
     module_mocker.patch.object(
@@ -73,8 +79,8 @@ def fetcher_config(request):
 
 @pytest.fixture
 def mock_data(fetcher_config):
-    with open(fetcher_config["mock_file"], "r") as f:
-        return json.load(f)
+    with open(fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
+        return json.load(filepath)
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -102,7 +108,7 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
 
 
 @pytest.mark.asyncio
-async def test_async_fetcher_404_error(mocker, fetcher_config, forked_client):
+async def test_async_fetcher_404_error(fetcher_config, forked_client):
     with aioresponses(passthrough=[forked_client.url]) as mock:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
@@ -132,7 +138,7 @@ async def test_async_fetcher_404_error(mocker, fetcher_config, forked_client):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_fetcher_sync_success(fetcher_config, mock_data):
-    with requests_mock.Mocker() as m:
+    with requests_mock.Mocker() as mocker:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
         # Mocking the expected call for assets
@@ -140,7 +146,7 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, json=mock_data[quote_asset])
+            mocker.get(url, json=mock_data[quote_asset])
 
         result = fetcher.fetch_sync()
 
@@ -148,14 +154,14 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
 
 
 def test_fetcher_sync_404(fetcher_config):
-    with requests_mock.Mocker() as m:
+    with requests_mock.Mocker() as mocker:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, status_code=404)
+            mocker.get(url, status_code=404)
 
         result = fetcher.fetch_sync()
 
@@ -171,7 +177,6 @@ def test_fetcher_sync_404(fetcher_config):
 
 
 # %% FUTURE
-
 
 @pytest.fixture(params=FUTURE_FETCHER_CONFIGS.values())
 def future_fetcher_config(request):
@@ -196,22 +201,22 @@ def other_mock_endpoints(future_fetcher_config):
             [*fn], [*val] = zip(*mock_fn.items())
             fn, val = fn[0], val[0]
             url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
-            with open(val["mock_file"], "r") as f:
-                mock_file = json.load(f)
+            with open(val["mock_file"], "r", encoding="utf-8") as filepath:
+                mock_file = json.load(filepath)
             responses.append({"url": url, "json": mock_file[quote_asset]})
     return responses
 
-
 @pytest.fixture
 def mock_future_data(future_fetcher_config):
-    with open(future_fetcher_config["mock_file"], "r") as f:
-        return json.load(f)
+    with open(future_fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
+        return json.load(filepath)
+
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
 async def test_async_future_fetcher(
-    future_fetcher_config, mock_future_data, other_mock_endpoints
+        future_fetcher_config, mock_future_data, other_mock_endpoints
 ):
     with aioresponses() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
@@ -226,8 +231,8 @@ async def test_async_future_fetcher(
             mock.get(url, status=200, payload=mock_future_data[quote_asset])
 
         if other_mock_endpoints:
-            for e in other_mock_endpoints:
-                mock.get(e["url"], status=200, payload=e["json"])
+            for endpoint in other_mock_endpoints:
+                mock.get(endpoint["url"], status=200, payload=endpoint["json"])
 
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
@@ -264,7 +269,7 @@ async def test_async_future_fetcher_404_error(future_fetcher_config):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_future_fetcher_sync_success(
-    future_fetcher_config, mock_future_data, other_mock_endpoints
+        future_fetcher_config, mock_future_data, other_mock_endpoints
 ):
     with requests_mock.Mocker() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
@@ -279,8 +284,8 @@ def test_future_fetcher_sync_success(
             mock.get(url, json=mock_future_data[quote_asset])
 
         if other_mock_endpoints:
-            for e in other_mock_endpoints:
-                mock.get(e["url"], json=e["json"])
+            for endpoint in other_mock_endpoints:
+                mock.get(endpoint["url"], json=endpoint["json"])
 
         result = fetcher.fetch_sync()
 
@@ -288,7 +293,7 @@ def test_future_fetcher_sync_success(
 
 
 def test_future_fetcher_sync_404(future_fetcher_config):
-    with requests_mock.Mocker() as m:
+    with requests_mock.Mocker() as mocker:
         fetcher = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME
         )
@@ -297,7 +302,7 @@ def test_future_fetcher_sync_404(future_fetcher_config):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, status_code=404)
+            mocker.get(url, status_code=404)
 
         result = fetcher.fetch_sync()
 
@@ -314,7 +319,6 @@ def test_future_fetcher_sync_404(future_fetcher_config):
 
 # %% ONCHAIN
 
-
 @pytest.fixture(params=ONCHAIN_FETCHER_CONFIGS.values())
 def onchain_fetcher_config(request):
     return request.param
@@ -322,8 +326,8 @@ def onchain_fetcher_config(request):
 
 @pytest.fixture
 def onchain_mock_data(onchain_fetcher_config):
-    with open(onchain_fetcher_config["mock_file"], "r") as f:
-        return json.load(f)
+    with open(onchain_fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
+        return json.load(filepath)
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -375,7 +379,7 @@ async def test_onchain_async_fetcher_404_error(onchain_fetcher_config):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_onchain_fetcher_sync_success(onchain_fetcher_config, onchain_mock_data):
-    with requests_mock.Mocker() as m:
+    with requests_mock.Mocker() as mocker:
         fetcher = onchain_fetcher_config["fetcher_class"](
             SAMPLE_ONCHAIN_ASSETS, PUBLISHER_NAME
         )
@@ -385,7 +389,7 @@ def test_onchain_fetcher_sync_success(onchain_fetcher_config, onchain_mock_data)
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, json=onchain_mock_data[quote_asset])
+            mocker.get(url, json=onchain_mock_data[quote_asset])
 
         result = fetcher.fetch_sync()
 
@@ -393,7 +397,7 @@ def test_onchain_fetcher_sync_success(onchain_fetcher_config, onchain_mock_data)
 
 
 def test_onchain_fetcher_sync_404(onchain_fetcher_config):
-    with requests_mock.Mocker() as m:
+    with requests_mock.Mocker() as mocker:
         fetcher = onchain_fetcher_config["fetcher_class"](
             SAMPLE_ONCHAIN_ASSETS, PUBLISHER_NAME
         )
@@ -402,7 +406,7 @@ def test_onchain_fetcher_sync_404(onchain_fetcher_config):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, status_code=404)
+            mocker.get(url, status_code=404)
 
         result = fetcher.fetch_sync()
 

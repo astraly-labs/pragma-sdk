@@ -60,3 +60,6 @@ cover/
 
 # Devnet state
 devnet.pkl
+
+.idea/
+.vscode/

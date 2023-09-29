@@ -44,7 +44,9 @@ class OracleMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
@@ -76,18 +78,19 @@ class OracleMixin:
         invocations = []
         serialized_spot_entries = SpotEntry.serialize_entries(entries)
         if pagination:
-            ix = 0
-            while ix < len(serialized_spot_entries):
-                entries_subset = serialized_spot_entries[ix : ix + pagination]
+            index = 0
+            while index < len(serialized_spot_entries):
+                entries_subset = serialized_spot_entries[index : index + pagination]
                 invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Spot": entry} for entry in entries_subset],
                     max_fee=max_fee,
                 )
-                ix += pagination
+                index += pagination
                 invocations.append(invocation)
                 logger.debug(str(invocation))
                 logger.info(
-                    f"Sent {len(entries_subset)} updated spot entries with transaction {hex(invocation.hash)}"
+                    "Sent %d updated spot entries with transaction %s"
+                    , len(entries_subset), hex(invocation.hash)
                 )
         elif len(serialized_spot_entries) > 0:
             invocation = await self.oracle.functions["publish_data_entries"].invoke(
@@ -97,23 +100,27 @@ class OracleMixin:
             invocations.append(invocation)
             logger.debug(str(invocation))
             logger.info(
-                f"Sent {len(serialized_spot_entries)} updated spot entries with transaction {hex(invocation.hash)}"
+                "Sent %d updated spot entries with transaction %s",
+                len(serialized_spot_entries),
+                hex(invocation.hash),
             )
 
         serialized_future_entries = FutureEntry.serialize_entries(entries)
         if pagination:
-            ix = 0
-            while ix < len(serialized_future_entries):
-                entries_subset = serialized_future_entries[ix : ix + pagination]
+            index = 0
+            while index < len(serialized_future_entries):
+                entries_subset = serialized_future_entries[index : index + pagination]
                 invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
                 )
-                ix += pagination
+                index += pagination
                 invocations.append(invocation)
                 logger.debug(str(invocation))
                 logger.info(
-                    f"Sent {len(entries_subset)} updated future entries with transaction {hex(invocation.hash)}"
+                    "Sent %d updated future entries with transaction %s",
+                    len(entries_subset),
+                    hex(invocation.hash),
                 )
         elif len(serialized_future_entries) > 0:
             invocation = await self.oracle.functions["publish_data_entries"].invoke(
@@ -123,13 +130,17 @@ class OracleMixin:
             invocations.append(invocation)
             logger.debug(str(invocation))
             logger.info(
-                f"Sent {len(serialized_future_entries)} updated future entries with transaction {hex(invocation.hash)}"
+                "Sent %d updated future entries with transaction %s",
+                len(serialized_future_entries),
+                hex(invocation.hash),
             )
 
         return invocations
 
     @deprecated
-    async def get_spot_entries(self, pair_id, sources=[]) -> List[SpotEntry]:
+    async def get_spot_entries(self, pair_id, sources=None) -> List[SpotEntry]:
+        if sources is None:
+            sources = []
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -144,8 +155,10 @@ class OracleMixin:
 
     @deprecated
     async def get_future_entries(
-        self, pair_id, expiration_timestamp, sources=[]
+        self, pair_id, expiration_timestamp, sources=None
     ) -> List[FutureEntry]:
+        if sources is None:
+            sources = []
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -245,7 +258,9 @@ class OracleMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.SPOT, pair_id, None).serialize(),
@@ -264,7 +279,9 @@ class OracleMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
@@ -273,7 +290,7 @@ class OracleMixin:
         )
         return invocation
 
-    # TODO: Fix future checkpoints
+    # TODO (#000): Fix future checkpoints
     async def set_future_checkpoints(
         self,
         pair_ids: List[int],
@@ -284,23 +301,28 @@ class OracleMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
 
+        invocation = None
         if pagination:
-            ix = 0
-            while ix < len(pair_ids):
-                pair_ids_subset = pair_ids[ix : ix + pagination]
+            index = 0
+            while index < len(pair_ids):
+                pair_ids_subset = pair_ids[index : index + pagination]
                 invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
                     max_fee=max_fee,
                 )
-                ix += pagination
+                index += pagination
                 logger.debug(str(invocation))
                 logger.info(
-                    f"Set future checkpoints for {len(pair_ids_subset)} pair IDs with transaction {hex(invocation.hash)}"
+                    "Set future checkpoints for %d pair IDs with transaction %s",
+                    len(pair_ids_subset),
+                    hex(invocation.hash),
                 )
         else:
             invocation = await self.oracle.functions["set_checkpoints"].invoke(
@@ -321,12 +343,16 @@ class OracleMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
+
+        invocation = None
         if pagination:
-            ix = 0
-            while ix < len(pair_ids):
-                pair_ids_subset = pair_ids[ix : ix + pagination]
+            index = 0
+            while index < len(pair_ids):
+                pair_ids_subset = pair_ids[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         DataType(DataTypes.SPOT, pair_id, None).serialize()
@@ -335,10 +361,12 @@ class OracleMixin:
                     aggregation_mode.serialize(),
                     max_fee=max_fee,
                 )
-                ix += pagination
+                index += pagination
                 logger.debug(str(invocation))
                 logger.info(
-                    f"Set checkpoints for {len(pair_ids_subset)} pair IDs with transaction {hex(invocation.hash)}"
+                    "Set checkpoints for %d pair IDs with transaction %s",
+                    len(pair_ids_subset),
+                    hex(invocation.hash),
                 )
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
