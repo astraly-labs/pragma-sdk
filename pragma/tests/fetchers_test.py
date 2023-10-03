@@ -20,12 +20,10 @@ from pragma.tests.constants import (
     SAMPLE_ONCHAIN_ASSETS,
 )
 from pragma.tests.fetcher_configs import (
-    FUTURE_FETCHER_CONFIGS,
-    PUBLISHER_NAME,
-)
-from pragma.tests.fetcher_configs import (
-    ONCHAIN_FETCHER_CONFIGS,
     FETCHER_CONFIGS,
+    FUTURE_FETCHER_CONFIGS,
+    ONCHAIN_FETCHER_CONFIGS,
+    PUBLISHER_NAME,
 )
 from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
 

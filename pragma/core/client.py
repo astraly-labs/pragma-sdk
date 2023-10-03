@@ -16,8 +16,9 @@ from pragma.core.mixins import (
 from pragma.core.types import (
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
+    ClientException,
     ContractAddresses,
-    get_client_from_network, ClientException,
+    get_client_from_network,
 )
 
 logging.basicConfig()
