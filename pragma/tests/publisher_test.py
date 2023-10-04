@@ -165,7 +165,6 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient):
     await publisher.publish_many(data, pagination=PAGINATION)
 
 
-
 def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
     errors = [entry for entry in data if not isinstance(entry, data_type)]
 

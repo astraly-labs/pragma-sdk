@@ -23,13 +23,12 @@ def snakecase(string):
         string: Snake cased string.
 
     """
-    string = re.sub(r"[\-\.\s]", '_', str(string))
+    string = re.sub(r"[\-\.\s]", "_", str(string))
     if not string:
         return string
-    return ((string[0].lower())
-            + re.sub(r"[A-Z0-9]",
-                     lambda matched: '_' + matched.group(0).lower(),
-                     string[1:]))
+    return (string[0].lower()) + re.sub(
+        r"[A-Z0-9]", lambda matched: "_" + matched.group(0).lower(), string[1:]
+    )
 
 
 def get_artifact(contract_name):

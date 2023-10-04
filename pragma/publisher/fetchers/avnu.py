@@ -31,10 +31,12 @@ ASSET_MAPPING: Dict[str, str] = {
 
 
 class AvnuFetcher(PublisherInterfaceT):
-    BASE_URL: str = ("https://starknet.api.avnu.fi/swap/v1/prices?"
-                     "sellTokenAddress={quote_token}"
-                     "&buyTokenAddress={base_token}"
-                     "&sellAmount={sell_amount}")
+    BASE_URL: str = (
+        "https://starknet.api.avnu.fi/swap/v1/prices?"
+        "sellTokenAddress={quote_token}"
+        "&buyTokenAddress={base_token}"
+        "&sellAmount={sell_amount}"
+    )
 
     SOURCE: str = "AVNU"
     headers = {

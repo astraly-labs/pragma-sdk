@@ -28,9 +28,11 @@ class TheGraphFetcher(PublisherInterfaceT):
     ) -> GenericEntry:
         if asset["source"] == "AAVE":
             url_slug = "aave/protocol-v2"
-            query = (f"query "
-                     f"{{reserves(where: {{id: \"{asset['detail']['asset_address']}\"}}) "
-                     f"{{name isActive isFrozen {asset['detail']['metric']}}}}}")
+            query = (
+                f"query "
+                f"{{reserves(where: {{id: \"{asset['detail']['asset_address']}\"}}) "
+                f"{{name isActive isFrozen {asset['detail']['metric']}}}}}"
+            )
             input_decimals = 27
         else:
             raise ValueError(
@@ -48,9 +50,11 @@ class TheGraphFetcher(PublisherInterfaceT):
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> GenericEntry:
         if asset["source"] == "AAVE":
             url_slug = "aave/protocol-v2"
-            query = (f"query {{reserves(where: "
-                     f"{{id: \"{asset['detail']['asset_address']}\"}}) "
-                     f"{{name isActive isFrozen {asset['detail']['metric']}}}}}")
+            query = (
+                f"query {{reserves(where: "
+                f"{{id: \"{asset['detail']['asset_address']}\"}}) "
+                f"{{name isActive isFrozen {asset['detail']['metric']}}}}}"
+            )
             input_decimals = 27
         else:
             raise ValueError(

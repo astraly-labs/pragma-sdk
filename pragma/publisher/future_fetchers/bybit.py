@@ -109,7 +109,7 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volume24h"])
         expiry_timestamp = int(data["deliveryTime"])
-        logger.info("Fetched future for %s from BYBIT", ('/'.join(pair)))
+        logger.info("Fetched future for %s from BYBIT", ("/".join(pair)))
 
         return FutureEntry(
             pair_id=pair_id,

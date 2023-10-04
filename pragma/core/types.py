@@ -206,7 +206,6 @@ class DataType:
         }
 
 
-
 class BasePragmaException(Exception):
     message: str
 

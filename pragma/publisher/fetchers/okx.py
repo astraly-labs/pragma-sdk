@@ -106,7 +106,7 @@ class OkxFetcher(PublisherInterfaceT):
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])
 
-        logger.info("Fetched price %d for %s from OKX", price, '/'.join(pair))
+        logger.info("Fetched price %d for %s from OKX", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

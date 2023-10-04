@@ -118,9 +118,7 @@ async def test_deploy_contract(contracts):
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
-async def test_client_setup(
-    pragma_client: PragmaClient, account: BaseAccount
-):
+async def test_client_setup(pragma_client: PragmaClient, account: BaseAccount):
     assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()

@@ -89,8 +89,9 @@ class OracleMixin:
                 invocations.append(invocation)
                 logger.debug(str(invocation))
                 logger.info(
-                    "Sent %d updated spot entries with transaction %s"
-                    , len(entries_subset), hex(invocation.hash)
+                    "Sent %d updated spot entries with transaction %s",
+                    len(entries_subset),
+                    hex(invocation.hash),
                 )
         elif len(serialized_spot_entries) > 0:
             invocation = await self.oracle.functions["publish_data_entries"].invoke(

@@ -124,7 +124,7 @@ class KaikoFetcher(PublisherInterfaceT):
         volume = float(data["volume"])
         pair_id = currency_pair_to_pair_id(*pair)
 
-        logger.info("Fetched price %d for %s from Kaiko", price, '/'.join(pair))
+        logger.info("Fetched price %d for %s from Kaiko", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

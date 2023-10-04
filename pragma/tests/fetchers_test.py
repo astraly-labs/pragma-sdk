@@ -176,6 +176,7 @@ def test_fetcher_sync_404(fetcher_config):
 
 # %% FUTURE
 
+
 @pytest.fixture(params=FUTURE_FETCHER_CONFIGS.values())
 def future_fetcher_config(request):
     return request.param
@@ -204,17 +205,17 @@ def other_mock_endpoints(future_fetcher_config):
             responses.append({"url": url, "json": mock_file[quote_asset]})
     return responses
 
+
 @pytest.fixture
 def mock_future_data(future_fetcher_config):
     with open(future_fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
         return json.load(filepath)
 
 
-
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
 async def test_async_future_fetcher(
-        future_fetcher_config, mock_future_data, other_mock_endpoints
+    future_fetcher_config, mock_future_data, other_mock_endpoints
 ):
     with aioresponses() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
@@ -267,7 +268,7 @@ async def test_async_future_fetcher_404_error(future_fetcher_config):
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 def test_future_fetcher_sync_success(
-        future_fetcher_config, mock_future_data, other_mock_endpoints
+    future_fetcher_config, mock_future_data, other_mock_endpoints
 ):
     with requests_mock.Mocker() as mock:
         fetcher = future_fetcher_config["fetcher_class"](
@@ -316,6 +317,7 @@ def test_future_fetcher_sync_404(future_fetcher_config):
 
 
 # %% ONCHAIN
+
 
 @pytest.fixture(params=ONCHAIN_FETCHER_CONFIGS.values())
 def onchain_fetcher_config(request):

@@ -171,10 +171,12 @@ class SpotEntry(Entry):
         return list(filter(lambda item: item is not None, serialized_entries))
 
     def __repr__(self):
-        return (f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
-                f'price={self.price}, timestamp={self.base.timestamp}, '
-                f'source="{felt_to_str(self.base.source)}", '
-                f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")')
+        return (
+            f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
+        )
 
 
 class FutureEntry(Entry):
@@ -302,13 +304,15 @@ class FutureEntry(Entry):
         return list(filter(lambda item: item is not None, serialized_entries))
 
     def __repr__(self):
-        return (f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
-                f'price={self.price}, '
-                f'timestamp={self.base.timestamp}, '
-                f'source="{felt_to_str(self.base.source)}", '
-                f'publisher="{felt_to_str(self.base.publisher)}, '
-                f'volume={self.volume}, '
-                f'expiry_timestamp={self.expiry_timestamp})")')
+        return (
+            f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, '
+            f"volume={self.volume}, "
+            f'expiry_timestamp={self.expiry_timestamp})")'
+        )
 
 
 class GenericEntry(Entry):
@@ -358,8 +362,10 @@ class GenericEntry(Entry):
         )
 
     def __repr__(self):
-        return (f'GenericEntry(key="{felt_to_str(self.key)}", '
-                f'value={self.value}, '
-                f'timestamp={self.base.timestamp}, '
-                f'source="{felt_to_str(self.base.source)}", '
-                f'publisher="{felt_to_str(self.base.publisher)}")')
+        return (
+            f'GenericEntry(key="{felt_to_str(self.key)}", '
+            f"value={self.value}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}")'
+        )
