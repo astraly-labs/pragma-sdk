@@ -74,7 +74,7 @@ class CexFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping CEX for non-spot asset {asset}")
+                logger.debug("Skipping CEX for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -83,7 +83,7 @@ class CexFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping CEX for non-spot asset {asset}")
+                logger.debug("Skipping CEX for non-spot asset %s", asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -101,7 +101,7 @@ class CexFetcher(PublisherInterfaceT):
         volume = float(result["volume"])
         pair_id = currency_pair_to_pair_id(*pair)
 
-        logger.info(f"Fetched price {price} for {'/'.join(pair)} from CEX")
+        logger.info("Fetched price %d for %s from CEX", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

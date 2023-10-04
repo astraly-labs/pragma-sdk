@@ -2,16 +2,9 @@
 
 import pytest
 import pytest_asyncio
-from starknet_py.common import (
-    create_casm_class,
-    create_compiled_contract,
-    create_sierra_compiled_contract,
-)
 from starknet_py.constants import FEE_CONTRACT_ADDRESS
 from starknet_py.contract import Contract
-from starknet_py.hash.casm_class_hash import compute_casm_class_hash
 from starknet_py.net.account.base_account import BaseAccount
-from starknet_py.net.udc_deployer.deployer import Deployer
 
 from pragma.tests.constants import MAX_FEE, MOCK_COMPILED_DIR
 from pragma.tests.utils import read_contract

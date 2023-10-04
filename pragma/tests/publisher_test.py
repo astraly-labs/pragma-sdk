@@ -1,6 +1,7 @@
+# pylint: disable=wildcard-import,unused-wildcard-import
+
 import os
-import traceback
-from copy import deepcopy
+from typing import Sequence
 
 import pytest
 from dotenv import load_dotenv
@@ -21,15 +22,12 @@ ALL_SPOT_FETCHERS = [
     CexFetcher,
     CoinbaseFetcher,
     DefillamaFetcher,
-    # GeminiFetcher,
     OkxFetcher,
     GeckoTerminalFetcher,
 ]
 
 ALL_FUTURE_FETCHERS = [
     OkxFutureFetcher,
-    # BinanceFutureFetcher,
-    # ByBitFutureFetcher
 ]
 
 ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS
@@ -55,11 +53,11 @@ SOURCES = [
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
-    PUBLISHER_ADDRESS = pragma_client.account_address()
+async def test_publisher_client_spot(pragma_client: PragmaClient):
+    publisher_address = pragma_client.account_address()
 
     # Add PRAGMA as Publisher
-    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
+    await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
 
     publishers = await pragma_client.get_all_publishers()
     assert publishers == [str_to_felt(PUBLISHER_NAME)]
@@ -76,7 +74,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
         [fetcher(SAMPLE_ASSETS, PUBLISHER_NAME) for fetcher in ALL_SPOT_FETCHERS]
     )
 
-    print(f"🧩 Fetchers : ", publisher.get_fetchers())
+    print(f"🧩 Fetchers : {publisher.get_fetchers()}")
 
     # Add KaikoFetcher if API KEY is provided
     api_key = os.getenv("KAIKO_API_KEY")
@@ -99,9 +97,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient, contracts):
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
-    PUBLISHER_ADDRESS = pragma_client.account_address()
-
+async def test_publisher_client_future(pragma_client: PragmaClient):
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
     )
@@ -113,26 +109,26 @@ async def test_publisher_client_future(pragma_client: PragmaClient, contracts):
         ]
     )
 
-    print(f"🧩 Fetchers : ", publisher.get_fetchers())
+    print(f"🧩 Fetchers : {publisher.get_fetchers()}")
 
-    data = await publisher.fetch()
+    data_async: Sequence[Entry] = await publisher.fetch()
 
-    asset_valid_data_type(data, FutureEntry)
+    asset_valid_data_type(data_async, FutureEntry)
 
-    data = publisher.fetch_sync()
+    data_sync: Sequence[Entry] = publisher.fetch_sync()
 
-    asset_valid_data_type(data, FutureEntry)
+    asset_valid_data_type(data_sync, FutureEntry)
 
     # Publish FUTURE data
-    data = [d for d in data if isinstance(d, FutureEntry)]
-    print(data)
-    await publisher.publish_many(data, pagination=PAGINATION)
+    data_list: Sequence[FutureEntry] = [
+        d for d in data_sync if isinstance(d, FutureEntry)
+    ]
+    print(data_list)
+    await publisher.publish_many(data_list, pagination=PAGINATION)
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_all_assets(pragma_client: PragmaClient, contracts):
-    PUBLISHER_ADDRESS = pragma_client.account_address()
-
+async def test_publisher_client_all_assets(pragma_client: PragmaClient):
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
     )
@@ -169,10 +165,10 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient, contract
     await publisher.publish_many(data, pagination=PAGINATION)
 
 
-def asset_valid_data_type(data, data_type: Entry):
+def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
     errors = [entry for entry in data if not isinstance(entry, data_type)]
 
     if len(errors) > 0:
         print("⚠️ Invalid Data Types :", errors)
 
-    assert all([isinstance(entry, data_type) for entry in data])
+    assert all(isinstance(entry, data_type) for entry in data)

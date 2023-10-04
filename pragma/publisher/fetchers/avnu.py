@@ -16,7 +16,7 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
 
-# TODO: Is there a better way ?
+# TODO (#000): Is there a better way ?
 ASSET_MAPPING: Dict[str, str] = {
     "ETH": "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
     "USDC": "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
@@ -31,7 +31,12 @@ ASSET_MAPPING: Dict[str, str] = {
 
 
 class AvnuFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={quote_token}&buyTokenAddress={base_token}&sellAmount={sell_amount}"
+    BASE_URL: str = (
+        "https://starknet.api.avnu.fi/swap/v1/prices?"
+        "sellTokenAddress={quote_token}"
+        "&buyTokenAddress={base_token}"
+        "&sellAmount={sell_amount}"
+    )
 
     SOURCE: str = "AVNU"
     headers = {
@@ -108,7 +113,7 @@ class AvnuFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping {self.SOURCE} for non-spot asset {asset}")
+                logger.debug("Skipping {self.SOURCE} for non-spot asset {asset}")
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -117,7 +122,7 @@ class AvnuFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping {self.SOURCE} for non-spot asset {asset}")
+                logger.debug("Skipping {self.SOURCE} for non-spot asset {asset}")
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -150,7 +155,7 @@ class AvnuFetcher(PublisherInterfaceT):
         )
         return url
 
-    # TODO: Aggregate DEXs data based on liquidity/volume data
+    # TODO (#000): Aggregate DEXs data based on liquidity/volume data
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
 
@@ -170,7 +175,7 @@ class AvnuFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
 
         pair_id = currency_pair_to_pair_id(*pair)
-        logger.info(f"Fetched price {price} for {pair_id} from AVNU")
+        logger.info("Fetched price %d for %s from AVNU", price, pair_id)
 
         return SpotEntry(
             pair_id=pair_id,
@@ -180,6 +185,7 @@ class AvnuFetcher(PublisherInterfaceT):
             publisher=self.publisher,
         )
 
+    # pylint: disable=no-self-use
     def _pragma_client(self):
         return PragmaClient(network="mainnet")
 

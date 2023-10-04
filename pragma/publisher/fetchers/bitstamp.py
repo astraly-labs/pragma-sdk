@@ -52,7 +52,7 @@ class BitstampFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Bitstamp for non-spot asset {asset}")
+                logger.debug("Skipping Bitstamp for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -61,7 +61,7 @@ class BitstampFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Bitstamp for non-spot asset {asset}")
+                logger.debug("Skipping Bitstamp for non-spot asset %s", asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -78,7 +78,7 @@ class BitstampFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
-        logger.info(f"Fetched price {price} for {'/'.join(pair)} from Bitstamp")
+        logger.info("Fetched price %d for %s from Bitstamp", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

@@ -46,7 +46,7 @@ class KaikoFetcher(PublisherInterfaceT):
 
             if resp.status == 403:
                 return PublisherFetchError(
-                    f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+                    "Unauthorized: Please provide an API Key to use KaikoFetcher"
                 )
 
             content_type = resp.content_type
@@ -76,7 +76,7 @@ class KaikoFetcher(PublisherInterfaceT):
 
         if resp.status_code == 403:
             return PublisherFetchError(
-                f"Unauthorized: Please provide an API Key to use KaikoFetcher"
+                "Unauthorized: Please provide an API Key to use KaikoFetcher"
             )
 
         text = resp.text
@@ -93,7 +93,7 @@ class KaikoFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Kaiko for non-spot asset {asset}")
+                logger.debug("Skipping Kaiko for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -102,7 +102,7 @@ class KaikoFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT":
-                logger.debug(f"Skipping Kaiko for non-spot asset {asset}")
+                logger.debug("Skipping Kaiko for non-spot asset %s", asset)
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -124,7 +124,7 @@ class KaikoFetcher(PublisherInterfaceT):
         volume = float(data["volume"])
         pair_id = currency_pair_to_pair_id(*pair)
 
-        logger.info(f"Fetched price {price} for {'/'.join(pair)} from Kaiko")
+        logger.info("Fetched price %d for %s from Kaiko", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,

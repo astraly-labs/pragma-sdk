@@ -3,9 +3,7 @@ from __future__ import annotations
 import abc
 from typing import Dict, List, Optional, Tuple, Union
 
-from web3 import Web3
-
-from pragma.core.assets import AssetType, get_asset_spec_for_pair_id_by_type
+from pragma.core.assets import get_asset_spec_for_pair_id_by_type
 from pragma.core.utils import felt_to_str, str_to_felt
 
 
@@ -15,10 +13,11 @@ class Entry(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def to_tuple(self) -> Dict[str, str]:
+    def to_tuple(self) -> Tuple:
         ...
 
-    def serialize_entries(self, entries: List[Entry]):
+    @staticmethod
+    def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [
             entry.serialize() for entry in entries if issubclass(entry, Entry)
         ]
@@ -40,10 +39,10 @@ class BaseEntry:
     def __init__(
         self, timestamp: int, source: Union[str, int], publisher: Union[str, int]
     ):
-        if type(publisher) == str:
+        if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
 
-        if type(source) == str:
+        if isinstance(source, str):
             source = str_to_felt(source)
 
         self.timestamp = timestamp
@@ -75,13 +74,13 @@ class SpotEntry(Entry):
         volume: Optional[float] = 0,
         autoscale_volume: bool = True,
     ) -> None:
-        if type(pair_id) == str:
+        if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
 
-        if type(publisher) == str:
+        if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
 
-        if type(source) == str:
+        if isinstance(source, str):
             source = str_to_felt(source)
 
         self.base = BaseEntry(timestamp, source, publisher)
@@ -90,7 +89,8 @@ class SpotEntry(Entry):
 
         if autoscale_volume:
             asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
-            decimals = asset["decimals"]
+            decimals = asset["decimals"] or 0
+            volume = volume or 0
 
             self.volume = int(volume * price * 10**decimals)
         else:
@@ -141,7 +141,7 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def set_publisher(self, publisher) -> self:
+    def set_publisher(self, publisher):
         self.base.publisher = publisher
         return self
 
@@ -161,17 +161,22 @@ class SpotEntry(Entry):
     @staticmethod
     def serialize_entries(entries: List[SpotEntry]) -> List[Dict[str, int]]:
         """serialize entries to a List of dictionaries"""
-        # TODO (rlkelly): log errors
+        # TODO (#000): log errors
         serialized_entries = [
             entry.serialize()
             for entry in entries
-            # TODO (rlkelly): This needs to be much more resilient to publish errors
+            # TODO (#000): This needs to be much more resilient to publish errors
             if isinstance(entry, SpotEntry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     def __repr__(self):
-        return f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", price={self.price}, timestamp={self.base.timestamp}, source="{felt_to_str(self.base.source)}", publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
+        return (
+            f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
+        )
 
 
 class FutureEntry(Entry):
@@ -200,13 +205,13 @@ class FutureEntry(Entry):
         volume: Optional[float] = 0,
         autoscale_volume: bool = True,
     ):
-        if type(pair_id) == str:
+        if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
 
-        if type(publisher) == str:
+        if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
 
-        if type(source) == str:
+        if isinstance(source, str):
             source = str_to_felt(source)
 
         self.base = BaseEntry(timestamp, source, publisher)
@@ -216,7 +221,8 @@ class FutureEntry(Entry):
 
         if autoscale_volume:
             asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "FUTURE")
-            decimals = asset["decimals"]
+            decimals = asset["decimals"] or 0
+            volume = volume or 0
 
             self.volume = int(volume * price * 10**decimals)
         else:
@@ -247,7 +253,7 @@ class FutureEntry(Entry):
             )
         return False
 
-    def to_tuple(self):
+    def to_tuple(self) -> Tuple:
         return (
             self.base.timestamp,
             self.base.source,
@@ -288,17 +294,25 @@ class FutureEntry(Entry):
     @staticmethod
     def serialize_entries(entries: List[FutureEntry]) -> List[Dict[str, int]]:
         """serialize entries to a List of dictionaries"""
-        # TODO (rlkelly): log errors
+        # TODO (#000): log errors
         serialized_entries = [
             entry.serialize()
             for entry in entries
-            # TODO (rlkelly): This needs to be much more resilient to publish errors
+            # TODO (#000): This needs to be much more resilient to publish errors
             if isinstance(entry, FutureEntry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     def __repr__(self):
-        return f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", price={self.price}, timestamp={self.base.timestamp}, source="{felt_to_str(self.base.source)}", publisher="{felt_to_str(self.base.publisher)}, volume={self.volume}, expiry_timestamp={self.expiry_timestamp})")'
+        return (
+            f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, '
+            f"volume={self.volume}, "
+            f'expiry_timestamp={self.expiry_timestamp})")'
+        )
 
 
 class GenericEntry(Entry):
@@ -314,13 +328,13 @@ class GenericEntry(Entry):
         key: Union[str, int],
         value: int,
     ):
-        if type(publisher) == str:
+        if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
 
-        if type(source) == str:
+        if isinstance(source, str):
             source = str_to_felt(source)
 
-        if type(key) == str:
+        if isinstance(key, str):
             key = str_to_felt(key)
 
         self.base = BaseEntry(timestamp, source, publisher)
@@ -338,7 +352,7 @@ class GenericEntry(Entry):
             "value": self.value,
         }
 
-    def to_tuple(self):
+    def to_tuple(self) -> Tuple:
         return (
             self.base.timestamp,
             self.base.source,
@@ -348,4 +362,10 @@ class GenericEntry(Entry):
         )
 
     def __repr__(self):
-        return f'GenericEntry(key="{felt_to_str(self.key)}", value={self.value}, timestamp={self.base.timestamp}, source="{felt_to_str(self.base.source)}", publisher="{felt_to_str(self.base.publisher)}")'
+        return (
+            f'GenericEntry(key="{felt_to_str(self.key)}", '
+            f"value={self.value}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}")'
+        )

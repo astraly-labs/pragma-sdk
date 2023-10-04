@@ -14,9 +14,9 @@ from pragma.core.mixins import (
     TransactionMixin,
 )
 from pragma.core.types import (
-    CHAIN_ID_TO_NETWORK,
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
+    ClientException,
     ContractAddresses,
     get_client_from_network,
 )
@@ -42,17 +42,20 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
     ):
         """
         Client for interacting with Pragma on Starknet.
-        :param network: Target network for the client. Can be a URL string, or one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``
+        :param network: Target network for the client.
+            Can be a URL string, or one of
+            ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``
         :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
-        :param contract_addresses_config: Optional Contract Addresses for Pragma.  Will default to the provided network but must be set if using non standard contracts.
+        :param contract_addresses_config: Optional Contract Addresses for Pragma.
+            Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
         self.client: FullNodeClient = get_client_from_network(network, port=port)
         if network.startswith("http") and chain_name is None:
-            raise Exception(
+            raise ClientException(
                 f"Network provided is a URL: {network} but `chain_name` is not provided."
             )
         self.network = (
@@ -99,7 +102,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         self._setup_account_client(chain_id, private_key, account_contract_address)
 
     def _setup_account_client(self, chain_id, private_key, account_contract_address):
-        if type(private_key) == str:
+        if isinstance(private_key, str):
             private_key = int(private_key, 16)
 
         self.signer = StarkCurveSigner(
@@ -113,7 +116,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
             signer=self.signer,
         )
         self.client = self.account.client
-        self.client._get_nonce = self._get_nonce
+        self.client._get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
         self.account_contract_address = account_contract_address
 
@@ -125,7 +128,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         stats_contract_address: int,
     ):
         provider = self.account if self.account else self.client
-        self.stats = Contract(
+        self.stats = Contract(  # pylint: disable=attribute-defined-outside-init
             address=stats_contract_address,
             abi=ABIS["pragma_SummaryStats"],
             provider=provider,

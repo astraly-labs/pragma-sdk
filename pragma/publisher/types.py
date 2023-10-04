@@ -1,5 +1,5 @@
 import abc
-from typing import Any, List, Literal
+from typing import Any, List
 
 import aiohttp
 from aiohttp import ClientSession

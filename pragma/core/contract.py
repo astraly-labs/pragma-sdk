@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import asyncio
 from typing import Callable, Optional, Tuple
 from warnings import warn
@@ -14,7 +16,6 @@ from starknet_py.net.client_models import (
     TransactionStatus,
 )
 from starknet_py.transaction_errors import (
-    TransactionFailedError,
     TransactionNotReceivedError,
     TransactionRejectedError,
     TransactionRevertedError,
@@ -25,10 +26,11 @@ class Contract(StarknetContract):
     def __getattr__(self, attr):
         if attr in self._functions:
             return self._functions[attr]
-        elif attr in dir(self):
+
+        if attr in dir(self):
             return getattr(self, attr)
-        else:
-            raise AttributeError("Invalid Attribute")
+
+        raise AttributeError("Invalid Attribute")
 
 
 async def invoke_(

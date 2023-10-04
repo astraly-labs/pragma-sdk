@@ -82,7 +82,7 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping BYBIT for non-spot asset {asset}")
+                logger.debug("Skipping BYBIT for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -91,7 +91,7 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "FUTURE":
-                logger.debug(f"Skipping BYBIT for non-spot asset {asset}")
+                logger.debug("Skipping BYBIT for non-spot asset %s", (asset))
                 continue
             entries.append(self._fetch_pair_sync(asset))
         return entries
@@ -109,7 +109,7 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volume24h"])
         expiry_timestamp = int(data["deliveryTime"])
-        logger.info(f"Fetched future for {'/'.join(pair)} from BYBIT")
+        logger.info("Fetched future for %s from BYBIT", ("/".join(pair)))
 
         return FutureEntry(
             pair_id=pair_id,

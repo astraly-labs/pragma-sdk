@@ -89,7 +89,6 @@ async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
 
 
 @pytest_asyncio.fixture(scope="package", name="pragma_client")
-# pylint: disable=redefined-outer-name
 async def pragma_client(
     contracts: (Contract, Contract),
     network,
@@ -118,10 +117,8 @@ async def test_deploy_contract(contracts):
 
 
 @pytest.mark.asyncio
-async def test_client_setup(
-    contracts: (Contract, Contract), pragma_client: PragmaClient, account: BaseAccount
-):
-    oracle, registry = contracts
+# pylint: disable=redefined-outer-name
+async def test_client_setup(pragma_client: PragmaClient, account: BaseAccount):
     assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()
@@ -132,53 +129,52 @@ async def test_client_setup(
 
 
 @pytest.mark.asyncio
-async def test_client_publisher_mixin(pragma_client: PragmaClient, contracts):
-    oracle, registry = contracts
+# pylint: disable=redefined-outer-name
+async def test_client_publisher_mixin(pragma_client: PragmaClient):
     publishers = await pragma_client.get_all_publishers()
     assert publishers == []
 
-    PUBLISHER_NAME = "PUBLISHER_1"
-    PUBLISHER_ADDRESS = 123
+    publisher_name = "PUBLISHER_1"
+    expected_publisher_address = 123
 
-    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
+    await pragma_client.add_publisher(publisher_name, expected_publisher_address)
 
     publishers = await pragma_client.get_all_publishers()
-    assert publishers == [str_to_felt(PUBLISHER_NAME)]
+    assert publishers == [str_to_felt(publisher_name)]
 
-    publisher_address = await pragma_client.get_publisher_address(PUBLISHER_NAME)
-    assert publisher_address == PUBLISHER_ADDRESS
+    publisher_address = await pragma_client.get_publisher_address(publisher_name)
+    assert expected_publisher_address == publisher_address
 
-    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_1)
+    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
 
-    sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
+    sources = await pragma_client.get_publisher_sources(publisher_name)
     assert sources == [str_to_felt(SOURCE_1)]
 
-    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, [SOURCE_2, SOURCE_3])
+    await pragma_client.add_sources_for_publisher(publisher_name, [SOURCE_2, SOURCE_3])
 
-    sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
+    sources = await pragma_client.get_publisher_sources(publisher_name)
     assert sources == [str_to_felt(source) for source in (SOURCE_1, SOURCE_2, SOURCE_3)]
 
 
 @pytest.mark.asyncio
-async def test_client_oracle_mixin_spot(pragma_client: PragmaClient, contracts):
-    oracle, registry = contracts
-
+# pylint: disable=redefined-outer-name
+async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     # Add PRAGMA as Publisher
-    PUBLISHER_NAME = "PRAGMA"
-    PUBLISHER_ADDRESS = pragma_client.account_address()
+    publisher_name = "PRAGMA"
+    publisher_address = pragma_client.account_address()
 
-    await pragma_client.add_publisher(PUBLISHER_NAME, PUBLISHER_ADDRESS)
+    await pragma_client.add_publisher(publisher_name, publisher_address)
 
     publishers = await pragma_client.get_all_publishers()
-    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(PUBLISHER_NAME)]
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
 
     # Add PRAGMA as Source for PRAGMA Publisher
-    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_1)
+    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
 
     # Publish SPOT Entry
     timestamp = int(time.time())
     await pragma_client.publish_spot_entry(
-        BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=int(200 * 100 * 1e8)
+        BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
     )
 
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
@@ -199,22 +195,22 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient, contracts):
 
     # Publish many SPOT entries
     spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=10
+        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=10
     )
     spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp + 10, SOURCE_1, PUBLISHER_NAME, volume=20
+        ETH_PAIR, 200, timestamp + 10, SOURCE_1, publisher_name, volume=20
     )
 
     await pragma_client.publish_many([spot_entry_1, spot_entry_2])
 
     # Fails for UNKNOWN source
-    UNKNOWN_SOURCE = "UNKNOWN"
+    unknown_source = "UNKNOWN"
     try:
         await pragma_client.get_spot_entries(
-            ETH_PAIR, sources=[str_to_felt(UNKNOWN_SOURCE)]
+            ETH_PAIR, sources=[str_to_felt(unknown_source)]
         )
     except ClientError as err:
-        err_msg = f"Execution was reverted; failure reason: [0x4e6f206461746120656e74727920666f756e64]"
+        err_msg = "Execution was reverted; failure reason: [0x4e6f206461746120656e74727920666f756e64]"
         if not err_msg in err.message:
             raise err
 
@@ -232,12 +228,12 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient, contracts):
     assert res.decimals == 8
 
     # Add new source and check aggregation
-    await pragma_client.add_source_for_publisher(PUBLISHER_NAME, SOURCE_2)
+    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
     spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp + 20, SOURCE_1, PUBLISHER_NAME, volume=10
+        ETH_PAIR, 100, timestamp + 20, SOURCE_1, publisher_name, volume=10
     )
     spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp + 30, SOURCE_2, PUBLISHER_NAME, volume=20
+        ETH_PAIR, 200, timestamp + 30, SOURCE_2, publisher_name, volume=20
     )
 
     await pragma_client.publish_many([spot_entry_1, spot_entry_2])
@@ -250,13 +246,12 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient, contracts):
 
 
 @pytest.mark.asyncio
-async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts):
-    oracle, registry = contracts
-
+# pylint: disable=redefined-outer-name
+async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     # Checks
-    PUBLISHER_NAME = "PRAGMA"
+    publisher_name = "PRAGMA"
     publishers = await pragma_client.get_all_publishers()
-    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(PUBLISHER_NAME)]
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
 
     timestamp = int(time.time())
     expiry_timestamp = timestamp + 1000
@@ -265,7 +260,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
         1000,
         timestamp,
         SOURCE_1,
-        PUBLISHER_NAME,
+        publisher_name,
         expiry_timestamp,
         volume=10000,
     )
@@ -274,7 +269,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
         2000,
         timestamp + 100,
         SOURCE_1,
-        PUBLISHER_NAME,
+        publisher_name,
         expiry_timestamp,
         volume=20000,
     )
@@ -298,14 +293,14 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient, contracts
 
     # Add new source and check aggregation
     future_entry_1 = FutureEntry(
-        ETH_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, expiry_timestamp, volume=10
+        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, expiry_timestamp, volume=10
     )
     future_entry_2 = FutureEntry(
         ETH_PAIR,
         200,
         timestamp + 10,
         SOURCE_2,
-        PUBLISHER_NAME,
+        publisher_name,
         expiry_timestamp,
         volume=20,
     )
@@ -329,6 +324,6 @@ def test_client_with_http_network():
     # default value of network is testnet
     assert client_with_chain_name_only.network == "testnet"
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as exception:
         _ = PragmaClient(network="http://test.rpc/rpc")
-        assert "`chain_name` is not provided" in str(e)
+        assert "`chain_name` is not provided" in str(exception)
