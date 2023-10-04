@@ -16,8 +16,8 @@ class Entry(abc.ABC):
     def to_tuple(self) -> Tuple:
         ...
 
-    @classmethod
-    def serialize_entries(cls, entries: List[Entry]):
+    @staticmethod
+    def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [
             entry.serialize() for entry in entries if issubclass(entry, Entry)
         ]
@@ -291,8 +291,8 @@ class FutureEntry(Entry):
             autoscale_volume=False,
         )
 
-    @classmethod
-    def serialize_entries(cls, entries: List[FutureEntry]) -> List[Dict[str, int]]:
+    @staticmethod
+    def serialize_entries(entries: List[FutureEntry]) -> List[Dict[str, int]]:
         """serialize entries to a List of dictionaries"""
         # TODO (#000): log errors
         serialized_entries = [
@@ -352,7 +352,7 @@ class GenericEntry(Entry):
             "value": self.value,
         }
 
-    def to_tuple(self):
+    def to_tuple(self) -> Tuple:
         return (
             self.base.timestamp,
             self.base.source,
