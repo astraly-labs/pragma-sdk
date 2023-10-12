@@ -327,3 +327,5 @@ def test_client_with_http_network():
     with pytest.raises(Exception) as exception:
         _ = PragmaClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
+
+

@@ -41,6 +41,8 @@ STARKSCAN_URLS = {
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
 }
 
+PRAGMA_API_URL = "http://localhost:8080"
+
 
 def get_rpc_url(network=TESTNET, port=5050):
     if network.startswith("http"):

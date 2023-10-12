@@ -12,6 +12,7 @@ from pragma.core.mixins import (
     OracleMixin,
     PublisherRegistryMixin,
     TransactionMixin,
+    OffchainMixin
 )
 from pragma.core.types import (
     CHAIN_IDS,
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin):
+class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin, OffchainMixin):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None

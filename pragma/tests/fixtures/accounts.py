@@ -42,6 +42,7 @@ async def devnet_account_details(
     """
     private_key = _get_random_private_key_unsafe()
     key_pair = KeyPair.from_private_key(private_key)
+    print(key_pair.public_key)
     salt = 1
 
     address = compute_address(
