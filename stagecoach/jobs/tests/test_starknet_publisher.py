@@ -18,13 +18,13 @@ from pragma.tests.fetcher_configs import FETCHER_CONFIGS
 def mock_starknet_publisher_env(monkeypatch):
     env_vars = {
         "SECRET_NAME": "SecretString",
-        "NETWORK": "devnet",
+        "NETWORK": "testnet",
         "SPOT_ASSETS": SAMPLE_ASSETS,
         "FUTURE_ASSETS": SAMPLE_FUTURE_ASSETS,
-        "PUBLISHER": "MY_PUBLISHER",
+        "PUBLISHER": "PRAGMA",
         "PUBLISHER_ADDRESS": TESTNET_ACCOUNT_ADDRESS,
         "KAIKO_API_KEY": "some_key",
-        "PAGINATION": 2,
+        "PAGINATION": 40,
         # default max_fee of 1e18 wei triggers a code 54 error (account balance < tx.max_fee)
         "MAX_FEE": int(1e16),
     }
@@ -73,11 +73,10 @@ async def fetchers(devnet_node):
 def test_starknet_publisher_key(mock_starknet_publisher_env, secrets):
     from stagecoach.jobs.publishers.starknet_publisher import app
 
-    assert app._get_pvt_key() == int(TESTNET_ACCOUNT_PRIVATE_KEY, 16)
+    assert app._get_pvt_key() == int(os.environ["PUBLISHER_PRIVATE_KEY"], 10)
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip("TODO (#000): publisher failing test 🤔 contract not found")
 async def test_starknet_publisher__handler(
     monkeypatch,
     mock_starknet_publisher_env,
@@ -85,7 +84,7 @@ async def test_starknet_publisher__handler(
     fetchers,
     devnet_node,
 ):
-    monkeypatch.setenv("RPC_URL", f"{devnet_node}/rpc")
+    monkeypatch.setenv("RPC_URL", f"{devnet_node}")
     from stagecoach.jobs.publishers.starknet_publisher import app
 
     assets = SAMPLE_ASSETS + SAMPLE_FUTURE_ASSETS

@@ -66,7 +66,7 @@ def _get_pvt_key():
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
         json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
-        16,
+        10,
     )
 
 
@@ -111,6 +111,7 @@ async def _handler(assets):
     publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
 
     _entries = await publisher_client.fetch()
+    print(_entries)
     response = await publisher_client.publish_many(
         _entries,
         pagination=PAGINATION,

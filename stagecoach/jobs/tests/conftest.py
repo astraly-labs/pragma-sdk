@@ -1,6 +1,7 @@
 import json
 import subprocess
 import time
+import os
 
 import boto3
 import pytest
@@ -52,7 +53,7 @@ def secrets():
             SecretString=json.dumps(
                 {
                     "HERODOTUS_API_KEY": "mykey",
-                    "PUBLISHER_PRIVATE_KEY": TESTNET_ACCOUNT_PRIVATE_KEY,
+                    "PUBLISHER_PRIVATE_KEY": os.environ["PUBLISHER_PRIVATE_KEY"],
                 }
             ),
         )

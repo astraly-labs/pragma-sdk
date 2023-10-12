@@ -39,7 +39,7 @@ def _get_pvt_key():
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
         json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
-        16,
+        10,
     )
 
 

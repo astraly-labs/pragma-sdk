@@ -1,4 +1,5 @@
 import pytest
+import os
 from starknet_py.net.client_models import TransactionType
 
 from pragma.tests.constants import TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY
@@ -23,7 +24,7 @@ def mock_checkpoint_env(monkeypatch):
 def test_checkpoint_get_api_key(mock_checkpoint_env, secrets):
     from stagecoach.jobs.publishers.checkpoint import app
 
-    assert app._get_pvt_key() == int(TESTNET_ACCOUNT_PRIVATE_KEY, 16)
+    assert app._get_pvt_key() == int(os.environ["PUBLISHER_PRIVATE_KEY"], 10)
 
 
 @pytest.mark.asyncio
