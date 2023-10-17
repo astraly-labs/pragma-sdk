@@ -50,7 +50,7 @@ def get_asset_address(asset: str, network: Network):
 
 class AvnuFetcher(PublisherInterfaceT):
     BASE_URL: str = (
-        "https://starknet.api.avnu.fi/swap/v1/prices?"
+        "https://{network}.api.avnu.fi/swap/v1/prices?"
         "sellTokenAddress={quote_token}"
         "&buyTokenAddress={base_token}"
         "&sellAmount={sell_amount}"
@@ -107,7 +107,11 @@ class AvnuFetcher(PublisherInterfaceT):
             return PublisherFetchError(f"Base asset not supported : {pair[1]}")
 
         decimals = self._fetch_decimals_sync(address_0)
-        url = self.url.format(
+        url = self.BASE_URL.format(
+            network={
+                "mainnet": "starknet",
+                "testnet": "goerli",
+            }[self.network],
             quote_token=address_0,
             base_token=address_1,
             sell_amount=hex(10**decimals),
@@ -154,8 +158,15 @@ class AvnuFetcher(PublisherInterfaceT):
             )
 
         decimals = self._fetch_decimals_sync(address_0)
-        url = self.url.format(
-            quote_token=address_0, base_token=address_1, sell_amount=hex(10**decimals)
+
+        url = self.BASE_URL.format(
+            network={
+                "mainnet": "starknet",
+                "testnet": "goerli",
+            }[self.network],
+            quote_token=address_0,
+            base_token=address_1,
+            sell_amount=hex(10**decimals),
         )
         return url
 
@@ -168,8 +179,14 @@ class AvnuFetcher(PublisherInterfaceT):
             )
 
         decimals = await self._fetch_decimals(address_0)
-        url = self.url.format(
-            quote_token=address_0, base_token=address_1, sell_amount=hex(10**decimals)
+        url = self.BASE_URL.format(
+            network={
+                "mainnet": "starknet",
+                "testnet": "goerli",
+            }[self.network],
+            quote_token=address_0,
+            base_token=address_1,
+            sell_amount=hex(10**decimals),
         )
         return url
 
@@ -210,16 +227,6 @@ class AvnuFetcher(PublisherInterfaceT):
     @property
     def network(self) -> Network:
         return self._pragma_client().network
-
-    @property
-    def url(self) -> str:
-        return {
-            MAINNET: self.BASE_URL,
-            TESTNET: "https://goerli.api.avnu.fi/swap/v1/"
-                     "prices?sellTokenAddress={quote_token}"
-                     "&buyTokenAddress={base_token}"
-                     "&sellAmount={sell_amount}"
-        }[self.network]
 
     async def _fetch_decimals(self, address: str) -> int:
         # Create a call to function "decimals" at address `address`
