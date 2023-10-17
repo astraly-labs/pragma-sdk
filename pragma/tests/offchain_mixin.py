@@ -1,15 +1,14 @@
 import time
 from typing import Tuple
-from urllib.parse import urlparse
 
 import pytest
 import pytest_asyncio
 
+from starknet_py.utils.typed_data import TypedData
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import str_to_felt
 from pragma.core.mixins.offchain import build_publish_message
-from starknet_py.utils.typed_data import TypedData
 
 PUBLISHER_NAME = "PRAGMA"
 
@@ -62,17 +61,19 @@ async def pragma_offchain_client(
 
 def test_publish_message():
     msg = build_publish_message(MOCK_DATA)
-    hash = TypedData.from_dict(msg).message_hash(0)
-    print(msg, hash)
+    hash_ = TypedData.from_dict(msg).message_hash(0)
+    print(msg, hash_)
 
 def test_publish_message_empty():
     msg = build_publish_message(EMPTY_DATA)
-    hash = TypedData.from_dict(msg).message_hash(0)
-    print(msg, hash)
+    hash_ = TypedData.from_dict(msg).message_hash(0)
+    print(msg, hash_)
 
 
 @pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
 async def test_publish_api(pragma_offchain_client: PragmaClient):
     response = await pragma_offchain_client.publish_data(MOCK_DATA)
 
     assert response.status == 200
+    

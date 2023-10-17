@@ -1,19 +1,15 @@
 import collections
 import logging
-from typing import List, Optional
-import aiohttp
+from typing import List, Dict
 import time
+import aiohttp
 
-from deprecated import deprecated
-from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
 
-from pragma.core.contract import Contract
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode, DataType, DataTypes, PRAGMA_API_URL
-from pragma.core.utils import str_to_felt
+from pragma.core.entry import SpotEntry
+from pragma.core.types import AggregationMode, PRAGMA_API_URL
 
 logger = logging.getLogger(__name__)
 
@@ -76,18 +72,17 @@ class OffchainMixin:
 
     def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
         message = build_publish_message(entries)
-        hash = TypedData.from_dict(message).message_hash(self.account.address)
+        hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
-        return sig, hash
+        return sig, hash_
 
     async def publish_data(
         self,
         entries: List[SpotEntry],
-        pagination: Optional[int] = 40,
     ):
         # Sign message
-        sig, hash = self.sign_publish_message(entries)
+        sig, _ = self.sign_publish_message(entries)
 
         now = int(time.time())
         expiry = now + 24 * 60 * 60
@@ -108,8 +103,6 @@ class OffchainMixin:
         logging.info(f"POST {url}")
         logging.info(f"Headers: {headers}")
         logging.info(f"Body: {body}")
-        
-        print(body)
 
         # Call Pragma API
         async with aiohttp.ClientSession() as session:
@@ -122,9 +115,10 @@ class OffchainMixin:
                     logging.error(f"Status Code: {status_code}")
                     logging.error(f"Response Text: {response}")
                     logging.error("Unable to POST /v1/data")
-        
+
         return response
 
+    # pylint: disable=no-self-use
     async def get_spot(
         self,
         quote_asset,
@@ -133,6 +127,8 @@ class OffchainMixin:
         sources=None,
     ):
         url = PRAGMA_API_URL + f"/v1/data/{quote_asset}/{base_asset}"
+
+        headers = {}
 
         logging.info(f"GET {url}")
 
@@ -144,9 +140,9 @@ class OffchainMixin:
                     logging.info(f"Success: {response}")
                     logging.info("Get Data successful")
                     return response["result"]
-                else:
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to GET /v1/data")
+
+                logging.error(f"Status Code: {status_code}")
+                logging.error(f"Response Text: {response}")
+                logging.error("Unable to GET /v1/data")
 
         return []
