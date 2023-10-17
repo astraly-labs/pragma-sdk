@@ -9,7 +9,7 @@ from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
 
 from pragma.core.entry import SpotEntry
-from pragma.core.types import AggregationMode, PRAGMA_API_URL
+from pragma.core.types import AggregationMode
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,7 @@ def build_publish_message(entries: List[SpotEntry]) -> TypedData:
 class OffchainMixin:
     client: Client
     account: Account
+    api_url: str
 
     def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
         message = build_publish_message(entries)
@@ -98,7 +99,7 @@ class OffchainMixin:
             "entries": SpotEntry.offchain_serialize_entries(entries),
         }
 
-        url = PRAGMA_API_URL + '/v1/data/publish'
+        url = self.api_url + '/v1/data/publish'
 
         logging.info(f"POST {url}")
         logging.info(f"Headers: {headers}")
@@ -126,7 +127,7 @@ class OffchainMixin:
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources=None,
     ):
-        url = PRAGMA_API_URL + f"/v1/data/{quote_asset}/{base_asset}"
+        url = self.api_url + f"/v1/data/{quote_asset}/{base_asset}"
 
         headers = {}
 
