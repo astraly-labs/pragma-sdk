@@ -30,6 +30,12 @@ class PragmaPublisherClient(PragmaClient):
     await eapc.fetch()
     eapc.fetch_sync()
     ```
+
+    You can also set a custom timeout duration as followed:
+    ```python
+    await eapc.fetch(timeout_duration=20) # Denominated in seconds (default=10)
+    ```
+
     """
 
     fetchers: List[PublisherInterfaceT] = []
@@ -51,9 +57,9 @@ class PragmaPublisherClient(PragmaClient):
     def get_fetchers(self):
         return self.fetchers
 
-    async def fetch(self, filter_exceptions=True, return_exceptions=True) -> List[any]:
+    async def fetch(self, filter_exceptions=True, return_exceptions=True, timeout_duration=10) -> List[any]:
         tasks = []
-        timeout = aiohttp.ClientTimeout(total=10)  # 10 seconds per request
+        timeout = aiohttp.ClientTimeout(total=timeout_duration)  # 10 seconds per request
         async with aiohttp.ClientSession(timeout=timeout) as session:
             for fetcher in self.fetchers:
                 data = fetcher.fetch(session)
