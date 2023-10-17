@@ -38,12 +38,12 @@ price': 1000,
 """
 def build_publish_message(entries: List[SpotEntry]) -> TypedData:
     message = {
+        "domain": {"name": "Pragma", "version": "1"},
+        "primaryType": "Request",
         "message": {
             "action": "Publish",
             "entries": SpotEntry.serialize_entries(entries),
         },
-        "domain": {"name": "Pragma", "version": "1"},
-        "primaryType": "Request",
         "types": {
             "StarkNetDomain": [
                 {"name": "name", "type": "felt"},
@@ -77,10 +77,9 @@ class OffchainMixin:
     def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
         message = build_publish_message(entries)
         hash = TypedData.from_dict(message).message_hash(self.account.address)
-
         sig = self.account.sign_message(message)
 
-        return sig, 0
+        return sig, hash
 
     async def publish_data(
         self,

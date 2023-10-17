@@ -37,6 +37,18 @@ MOCK_DATA = [
         ),
     ]
 
+EMPTY_DATA = [
+        SpotEntry(
+            pair_id="pair_id",
+            source="source",
+            publisher="publisher",
+            price=0,
+            timestamp=0,
+            volume=0,
+            autoscale_volume=False
+        ),
+    ]
+
 @pytest_asyncio.fixture(scope="package", name="pragma_offchain_client")
 async def pragma_offchain_client(
     address_and_private_key: Tuple[str, str],
@@ -50,6 +62,11 @@ async def pragma_offchain_client(
 
 def test_publish_message():
     msg = build_publish_message(MOCK_DATA)
+    hash = TypedData.from_dict(msg).message_hash(0)
+    print(msg, hash)
+
+def test_publish_message_empty():
+    msg = build_publish_message(EMPTY_DATA)
     hash = TypedData.from_dict(msg).message_hash(0)
     print(msg, hash)
 
