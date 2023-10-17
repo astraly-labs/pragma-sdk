@@ -34,7 +34,7 @@ SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
 FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
-PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
+PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 0)
 KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
@@ -66,7 +66,7 @@ def _get_pvt_key():
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
         json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
-        10,
+        0,
     )
 
 
