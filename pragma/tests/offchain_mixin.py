@@ -75,5 +75,14 @@ def test_publish_message_empty():
 async def test_publish_api(pragma_offchain_client: PragmaClient):
     response = await pragma_offchain_client.publish_data(MOCK_DATA)
 
-    assert response.status == 200
-    
+    assert response.number_entries_created == 2
+
+@pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
+async def test_get_data(pragma_offchain_client: PragmaClient):
+    response = await pragma_offchain_client.get_spot_data("ETH", "USD")
+    print(response)
+
+    assert response["num_sources_aggregated"] > 0
+    assert response["pair_id"] == 'ETH/USD'
+    assert response["price"] > 0

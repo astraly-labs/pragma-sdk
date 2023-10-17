@@ -109,18 +109,20 @@ class OffchainMixin:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=body) as response:
                 status_code: int = response.status
+                response: Dict = await response.json()
                 if status_code == 200:
                     logging.info(f"Success: {response}")
                     logging.info("Publish successful")
-                else:
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to POST /v1/data")
+                    return response
+
+                logging.error(f"Status Code: {status_code}")
+                logging.error(f"Response Text: {response}")
+                logging.error("Unable to POST /v1/data")
 
         return response
 
     # pylint: disable=no-self-use
-    async def get_spot(
+    async def get_spot_data(
         self,
         quote_asset,
         base_asset,
@@ -140,10 +142,9 @@ class OffchainMixin:
                 if status_code == 200:
                     logging.info(f"Success: {response}")
                     logging.info("Get Data successful")
-                    return response["result"]
 
                 logging.error(f"Status Code: {status_code}")
                 logging.error(f"Response Text: {response}")
                 logging.error("Unable to GET /v1/data")
 
-        return []
+        return response
