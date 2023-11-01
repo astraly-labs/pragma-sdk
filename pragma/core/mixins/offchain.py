@@ -3,6 +3,8 @@ import logging
 from typing import List, Dict
 import time
 import aiohttp
+import ssl
+import io
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
@@ -70,18 +72,39 @@ class OffchainMixin:
     client: Client
     account: Account
     api_url: str
+    ssl_context: ssl.SSLContext
 
     def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
+        """
+        Sign a publish message
+        """
+
         message = build_publish_message(entries)
         hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
         return sig, hash_
 
+    def load_ssl_context(self, client_cert, client_key):
+        """
+        Load SSL context from client cert and key
+        """
+
+        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        ssl_context.load_cert_chain(certfile=io.StringIO(client_cert), keyfile=io.StringIO(client_key))
+        self.ssl_context = ssl_context
+
     async def publish_data(
         self,
         entries: List[SpotEntry],
     ):
+        """
+        Publish data to PragmAPI
+
+        Args:
+            entries (List[SpotEntry]): List of SpotEntry to publish
+        """
+
         # Sign message
         sig, _ = self.sign_publish_message(entries)
 
@@ -106,7 +129,7 @@ class OffchainMixin:
         logging.info(f"Body: {body}")
 
         # Call Pragma API
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)) as session:
             async with session.post(url, headers=headers, json=body) as response:
                 status_code: int = response.status
                 response: Dict = await response.json()
@@ -135,7 +158,7 @@ class OffchainMixin:
 
         logging.info(f"GET {url}")
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)) as session:
             async with session.get(url, headers=headers) as response:
                 status_code: int = response.status
                 response: Dict = await response.json()
