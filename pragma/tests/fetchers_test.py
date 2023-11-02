@@ -41,7 +41,7 @@ def forked_client(module_mocker, pytestconfig) -> Client:
 
     :return: a starknet Client
     """
-    net = pytestconfig.getoption("--net")
+    # net = pytestconfig.getoption("--net")
     port = get_available_port()
     command = [
         "poetry",

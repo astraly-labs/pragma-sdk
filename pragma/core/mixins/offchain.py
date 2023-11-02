@@ -2,9 +2,9 @@ import collections
 import logging
 from typing import List, Dict
 import time
-import aiohttp
-import ssl
 import io
+import ssl
+import aiohttp
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
