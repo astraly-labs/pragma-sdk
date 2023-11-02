@@ -41,7 +41,8 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
-        api_url: str = PRAGMA_API_URL
+        api_url: Optional[str] = PRAGMA_API_URL,
+        api_key: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -55,8 +56,14 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param port: Optional port to interact with local node. Will default to 5050.
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
+        :param api_url: Optional URL for the Pragma API.  Defaults to http://localhost:8080
+        :param api_key: Optional API key for the Pragma API.
         """
         self.api_url = api_url
+
+        if api_key is not None:
+            self.api_key = api_key
+
         self.client: FullNodeClient = get_client_from_network(network, port=port)
         if network.startswith("http") and chain_name is None:
             raise ClientException(

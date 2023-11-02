@@ -73,6 +73,7 @@ class OffchainMixin:
     account: Account
     api_url: str
     ssl_context: ssl.SSLContext
+    api_key: str
 
     def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
         """
@@ -115,6 +116,7 @@ class OffchainMixin:
         headers: Dict = {
             "PRAGMA-TIMESTAMP": str(now),
             "PRAGMA-SIGNATURE-EXPIRATION": str(expiry),
+            "x-api-key": self.api_key,
         }
 
         body = {
@@ -152,9 +154,20 @@ class OffchainMixin:
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources=None,
     ):
+        """
+        Get spot data from PragmaAPI
+
+        Args:
+            quote_asset (str): Quote asset
+            base_asset (str): Base asset
+            aggregation_mode (AggregationMode): Aggregation mode
+            sources (List[str]): List of sources to fetch from
+        """
         url = self.api_url + f"/v1/data/{quote_asset}/{base_asset}"
 
-        headers = {}
+        headers = {
+            "x-api-key": self.api_key,
+        }
 
         logging.info(f"GET {url}")
 
