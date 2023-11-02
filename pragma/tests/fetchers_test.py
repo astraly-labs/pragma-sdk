@@ -41,7 +41,7 @@ def forked_client(module_mocker, pytestconfig) -> Client:
 
     :return: a starknet Client
     """
-    net = pytestconfig.getoption("--net")
+    # net = pytestconfig.getoption("--net")
     port = get_available_port()
     command = [
         "poetry",
@@ -61,7 +61,7 @@ def forked_client(module_mocker, pytestconfig) -> Client:
     ]
     subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)
-    pragma_client = PragmaClient(net, port=port)
+    pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name="mainnet")
     module_mocker.patch.object(
         AvnuFetcher,
         "_pragma_client",
