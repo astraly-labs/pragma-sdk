@@ -12,6 +12,7 @@ from pragma.core.mixins import (
     OracleMixin,
     PublisherRegistryMixin,
     TransactionMixin,
+    OffchainMixin
 )
 from pragma.core.types import (
     CHAIN_IDS,
@@ -19,6 +20,7 @@ from pragma.core.types import (
     ClientException,
     ContractAddresses,
     get_client_from_network,
+    PRAGMA_API_URL
 )
 
 logging.basicConfig()
@@ -26,7 +28,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin):
+class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin, OffchainMixin):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
@@ -39,6 +41,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
+        api_url: str = PRAGMA_API_URL
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -53,6 +56,7 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
+        self.api_url = api_url
         self.client: FullNodeClient = get_client_from_network(network, port=port)
         if network.startswith("http") and chain_name is None:
             raise ClientException(

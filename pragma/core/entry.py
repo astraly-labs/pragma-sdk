@@ -141,6 +141,18 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
+    def offchain_serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": felt_to_str(self.base.source),
+                "publisher": felt_to_str(self.base.publisher),
+            },
+            "pair_id": felt_to_str(self.pair_id),
+            "price": self.price,
+            "volume": self.volume,
+        }
+
     def set_publisher(self, publisher):
         self.base.publisher = publisher
         return self
@@ -164,6 +176,18 @@ class SpotEntry(Entry):
         # TODO (#000): log errors
         serialized_entries = [
             entry.serialize()
+            for entry in entries
+            # TODO (#000): This needs to be much more resilient to publish errors
+            if isinstance(entry, SpotEntry)
+        ]
+        return list(filter(lambda item: item is not None, serialized_entries))
+
+    @staticmethod
+    def offchain_serialize_entries(entries: List[SpotEntry]) -> List[Dict[str, int]]:
+        """serialize entries to a List of dictionaries for off-chain consumption"""
+        # TODO (#000): log errors
+        serialized_entries = [
+            entry.offchain_serialize()
             for entry in entries
             # TODO (#000): This needs to be much more resilient to publish errors
             if isinstance(entry, SpotEntry)
