@@ -158,6 +158,7 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
 
+            # TODO (#000): Fix this test
             if fetcher_config["name"] == "TheGraph":
                 query = fetcher.query_body(quote_asset)
                 print(query)
