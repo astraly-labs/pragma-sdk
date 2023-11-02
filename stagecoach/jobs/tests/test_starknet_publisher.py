@@ -27,8 +27,8 @@ def mock_starknet_publisher_env(monkeypatch):
         "SPOT_ASSETS": SAMPLE_ASSETS,
         "FUTURE_ASSETS": SAMPLE_FUTURE_ASSETS,
         "PUBLISHER": "PRAGMA",
-        "PUBLISHER_ADDRESS": TESTNET_ACCOUNT_ADDRESS,
-        "PUBLISHER_PRIVATE_KEY": TESTNET_ACCOUNT_PRIVATE_KEY,
+        "PUBLISHER_ADDRESS": int("0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16),
+        "PUBLISHER_PRIVATE_KEY": int(os.environ["PUBLISHER_PRIVATE_KEY"]),
         "KAIKO_API_KEY": "some_key",
         "PAGINATION": 40,
         # default max_fee of 1e18 wei triggers a code 54 error (account balance < tx.max_fee)

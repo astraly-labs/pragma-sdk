@@ -13,9 +13,9 @@ from stagecoach.jobs.publishers.custom import app
 @pytest.fixture
 def mock_custom_env(monkeypatch):
     env_vars = {
-        "PUBLISHER_PRIVATE_KEY": os.environ["PUBLISHER_PRIVATE_KEY"],
-        "PUBLISHER_ADDRESS": TESTNET_ACCOUNT_ADDRESS,
-        "NETWORK": "testnet",
+        "PUBLISHER_PRIVATE_KEY": int(os.environ["PUBLISHER_PRIVATE_KEY"], 10),
+        "PUBLISHER_ADDRESS": int("0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16),
+        "NETWORK": "devnet",
         # default max_fee of 1e18 wei triggers a code 54 error (account balance < tx.max_fee)
         "MAX_FEE": int(1e16),
     }
@@ -38,5 +38,5 @@ def test_fetch_entries(asset):
 
 @pytest.mark.asyncio
 async def test_publish_all(mock_custom_env, devnet_node):
+    monkeypatch.setenv("RPC_URL", devnet_node)
     result = await app.publish_all(SAMPLE_ASSETS)
-    print("done!")

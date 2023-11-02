@@ -231,7 +231,7 @@ class AvnuFetcher(PublisherInterfaceT):
     async def _fetch_decimals(self, address: str) -> int:
         # Create a call to function "decimals" at address `address`
         call = Call(
-            to_addr=address,
+            to_addr=int(address, 16),
             selector=get_selector_from_name("decimals"),
             calldata=[],
         )
@@ -243,7 +243,7 @@ class AvnuFetcher(PublisherInterfaceT):
     def _fetch_decimals_sync(self, address: str) -> int:
         # Create a call to function "decimals" at address `address`
         call = Call(
-            to_addr=address,
+            to_addr=int(address, 16),
             selector=get_selector_from_name("decimals"),
             calldata=[],
         )
