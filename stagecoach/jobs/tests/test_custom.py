@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
@@ -14,7 +15,9 @@ from stagecoach.jobs.publishers.custom import app
 def mock_custom_env(monkeypatch):
     env_vars = {
         "PUBLISHER_PRIVATE_KEY": int(os.environ["PUBLISHER_PRIVATE_KEY"], 10),
-        "PUBLISHER_ADDRESS": int("0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16),
+        "PUBLISHER_ADDRESS": int(
+            "0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16
+        ),
         "NETWORK": "devnet",
         # default max_fee of 1e18 wei triggers a code 54 error (account balance < tx.max_fee)
         "MAX_FEE": int(1e16),

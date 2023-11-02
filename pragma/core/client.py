@@ -9,18 +9,18 @@ from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
 from pragma.core.mixins import (
     NonceMixin,
+    OffchainMixin,
     OracleMixin,
     PublisherRegistryMixin,
     TransactionMixin,
-    OffchainMixin
 )
 from pragma.core.types import (
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
+    PRAGMA_API_URL,
     ClientException,
     ContractAddresses,
     get_client_from_network,
-    PRAGMA_API_URL
 )
 
 logging.basicConfig()
@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin, OffchainMixin):
+class PragmaClient(
+    NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin, OffchainMixin
+):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None

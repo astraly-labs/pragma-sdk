@@ -98,10 +98,21 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
                 url = await fetcher.format_url_async(quote_asset, base_asset)
             else:
                 url = fetcher.format_url(quote_asset, base_asset)
-            mock.get(url, status=200, payload=mock_data[quote_asset])
+
+            if fetcher_config["name"] == "TheGraph":
+                query = fetcher.query_body(quote_asset)
+                mock.post(
+                    url,
+                    status=200,
+                    body={"query": query},
+                    payload=mock_data[quote_asset],
+                )
+            else:
+                mock.get(url, status=200, payload=mock_data[quote_asset])
 
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
+
         assert result == fetcher_config["expected_result"]
 
 
@@ -118,7 +129,9 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
                 url = await fetcher.format_url_async(quote_asset, base_asset)
             else:
                 url = fetcher.format_url(quote_asset, base_asset)
+
             mock.get(url, status=404)
+            mock.post(url, status=404)
 
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
@@ -144,7 +157,18 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            mocker.get(url, json=mock_data[quote_asset])
+
+            if fetcher_config["name"] == "TheGraph":
+                query = fetcher.query_body(quote_asset)
+                print(query)
+                mocker.post(
+                    url,
+                    json=mock_data[quote_asset],
+                    additional_matcher=lambda request: request.text
+                    == '{"query": "' + query + '"}}',
+                )
+            else:
+                mocker.get(url, json=mock_data[quote_asset])
 
         result = fetcher.fetch_sync()
 
@@ -160,6 +184,7 @@ def test_fetcher_sync_404(fetcher_config):
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
             mocker.get(url, status_code=404)
+            mocker.post(url, status_code=404)
 
         result = fetcher.fetch_sync()
 
