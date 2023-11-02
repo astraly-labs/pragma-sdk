@@ -43,5 +43,5 @@ jobs:
             ghcr.io/${{ github.repository }}/${{ matrix.dockerfile }}:latest
             ghcr.io/${{ github.repository }}/${{ matrix.dockerfile }}:${{ github.sha }}
           file: ./${{ matrix.dockerfile }}/Dockerfile
-          context: .
+          context: ./${{ matrix.dockerfile }}
           platforms: linux/amd64
