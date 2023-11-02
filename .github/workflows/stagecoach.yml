@@ -197,12 +197,8 @@ jobs:
         dockerfile: [
           "stagecoach/base_images/base",
           "stagecoach/base_images/lambda",
-          "stagecoach/jobs/herodotus",
           "stagecoach/jobs/publishers/checkpoint",
-          "stagecoach/jobs/publishers/custom",
           "stagecoach/jobs/publishers/starknet_publisher",
-          "stagecoach/monitors/balance",
-          "stagecoach/monitors/price"
         ]
     steps:
       - uses: actions/checkout@v3
