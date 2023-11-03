@@ -233,6 +233,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     )
     try:
         await pragma_client.publish_many([spot_entry_future])
+        assert 0 == 1
     except TransactionRevertedError as err:
         err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         if not err_msg in err.message:
@@ -301,17 +302,6 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.decimals == 8
     assert res.expiration_timestamp == expiry_timestamp
 
-    # Fails if timestamp too far in the future (>2min)
-    future_entry_future = FutureEntry(
-        ETH_PAIR, 100, timestamp + 500, SOURCE_1, publisher_name, expiry_timestamp, volume=10
-    )
-    try:
-        await pragma_client.publish_many([future_entry_future])
-    except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
-        if not err_msg in err.message:
-            raise err
-
     # Add new source and check aggregation
     future_entry_1 = FutureEntry(
         ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, expiry_timestamp, volume=10
@@ -333,6 +323,18 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.num_sources_aggregated == 2
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
+
+    # Fails if timestamp too far in the future (>2min)
+    future_entry_future = FutureEntry(
+        ETH_PAIR, 100, timestamp + 1000, SOURCE_1, publisher_name, expiry_timestamp, volume=10
+    )
+    try:
+        await pragma_client.publish_many([future_entry_future])
+        assert 0 == 1
+    except TransactionRevertedError as err:
+        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        if not err_msg in err.message:
+            raise err
 
 
 def test_client_with_http_network():
