@@ -19,7 +19,7 @@ git clone https://github.com/starkware-libs/cairo && cd cairo
 ```
 2. Checkout the release tag:
 ```shell
-git checkout v2.1.0
+git checkout v2.2.0
 ```
 3. Compile:
 ```shell
@@ -32,5 +32,5 @@ echo "/path/to/cairo/Cargo.toml" >> manifest-path
 ```
 5. Now, you can run tests:
 ```shell
-coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests
+poetry run coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests -s
 ```
