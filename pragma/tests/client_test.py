@@ -7,6 +7,7 @@ import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.client_errors import ClientError
+from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
@@ -178,7 +179,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     )
 
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
-    assert entries == [SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, 0, volume=200)]
+    assert entries == [SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=200)]
 
     # Get SPOT
     res = await pragma_client.get_spot(BTC_PAIR)
@@ -210,14 +211,13 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
             ETH_PAIR, sources=[str_to_felt(unknown_source)]
         )
     except ClientError as err:
-        err_msg = "Execution was reverted; failure reason: [0x4e6f206461746120656e74727920666f756e64]"
+        err_msg = "Execution was reverted; failure reason: [0x4e6f207075626c697368657220666f7220736f75726365]"
         if not err_msg in err.message:
             raise err
 
     # Returns correct entries
     entries = await pragma_client.get_spot_entries(ETH_PAIR, sources=[])
 
-    spot_entry_2.set_publisher(0)
     assert entries == [spot_entry_2]
 
     # Return correct price aggregated
@@ -226,6 +226,18 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     assert res.num_sources_aggregated == 1
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
+
+    # Fails if timestamp too far in the future (>2min)
+    spot_entry_future = SpotEntry(
+        ETH_PAIR, 100, timestamp + 130, SOURCE_1, publisher_name, volume=10
+    )
+    try:
+        await pragma_client.publish_many([spot_entry_future])
+        assert False
+    except TransactionRevertedError as err:
+        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        if not err_msg in err.message:
+            raise err
 
     # Add new source and check aggregation
     await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
@@ -280,7 +292,6 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     entries = await pragma_client.get_future_entries(
         BTC_PAIR, expiry_timestamp, sources=[]
     )
-    future_entry_2.base.publisher = 0
     assert entries == [future_entry_2]
 
     # Get FUTURE
@@ -312,6 +323,18 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.num_sources_aggregated == 2
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
+
+    # Fails if timestamp too far in the future (>2min)
+    future_entry_future = FutureEntry(
+        ETH_PAIR, 100, timestamp + 1000, SOURCE_1, publisher_name, expiry_timestamp, volume=10
+    )
+    try:
+        await pragma_client.publish_many([future_entry_future])
+        assert False
+    except TransactionRevertedError as err:
+        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        if not err_msg in err.message:
+            raise err
 
 
 def test_client_with_http_network():
