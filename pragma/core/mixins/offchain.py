@@ -1,11 +1,11 @@
 import collections
-import logging
-from typing import List, Dict
-import time
 import io
+import logging
 import ssl
-import aiohttp
+import time
+from typing import Dict, List
 
+import aiohttp
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
@@ -34,6 +34,8 @@ GetDataResponse = collections.namedtuple(
 price': 1000, 
 'volume': 0}
 """
+
+
 def build_publish_message(entries: List[SpotEntry]) -> TypedData:
     message = {
         "domain": {"name": "Pragma", "version": "1"},
@@ -52,15 +54,15 @@ def build_publish_message(entries: List[SpotEntry]) -> TypedData:
                 {"name": "entries", "type": "Entry*"},
             ],
             "Entry": [
-                { "name": "base", "type": "Base" },
-                { "name": "pair_id", "type": "felt" },
-                { "name": "price", "type": "felt" },
-                { "name": "volume", "type": "felt" },
+                {"name": "base", "type": "Base"},
+                {"name": "pair_id", "type": "felt"},
+                {"name": "price", "type": "felt"},
+                {"name": "volume", "type": "felt"},
             ],
             "Base": [
-                { "name": "publisher", "type": "felt" },
-                { "name": "source", "type": "felt" },
-                { "name": "timestamp", "type": "felt" },
+                {"name": "publisher", "type": "felt"},
+                {"name": "source", "type": "felt"},
+                {"name": "timestamp", "type": "felt"},
             ],
         },
     }
@@ -92,7 +94,9 @@ class OffchainMixin:
         """
 
         ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        ssl_context.load_cert_chain(certfile=io.StringIO(client_cert), keyfile=io.StringIO(client_key))
+        ssl_context.load_cert_chain(
+            certfile=io.StringIO(client_cert), keyfile=io.StringIO(client_key)
+        )
         self.ssl_context = ssl_context
 
     async def publish_data(
@@ -124,14 +128,16 @@ class OffchainMixin:
             "entries": SpotEntry.offchain_serialize_entries(entries),
         }
 
-        url = self.api_url + '/v1/data/publish'
+        url = self.api_url + "/v1/data/publish"
 
         logging.info(f"POST {url}")
         logging.info(f"Headers: {headers}")
         logging.info(f"Body: {body}")
 
         # Call Pragma API
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)) as session:
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)
+        ) as session:
             async with session.post(url, headers=headers, json=body) as response:
                 status_code: int = response.status
                 response: Dict = await response.json()
@@ -171,7 +177,9 @@ class OffchainMixin:
 
         logging.info(f"GET {url}")
 
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)) as session:
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)
+        ) as session:
             async with session.get(url, headers=headers) as response:
                 status_code: int = response.status
                 response: Dict = await response.json()

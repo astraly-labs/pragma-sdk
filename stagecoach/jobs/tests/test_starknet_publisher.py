@@ -9,13 +9,13 @@ from aioresponses import aioresponses
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
-    TESTNET_ACCOUNT_PRIVATE_KEY,
     TESTNET_ACCOUNT_ADDRESS,
+    TESTNET_ACCOUNT_PRIVATE_KEY,
 )
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,
-    ONCHAIN_FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,
+    ONCHAIN_FETCHER_CONFIGS,
 )
 
 
@@ -27,7 +27,9 @@ def mock_starknet_publisher_env(monkeypatch):
         "SPOT_ASSETS": SAMPLE_ASSETS,
         "FUTURE_ASSETS": SAMPLE_FUTURE_ASSETS,
         "PUBLISHER": "PRAGMA",
-        "PUBLISHER_ADDRESS": int("0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16),
+        "PUBLISHER_ADDRESS": int(
+            "0x0624EBFB99865079BD58CFCFB925B6F5CE940D6F6E41E118B8A72B7163FB435C", 16
+        ),
         "PUBLISHER_PRIVATE_KEY": int(os.environ["PUBLISHER_PRIVATE_KEY"]),
         "KAIKO_API_KEY": "some_key",
         "PAGINATION": 40,

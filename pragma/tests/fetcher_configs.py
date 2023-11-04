@@ -150,6 +150,29 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
+    "TheGraphFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "thegraph.json",
+        "fetcher_class": TheGraphFetcher,
+        "name": "TheGraph",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                3459885191309,
+                12345,
+                "THEGRAPH",
+                PUBLISHER_NAME,
+                volume=13263948239.39806410965943312664704,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                180043642780,
+                12345,
+                "THEGRAPH",
+                PUBLISHER_NAME,
+                volume=406618849947.3046337346962943997025,
+            ),
+        ],
+    },
 }
 
 FUTURE_FETCHER_CONFIGS = {
