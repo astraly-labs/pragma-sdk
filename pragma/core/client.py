@@ -61,6 +61,7 @@ class PragmaClient(
         :param api_url: Optional URL for the Pragma API.  Defaults to http://localhost:8080
         :param api_key: Optional API key for the Pragma API.
         """
+        self.ssl_context = None
         self.api_url = api_url
 
         if api_key is not None:
