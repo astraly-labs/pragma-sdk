@@ -40,6 +40,6 @@ def test_fetch_entries(asset):
 
 
 @pytest.mark.asyncio
-async def test_publish_all(mock_custom_env, devnet_node):
+async def test_publish_all(monkeypatch, mock_custom_env, devnet_node):
     monkeypatch.setenv("RPC_URL", devnet_node)
     result = await app.publish_all(SAMPLE_ASSETS)

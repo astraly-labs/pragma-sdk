@@ -12,7 +12,6 @@ from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
     AscendexFetcher,
-    AvnuFetcher,
     BitstampFetcher,
     CexFetcher,
     CoinbaseFetcher,
@@ -72,6 +71,7 @@ def _get_pvt_key():
 
 async def _handler(assets):
     publisher_private_key = _get_pvt_key()
+    # publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 0)
 
     rpc_url = os.getenv("RPC_URL")
 
@@ -103,7 +103,6 @@ async def _handler(assets):
                 BinanceFutureFetcher,
                 OkxFutureFetcher,
                 ByBitFutureFetcher,
-                AvnuFetcher,
             )
         ]
     )

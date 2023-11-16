@@ -34,3 +34,20 @@ echo "/path/to/cairo/Cargo.toml" >> manifest-path
 ```shell
 poetry run coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests -s
 ```
+
+## Updating ABIs
+
+1. Upgrade submodule
+```shell
+git submodule update --remote
+```
+
+2. Compile contracts
+```shell
+cd pragma-oracle && scarb build
+```
+
+3. Update ABIs
+```shell
+poe update_abis
+```

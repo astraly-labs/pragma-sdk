@@ -350,3 +350,10 @@ def test_client_with_http_network():
     with pytest.raises(Exception) as exception:
         _ = PragmaClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
+
+# @pytest.mark.asyncio
+# async def test_client_live():
+#     client = PragmaClient(network="testnet")
+
+#     print(await client.get_spot("BTC/USD"))
+#     print(await client.get_future("BTC/USD", expiry_timestamp=0))
