@@ -356,3 +356,4 @@ def test_client_with_http_network():
 #     client = PragmaClient(network="testnet")
 
 #     print(await client.get_spot("BTC/USD"))
+#     print(await client.get_future("BTC/USD", expiry_timestamp=0))
