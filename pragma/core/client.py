@@ -34,6 +34,7 @@ class PragmaClient(
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
+    fullnode_client: FullNodeClient = None
 
     def __init__(
         self,
@@ -67,7 +68,9 @@ class PragmaClient(
         if api_key is not None:
             self.api_key = api_key
 
-        self.client: FullNodeClient = get_client_from_network(network, port=port)
+        full_node_client: FullNodeClient = get_client_from_network(network, port=port)
+        self.full_node_client = full_node_client
+        self.client = full_node_client
         if network.startswith("http") and chain_name is None:
             raise ClientException(
                 f"Network provided is a URL: {network} but `chain_name` is not provided."
@@ -101,6 +104,9 @@ class PragmaClient(
             provider=provider,
             cairo_version=1,
         )
+
+    def full_node_client(self, network):
+        return get_client_from_network(network, port=port)
 
     async def get_balance(self, account_contract_address, token_address=None):
         client = Account(

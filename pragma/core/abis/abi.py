@@ -61,6 +61,7 @@ CONTRACTS_NAMES = [
     "pragma_PublisherRegistry",
     "pragma_SummaryStats",
     "pragma_YieldCurve",
+    "pragma_Randomness",
 ]
 ABIS = {
     contract_name: json.loads(get_abi(contract_name))
