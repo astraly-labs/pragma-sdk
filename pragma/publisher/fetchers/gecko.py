@@ -24,6 +24,8 @@ ASSET_MAPPING: Dict[str, any] = {
     "BTC": ("eth", "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"),
     "WSTETH": ("eth", "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"),
     "ETH": ("eth", "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
+    "UNI": ("eth", "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"),
+    "LUSD": ("eth", "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"),
 }
 
 
