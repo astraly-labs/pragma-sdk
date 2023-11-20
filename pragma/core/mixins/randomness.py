@@ -7,7 +7,7 @@ from pragma.core.contract import Contract
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.full_node_client import FullNodeClient
-from pragma.core.randomness.utils import create_randomness, felt_to_secret_key
+from pragma.core.randomness.utils import create_randomness, felt_to_secret_key, RandomnessRequest
 
 logger = logging.getLogger(__name__)
 
@@ -94,21 +94,23 @@ class RandomnessMixin:
 
         return response
 
-    async def handle_random(self, min_block: int = 0):
+    async def handle_random(self, pivate_key: int, min_block: int = 0):
 
         block_number = await self.fullnode_client.get_block_number()
-        sk = felt_to_secret_key(self.account.key_pair.private_key)
+        sk = felt_to_secret_key(private_key)
 
         more_pages = True
         continuation_token = None
 
+        # TODO(#000): add nonce tracking
         while more_pages:
             event_list = await self.fullnode_client.get_events(self.randomness.address, keys=[], from_block_number=min_block, to_block_number=block_number, continuation_token=continuation_token)
+            events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
 
-            for event in event_list.events:
-                minimum_block_number = 0 # TODO: add value
+            for event in events:
+                minimum_block_number = event.minimum_block_number
                 if minimum_block_number > block_number:
                     continue
                 request_id = event.data[1]
@@ -150,5 +152,5 @@ class RandomnessMixin:
 
                 print(f"submitted: {invocation.hash}\n\n")
 
-            # Wait for Tx to pass
-            await asyncio.sleep(5)
+                # Wait for Tx to pass
+                await asyncio.sleep(5)
