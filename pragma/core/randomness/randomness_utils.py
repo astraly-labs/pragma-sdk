@@ -187,6 +187,7 @@ def get_public_key(sk):
 
 # Internal functions
 
+
 # Section 5.4.1.2. ECVRF_hash_to_curve_elligator2_25519
 def _ecvrf_hash_to_curve_elligator2_25519(suite_string, y, alpha_string):
     """

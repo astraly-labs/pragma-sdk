@@ -167,9 +167,7 @@ def account(request) -> Account:
 
 
 @pytest.fixture(scope="package")
-def pre_deployed_account_with_validate_deploy(
-    pytestconfig, network: str
-) -> Account:
+def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Account:
     """
     Returns an Account pre-deployed on specified network. Used to deploy other accounts.
     """

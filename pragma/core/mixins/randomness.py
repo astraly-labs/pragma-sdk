@@ -2,27 +2,31 @@ import logging
 import sys
 from typing import Any, Callable, List, Optional
 
-from pragma.core.abis import ABIS
-from pragma.core.contract import Contract
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.full_node_client import FullNodeClient
-from pragma.core.randomness.utils import create_randomness, felt_to_secret_key, RandomnessRequest
+
+from pragma.core.abis import ABIS
+from pragma.core.contract import Contract
+from pragma.core.randomness.utils import (
+    RandomnessRequest,
+    create_randomness,
+    felt_to_secret_key,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class RandomnessMixin:
     client: Client
-    fullnode_client: FullNodeClient
     randomness: Optional[Contract] = None
 
     def init_randomness_contract(
         self,
         contract_address: int,
     ):
-      provider = self.account if self.account else self.client
-      self.randomness = Contract(
+        provider = self.account if self.account else self.client
+        self.randomness = Contract(
             address=contract_address,
             abi=ABIS["pragma_Randomness"],
             provider=provider,
@@ -94,6 +98,19 @@ class RandomnessMixin:
 
         return response
 
+    async def get_pending_requests(
+        self,
+        requestor_address: int,
+        offset=0,
+        max_len=100,
+    ):
+        (response,) = await self.randomness.functions["get_pending_requests"].call(
+            requestor_address,
+            offset,
+            max_len,
+        )
+
+        return response
 
     async def handle_random(self, private_key: int, min_block: int = 0):
         block_number = await self.fullnode_client.get_block_number()
@@ -104,7 +121,13 @@ class RandomnessMixin:
 
         # TODO(#000): add nonce tracking
         while more_pages:
-            event_list = await self.fullnode_client.get_events(self.randomness.address, keys=[], from_block_number=min_block, to_block_number=block_number, continuation_token=continuation_token)
+            event_list = await self.full_node_client.get_events(
+                self.randomness.address,
+                keys=["0xc285ec4fd3baa2fd5b1dc432a00bd5301d2c84b86a7e6900c13b6634b4e81a"],
+                from_block_number=min_block,
+                to_block_number=block_number,
+                continuation_token=continuation_token,
+            )
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
@@ -114,15 +137,15 @@ class RandomnessMixin:
                 if minimum_block_number > block_number:
                     continue
                 request_id = event.data[1]
-                status = await self.get_request_status(
-                    event.from_address, request_id
-                )
+                status = await self.get_request_status(event.from_address, request_id)
                 if status[0] != 1:
                     continue
 
                 print(f"event {event}")
 
-                block = await self.fullnode_client.get_block(block_number=minimum_block_number)
+                block = await self.fullnode_client.get_block(
+                    block_number=minimum_block_number
+                )
                 block_hash = block.block_hash
 
                 seed = (

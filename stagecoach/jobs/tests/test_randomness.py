@@ -27,5 +27,6 @@ def mock_randomness_env(monkeypatch):
 @pytest.mark.asyncio
 async def test_randomness_handler(mock_randomness_env):
     from stagecoach.jobs.randomness import app
-    result = await app.handler(None,None)
+
+    result = await app.handler(None, None)
     assert result["success"] == True
