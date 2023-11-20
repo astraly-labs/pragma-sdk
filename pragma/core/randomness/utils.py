@@ -24,13 +24,13 @@ class RandomnessRequest:
         callback_gas_limit,
         num_words,
     ):
-        self.request_id = int(request_id, 16)
-        self.caller_address = int(caller_address, 16)
-        self.seed = int(seed, 16)
-        self.minimum_block_number = int(minimum_block_number, 16)
-        self.callback_address = int(callback_address, 16)
-        self.callback_gas_limit = int(callback_gas_limit, 16)
-        self.num_words = int(num_words, 16)
+        self.request_id = request_id
+        self.caller_address = caller_address
+        self.seed = seed
+        self.minimum_block_number = minimum_block_number
+        self.callback_address = callback_address
+        self.callback_gas_limit = callback_gas_limit
+        self.num_words = num_words
 
     def __repr__(self):
         return (

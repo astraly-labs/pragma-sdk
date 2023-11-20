@@ -123,24 +123,25 @@ class RandomnessMixin:
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
-                keys=[["0xc285ec4fd3baa2fd5b1dc432a00bd5301d2c84b86a7e6900c13b6634b4e81a"]],
+                keys=[["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]],
                 from_block_number=min_block,
                 to_block_number=block_number,
                 continuation_token=continuation_token,
-                chun_size=50,
+                chunk_size=50,
             )
-            print(f"event_list: {event_list}")
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
 
             for event in events:
+                print(f"event: {event}")
                 minimum_block_number = event.minimum_block_number
                 if minimum_block_number > block_number:
                     continue
                 request_id = event.data[1]
                 status = await self.get_request_status(event.from_address, request_id)
-                if status[0] != 1:
+                print(status.variant)
+                if status.variant != 'RECEIVED':
                     continue
 
                 print(f"event {event}")
