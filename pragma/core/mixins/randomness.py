@@ -113,7 +113,7 @@ class RandomnessMixin:
         return response
 
     async def handle_random(self, private_key: int, min_block: int = 0):
-        block_number = await self.fullnode_client.get_block_number()
+        block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
@@ -123,11 +123,13 @@ class RandomnessMixin:
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
-                keys=["0xc285ec4fd3baa2fd5b1dc432a00bd5301d2c84b86a7e6900c13b6634b4e81a"],
+                keys=[["0xc285ec4fd3baa2fd5b1dc432a00bd5301d2c84b86a7e6900c13b6634b4e81a"]],
                 from_block_number=min_block,
                 to_block_number=block_number,
                 continuation_token=continuation_token,
+                chun_size=50,
             )
+            print(f"event_list: {event_list}")
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
@@ -143,7 +145,7 @@ class RandomnessMixin:
 
                 print(f"event {event}")
 
-                block = await self.fullnode_client.get_block(
+                block = await self.full_node_client.get_block(
                     block_number=minimum_block_number
                 )
                 block_hash = block.block_hash

@@ -4,7 +4,7 @@ from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.gateway_client import GatewayClient
+# from starknet_py.net.gateway_client import GatewayClient
 
 from pragma.core.utils import str_to_felt
 
@@ -62,13 +62,13 @@ def get_rpc_url(network=TESTNET, port=5050):
 
 
 def get_client_from_network(network: str, port=5050):
-    return GatewayClient(
-        net={
-            "feeder_gateway_url": f"http://127.0.0.1:{port}/feeder_gateway",
-            "gateway_url": f"http://127.0.0.1:{port}/gateway",
-        }
-    )
-    # return FullNodeClient(node_url=get_rpc_url(network, port=port))
+    # return GatewayClient(
+    #     net={
+    #         "feeder_gateway_url": f"http://127.0.0.1:{port}/feeder_gateway",
+    #         "gateway_url": f"http://127.0.0.1:{port}/gateway",
+    #     }
+    # )
+    return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
 @dataclass

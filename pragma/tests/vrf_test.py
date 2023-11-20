@@ -122,11 +122,15 @@ async def test_randomness_mixin(vrf_pragma_client: PragmaClient, randomness_cont
     callback_address = example_randomness.address
     publish_delay = 1
     num_words = 1
+    caller_address = vrf_pragma_client.account_address()
 
     await vrf_pragma_client.request_random(seed, callback_address, callback_gas_limit, publish_delay, num_words)
-    pending_reqs = await vrf_pragma_client.get_pending_requests(vrf_pragma_client.account_address())
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
     print("PENDING REQS", pending_reqs)
 
-    await vrf_pragma_client.handle_random(private_key, min_block=0)
-    pending_reqs = await vrf_pragma_client.get_pending_requests(vrf_pragma_client.account_address())
+    await vrf_pragma_client.handle_random(int(private_key, 16), min_block=0)
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
     print("PENDING REQS", pending_reqs)
+
+    status = await vrf_pragma_client.get_request_status(caller_address, 0)
+    print("STATUS", status)
