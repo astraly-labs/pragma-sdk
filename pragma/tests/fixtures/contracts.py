@@ -4,13 +4,13 @@ import pytest
 import pytest_asyncio
 from starknet_py.constants import FEE_CONTRACT_ADDRESS
 from starknet_py.contract import Contract
-from starknet_py.net.account.base_account import BaseAccount
+from starknet_py.net.account.account import Account
 
 from pragma.tests.constants import MAX_FEE, MOCK_COMPILED_DIR
 from pragma.tests.utils import read_contract
 
 
-async def declare_account(account: BaseAccount, compiled_account_contract: str) -> int:
+async def declare_account(account: Account, compiled_account_contract: str) -> int:
     """
     Declares a specified account.
     """
@@ -27,7 +27,7 @@ async def declare_account(account: BaseAccount, compiled_account_contract: str) 
 
 @pytest_asyncio.fixture(scope="package")
 async def account_with_validate_deploy_class_hash(
-    pre_deployed_account_with_validate_deploy: BaseAccount,
+    pre_deployed_account_with_validate_deploy: Account,
 ) -> int:
     compiled_contract = read_contract(
         "account_with_validate_deploy_compiled.json", directory=MOCK_COMPILED_DIR
@@ -38,7 +38,7 @@ async def account_with_validate_deploy_class_hash(
 
 
 @pytest.fixture(scope="package")
-def fee_contract(gateway_account: BaseAccount) -> Contract:
+def fee_contract(gateway_account: Account) -> Contract:
     """
     Returns an instance of the fee contract. It is used to transfer tokens.
     """
