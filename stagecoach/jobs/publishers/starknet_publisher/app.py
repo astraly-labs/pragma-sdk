@@ -37,7 +37,7 @@ PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 0)
 KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
-MAX_FEE = int(os.getenv("MAX_FEE", int(1e18)))
+MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
 if PAGINATION is not None:
     PAGINATION = int(PAGINATION)
 

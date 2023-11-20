@@ -94,8 +94,8 @@ class RandomnessMixin:
 
         return response
 
-    async def handle_random(self, private_key: int, min_block: int = 0):
 
+    async def handle_random(self, private_key: int, min_block: int = 0):
         block_number = await self.fullnode_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 

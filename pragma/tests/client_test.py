@@ -179,7 +179,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     )
 
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
-    assert entries == [SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=200)]
+    assert entries == [
+        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=200)
+    ]
 
     # Get SPOT
     res = await pragma_client.get_spot(BTC_PAIR)
@@ -326,7 +328,13 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
 
     # Fails if timestamp too far in the future (>2min)
     future_entry_future = FutureEntry(
-        ETH_PAIR, 100, timestamp + 1000, SOURCE_1, publisher_name, expiry_timestamp, volume=10
+        ETH_PAIR,
+        100,
+        timestamp + 1000,
+        SOURCE_1,
+        publisher_name,
+        expiry_timestamp,
+        volume=10,
     )
     try:
         await pragma_client.publish_many([future_entry_future])
@@ -350,6 +358,7 @@ def test_client_with_http_network():
     with pytest.raises(Exception) as exception:
         _ = PragmaClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
+
 
 # @pytest.mark.asyncio
 # async def test_client_live():
