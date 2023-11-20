@@ -4,9 +4,11 @@ from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
-# from starknet_py.net.gateway_client import GatewayClient
 
 from pragma.core.utils import str_to_felt
+
+# from starknet_py.net.gateway_client import GatewayClient
+
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -78,7 +80,10 @@ CONTRACT_ADDRESSES = {
         2408056700008799988274832007944460979526684291270693941276336026156441738630,
         3108238389225984732543655444430831893780207443780498125530192910262931411303,
     ),
-    MAINNET: ContractAddresses(0, 0),
+    MAINNET: ContractAddresses(
+        1035964020232444284030697086969999610062982650901949616270651804992179237909,
+        1202089834814778579992154020333959781277480478747022471664051891421849487195,
+    ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
 }
