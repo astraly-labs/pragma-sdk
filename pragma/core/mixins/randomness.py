@@ -1,28 +1,33 @@
 import logging
 import sys
 from typing import Any, Callable, List, Optional
+import asyncio
 
-from pragma.core.abis import ABIS
-from pragma.core.contract import Contract
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.full_node_client import FullNodeClient
-from pragma.core.randomness.utils import create_randomness, felt_to_secret_key, RandomnessRequest
+
+from pragma.core.abis import ABIS
+from pragma.core.contract import Contract
+from pragma.core.randomness.utils import (
+    RandomnessRequest,
+    create_randomness,
+    felt_to_secret_key,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class RandomnessMixin:
     client: Client
-    fullnode_client: FullNodeClient
     randomness: Optional[Contract] = None
 
     def init_randomness_contract(
         self,
         contract_address: int,
     ):
-      provider = self.account if self.account else self.client
-      self.randomness = Contract(
+        provider = self.account if self.account else self.client
+        self.randomness = Contract(
             address=contract_address,
             abi=ABIS["pragma_Randomness"],
             provider=provider,
@@ -61,7 +66,6 @@ class RandomnessMixin:
         callback_gas_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
-        block_hash: int,  # block hash of block
         proof: List[int],  # randomness proof
         max_fee=int(1e16),
     ) -> InvokeResult:
@@ -94,9 +98,22 @@ class RandomnessMixin:
 
         return response
 
-    async def handle_random(self, pivate_key: int, min_block: int = 0):
+    async def get_pending_requests(
+        self,
+        requestor_address: int,
+        offset=0,
+        max_len=100,
+    ):
+        (response,) = await self.randomness.functions["get_pending_requests"].call(
+            requestor_address,
+            offset,
+            max_len,
+        )
 
-        block_number = await self.fullnode_client.get_block_number()
+        return response
+
+    async def handle_random(self, private_key: int, min_block: int = 0):
+        block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
@@ -104,7 +121,14 @@ class RandomnessMixin:
 
         # TODO(#000): add nonce tracking
         while more_pages:
-            event_list = await self.fullnode_client.get_events(self.randomness.address, keys=[], from_block_number=min_block, to_block_number=block_number, continuation_token=continuation_token)
+            event_list = await self.full_node_client.get_events(
+                self.randomness.address,
+                keys=[["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]],
+                from_block_number=min_block,
+                to_block_number=block_number,
+                continuation_token=continuation_token,
+                chunk_size=50,
+            )
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
@@ -113,16 +137,16 @@ class RandomnessMixin:
                 minimum_block_number = event.minimum_block_number
                 if minimum_block_number > block_number:
                     continue
-                request_id = event.data[1]
-                status = await self.get_request_status(
-                    event.from_address, request_id
-                )
-                if status[0] != 1:
+                request_id = event.request_id
+                status = await self.get_request_status(event.caller_address, request_id)
+                if status.variant != 'RECEIVED':
                     continue
 
                 print(f"event {event}")
 
-                block = await self.fullnode_client.get_block(block_number=minimum_block_number)
+                block = await self.full_node_client.get_block(
+                    block_number=minimum_block_number
+                )
                 block_hash = block.block_hash
 
                 seed = (

@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
-from starknet_py.net.account.base_account import BaseAccount
+from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
@@ -28,7 +28,7 @@ SOURCE_3 = "SOURCE_3"
 
 @pytest_asyncio.fixture(scope="package")
 async def declare_deploy_oracle(
-    account: BaseAccount,
+    account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract_registry = read_contract(
         "pragma_PublisherRegistry.sierra.json", directory=None
@@ -119,7 +119,7 @@ async def test_deploy_contract(contracts):
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
-async def test_client_setup(pragma_client: PragmaClient, account: BaseAccount):
+async def test_client_setup(pragma_client: PragmaClient, account: Account):
     assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.0.7"
+version = "1.0.8"
 authors = ["0xevolve <matthias@pragmaoracle.com>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
@@ -57,6 +57,7 @@ typecheck = "pyright pragma"
 test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
 test_ci_publisher = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/publisher_test.py -s"
 test_ci_fetchers = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/fetchers_test.py -s"
+test_ci_vrf = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/vrf_test.py -s"
 test_stagecoach = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError stagecoach/ -s"
 circular_imports_check.shell = "poetry run pytest circular.py"
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
