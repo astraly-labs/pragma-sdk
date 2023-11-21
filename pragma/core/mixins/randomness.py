@@ -1,6 +1,7 @@
 import logging
 import sys
 from typing import Any, Callable, List, Optional
+import asyncio
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
@@ -65,7 +66,6 @@ class RandomnessMixin:
         callback_gas_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
-        block_hash: int,  # block hash of block
         proof: List[int],  # randomness proof
         max_fee=int(1e16),
     ) -> InvokeResult:
@@ -134,13 +134,11 @@ class RandomnessMixin:
             more_pages = continuation_token is not None
 
             for event in events:
-                print(f"event: {event}")
                 minimum_block_number = event.minimum_block_number
                 if minimum_block_number > block_number:
                     continue
-                request_id = event.data[1]
-                status = await self.get_request_status(event.from_address, request_id)
-                print(status.variant)
+                request_id = event.request_id
+                status = await self.get_request_status(event.caller_address, request_id)
                 if status.variant != 'RECEIVED':
                     continue
 
