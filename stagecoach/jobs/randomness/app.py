@@ -9,7 +9,7 @@ ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 0)
 VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
 
 
-def handler(event, context):
+async def handler(event, context):
     client = PragmaClient(
         network=NETWORK,
         account_private_key=ADMIN_PRIVATE_KEY,

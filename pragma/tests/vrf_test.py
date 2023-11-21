@@ -13,6 +13,7 @@ from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 from pragma.tests.constants import CURRENCIES, PAIRS
 from pragma.tests.utils import read_contract
+from starknet_py.transaction_errors import TransactionRevertedError
 
 
 @pytest_asyncio.fixture(scope="package")
@@ -134,3 +135,42 @@ async def test_randomness_mixin(vrf_pragma_client: PragmaClient, randomness_cont
 
     status = await vrf_pragma_client.get_request_status(caller_address, 0)
     assert status.variant == 'FULFILLED'
+
+    # Request cancellation test
+    seed = 2
+    await vrf_pragma_client.request_random(seed, callback_address, callback_gas_limit, publish_delay, num_words)
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
+    assert pending_reqs == [1]
+    status = await vrf_pragma_client.get_request_status(caller_address, 1)
+    assert status.variant == 'RECEIVED'
+    await vrf_pragma_client.cancel_random_request(pending_reqs[0], caller_address, seed,callback_address, callback_gas_limit,publish_delay, num_words)
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
+    assert pending_reqs == []
+    status = await vrf_pragma_client.get_request_status(caller_address, 1)
+    assert status.variant == 'CANCELLED'
+
+    # Request cancellation failed if request is already fulfilled
+    seed = 3
+    await vrf_pragma_client.request_random(seed, callback_address, callback_gas_limit, publish_delay, num_words)
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
+    assert pending_reqs == [2]
+    status = await vrf_pragma_client.get_request_status(caller_address, 2)
+    assert status.variant == 'RECEIVED'
+    await vrf_pragma_client.handle_random(int(private_key, 16), min_block=0)
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
+    assert pending_reqs == []
+    status = await vrf_pragma_client.get_request_status(caller_address, 2)
+    assert status.variant == 'FULFILLED'
+    try: 
+        await vrf_pragma_client.cancel_random_request(2, caller_address, seed,callback_address, callback_gas_limit,publish_delay, num_words)
+        assert False
+    except TransactionRevertedError as err: 
+        err_msg = "Execution was reverted; failure reason: [0x7265717565737420616c72656164792066756c66696c6c6564]"
+        if not err_msg in err.message:
+            raise err
+        
+    
+        
+    
+
+
