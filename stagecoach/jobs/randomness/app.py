@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from pragma.core.client import PragmaClient
 
@@ -10,15 +11,18 @@ VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
 
 
 def handler(event, context):
+    asyncio.run(main())
+
+    return {
+        "success": True,
+    }
+
+async def main():
     client = PragmaClient(
         network=NETWORK,
         account_private_key=ADMIN_PRIVATE_KEY,
         account_contract_address=ADMIN_CONTRACT_ADDRESS,
     )
-    await client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
+    client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
 
     await client.handle_random(ADMIN_PRIVATE_KEY, START_BLOCK)
-
-    return {
-        "success": True,
-    }
