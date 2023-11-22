@@ -32,60 +32,9 @@ from pragma.tests.utils import (
 )
 
 
-async def devnet_account_details(
-    account: BaseAccount,
-    class_hash: int,
-    network: str,
-) -> Tuple[str, str]:
-    """
-    Deploys an Account and adds fee tokens to its balance (only on devnet).
-    """
-    private_key = _get_random_private_key_unsafe()
-    key_pair = KeyPair.from_private_key(private_key)
-    salt = 1
-
-    address = compute_address(
-        class_hash=class_hash,
-        constructor_calldata=[key_pair.public_key],
-        salt=salt,
-        deployer_address=0,
-    )
-
-    http_client = GatewayHttpClient(network)
-    await http_client.post(
-        method_name="mint",
-        payload={
-            "address": hex(address),
-            "amount": int(1e30),
-        },
-    )
-
-    deploy_account_tx = await get_deploy_account_transaction(
-        address=address,
-        key_pair=key_pair,
-        salt=salt,
-        class_hash=class_hash,
-        network=network,
-    )
-
-    account = Account(
-        address=address,
-        client=account.client,
-        key_pair=key_pair,
-        chain=StarknetChainId.TESTNET,
-    )
-    res = await account.client.deploy_account(deploy_account_tx)
-    await account.client.wait_for_tx(res.transaction_hash)
-
-    return hex(address), hex(key_pair.private_key)
-
-
 @pytest_asyncio.fixture(scope="package")
 async def address_and_private_key(
     pytestconfig,
-    pre_deployed_account_with_validate_deploy: BaseAccount,
-    account_with_validate_deploy_class_hash: int,
-    network: str,
 ) -> Tuple[str, str]:
     """
     Returns address and private key of an account, depending on the network.
@@ -93,18 +42,16 @@ async def address_and_private_key(
     net = pytestconfig.getoption("--net")
 
     account_details = {
+        "devnet": (
+            DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
+            DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
+        ),
         "testnet": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
         "integration": (
             INTEGRATION_ACCOUNT_ADDRESS,
             INTEGRATION_ACCOUNT_PRIVATE_KEY,
         ),
     }
-    if net == "devnet":
-        return await devnet_account_details(
-            pre_deployed_account_with_validate_deploy,
-            account_with_validate_deploy_class_hash,
-            network,
-        )
     return account_details[net]
 
 
