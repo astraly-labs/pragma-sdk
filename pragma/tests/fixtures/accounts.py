@@ -25,10 +25,6 @@ from pragma.tests.constants import (
     TESTNET_ACCOUNT_ADDRESS,
     TESTNET_ACCOUNT_PRIVATE_KEY,
 )
-from pragma.tests.utils import (
-    _get_random_private_key_unsafe,
-    get_deploy_account_transaction,
-)
 
 
 @pytest_asyncio.fixture(scope="package")
