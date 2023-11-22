@@ -39,7 +39,7 @@ class RandomnessMixin:
         self,
         seed: int,
         callback_address: int,
-        callback_gas_limit: int = 1000000,
+        callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
         max_fee=int(1e16),
@@ -51,7 +51,7 @@ class RandomnessMixin:
         invocation = await self.randomness.functions["request_random"].invoke(
             seed,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
             publish_delay,
             num_words,
             max_fee=max_fee,
@@ -64,7 +64,7 @@ class RandomnessMixin:
         requestor_address: int,
         seed: int,
         callback_address: int,
-        callback_gas_limit: int,  # =1000000
+        callback_fee_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
         proof: List[int],  # randomness proof
@@ -80,19 +80,25 @@ class RandomnessMixin:
             seed,
             minimum_block_number,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
             random_words,
             proof,
         )
         estimate_fee = await prepared_call.estimate_fee()
 
-        if estimate_fee.gas_usage > callback_gas_limit:
-            logger.error(f"OUT OF GAS {estimate_fee.gas_usage} > {callback_gas_limit}")
+        if estimate_fee.overall_fee > callback_fee_limit:
+            logger.error(f"OUT OF GAS {estimate_fee.gas_usage} > {callback_fee_limit}")
             invocation = await self.randomness.functions["update_status"].invoke(
                 callback_address,
                 request_id,
                 RequestStatus.OUTOFGAS.serialize(),
-                max_fee=max_fee,
+                auto_estimate=True
+            )
+            # Refund gas
+            await self.randomness.functions["refund_operation"].invoke(
+                callback_address,
+                request_id,
+                auto_estimate=True
             )
             return invocation
 
@@ -102,7 +108,7 @@ class RandomnessMixin:
             seed,
             minimum_block_number,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
             random_words,
             proof,
             max_fee=max_fee,
@@ -143,7 +149,7 @@ class RandomnessMixin:
         requestor_address: int,
         seed: int,
         callback_address: int,
-        callback_gas_limit: int,
+        callback_fee_limit: int,
         publish_delay: int,
         num_words: int,
         max_fee=int(1e16),
@@ -160,7 +166,7 @@ class RandomnessMixin:
             seed,
             minimum_block_number,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
             num_words,
             max_fee=max_fee,
         )
@@ -224,7 +230,7 @@ class RandomnessMixin:
                     event.caller_address,
                     event.seed,
                     event.callback_address,
-                    event.callback_gas_limit,
+                    event.callback_fee_limit,
                     event.minimum_block_number,
                     random_words,
                     proof,
