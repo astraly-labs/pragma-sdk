@@ -64,6 +64,7 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         "--seed",
         str(1),
+        "--disable-fee",
     ]
     return command
 
