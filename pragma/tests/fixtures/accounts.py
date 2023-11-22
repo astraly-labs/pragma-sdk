@@ -191,7 +191,7 @@ def pre_deployed_account_with_validate_deploy(
 
     return Account(
         address=address,
-        client=GatewayClient(net=network),
+        client=FullNodeClient(node_url=network),
         key_pair=KeyPair.from_private_key(int(private_key, 16)),
         chain=StarknetChainId.TESTNET,
     )

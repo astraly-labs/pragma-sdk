@@ -34,3 +34,8 @@ echo "/path/to/cairo/Cargo.toml" >> manifest-path
 ```shell
 coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests
 ```
+
+- curl -L https://install.dojoengine.org | bash
+- source /Users/kasteph/.zshenv
+- dojoup
+- 

@@ -14,7 +14,6 @@ async def declare_account(account: BaseAccount, compiled_account_contract: str) 
     """
     Declares a specified account.
     """
-
     declare_tx = await account.sign_declare_transaction(
         compiled_contract=compiled_account_contract,
         max_fee=MAX_FEE,

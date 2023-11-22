@@ -53,18 +53,17 @@ def start_devnet():
 
 def start_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
-        "poetry",
-        "run",
-        "starknet-devnet",
+        "katana",
+        "--chain-id",
+        "SN_GOERLI",
         "--host",
         "127.0.0.1",
         "--port",
         str(devnet_port),
-        "--accounts",  # deploys specified number of accounts
+        "--accounts",
         str(1),
-        "--seed",  # generates same accounts each time
+        "--seed",
         str(1),
-        *get_compiler_manifest(),
     ]
     return command
 
@@ -72,11 +71,11 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
 def start_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
-        "python3",
-        "-m",
-        "starknet_devnet.server",
+        "katana",
+        "--rpc-url",
+        "127.0.0.1",
         "--port",
-        f"{devnet_port}",
+        str(devnet_port),
         "--accounts",
         str(1),
         "--seed",

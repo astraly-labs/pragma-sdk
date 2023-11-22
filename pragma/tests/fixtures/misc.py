@@ -3,13 +3,23 @@
 
 import pytest
 
+from pragma.core.types import get_rpc_url
+
 
 def pytest_addoption(parser):
     parser.addoption(
         "--net",
         action="store",
         default="devnet",
-        help="Network to run tests on: possible 'testnet', 'devnet', 'all'",
+        help="Network to run tests on, one of: "
+             "`mainnet`, `testnet`, `sharingan`, `pragma_testnet`",
+    )
+    parser.addoption(
+        "--fork-block-number",
+        action="store",
+        default="",
+        help="The block number to fork from. See: "
+             "https://book.dojoengine.org/toolchain/katana/reference.html",
     )
     parser.addoption(
         "--client",
