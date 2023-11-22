@@ -1,5 +1,5 @@
-import os
 import asyncio
+import os
 
 from pragma.core.client import PragmaClient
 
@@ -16,6 +16,7 @@ def handler(event, context):
     return {
         "success": True,
     }
+
 
 async def main():
     client = PragmaClient(

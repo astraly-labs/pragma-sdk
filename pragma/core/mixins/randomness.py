@@ -1,7 +1,7 @@
+import asyncio
 import logging
 import sys
 from typing import Any, Callable, List, Optional
-import asyncio
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
@@ -14,6 +14,7 @@ from pragma.core.randomness.utils import (
     create_randomness,
     felt_to_secret_key,
 )
+from pragma.core.types import RequestStatus
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,28 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
+        prepared_call = self.randomness.functions["submit_random"].prepare(
+            request_id,
+            requestor_address,
+            seed,
+            minimum_block_number,
+            callback_address,
+            callback_gas_limit,
+            random_words,
+            proof,
+        )
+        estimate_fee = await prepared_call.estimate_fee()
+
+        if estimate_fee.gas_usage > callback_gas_limit:
+            logger.error(f"OUT OF GAS {estimate_fee.gas_usage} > {callback_gas_limit}")
+            invocation = await self.randomness.functions["update_status"].invoke(
+                callback_address,
+                request_id,
+                RequestStatus.OUTOFGAS.serialize(),
+                max_fee=max_fee,
+            )
+            return invocation
+
         invocation = await self.randomness.functions["submit_random"].invoke(
             request_id,
             requestor_address,
@@ -84,6 +107,8 @@ class RandomnessMixin:
             proof,
             max_fee=max_fee,
         )
+        logger.info(f"Sumbitted random {invocation.hash}")
+
         return invocation
 
     async def get_request_status(
@@ -112,6 +137,35 @@ class RandomnessMixin:
 
         return response
 
+    async def cancel_random_request(
+        self,
+        request_id: int,
+        requestor_address: int,
+        seed: int,
+        callback_address: int,
+        callback_gas_limit: int,
+        publish_delay: int,
+        num_words: int,
+        max_fee=int(1e16),
+    ) -> InvokeResult:
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+        block_number = await self.full_node_client.get_block_number()
+        minimum_block_number = block_number + publish_delay
+        invocation = await self.randomness.functions["cancel_random_request"].invoke(
+            request_id,
+            requestor_address,
+            seed,
+            minimum_block_number,
+            callback_address,
+            callback_gas_limit,
+            num_words,
+            max_fee=max_fee,
+        )
+        return invocation
+
     async def handle_random(self, private_key: int, min_block: int = 0):
         block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
@@ -123,7 +177,9 @@ class RandomnessMixin:
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
-                keys=[["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]],
+                keys=[
+                    ["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]
+                ],
                 from_block_number=min_block,
                 to_block_number=block_number,
                 continuation_token=continuation_token,
@@ -139,7 +195,7 @@ class RandomnessMixin:
                     continue
                 request_id = event.request_id
                 status = await self.get_request_status(event.caller_address, request_id)
-                if status.variant != 'RECEIVED':
+                if status.variant != "RECEIVED":
                     continue
 
                 print(f"event {event}")
