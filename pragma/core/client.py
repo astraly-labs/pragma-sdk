@@ -9,13 +9,16 @@ from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
 from pragma.core.mixins import (
     NonceMixin,
+    OffchainMixin,
     OracleMixin,
     PublisherRegistryMixin,
+    RandomnessMixin,
     TransactionMixin,
 )
 from pragma.core.types import (
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
+    PRAGMA_API_URL,
     ClientException,
     ContractAddresses,
     get_client_from_network,
@@ -26,10 +29,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionMixin):
+class PragmaClient(
+    NonceMixin,
+    OracleMixin,
+    PublisherRegistryMixin,
+    TransactionMixin,
+    OffchainMixin,
+    RandomnessMixin,
+):
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
+    fullnode_client: FullNodeClient = None
 
     def __init__(
         self,
@@ -39,6 +50,8 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
+        api_url: Optional[str] = PRAGMA_API_URL,
+        api_key: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -52,8 +65,18 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
         :param port: Optional port to interact with local node. Will default to 5050.
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
+        :param api_url: Optional URL for the Pragma API.  Defaults to http://localhost:8080
+        :param api_key: Optional API key for the Pragma API.
         """
-        self.client: FullNodeClient = get_client_from_network(network, port=port)
+        self.ssl_context = None
+        self.api_url = api_url
+
+        if api_key is not None:
+            self.api_key = api_key
+
+        full_node_client: FullNodeClient = get_client_from_network(network, port=port)
+        self.full_node_client = full_node_client
+        self.client = full_node_client
         if network.startswith("http") and chain_name is None:
             raise ClientException(
                 f"Network provided is a URL: {network} but `chain_name` is not provided."
@@ -87,6 +110,9 @@ class PragmaClient(NonceMixin, OracleMixin, PublisherRegistryMixin, TransactionM
             provider=provider,
             cairo_version=1,
         )
+
+    def full_node_client(self, network):
+        return get_client_from_network(network, port=port)
 
     async def get_balance(self, account_contract_address, token_address=None):
         client = Account(

@@ -5,8 +5,9 @@ from urllib.parse import urlparse
 import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
-from starknet_py.net.account.base_account import BaseAccount
+from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
+from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
@@ -27,7 +28,7 @@ SOURCE_3 = "SOURCE_3"
 
 @pytest_asyncio.fixture(scope="package")
 async def declare_deploy_oracle(
-    account: BaseAccount,
+    account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract_registry = read_contract(
         "pragma_PublisherRegistry.sierra.json", directory=None
@@ -118,7 +119,7 @@ async def test_deploy_contract(contracts):
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
-async def test_client_setup(pragma_client: PragmaClient, account: BaseAccount):
+async def test_client_setup(pragma_client: PragmaClient, account: Account):
     assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()
@@ -228,6 +229,18 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
 
+    # Fails if timestamp too far in the future (>2min)
+    spot_entry_future = SpotEntry(
+        ETH_PAIR, 100, timestamp + 130, SOURCE_1, publisher_name, volume=10
+    )
+    try:
+        await pragma_client.publish_many([spot_entry_future])
+        assert False
+    except TransactionRevertedError as err:
+        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        if not err_msg in err.message:
+            raise err
+
     # Add new source and check aggregation
     await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
     spot_entry_1 = SpotEntry(
@@ -313,6 +326,24 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
 
+    # Fails if timestamp too far in the future (>2min)
+    future_entry_future = FutureEntry(
+        ETH_PAIR,
+        100,
+        timestamp + 1000,
+        SOURCE_1,
+        publisher_name,
+        expiry_timestamp,
+        volume=10,
+    )
+    try:
+        await pragma_client.publish_many([future_entry_future])
+        assert False
+    except TransactionRevertedError as err:
+        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        if not err_msg in err.message:
+            raise err
+
 
 def test_client_with_http_network():
     client_with_chain_name = PragmaClient(
@@ -327,3 +358,11 @@ def test_client_with_http_network():
     with pytest.raises(Exception) as exception:
         _ = PragmaClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
+
+
+# @pytest.mark.asyncio
+# async def test_client_live():
+#     client = PragmaClient(network="testnet")
+
+#     print(await client.get_spot("BTC/USD"))
+#     print(await client.get_future("BTC/USD", expiry_timestamp=0))

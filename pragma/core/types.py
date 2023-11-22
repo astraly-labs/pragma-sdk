@@ -4,6 +4,7 @@ from enum import Enum, unique
 from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
+# from starknet_py.net.gateway_client import GatewayClient
 
 from pragma.core.utils import str_to_felt
 
@@ -41,6 +42,8 @@ STARKSCAN_URLS = {
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
 }
 
+PRAGMA_API_URL = "https://api.dev.pragma.build"
+
 
 def get_rpc_url(network=TESTNET, port=5050):
     if network.startswith("http"):
@@ -59,6 +62,12 @@ def get_rpc_url(network=TESTNET, port=5050):
 
 
 def get_client_from_network(network: str, port=5050):
+    # return GatewayClient(
+    #     net={
+    #         "feeder_gateway_url": f"http://127.0.0.1:{port}/feeder_gateway",
+    #         "gateway_url": f"http://127.0.0.1:{port}/gateway",
+    #     }
+    # )
     return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
@@ -71,10 +80,13 @@ class ContractAddresses:
 CONTRACT_ADDRESSES = {
     DEVNET: ContractAddresses(0, 0),
     TESTNET: ContractAddresses(
-        1879860257230188794072258684440329704554817846629170083629504759694981156907,
-        2771562156282025154643998054480061423405497639137376305590169894519994140346,
+        2408056700008799988274832007944460979526684291270693941276336026156441738630,
+        3108238389225984732543655444430831893780207443780498125530192910262931411303,
     ),
-    MAINNET: ContractAddresses(0, 0),
+    MAINNET: ContractAddresses(
+        1035964020232444284030697086969999610062982650901949616270651804992179237909,
+        1202089834814778579992154020333959781277480478747022471664051891421849487195,
+    ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
 }

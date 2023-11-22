@@ -11,7 +11,6 @@ import pytest
 import pytest_asyncio
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
-from starknet_py.net.account.base_account import BaseAccount
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.http_client import GatewayHttpClient
@@ -75,7 +74,7 @@ def gateway_account(
 @pytest.fixture(scope="package")
 def full_node_account(
     address_and_private_key: Tuple[str, str], full_node_client: FullNodeClient
-) -> BaseAccount:
+) -> Account:
     """
     Returns a new Account created with FullNodeClient.
     """
@@ -107,7 +106,7 @@ def net_to_base_accounts() -> List[str]:
     scope="package",
     params=net_to_base_accounts(),
 )
-def account(request) -> BaseAccount:
+def account(request) -> Account:
     """
     This parametrized fixture returns all new Accounts, one by one.
     """
@@ -115,9 +114,7 @@ def account(request) -> BaseAccount:
 
 
 @pytest.fixture(scope="package")
-def pre_deployed_account_with_validate_deploy(
-    pytestconfig, network: str
-) -> BaseAccount:
+def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Account:
     """
     Returns an Account pre-deployed on specified network. Used to deploy other accounts.
     """
