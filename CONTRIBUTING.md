@@ -36,6 +36,5 @@ coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-reru
 ```
 
 - curl -L https://install.dojoengine.org | bash
-- source /Users/kasteph/.zshenv
+- source /Users/<user>/.zshenv
 - dojoup
-- 

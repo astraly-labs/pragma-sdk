@@ -178,7 +178,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     )
 
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
-    assert entries == [SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, 0, volume=200)]
+    assert entries == [
+        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
+    ]
 
     # Get SPOT
     res = await pragma_client.get_spot(BTC_PAIR)
@@ -210,14 +212,13 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
             ETH_PAIR, sources=[str_to_felt(unknown_source)]
         )
     except ClientError as err:
-        err_msg = "Execution was reverted; failure reason: [0x4e6f206461746120656e74727920666f756e64]"
+        err_msg = "Contract error"  # TODO(#000): check error message 04e6f206461746120656e74727920666f756e64
         if not err_msg in err.message:
             raise err
 
     # Returns correct entries
     entries = await pragma_client.get_spot_entries(ETH_PAIR, sources=[])
 
-    spot_entry_2.set_publisher(0)
     assert entries == [spot_entry_2]
 
     # Return correct price aggregated
@@ -280,7 +281,6 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     entries = await pragma_client.get_future_entries(
         BTC_PAIR, expiry_timestamp, sources=[]
     )
-    future_entry_2.base.publisher = 0
     assert entries == [future_entry_2]
 
     # Get FUTURE

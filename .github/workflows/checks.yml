@@ -133,44 +133,10 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-      - name: Clone Cairo1 compiler repository
-        uses: actions/checkout@v3
-        with:
-          repository: starkware-libs/cairo
-          persist-credentials: false
-          ref: v2.1.0
-          path: cairo
-
-      - name: Cache rust dependencies
-        id: cache-rust
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build compiler
-        if: steps.cache-rust.outputs.cache-hit != 'true'
-        working-directory: ./cairo
+      - name: Install dojo
         run: |
-          cargo build
-
-      - name: Build starknet-compile
-        working-directory: ./cairo
-        run: |
-          cargo run --bin starknet-compile -- --version
-          cargo run --bin starknet-sierra-compile -- --version
-
-      - name: Create manifest file
-        run: |
-          readlink -f ./cairo/Cargo.toml >> ./pragma/tests/manifest-path
-
-      - name: List directories
-        run: ls -R
+          curl -L https://install.dojoengine.org | bash
+          dojoup
 
       # ====================== RUN TESTS ====================== #
 
