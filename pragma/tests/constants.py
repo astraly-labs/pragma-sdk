@@ -43,6 +43,7 @@ TESTNET_ACCOUNT_ADDRESS = (
     "0x59083382aadec25d7616a7f48942d72d469b0ac581f2e935ec26b68f66bd600"
 )
 # 0x61910356c5adf66efb65ec3df5d07a6e5e6e7c8b59f15a13eda7a34c8d1ecc4
+FEE_TOKEN_ADDRESS = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 
 # -------------------------------- INTEGRATION ---------------------------------
 
