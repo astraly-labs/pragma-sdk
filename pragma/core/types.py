@@ -106,11 +106,11 @@ class AggregationMode(Enum):
 
 @unique
 class RequestStatus(Enum):
-    UNINITIALIZED = "Uninitialized"
-    RECEIVED = "Received"
-    FULFILLED = "Fulfilled"
-    CANCELLED = "Cancelled"
-    OUTOFGAS = "OutOfGas"
+    UNINITIALIZED = "UNINITIALIZED"
+    RECEIVED = "RECEIVED"
+    FULFILLED = "FULFILLED"
+    CANCELLED = "CANCELLED"
+    OUT_OF_GAS = "OUT_OF_GAS"
 
     def serialize(self):
         return {self.value: None}

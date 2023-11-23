@@ -81,25 +81,25 @@ class RandomnessMixin:
             minimum_block_number,
             callback_address,
             callback_fee_limit,
+            callback_fee_limit,
             random_words,
             proof,
         )
         estimate_fee = await prepared_call.estimate_fee()
 
         if estimate_fee.overall_fee > callback_fee_limit:
-            logger.error(f"OUT OF GAS {estimate_fee.gas_usage} > {callback_fee_limit}")
+            logger.error(
+                f"OUT OF GAS {estimate_fee.overall_fee} > {callback_fee_limit}"
+            )
             invocation = await self.randomness.functions["update_status"].invoke(
-                callback_address,
+                requestor_address,
                 request_id,
-                RequestStatus.OUTOFGAS.serialize(),
-                auto_estimate=True
+                RequestStatus.OUT_OF_GAS.serialize(),
+                auto_estimate=True,
             )
             # Refund gas
-            await self.randomness.functions["refund_operation"].invoke(
-                callback_address,
-                request_id,
-                auto_estimate=True
-            )
+            await self.refund_operation(request_id, requestor_address)
+
             return invocation
 
         invocation = await self.randomness.functions["submit_random"].invoke(
@@ -109,6 +109,7 @@ class RandomnessMixin:
             minimum_block_number,
             callback_address,
             callback_fee_limit,
+            estimate_fee.overall_fee,
             random_words,
             proof,
             max_fee=max_fee,
@@ -169,6 +170,21 @@ class RandomnessMixin:
             callback_fee_limit,
             num_words,
             max_fee=max_fee,
+        )
+        return invocation
+
+    async def refund_operation(
+        self,
+        request_id: int,
+        requestor_address: int,
+        max_fee=int(1e16),
+    ) -> InvokeResult:
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+        invocation = await self.randomness.functions["refund_operation"].invoke(
+            requestor_address, request_id, max_fee=max_fee
         )
         return invocation
 
@@ -236,7 +252,7 @@ class RandomnessMixin:
                     proof,
                 )
 
-                print(f"submitted: {invocation.hash}\n\n")
+                print(f"Submitted: {hex(invocation.hash)}\n\n")
 
                 # Wait for Tx to pass
                 await asyncio.sleep(5)
