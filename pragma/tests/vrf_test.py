@@ -282,4 +282,4 @@ async def test_fails_gas_limit(
 
     balance_after = await vrf_pragma_client.get_balance(caller_address)
 
-    assert balance_before <= balance_after
+    assert balance_before >= balance_after
