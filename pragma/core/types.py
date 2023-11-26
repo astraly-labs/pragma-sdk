@@ -1,4 +1,5 @@
 import logging
+import random
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
@@ -46,14 +47,30 @@ STARKSCAN_URLS = {
 
 PRAGMA_API_URL = "https://api.dev.pragma.build"
 
+RPC_URLS = {
+    MAINNET: [
+        "https://starknet-mainnet.public.blastapi.io",
+        "https://rpc.starknet.lava.build",
+        "https://limited-rpc.nethermind.io/mainnet-juno",
+    ],
+    TESTNET: [
+        "https://starknet-testnet.public.blastapi.io",
+        "https://rpc.starknet-testnet.lava.build",
+        "https://limited-rpc.nethermind.io/goerli-juno",
+    ],
+}
+
 
 def get_rpc_url(network=TESTNET, port=5050):
     if network.startswith("http"):
         return network
     if network == TESTNET:
-        return "https://starknet-testnet.public.blastapi.io"
+        random_index = random.randint(0, len(RPC_URLS[TESTNET]) - 1)
+        return RPC_URLS[TESTNET][random_index]
     if network == MAINNET:
-        return "https://starknet-mainnet.public.blastapi.io"
+        random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
+        print(random_index)
+        return RPC_URLS[MAINNET][random_index]
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:

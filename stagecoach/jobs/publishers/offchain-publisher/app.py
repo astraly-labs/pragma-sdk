@@ -3,21 +3,29 @@ import json
 import os
 
 import boto3
+
+from pragma.core.assets import (
+    get_future_asset_spec_for_pair_id,
+    get_spot_asset_spec_for_pair_id,
+)
 from pragma.core.logger import get_stream_logger
-from pragma.core.assets import get_spot_asset_spec_for_pair_id, get_future_asset_spec_for_pair_id
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
+    AscendexFetcher,
+    AvnuFetcher,
     BitstampFetcher,
     CexFetcher,
     CoinbaseFetcher,
-    AscendexFetcher,
-    KaikoFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
+    KaikoFetcher,
     OkxFetcher,
-    AvnuFetcher
 )
-from pragma.publisher.future_fetchers import (BinanceFutureFetcher, OkxFutureFetcher, ByBitFutureFetcher)
+from pragma.publisher.future_fetchers import (
+    BinanceFutureFetcher,
+    ByBitFutureFetcher,
+    OkxFutureFetcher,
+)
 
 logger = get_stream_logger()
 
@@ -33,7 +41,9 @@ if PAGINATION is not None:
 
 
 def handler(event, context):
-    spot_assets = [get_spot_asset_spec_for_pair_id(asset) for asset in SPOT_ASSETS.split(",")]
+    spot_assets = [
+        get_spot_asset_spec_for_pair_id(asset) for asset in SPOT_ASSETS.split(",")
+    ]
     response = asyncio.run(_handler(spot_assets))
     return {
         "success": response,
@@ -59,7 +69,7 @@ async def _handler(assets):
     publisher_client = PragmaPublisherClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
-        api_url=API_URL
+        api_url=API_URL,
     )
 
     publisher_client.add_fetchers(
@@ -76,13 +86,13 @@ async def _handler(assets):
             )
         ]
     )
-    
+
     publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
-    
+
     _entries = await publisher_client.fetch()
     print(f"Got {_entries} entries")
     response = await publisher_client.publish_data(_entries)
-    
+
     print(f"Successfuly published data with response {response}")
 
     return response
