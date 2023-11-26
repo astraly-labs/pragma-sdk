@@ -69,7 +69,6 @@ def get_rpc_url(network=TESTNET, port=5050):
         return RPC_URLS[TESTNET][random_index]
     if network == MAINNET:
         random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
-        print(random_index)
         return RPC_URLS[MAINNET][random_index]
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
