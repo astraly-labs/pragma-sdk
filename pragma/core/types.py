@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
 
-from pragma.core.utils import str_to_felt
+from pragma.core.utils import str_to_felt, felt_to_str
 
 # from starknet_py.net.gateway_client import GatewayClient
 
@@ -183,6 +183,9 @@ class Currency:
             "ethereum_address": self.ethereum_address,
         }
 
+    def __repr__(self):
+        return f"Currency({felt_to_str(self.id)}, {self.decimals}, {self.is_abstract_currency}, {self.starknet_address}, {self.ethereum_address})"
+
 
 class Pair:
     id_: int
@@ -211,6 +214,9 @@ class Pair:
             "quote_currency_id": self.quote_currency_id,
             "base_currency_id": self.base_currency_id,
         }
+
+    def __repr__(self):
+        return f"Pair({felt_to_str(self.id)}, {felt_to_str(self.quote_currency_id)}, {felt_to_str(self.base_currency_id)})"
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
