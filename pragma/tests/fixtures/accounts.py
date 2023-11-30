@@ -46,6 +46,10 @@ async def address_and_private_key(
             INTEGRATION_ACCOUNT_ADDRESS,
             INTEGRATION_ACCOUNT_PRIVATE_KEY,
         ),
+        "fork_devnet": (
+            DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
+            DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
+        ),
     }
     return account_details[net]
 

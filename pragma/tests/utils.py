@@ -2,17 +2,18 @@ import random
 from pathlib import Path
 from typing import Optional, cast
 
+import json
+import os 
 from starknet_py.constants import EC_ORDER
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
-from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 from pragma.tests.constants import CONTRACTS_COMPILED_DIR, MAX_FEE
-
+from pragma.tests.constants import DEPLOYMENTS_DIR
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
     """
@@ -36,28 +37,15 @@ def _get_random_private_key_unsafe() -> int:
 
 
 async def get_deploy_account_transaction(
-    *,
-    address: int,
-    key_pair: KeyPair,
-    salt: int,
-    class_hash: int,
-    network: Optional[Network] = None,
-    client: Optional[Client] = None,
+    *, address: int, key_pair: KeyPair, salt: int, class_hash: int, client: Client
 ) -> DeployAccount:
     """
     Get a signed DeployAccount transaction from provided details
     """
-    if network is None and client is None:
-        raise ValueError("One of network or client must be provided.")
 
     account = Account(
         address=address,
-        client=client
-        or GatewayClient(
-            net=cast(
-                Network, network
-            )  # Cast needed because pyright doesn't recognize network as not None at this point
-        ),
+        client=client,
         key_pair=key_pair,
         chain=StarknetChainId.TESTNET,
     )
@@ -65,5 +53,18 @@ async def get_deploy_account_transaction(
         class_hash=class_hash,
         contract_address_salt=salt,
         constructor_calldata=[key_pair.public_key],
-        max_fee=MAX_FEE,
+        max_fee=int(1e16),
     )
+
+def get_declarations():
+    return {
+        name: int(class_hash, 16)
+        for name, class_hash in json.load(
+            open(DEPLOYMENTS_DIR / "declarations.json")
+        ).items()
+    }
+
+
+def get_deployments():
+    print(DEPLOYMENTS_DIR)
+    return json.load(open(DEPLOYMENTS_DIR / "deployments/deployments.json", "r"))

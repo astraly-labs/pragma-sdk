@@ -56,7 +56,7 @@ def get_abi(contract_name):
 
 
 CONTRACTS_NAMES = [
-    "pragma_Admin",
+    # "pragma_Ownable",
     "pragma_Oracle",
     "pragma_PublisherRegistry",
     "pragma_SummaryStats",

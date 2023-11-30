@@ -30,12 +30,13 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="package")
-def network(pytestconfig, run_devnet: str) -> str:
+def network(pytestconfig, run_devnet: str, fork_testnet_devnet: str) -> str:
     """
     Returns network address depending on the --net parameter.
     """
     net = pytestconfig.getoption("--net")
     net_address = {
+        'fork_devnet': fork_testnet_devnet, 
         "devnet": run_devnet,
         "testnet": "testnet",
         "integration": "https://external.integration.starknet.io",
@@ -50,12 +51,14 @@ def pytest_collection_modifyitems(config, items):
 
     run_testnet = config.getoption("--net") == "testnet"
     run_devnet = config.getoption("--net") == "devnet"
+    fork_testnet_devnet= config.getoption("--net") == "fork_devnet"
     for item in items:
         runs_on_testnet = "run_on_testnet" in item.keywords
         runs_on_devnet = "run_on_devnet" in item.keywords
+        runs_on_fork_devnet = "run_on_fork_devnet" in item.keywords
         should_not_run = (runs_on_devnet and not run_devnet) or (
             runs_on_testnet and not run_testnet
-        )
+        ) or (runs_on_fork_devnet and not fork_testnet_devnet)
         if should_not_run:
             item.add_marker(pytest.mark.skip())
 

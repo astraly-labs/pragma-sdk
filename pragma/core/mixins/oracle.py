@@ -380,3 +380,10 @@ class OracleMixin:
             )
 
         return invocation
+
+
+    async def get_admin_address(
+            self
+    ) ->int: 
+        (response,) = await self.oracle.functions["get_admin_address"].call()
+        return response

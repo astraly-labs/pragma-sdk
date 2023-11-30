@@ -2,15 +2,18 @@ import logging
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
-
+import os 
 from starknet_py.net.full_node_client import FullNodeClient
-# from starknet_py.net.gateway_client import GatewayClient
+from dotenv import load_dotenv
 
 from pragma.core.utils import str_to_felt
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+load_dotenv()
+
 
 ADDRESS = int
 HEX_STR = str  # pylint: disable=invalid-name
@@ -20,9 +23,10 @@ DEVNET = "devnet"
 TESTNET = "testnet"
 MAINNET = "mainnet"
 SHARINGAN = "sharingan"
+FORK_DEVNET = "fork_devnet"
 PRAGMA_TESTNET = "pragma_testnet"
 
-Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet"]
+Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "fork_devnet"]
 
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
@@ -30,6 +34,7 @@ CHAIN_IDS = {
     TESTNET: 1536727068981429685321,
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
+    FORK_DEVNET: 1536727068981429685321,
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
@@ -40,12 +45,14 @@ STARKSCAN_URLS = {
     DEVNET: "https://devnet.starkscan.co",
     SHARINGAN: "https://sharingan-explorer.madara.zone",
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
+    FORK_DEVNET: "https://devnet.starkscan.co",
 }
 
 PRAGMA_API_URL = "https://api.dev.pragma.build"
 
 
 def get_rpc_url(network=TESTNET, port=5050):
+    
     if network.startswith("http"):
         return network
     if network == TESTNET:
@@ -58,16 +65,12 @@ def get_rpc_url(network=TESTNET, port=5050):
         return "https://testnet.pragmaoracle.com/rpc"
     if network == DEVNET:
         return f"http://127.0.0.1:{port}/rpc"
+    if network == FORK_DEVNET:
+        return f"http://127.0.0.1:{port}/rpc"
     raise ClientException("Must provide a network name or an RPC URL.")
 
 
 def get_client_from_network(network: str, port=5050):
-    # return GatewayClient(
-    #     net={
-    #         "feeder_gateway_url": f"http://127.0.0.1:{port}/feeder_gateway",
-    #         "gateway_url": f"http://127.0.0.1:{port}/gateway",
-    #     }
-    # )
     return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
@@ -89,6 +92,7 @@ CONTRACT_ADDRESSES = {
     ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
+    FORK_DEVNET: ContractAddresses(0, 0),
 }
 
 

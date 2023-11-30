@@ -4,15 +4,20 @@ https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee38
 """
 
 import os
+from dotenv import load_dotenv
+
 import socket
 import subprocess
 import time
 from contextlib import closing
 from pathlib import Path
 from typing import Generator, List
-
+from pragma.tests.constants import FORK_BLOCK_NUMBER
 import pytest
 
+
+
+load_dotenv()
 
 def get_available_port() -> int:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
@@ -51,6 +56,19 @@ def start_devnet():
     return devnet_port, proc
 
 
+def fork_start_devnet(): 
+    devnet_port = get_available_port()
+
+    if os.name == "nt":
+        start_devnet_command = start_fork_devnet_command_windows(devnet_port)
+    else:
+        start_devnet_command = start_fork_devnet_command_unix(devnet_port)
+    proc = subprocess.Popen(start_devnet_command)
+    time.sleep(10)
+    return devnet_port, proc
+
+
+
 def start_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
         "katana",
@@ -83,6 +101,46 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
         str(1),
     ]
 
+def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
+    rpc_url = os.getenv("RPC_URL")
+    command = [
+        "katana",
+        "--fork-block-number", 
+        str(FORK_BLOCK_NUMBER),
+        "--chain-id",
+        "SN_GOERLI",
+        "--host",
+           "127.0.0.1",
+        "--port",
+        str(devnet_port),
+        "--accounts",
+        str(1),
+        "--seed",
+        str(1),
+        '--rpc-url', 
+        str(rpc_url),
+        "--disable-fee",
+    ]
+    return command
+
+
+def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
+    rpc_url = os.getenv("RPC_URL")
+
+    return [
+        "wsl",
+        "katana",
+        "--fork-block-number", 
+        str(FORK_BLOCK_NUMBER),
+        "--rpc-url",
+        str(rpc_url),
+        "--port",
+        str(devnet_port),
+        "--accounts",
+        str(1),
+        "--seed",
+        str(1),
+    ]
 
 @pytest.fixture(scope="package")
 def run_devnet() -> Generator[str, None, None]:
@@ -92,3 +150,15 @@ def run_devnet() -> Generator[str, None, None]:
     devnet_port, proc = start_devnet()
     yield f"http://127.0.0.1:{devnet_port}"
     proc.kill()
+
+
+
+@pytest.fixture(scope="package")
+def fork_testnet_devnet() -> Generator[str, None, None]:
+    """
+    Runs devnet instance once per module and returns it's address.
+    """
+    devnet_port, proc = fork_start_devnet()
+    yield f"http://127.0.0.1:{devnet_port}"
+    proc.kill()
+    
