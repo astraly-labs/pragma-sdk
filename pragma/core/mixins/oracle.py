@@ -10,7 +10,7 @@ from starknet_py.net.client import Client
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataType, DataTypes
-from pragma.core.utils import str_to_felt
+from pragma.core.utils import str_to_felt, felt_to_str
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +153,13 @@ class OracleMixin:
         )
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
+
+    async def get_all_sources(self, data_type: DataType) -> List[str]:
+        (response,) = await self.oracle.functions["get_all_sources"].call(
+            data_type.serialize()
+        )
+
+        return [felt_to_str(source) for source in response]
 
     @deprecated
     async def get_future_entries(

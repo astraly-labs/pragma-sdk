@@ -1,7 +1,7 @@
+import asyncio
 import logging
 import sys
 from typing import Any, Callable, List, Optional
-import asyncio
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
@@ -14,6 +14,7 @@ from pragma.core.randomness.utils import (
     create_randomness,
     felt_to_secret_key,
 )
+from pragma.core.types import RequestStatus
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class RandomnessMixin:
         self,
         seed: int,
         callback_address: int,
-        callback_gas_limit: int = 1000000,
+        callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
         max_fee=int(1e16),
@@ -50,7 +51,7 @@ class RandomnessMixin:
         invocation = await self.randomness.functions["request_random"].invoke(
             seed,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
             publish_delay,
             num_words,
             max_fee=max_fee,
@@ -63,7 +64,7 @@ class RandomnessMixin:
         requestor_address: int,
         seed: int,
         callback_address: int,
-        callback_gas_limit: int,  # =1000000
+        callback_fee_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
         proof: List[int],  # randomness proof
@@ -73,17 +74,48 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
+        prepared_call = self.randomness.functions["submit_random"].prepare(
+            request_id,
+            requestor_address,
+            seed,
+            minimum_block_number,
+            callback_address,
+            callback_fee_limit,
+            callback_fee_limit,
+            random_words,
+            proof,
+        )
+        estimate_fee = await prepared_call.estimate_fee()
+
+        if estimate_fee.overall_fee > callback_fee_limit:
+            logger.error(
+                f"OUT OF GAS {estimate_fee.overall_fee} > {callback_fee_limit}"
+            )
+            invocation = await self.randomness.functions["update_status"].invoke(
+                requestor_address,
+                request_id,
+                RequestStatus.OUT_OF_GAS.serialize(),
+                auto_estimate=True,
+            )
+            # Refund gas
+            await self.refund_operation(request_id, requestor_address)
+
+            return invocation
+
         invocation = await self.randomness.functions["submit_random"].invoke(
             request_id,
             requestor_address,
             seed,
             minimum_block_number,
             callback_address,
-            callback_gas_limit,
+            callback_fee_limit,
+            estimate_fee.overall_fee,
             random_words,
             proof,
             max_fee=max_fee,
         )
+        logger.info(f"Sumbitted random {invocation.hash}")
+
         return invocation
 
     async def get_request_status(
@@ -112,6 +144,50 @@ class RandomnessMixin:
 
         return response
 
+    async def cancel_random_request(
+        self,
+        request_id: int,
+        requestor_address: int,
+        seed: int,
+        callback_address: int,
+        callback_fee_limit: int,
+        publish_delay: int,
+        num_words: int,
+        max_fee=int(1e16),
+    ) -> InvokeResult:
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+        block_number = await self.full_node_client.get_block_number()
+        minimum_block_number = block_number + publish_delay
+        invocation = await self.randomness.functions["cancel_random_request"].invoke(
+            request_id,
+            requestor_address,
+            seed,
+            minimum_block_number,
+            callback_address,
+            callback_fee_limit,
+            num_words,
+            max_fee=max_fee,
+        )
+        return invocation
+
+    async def refund_operation(
+        self,
+        request_id: int,
+        requestor_address: int,
+        max_fee=int(1e16),
+    ) -> InvokeResult:
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+        invocation = await self.randomness.functions["refund_operation"].invoke(
+            requestor_address, request_id, max_fee=max_fee
+        )
+        return invocation
+
     async def handle_random(self, private_key: int, min_block: int = 0):
         block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
@@ -123,7 +199,9 @@ class RandomnessMixin:
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
-                keys=[["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]],
+                keys=[
+                    ["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]
+                ],
                 from_block_number=min_block,
                 to_block_number=block_number,
                 continuation_token=continuation_token,
@@ -139,7 +217,7 @@ class RandomnessMixin:
                     continue
                 request_id = event.request_id
                 status = await self.get_request_status(event.caller_address, request_id)
-                if status.variant != 'RECEIVED':
+                if status.variant != "RECEIVED":
                     continue
 
                 print(f"event {event}")
@@ -168,13 +246,13 @@ class RandomnessMixin:
                     event.caller_address,
                     event.seed,
                     event.callback_address,
-                    event.callback_gas_limit,
+                    event.callback_fee_limit,
                     event.minimum_block_number,
                     random_words,
                     proof,
                 )
 
-                print(f"submitted: {invocation.hash}\n\n")
+                print(f"Submitted: {hex(invocation.hash)}\n\n")
 
                 # Wait for Tx to pass
                 await asyncio.sleep(5)

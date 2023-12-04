@@ -21,7 +21,7 @@ class RandomnessRequest:
         seed,
         minimum_block_number,
         callback_address,
-        callback_gas_limit,
+        callback_fee_limit,
         num_words,
     ):
         self.request_id = request_id
@@ -29,7 +29,7 @@ class RandomnessRequest:
         self.seed = seed
         self.minimum_block_number = minimum_block_number
         self.callback_address = callback_address
-        self.callback_gas_limit = callback_gas_limit
+        self.callback_fee_limit = callback_fee_limit
         self.num_words = num_words
 
     def __repr__(self):

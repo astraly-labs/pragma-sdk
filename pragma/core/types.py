@@ -1,18 +1,15 @@
 import logging
+import random
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
-import os 
 from starknet_py.net.full_node_client import FullNodeClient
-from dotenv import load_dotenv
+from pragma.core.utils import str_to_felt, felt_to_str
 
-from pragma.core.utils import str_to_felt
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-load_dotenv()
 
 
 ADDRESS = int
@@ -26,7 +23,9 @@ SHARINGAN = "sharingan"
 FORK_DEVNET = "fork_devnet"
 PRAGMA_TESTNET = "pragma_testnet"
 
-Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "fork_devnet"]
+Network = Literal[
+    "devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "fork_devnet"
+]
 
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
@@ -50,15 +49,29 @@ STARKSCAN_URLS = {
 
 PRAGMA_API_URL = "https://api.dev.pragma.build"
 
+RPC_URLS = {
+    MAINNET: [
+        "https://starknet-mainnet.public.blastapi.io",
+        "https://rpc.starknet.lava.build",
+        "https://limited-rpc.nethermind.io/mainnet-juno",
+    ],
+    TESTNET: [
+        "https://starknet-testnet.public.blastapi.io",
+        "https://rpc.starknet-testnet.lava.build",
+        "https://limited-rpc.nethermind.io/goerli-juno",
+    ],
+}
+
 
 def get_rpc_url(network=TESTNET, port=5050):
-    
     if network.startswith("http"):
         return network
     if network == TESTNET:
-        return "https://starknet-testnet.public.blastapi.io"
+        random_index = random.randint(0, len(RPC_URLS[TESTNET]) - 1)
+        return RPC_URLS[TESTNET][random_index]
     if network == MAINNET:
-        return "https://starknet-mainnet.public.blastapi.io"
+        random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
+        return RPC_URLS[MAINNET][random_index]
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
@@ -101,6 +114,18 @@ class AggregationMode(Enum):
     MEDIAN = "Median"
     AVERAGE = "Mean"
     ERROR = "Error"
+
+    def serialize(self):
+        return {self.value: None}
+
+
+@unique
+class RequestStatus(Enum):
+    UNINITIALIZED = "UNINITIALIZED"
+    RECEIVED = "RECEIVED"
+    FULFILLED = "FULFILLED"
+    CANCELLED = "CANCELLED"
+    OUT_OF_GAS = "OUT_OF_GAS"
 
     def serialize(self):
         return {self.value: None}
@@ -157,6 +182,9 @@ class Currency:
             "ethereum_address": self.ethereum_address,
         }
 
+    def __repr__(self):
+        return f"Currency({felt_to_str(self.id)}, {self.decimals}, {self.is_abstract_currency}, {self.starknet_address}, {self.ethereum_address})"
+
 
 class Pair:
     id_: int
@@ -185,6 +213,9 @@ class Pair:
             "quote_currency_id": self.quote_currency_id,
             "base_currency_id": self.base_currency_id,
         }
+
+    def __repr__(self):
+        return f"Pair({felt_to_str(self.id)}, {felt_to_str(self.quote_currency_id)}, {felt_to_str(self.base_currency_id)})"
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
