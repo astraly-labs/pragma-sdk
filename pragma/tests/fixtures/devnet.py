@@ -15,9 +15,11 @@ from typing import Generator, List
 from pragma.tests.constants import FORK_BLOCK_NUMBER
 import pytest
 
+from pragma.core.types import RPC_URLS
 
 
 load_dotenv()
+
 
 def get_available_port() -> int:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
@@ -56,7 +58,7 @@ def start_devnet():
     return devnet_port, proc
 
 
-def fork_start_devnet(): 
+def fork_start_devnet():
     devnet_port = get_available_port()
 
     if os.name == "nt":
@@ -66,7 +68,6 @@ def fork_start_devnet():
     proc = subprocess.Popen(start_devnet_command)
     time.sleep(10)
     return devnet_port, proc
-
 
 
 def start_devnet_command_unix(devnet_port: int) -> List[str]:
@@ -101,36 +102,38 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
         str(1),
     ]
 
+
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
-    rpc_url = os.getenv("FORK_RPC_URL")
+    fork_network = os.getenv("FORK_NETWORK")
+    rpc_url = RPC_URLS[fork_network]
+
     command = [
         "katana",
-        "--fork-block-number", 
+        "--fork-block-number",
         str(FORK_BLOCK_NUMBER),
-        "--chain-id",
-        "SN_GOERLI",
         "--host",
-           "127.0.0.1",
+        "127.0.0.1",
         "--port",
         str(devnet_port),
         "--accounts",
         str(1),
         "--seed",
         str(1),
-        '--rpc-url', 
+        "--rpc-url",
         str(rpc_url),
-        "--disable-fee"
+        "--disable-fee",
     ]
     return command
 
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
-    rpc_url = os.getenv("FORK_RPC_URL")
+    fork_network = os.getenv("FORK_NETWORK")
+    rpc_url = RPC_URLS[fork_network]
 
     return [
         "wsl",
         "katana",
-        "--fork-block-number", 
+        "--fork-block-number",
         str(FORK_BLOCK_NUMBER),
         "--rpc-url",
         str(rpc_url),
@@ -142,6 +145,7 @@ def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
         str(1),
     ]
 
+
 @pytest.fixture(scope="package")
 def run_devnet() -> Generator[str, None, None]:
     """
@@ -152,7 +156,6 @@ def run_devnet() -> Generator[str, None, None]:
     proc.kill()
 
 
-
 @pytest.fixture(scope="package")
 def fork_testnet_devnet() -> Generator[str, None, None]:
     """
@@ -161,4 +164,3 @@ def fork_testnet_devnet() -> Generator[str, None, None]:
     devnet_port, proc = fork_start_devnet()
     yield f"http://127.0.0.1:{devnet_port}"
     proc.kill()
-    
