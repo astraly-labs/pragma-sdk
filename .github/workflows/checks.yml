@@ -151,6 +151,9 @@ jobs:
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
+          FORK_NETWORK: testnet
+          TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
+          TESTNET_ACCOUNT_PRIVATE_KEY: ${{ secrets.TESTNET_ACCOUNT_PRIVATE_KEY }}
         run: |
           poetry run poe test_ci_update_client
           poetry run poe test_ci_client
