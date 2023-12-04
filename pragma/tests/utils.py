@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, cast
 
 import json
-import os 
+import os
 from starknet_py.constants import EC_ORDER
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
@@ -14,6 +14,7 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 from pragma.tests.constants import CONTRACTS_COMPILED_DIR, MAX_FEE
 from pragma.tests.constants import DEPLOYMENTS_DIR
+
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
     """
@@ -26,14 +27,6 @@ def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
         raise ValueError(f"Directory {directory} does not exist!")
 
     return (directory / file_name).read_text("utf-8")
-
-
-def _get_random_private_key_unsafe() -> int:
-    """
-    Returns a private key in the range [1, EC_ORDER).
-    This is not a safe way of generating private keys and should be used only in tests.
-    """
-    return random.randint(1, EC_ORDER - 1)
 
 
 async def get_deploy_account_transaction(
@@ -56,14 +49,15 @@ async def get_deploy_account_transaction(
         max_fee=int(1e16),
     )
 
-def get_declarations():
+
+def get_declarations(network: Network):
     return {
         name: int(class_hash, 16)
         for name, class_hash in json.load(
-            open(DEPLOYMENTS_DIR / "declarations.json")
+            open(DEPLOYMENTS_DIR / f"{network}" / "declarations.json")
         ).items()
     }
 
 
-def get_deployments():
-    return json.load(open(DEPLOYMENTS_DIR / "pragma-oracle/deployments/testnet/deployments.json", "r"))
+def get_deployments(network: Network):
+    return json.load(open(DEPLOYMENTS_DIR / f"{network}" / "deployments.json", "r"))

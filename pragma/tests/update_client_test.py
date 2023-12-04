@@ -1,9 +1,8 @@
 import time
 from typing import Tuple
 from urllib.parse import urlparse
-import aiohttp
-import json
 import logging
+import os
 import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
@@ -21,6 +20,7 @@ from starknet_py.transaction_errors import TransactionRevertedError
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 MAX_FEE = 3700000000000000
 PUBLISHER_NAME = "PRAGMA"
 
@@ -32,15 +32,41 @@ SOURCE_2 = "PRAGMA_2"
 SOURCE_3 = "SOURCE_3"
 
 
+@pytest_asyncio.fixture(scope="package", name="pragma_fork_client")
+async def pragma_fork_client(
+    network,
+    address_and_private_key: Tuple[str, str],
+) -> PragmaClient:
+    # TODO(#000): refactor this
+    fork_network = os.getenv("FORK_NETWORK")
+    deployments = get_deployments(fork_network)
+
+    oracle = deployments["pragma_Oracle"]
+    registry = deployments["pragma_PublisherRegistry"]
+    address, private_key = address_and_private_key
+
+    # Parse port from network url
+    port = urlparse(network).port
+
+    return PragmaClient(
+        network="fork_devnet",
+        chain_name=fork_network,
+        account_contract_address=address,
+        account_private_key=private_key,
+        contract_addresses_config=ContractAddresses(
+            registry["address"], oracle["address"]
+        ),
+        port=port,
+    )
 
 
 @pytest_asyncio.fixture(scope="package")
-async def declare_oracle(
-    pragma_fork_client: PragmaClient
-) -> DeclareResult:
+async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
-        compiled_contract_casm = read_contract("pragma_Oracle.casm.json", directory=None)
+        compiled_contract_casm = read_contract(
+            "pragma_Oracle.casm.json", directory=None
+        )
         # Declare Oracle
         declare_result = await Contract.declare(
             account=pragma_fork_client.account,
@@ -52,44 +78,26 @@ async def declare_oracle(
         return declare_result
 
     except ClientError as e:
-        if e.code == -32603: 
+        if e.code == -32603:
             logger.info(f"Contract already declared with this class hash")
-        else: 
+        else:
             logger.info(f"An error occured during the declaration: {e}")
         return None
 
 
-@pytest_asyncio.fixture(scope="package", name="pragma_fork_client")
-async def pragma_fork_client(
-    network,
-    address_and_private_key: Tuple[str, str],
-) -> PragmaClient:
-    deployments = get_deployments()
-    oracle = deployments["pragma_Oracle"]
-    registry = deployments["pragma_PublisherRegistry"]
-    address, private_key = address_and_private_key
-    # Parse port from network url
-    port = urlparse(network).port
-    return PragmaClient(
-        network="fork_devnet",
-        account_contract_address=address,
-        account_private_key=private_key,
-        contract_addresses_config=ContractAddresses(registry["address"], oracle["address"]),
-        port=port,
-    )
-
-
-
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
-async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_oracle: DeclareResult) : 
-    deployments = get_deployments()
+async def test_update_oracle(
+    pragma_fork_client: PragmaClient, declare_oracle: DeclareResult
+):
+    # TODO(#000): refactor this
+    fork_network = os.getenv("FORK_NETWORK")
+    deployments = get_deployments(fork_network)
+
     if declare_oracle is None:
         pytest.skip("oracle_declare failed. Skipping this test...")
 
-
     # Set up initial configuration
-
     publisher_name = "PRAGMA"
     publisher_address = pragma_fork_client.account_address()
 
@@ -128,6 +136,7 @@ async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_
     )
 
     await pragma_fork_client.publish_many([future_entry_1, future_entry_2])
+
     # Retrieve old state
     publishers = await pragma_fork_client.get_all_publishers()
     eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
@@ -136,22 +145,35 @@ async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_
     btc_future_price = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
     oracle_admin = await pragma_fork_client.get_admin_address()
     assert oracle_admin == pragma_fork_client.account_address()
-    # Determine new implementation hash 
+
+    # Determine new implementation hash
     declare_result = declare_oracle
     logger.info(f"Contract declared with hash: {declare_result.class_hash}")
+
     # Update oracle
-    update_invoke = await pragma_fork_client.update_oracle(declare_result.class_hash, MAX_FEE)
+    update_invoke = await pragma_fork_client.update_oracle(
+        declare_result.class_hash, MAX_FEE
+    )
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
+
     # Check that the class hash was updated
-    class_hash= await pragma_fork_client.full_node_client.get_class_hash_at(deployments['pragma_Oracle'])
+    class_hash = await pragma_fork_client.full_node_client.get_class_hash_at(
+        deployments["pragma_Oracle"]
+    )
+
     # assert class_hash['result'] == declare_result.class_hash
-    assert int(class_hash['result'],16) == declare_result.class_hash
+    assert int(class_hash["result"], 16) == declare_result.class_hash
+
     # Retrieve new state
     new_publishers = await pragma_fork_client.get_all_publishers()
     new_eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
-    new_eth_future_price = await pragma_fork_client.get_future(ETH_PAIR, expiry_timestamp)
+    new_eth_future_price = await pragma_fork_client.get_future(
+        ETH_PAIR, expiry_timestamp
+    )
     new_btc_spot_price = await pragma_fork_client.get_spot(BTC_PAIR)
-    new_btc_future_price = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
+    new_btc_future_price = await pragma_fork_client.get_future(
+        BTC_PAIR, expiry_timestamp
+    )
 
     # Check that state is the same
     assert publishers == new_publishers
@@ -159,9 +181,3 @@ async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_
     assert eth_future_price == new_eth_future_price
     assert btc_spot_price == new_btc_spot_price
     assert btc_future_price == new_btc_future_price
-
-    
-
-
-
-

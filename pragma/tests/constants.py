@@ -147,5 +147,4 @@ SAMPLE_ONCHAIN_ASSETS = [
 ]
 
 FORK_BLOCK_NUMBER = 911312
-DEPLOYMENTS_DIR =  Path(__file__).parent.parent.parent
-DEPLOYMENTS_DIR.mkdir(exist_ok=True, parents=True)
+DEPLOYMENTS_DIR = Path(__file__).parent.parent.parent / "pragma-oracle/deployments"

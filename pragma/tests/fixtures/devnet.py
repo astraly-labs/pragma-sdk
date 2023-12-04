@@ -4,6 +4,7 @@ https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee38
 """
 
 import os
+import random
 from dotenv import load_dotenv
 
 import socket
@@ -105,7 +106,7 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
     fork_network = os.getenv("FORK_NETWORK")
-    rpc_url = RPC_URLS[fork_network]
+    rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
 
     command = [
         "katana",
@@ -128,7 +129,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
     fork_network = os.getenv("FORK_NETWORK")
-    rpc_url = RPC_URLS[fork_network]
+    rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
 
     return [
         "wsl",
