@@ -133,11 +133,14 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-      - name: Install dojo
+      - name: Install dojoup
         run: |
           curl -L https://install.dojoengine.org | bash
-          source /home/runner/.bashrc
-          dojoup
+      
+      - name: Install dojo
+        run: |-
+          /home/runner/.config/.dojo/bin/dojoup
+          sudo mv /home/runner/.config/.dojo/bin/katana /usr/local/bin/
 
       # ====================== RUN TESTS ====================== #
 
@@ -149,6 +152,7 @@ jobs:
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
         run: |
+          poetry run poe test_ci_update_client
           poetry run poe test_ci_client
           poetry run poe test_ci_fetchers
           poetry run poe test_ci_publisher
