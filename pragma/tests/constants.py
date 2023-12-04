@@ -28,6 +28,7 @@ MOCK_DIR = repo_root / "pragma/tests" / "mock"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 
+DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 print("Current Directory:", os.getcwd())
 print("SUBMODULE_DIR:", SUBMODULE_DIR)
@@ -145,6 +146,3 @@ SAMPLE_ONCHAIN_ASSETS = [
     {"type": "SPOT", "pair": ("R", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]
-
-FORK_BLOCK_NUMBER = 911312
-DEPLOYMENTS_DIR = Path(__file__).parent.parent.parent / "pragma-oracle/deployments"

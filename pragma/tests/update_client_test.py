@@ -5,17 +5,14 @@ import logging
 import os
 import pytest
 import pytest_asyncio
-from starknet_py.contract import Contract, DeclareResult, DeployResult
-from starknet_py.net.account.account import Account
+from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 from pragma.core.client import PragmaClient
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.types import ContractAddresses, DataType, DataTypes
+from pragma.core.entry import FutureEntry
+from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
-from pragma.tests.constants import CURRENCIES, PAIRS, FORK_BLOCK_NUMBER
 from pragma.tests.utils import read_contract
-from pragma.tests.utils import get_declarations, get_deployments
-from starknet_py.transaction_errors import TransactionRevertedError
+from pragma.tests.utils import get_deployments
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -98,7 +95,7 @@ async def test_update_oracle(
         pytest.skip("oracle_declare failed. Skipping this test...")
 
     # Set up initial configuration
-    publisher_name = "PRAGMA"
+    publisher_name = "NEW_PRAGMA"
     publisher_address = pragma_fork_client.account_address()
 
     await pragma_fork_client.add_publisher(publisher_name, publisher_address)

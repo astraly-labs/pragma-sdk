@@ -13,7 +13,6 @@ import time
 from contextlib import closing
 from pathlib import Path
 from typing import Generator, List
-from pragma.tests.constants import FORK_BLOCK_NUMBER
 import pytest
 
 from pragma.core.types import RPC_URLS
@@ -110,8 +109,6 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
 
     command = [
         "katana",
-        "--fork-block-number",
-        str(FORK_BLOCK_NUMBER),
         "--host",
         "127.0.0.1",
         "--port",
@@ -134,8 +131,6 @@ def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
         "katana",
-        "--fork-block-number",
-        str(FORK_BLOCK_NUMBER),
         "--rpc-url",
         str(rpc_url),
         "--port",
