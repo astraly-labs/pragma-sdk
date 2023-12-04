@@ -5,12 +5,11 @@ import logging
 import os
 import pytest
 import pytest_asyncio
-from starknet_py.contract import Contract, DeclareResult, DeployResult
-from starknet_py.net.account.account import Account
+from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 from pragma.core.client import PragmaClient
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.types import ContractAddresses, DataType, DataTypes
+from pragma.core.entry import FutureEntry
+from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
 from pragma.tests.utils import read_contract
 from pragma.core.assets import PRAGMA_ALL_ASSETS
