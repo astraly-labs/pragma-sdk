@@ -1,20 +1,21 @@
+import logging
+import os
 import time
 from typing import Tuple
 from urllib.parse import urlparse
-import logging
-import os
+
 import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
+from starknet_py.transaction_errors import TransactionRevertedError
+
+from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry
 from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
-from pragma.tests.utils import read_contract
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.tests.utils import get_declarations, get_deployments
-from starknet_py.transaction_errors import TransactionRevertedError
+from pragma.tests.utils import get_declarations, get_deployments, read_contract
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -114,24 +115,27 @@ async def test_update_oracle(
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
 
     # Check that the class hash was updated
-    class_hash= await pragma_fork_client.full_node_client.get_class_hash_at(deployments['pragma_Oracle']['address'])
+    class_hash = await pragma_fork_client.full_node_client.get_class_hash_at(
+        deployments["pragma_Oracle"]["address"]
+    )
     # assert class_hash['result'] == declare_result.class_hash
     assert class_hash == declare_result.class_hash
     # Retrieve new state
     new_publishers = await pragma_fork_client.get_all_publishers()
-    post_treatment_prices = await retrieve_spot_prices(pragma_fork_client, PRAGMA_ALL_ASSETS)
-
+    post_treatment_prices = await retrieve_spot_prices(
+        pragma_fork_client, PRAGMA_ALL_ASSETS
+    )
 
     # Check that state is the same
     assert publishers == new_publishers
     assert initial_prices == post_treatment_prices
 
-    
-async def retrieve_spot_prices(client, assets):
+
+async def retrieve_spot_prices(client: PragmaClient, assets):
     prices = {}
     for asset in assets:
-        if asset['type'] == 'SPOT':
-            pair = asset['pair']
-            price = await client.get_spot(pair)
+        if asset["type"] == "SPOT":
+            pair = asset["pair"]
+            price = await client.get_spot(str_to_felt(pair[0] + "/" + pair[1]))
             prices[pair] = price
     return prices

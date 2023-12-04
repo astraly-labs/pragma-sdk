@@ -5,18 +5,17 @@ https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee38
 
 import os
 import random
-from dotenv import load_dotenv
-
 import socket
 import subprocess
 import time
 from contextlib import closing
 from pathlib import Path
 from typing import Generator, List
+
 import pytest
+from dotenv import load_dotenv
 
 from pragma.core.types import RPC_URLS
-
 
 load_dotenv()
 

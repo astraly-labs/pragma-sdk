@@ -4,12 +4,13 @@ Taken from starknet_py tests :
 https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
 """
 
+import os
 import sys
 from typing import List, Tuple
-import os
-from dotenv import load_dotenv
+
 import pytest
 import pytest_asyncio
+from dotenv import load_dotenv
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -17,6 +18,7 @@ from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.http_client import GatewayHttpClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair
+
 from pragma.tests.constants import (
     DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
@@ -54,7 +56,6 @@ async def address_and_private_key(
         ),
     }
     return account_details[net]
-
 
 
 @pytest.fixture(scope="package")

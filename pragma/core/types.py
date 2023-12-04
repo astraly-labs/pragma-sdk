@@ -3,9 +3,10 @@ import random
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
-from starknet_py.net.full_node_client import FullNodeClient
-from pragma.core.utils import str_to_felt, felt_to_str
 
+from starknet_py.net.full_node_client import FullNodeClient
+
+from pragma.core.utils import felt_to_str, str_to_felt
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)

@@ -1,9 +1,9 @@
+import json
+import os
 import random
 from pathlib import Path
 from typing import Optional, cast
 
-import json
-import os
 from starknet_py.constants import EC_ORDER
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
@@ -12,8 +12,7 @@ from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
-from pragma.tests.constants import CONTRACTS_COMPILED_DIR, MAX_FEE
-from pragma.tests.constants import DEPLOYMENTS_DIR
+from pragma.tests.constants import CONTRACTS_COMPILED_DIR, DEPLOYMENTS_DIR, MAX_FEE
 
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
