@@ -102,7 +102,7 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
     ]
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
-    rpc_url = os.getenv("RPC_URL")
+    rpc_url = os.getenv("FORK_RPC_URL")
     command = [
         "katana",
         "--fork-block-number", 
@@ -125,7 +125,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
 
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
-    rpc_url = os.getenv("RPC_URL")
+    rpc_url = os.getenv("FORK_RPC_URL")
 
     return [
         "wsl",

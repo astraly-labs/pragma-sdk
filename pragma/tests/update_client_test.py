@@ -83,6 +83,7 @@ async def pragma_fork_client(
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
 async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_oracle: DeclareResult) : 
+    deployments = get_deployments()
     if declare_oracle is None:
         pytest.skip("oracle_declare failed. Skipping this test...")
 
@@ -142,8 +143,7 @@ async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_
     update_invoke = await pragma_fork_client.update_oracle(declare_result.class_hash, MAX_FEE)
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
     # Check that the class hash was updated
-    class_hash_json = await check_class_hash_rpc(network)
-    class_hash = json.loads(class_hash_json)
+    class_hash= await pragma_fork_client.full_node_client.get_class_hash_at(deployments['pragma_Oracle'])
     # assert class_hash['result'] == declare_result.class_hash
     assert int(class_hash['result'],16) == declare_result.class_hash
     # Retrieve new state
@@ -155,41 +155,13 @@ async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_
 
     # Check that state is the same
     assert publishers == new_publishers
-    assert eth_spot_price.price == new_eth_spot_price.price
-    assert eth_spot_price.last_updated_timestamp == new_eth_spot_price.last_updated_timestamp
-    assert eth_spot_price.decimals == new_eth_spot_price.decimals
-    assert eth_spot_price.num_sources_aggregated  == new_eth_spot_price.num_sources_aggregated
-    assert eth_future_price.price == new_eth_future_price.price
-    assert eth_future_price.last_updated_timestamp == new_eth_future_price.last_updated_timestamp
-    assert eth_future_price.decimals == new_eth_future_price.decimals
-    assert eth_future_price.num_sources_aggregated  == new_eth_future_price.num_sources_aggregated
-    assert btc_spot_price.price == new_btc_spot_price.price 
-    assert btc_spot_price.last_updated_timestamp == new_btc_spot_price.last_updated_timestamp
-    assert btc_spot_price.decimals == new_btc_spot_price.decimals
-    assert btc_spot_price.num_sources_aggregated  == new_btc_spot_price.num_sources_aggregated
-    assert btc_future_price.price == new_btc_future_price.price
-    assert btc_future_price.last_updated_timestamp == new_btc_future_price.last_updated_timestamp
-    assert btc_future_price.decimals == new_btc_future_price.decimals
-    assert btc_future_price.num_sources_aggregated  == new_btc_future_price.num_sources_aggregated
+    assert eth_spot_price == new_eth_spot_price
+    assert eth_future_price == new_eth_future_price
+    assert btc_spot_price == new_btc_spot_price
+    assert btc_future_price == new_btc_future_price
+
+    
 
 
-async def check_class_hash_rpc(network): 
-    # Check that the class hash was updated
-    deployments = get_deployments()
-    oracle_address = deployments['pragma_Oracle']['address']
-    url = f"{network}"
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "starknet_getClassHashAt",
-        "params": [
-            "latest",
-            f"{oracle_address}"
-        ],
-        "id": 1
-    }
-    headers = {'Content-Type': 'application/json'}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=json.dumps(payload)) as response:
-            response_text = await response.text()
-            return(response_text)
+
 

@@ -66,4 +66,4 @@ def get_declarations():
 
 
 def get_deployments():
-    return json.load(open(DEPLOYMENTS_DIR / "deployments/deployments.json", "r"))
+    return json.load(open(DEPLOYMENTS_DIR / "pragma-oracle/deployments/testnet/deployments.json", "r"))
