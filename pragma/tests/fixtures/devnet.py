@@ -119,7 +119,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         '--rpc-url', 
         str(rpc_url),
-        "--disable-fee",
+        "--disable-fee"
     ]
     return command
 

@@ -145,6 +145,6 @@ SAMPLE_ONCHAIN_ASSETS = [
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]
 
-FORK_BLOCK_NUMBER = 911022
+FORK_BLOCK_NUMBER = 911312
 DEPLOYMENTS_DIR =  Path(__file__).parent
 DEPLOYMENTS_DIR.mkdir(exist_ok=True, parents=True)

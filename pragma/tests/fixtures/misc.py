@@ -12,7 +12,7 @@ def pytest_addoption(parser):
         action="store",
         default="devnet",
         help="Network to run tests on, one of: "
-             "`mainnet`, `testnet`, `sharingan`, `pragma_testnet`",
+             "`mainnet`, `testnet`, `sharingan`, `pragma_testnet`, `fork_devnet`",
     )
     parser.addoption(
         "--fork-block-number",
@@ -68,6 +68,3 @@ def get_tx_receipt_full_node_client():
     return "starknet_py.net.full_node_client.FullNodeClient.get_transaction_receipt"
 
 
-@pytest.fixture(name="tx_receipt_gateway_path", scope="package")
-def get_tx_receipt_gateway_client():
-    return "starknet_py.net.gateway_client.GatewayClient.get_transaction_receipt"

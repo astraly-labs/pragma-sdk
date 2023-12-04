@@ -66,5 +66,4 @@ def get_declarations():
 
 
 def get_deployments():
-    print(DEPLOYMENTS_DIR)
     return json.load(open(DEPLOYMENTS_DIR / "deployments/deployments.json", "r"))

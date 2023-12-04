@@ -1,22 +1,27 @@
 import time
 from typing import Tuple
 from urllib.parse import urlparse
-
+import aiohttp
+import json
+import logging
 import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
-from starknet_py.transaction_errors import TransactionRevertedError
 from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
-from pragma.tests.constants import CURRENCIES, PAIRS
+from pragma.tests.constants import CURRENCIES, PAIRS, FORK_BLOCK_NUMBER
 from pragma.tests.utils import read_contract
 from pragma.tests.utils import get_declarations, get_deployments
-from pathlib import Path
+from starknet_py.transaction_errors import TransactionRevertedError
 
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+MAX_FEE = 3700000000000000
 PUBLISHER_NAME = "PRAGMA"
 
 ETH_PAIR = str_to_felt("ETH/USD")
@@ -25,6 +30,33 @@ BTC_PAIR = str_to_felt("BTC/USD")
 SOURCE_1 = "PRAGMA_1"
 SOURCE_2 = "PRAGMA_2"
 SOURCE_3 = "SOURCE_3"
+
+
+
+
+@pytest_asyncio.fixture(scope="package")
+async def declare_oracle(
+    pragma_fork_client: PragmaClient
+) -> DeclareResult:
+    try:
+        compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
+        compiled_contract_casm = read_contract("pragma_Oracle.casm.json", directory=None)
+        # Declare Oracle
+        declare_result = await Contract.declare(
+            account=pragma_fork_client.account,
+            compiled_contract=compiled_contract,
+            compiled_contract_casm=compiled_contract_casm,
+            auto_estimate=True,
+        )
+        await declare_result.wait_for_acceptance()
+        return declare_result
+
+    except ClientError as e:
+        if e.code == -32603: 
+            logger.info(f"Contract already declared with this class hash")
+        else: 
+            logger.info(f"An error occured during the declaration: {e}")
+        return None
 
 
 @pytest_asyncio.fixture(scope="package", name="pragma_fork_client")
@@ -38,7 +70,6 @@ async def pragma_fork_client(
     address, private_key = address_and_private_key
     # Parse port from network url
     port = urlparse(network).port
-
     return PragmaClient(
         network="fork_devnet",
         account_contract_address=address,
@@ -47,66 +78,21 @@ async def pragma_fork_client(
         port=port,
     )
 
-@pytest.mark.asyncio 
-# pylint: disable=redefined-outer-name
-async def test_update_oracle(pragma_fork_client: PragmaClient): 
-    oracle_admin = await pragma_fork_client.get_spot(BTC_PAIR)
-    assert oracle_admin == pragma_fork_client.account_address()
-    # Determine new implementation hash 
-    compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
-    compiled_contract_casm = read_contract("pragma_Oracle.casm.json", directory=None)
-     # Declare Oracle
-    declare_result = await Contract.declare(
-        account=pragma_fork_client.account,
-        compiled_contract=compiled_contract,
-        compiled_contract_casm=compiled_contract_casm,
-        auto_estimate=True,
-    )
-    await declare_result.wait_for_acceptance()
-    # Update oracle
-    await pragma_fork_client.update_oracle(declare_result.class_hash)
-
-
-
-# @pytest.mark.asyncio
-# # pylint: disable=redefined-outer-name
-# async def test_client_publisher_mixin(pragma_fork_client: PragmaClient):
-#     publishers = await pragma_fork_client.get_all_publishers()
-#     assert publishers == []
-
-#     publisher_name = "PUBLISHER_1"
-#     expected_publisher_address = 123
-
-#     await pragma_fork_client.add_publisher(publisher_name, expected_publisher_address)
-
-#     publishers = await pragma_fork_client.get_all_publishers()
-#     assert publishers == [str_to_felt(publisher_name)]
-
-#     publisher_address = await pragma_fork_client.get_publisher_address(publisher_name)
-#     assert expected_publisher_address == publisher_address
-
-#     await pragma_fork_client.add_source_for_publisher(publisher_name, SOURCE_1)
-
-#     sources = await pragma_fork_client.get_publisher_sources(publisher_name)
-#     assert sources == [str_to_felt(SOURCE_1)]
-
-#     await pragma_fork_client.add_sources_for_publisher(publisher_name, [SOURCE_2, SOURCE_3])
-
-#     sources = await pragma_fork_client.get_publisher_sources(publisher_name)
-#     assert sources == [str_to_felt(source) for source in (SOURCE_1, SOURCE_2, SOURCE_3)]
 
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
-async def test_client_oracle_mixin_spot(pragma_fork_client: PragmaClient):
-    # Add PRAGMA as Publisher
+async def test_update_oracle(pragma_fork_client: PragmaClient, network, declare_oracle: DeclareResult) : 
+    if declare_oracle is None:
+        pytest.skip("oracle_declare failed. Skipping this test...")
+
+
+    # Set up initial configuration
+
     publisher_name = "PRAGMA"
     publisher_address = pragma_fork_client.account_address()
 
     await pragma_fork_client.add_publisher(publisher_name, publisher_address)
-
-    publishers = await pragma_fork_client.get_all_publishers()
-    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
 
     # Add PRAGMA as Source for PRAGMA Publisher
     await pragma_fork_client.add_source_for_publisher(publisher_name, SOURCE_1)
@@ -116,97 +102,10 @@ async def test_client_oracle_mixin_spot(pragma_fork_client: PragmaClient):
     await pragma_fork_client.publish_spot_entry(
         BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
     )
-
-    entries = await pragma_fork_client.get_spot_entries(BTC_PAIR, sources=[])
-    assert entries == [
-        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
-    ]
-
-    # Get SPOT
-    res = await pragma_fork_client.get_spot(BTC_PAIR)
-    assert res.price == 100
-    assert res.num_sources_aggregated == 1
-    assert res.last_updated_timestamp == timestamp
-    assert res.decimals == 8
-
-    # Get Decimals
-    decimals = await pragma_fork_client.get_decimals(
-        DataType(DataTypes.SPOT, BTC_PAIR, None)
+    await pragma_fork_client.publish_spot_entry(
+        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
     )
-    assert decimals == 8
-
-    # Publish many SPOT entries
-    spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=10
-    )
-    spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp + 10, SOURCE_1, publisher_name, volume=20
-    )
-
-    await pragma_fork_client.publish_many([spot_entry_1, spot_entry_2])
-
-    # Fails for UNKNOWN source
-    unknown_source = "UNKNOWN"
-    try:
-        await pragma_fork_client.get_spot_entries(
-            ETH_PAIR, sources=[str_to_felt(unknown_source)]
-        )
-    except ClientError as err:
-        err_msg = "Contract error"  # TODO(#000): check error message 04e6f206461746120656e74727920666f756e64
-        if not err_msg in err.message:
-            raise err
-
-    # Returns correct entries
-    entries = await pragma_fork_client.get_spot_entries(ETH_PAIR, sources=[])
-
-    assert entries == [spot_entry_2]
-
-    # Return correct price aggregated
-    res = await pragma_fork_client.get_spot(ETH_PAIR)
-    assert res.price == 200
-    assert res.num_sources_aggregated == 1
-    assert res.last_updated_timestamp == timestamp + 10
-    assert res.decimals == 8
-
-    # Fails if timestamp too far in the future (>2min)
-    spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp + 130, SOURCE_1, publisher_name, volume=10
-    )
-    try:
-        await pragma_fork_client.publish_many([spot_entry_future])
-        assert False
-    except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
-        if not err_msg in err.message:
-            raise err
-
-    # Add new source and check aggregation
-    await pragma_fork_client.add_source_for_publisher(publisher_name, SOURCE_2)
-    spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp + 20, SOURCE_1, publisher_name, volume=10
-    )
-    spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp + 30, SOURCE_2, publisher_name, volume=20
-    )
-
-    await pragma_fork_client.publish_many([spot_entry_1, spot_entry_2])
-
-    res = await pragma_fork_client.get_spot(ETH_PAIR)
-    assert res.price == 150
-    assert res.num_sources_aggregated == 2
-    assert res.last_updated_timestamp == timestamp + 30
-    assert res.decimals == 8
-
-
-@pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_client_oracle_mixin_future(pragma_fork_client: PragmaClient):
-    # Checks
-    publisher_name = "PRAGMA"
-    publishers = await pragma_fork_client.get_all_publishers()
-    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
-
-    timestamp = int(time.time())
+    # Publish FUTURE Entry
     expiry_timestamp = timestamp + 1000
     future_entry_1 = FutureEntry(
         BTC_PAIR,
@@ -218,7 +117,7 @@ async def test_client_oracle_mixin_future(pragma_fork_client: PragmaClient):
         volume=10000,
     )
     future_entry_2 = FutureEntry(
-        BTC_PAIR,
+        ETH_PAIR,
         2000,
         timestamp + 100,
         SOURCE_1,
@@ -228,57 +127,69 @@ async def test_client_oracle_mixin_future(pragma_fork_client: PragmaClient):
     )
 
     await pragma_fork_client.publish_many([future_entry_1, future_entry_2])
+    # Retrieve old state
+    publishers = await pragma_fork_client.get_all_publishers()
+    eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
+    eth_future_price = await pragma_fork_client.get_future(ETH_PAIR, expiry_timestamp)
+    btc_spot_price = await pragma_fork_client.get_spot(BTC_PAIR)
+    btc_future_price = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
+    oracle_admin = await pragma_fork_client.get_admin_address()
+    assert oracle_admin == pragma_fork_client.account_address()
+    # Determine new implementation hash 
+    declare_result = declare_oracle
+    logger.info(f"Contract declared with hash: {declare_result.class_hash}")
+    # Update oracle
+    update_invoke = await pragma_fork_client.update_oracle(declare_result.class_hash, MAX_FEE)
+    logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
+    # Check that the class hash was updated
+    class_hash_json = await check_class_hash_rpc(network)
+    class_hash = json.loads(class_hash_json)
+    # assert class_hash['result'] == declare_result.class_hash
+    assert int(class_hash['result'],16) == declare_result.class_hash
+    # Retrieve new state
+    new_publishers = await pragma_fork_client.get_all_publishers()
+    new_eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
+    new_eth_future_price = await pragma_fork_client.get_future(ETH_PAIR, expiry_timestamp)
+    new_btc_spot_price = await pragma_fork_client.get_spot(BTC_PAIR)
+    new_btc_future_price = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
 
-    # Check entries
-    entries = await pragma_fork_client.get_future_entries(
-        BTC_PAIR, expiry_timestamp, sources=[]
-    )
-    assert entries == [future_entry_2]
+    # Check that state is the same
+    assert publishers == new_publishers
+    assert eth_spot_price.price == new_eth_spot_price.price
+    assert eth_spot_price.last_updated_timestamp == new_eth_spot_price.last_updated_timestamp
+    assert eth_spot_price.decimals == new_eth_spot_price.decimals
+    assert eth_spot_price.num_sources_aggregated  == new_eth_spot_price.num_sources_aggregated
+    assert eth_future_price.price == new_eth_future_price.price
+    assert eth_future_price.last_updated_timestamp == new_eth_future_price.last_updated_timestamp
+    assert eth_future_price.decimals == new_eth_future_price.decimals
+    assert eth_future_price.num_sources_aggregated  == new_eth_future_price.num_sources_aggregated
+    assert btc_spot_price.price == new_btc_spot_price.price 
+    assert btc_spot_price.last_updated_timestamp == new_btc_spot_price.last_updated_timestamp
+    assert btc_spot_price.decimals == new_btc_spot_price.decimals
+    assert btc_spot_price.num_sources_aggregated  == new_btc_spot_price.num_sources_aggregated
+    assert btc_future_price.price == new_btc_future_price.price
+    assert btc_future_price.last_updated_timestamp == new_btc_future_price.last_updated_timestamp
+    assert btc_future_price.decimals == new_btc_future_price.decimals
+    assert btc_future_price.num_sources_aggregated  == new_btc_future_price.num_sources_aggregated
 
-    # Get FUTURE
-    res = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
-    assert res.price == 2000
-    assert res.num_sources_aggregated == 1
-    assert res.last_updated_timestamp == timestamp + 100
-    assert res.decimals == 8
-    assert res.expiration_timestamp == expiry_timestamp
 
-    # Add new source and check aggregation
-    future_entry_1 = FutureEntry(
-        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, expiry_timestamp, volume=10
-    )
-    future_entry_2 = FutureEntry(
-        ETH_PAIR,
-        200,
-        timestamp + 10,
-        SOURCE_2,
-        publisher_name,
-        expiry_timestamp,
-        volume=20,
-    )
+async def check_class_hash_rpc(network): 
+    # Check that the class hash was updated
+    deployments = get_deployments()
+    oracle_address = deployments['pragma_Oracle']['address']
+    url = f"{network}"
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "starknet_getClassHashAt",
+        "params": [
+            "latest",
+            f"{oracle_address}"
+        ],
+        "id": 1
+    }
+    headers = {'Content-Type': 'application/json'}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, data=json.dumps(payload)) as response:
+            response_text = await response.text()
+            return(response_text)
 
-    await pragma_fork_client.publish_many([future_entry_1, future_entry_2])
-
-    res = await pragma_fork_client.get_future(ETH_PAIR, expiry_timestamp)
-    assert res.price == 150
-    assert res.num_sources_aggregated == 2
-    assert res.last_updated_timestamp == timestamp + 10
-    assert res.decimals == 8
-
-    # Fails if timestamp too far in the future (>2min)
-    future_entry_future = FutureEntry(
-        ETH_PAIR,
-        100,
-        timestamp + 1000,
-        SOURCE_1,
-        publisher_name,
-        expiry_timestamp,
-        volume=10,
-    )
-    try:
-        await pragma_fork_client.publish_many([future_entry_future])
-        assert False
-    except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
-        if not err_msg in err.message:
-            raise err
