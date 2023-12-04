@@ -12,8 +12,8 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
-from pragma.tests.constants import CURRENCIES, PAIRS, FORK_BLOCK_NUMBER
 from pragma.tests.utils import read_contract
+from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.tests.utils import get_declarations, get_deployments
 from starknet_py.transaction_errors import TransactionRevertedError
 
@@ -97,52 +97,10 @@ async def test_update_oracle(
     if declare_oracle is None:
         pytest.skip("oracle_declare failed. Skipping this test...")
 
-    # Set up initial configuration
-    publisher_name = "PRAGMA"
-    publisher_address = pragma_fork_client.account_address()
-
-    await pragma_fork_client.add_publisher(publisher_name, publisher_address)
-
-    # Add PRAGMA as Source for PRAGMA Publisher
-    await pragma_fork_client.add_source_for_publisher(publisher_name, SOURCE_1)
-
-    # Publish SPOT Entry
-    timestamp = int(time.time())
-    await pragma_fork_client.publish_spot_entry(
-        BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
-    )
-    await pragma_fork_client.publish_spot_entry(
-        ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
-    )
-    # Publish FUTURE Entry
-    expiry_timestamp = timestamp + 1000
-    future_entry_1 = FutureEntry(
-        BTC_PAIR,
-        1000,
-        timestamp,
-        SOURCE_1,
-        publisher_name,
-        expiry_timestamp,
-        volume=10000,
-    )
-    future_entry_2 = FutureEntry(
-        ETH_PAIR,
-        2000,
-        timestamp + 100,
-        SOURCE_1,
-        publisher_name,
-        expiry_timestamp,
-        volume=20000,
-    )
-
-    await pragma_fork_client.publish_many([future_entry_1, future_entry_2])
-
     # Retrieve old state
+
     publishers = await pragma_fork_client.get_all_publishers()
-    eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
-    eth_future_price = await pragma_fork_client.get_future(ETH_PAIR, expiry_timestamp)
-    btc_spot_price = await pragma_fork_client.get_spot(BTC_PAIR)
-    btc_future_price = await pragma_fork_client.get_future(BTC_PAIR, expiry_timestamp)
+    initial_prices = await retrieve_spot_prices(pragma_fork_client, PRAGMA_ALL_ASSETS)
     oracle_admin = await pragma_fork_client.get_admin_address()
     assert oracle_admin == pragma_fork_client.account_address()
 
@@ -157,27 +115,24 @@ async def test_update_oracle(
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
 
     # Check that the class hash was updated
-    class_hash = await pragma_fork_client.full_node_client.get_class_hash_at(
-        deployments["pragma_Oracle"]
-    )
-
+    class_hash= await pragma_fork_client.full_node_client.get_class_hash_at(deployments['pragma_Oracle']['address'])
     # assert class_hash['result'] == declare_result.class_hash
-    assert int(class_hash["result"], 16) == declare_result.class_hash
-
+    assert class_hash == declare_result.class_hash
     # Retrieve new state
     new_publishers = await pragma_fork_client.get_all_publishers()
-    new_eth_spot_price = await pragma_fork_client.get_spot(ETH_PAIR)
-    new_eth_future_price = await pragma_fork_client.get_future(
-        ETH_PAIR, expiry_timestamp
-    )
-    new_btc_spot_price = await pragma_fork_client.get_spot(BTC_PAIR)
-    new_btc_future_price = await pragma_fork_client.get_future(
-        BTC_PAIR, expiry_timestamp
-    )
+    post_treatment_prices = await retrieve_spot_prices(pragma_fork_client, PRAGMA_ALL_ASSETS)
+
 
     # Check that state is the same
     assert publishers == new_publishers
-    assert eth_spot_price == new_eth_spot_price
-    assert eth_future_price == new_eth_future_price
-    assert btc_spot_price == new_btc_spot_price
-    assert btc_future_price == new_btc_future_price
+    assert initial_prices == post_treatment_prices
+
+    
+async def retrieve_spot_prices(client, assets):
+    prices = {}
+    for asset in assets:
+        if asset['type'] == 'SPOT':
+            pair = asset['pair']
+            price = await client.get_spot(pair)
+            prices[pair] = price
+    return prices
