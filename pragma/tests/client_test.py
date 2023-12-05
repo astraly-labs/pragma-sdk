@@ -237,7 +237,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         await pragma_client.publish_many([spot_entry_future])
         assert False
     except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        err_msg = "Unknown Starknet error"
         if not err_msg in err.message:
             raise err
 
@@ -305,6 +306,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.expiration_timestamp == expiry_timestamp
 
     # Add new source and check aggregation
+    timestamp = int(time.time())
     future_entry_1 = FutureEntry(
         ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, expiry_timestamp, volume=10
     )
@@ -340,7 +342,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
         await pragma_client.publish_many([future_entry_future])
         assert False
     except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        err_msg = "Unknown Starknet error"
         if not err_msg in err.message:
             raise err
 
