@@ -1,5 +1,4 @@
 from .ascendex import AscendexFetcher
-from .avnu import AvnuFetcher
 from .bitstamp import BitstampFetcher
 from .cex import CexFetcher
 from .coinbase import CoinbaseFetcher

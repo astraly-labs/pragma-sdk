@@ -143,6 +143,6 @@ SAMPLE_FUTURE_ASSETS = [
 ]
 
 SAMPLE_ONCHAIN_ASSETS = [
-    {"type": "SPOT", "pair": ("R", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("LUSD", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]

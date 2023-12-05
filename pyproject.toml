@@ -20,7 +20,6 @@ packages = [{ include = "pragma" }]
 python = ">=3.9,<3.10"
 "starknet.py" = "0.18.3"
 cairo-lang = "^0.12"
-starknet-devnet = "^0.6.3"
 typer = "0.6.1"
 deprecated = "^1.2.14"
 aioresponses = "^0.7.4"
