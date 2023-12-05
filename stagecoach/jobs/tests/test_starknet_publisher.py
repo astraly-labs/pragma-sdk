@@ -79,10 +79,7 @@ async def test_starknet_publisher__handler(
                 payload = json.load(json_data)
                 for asset in assets:
                     quote_asset, base_asset = asset["pair"]
-                    if fetcher_config["name"] == "AVNU":
-                        url = await fetcher.format_url_async(quote_asset, base_asset)
-                    else:
-                        url = fetcher.format_url(quote_asset, base_asset)
+                    url = fetcher.format_url(quote_asset, base_asset)
 
                     mocked.get(
                         url,

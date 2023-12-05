@@ -133,44 +133,14 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-      - name: Clone Cairo1 compiler repository
-        uses: actions/checkout@v3
-        with:
-          repository: starkware-libs/cairo
-          persist-credentials: false
-          ref: v2.2.0
-          path: cairo
-
-      - name: Cache rust dependencies
-        id: cache-rust
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build compiler
-        if: steps.cache-rust.outputs.cache-hit != 'true'
-        working-directory: ./cairo
+      - name: Install dojoup
         run: |
-          cargo build
-
-      - name: Build starknet-compile
-        working-directory: ./cairo
-        run: |
-          cargo run --bin starknet-compile -- --version
-          cargo run --bin starknet-sierra-compile -- --version
-
-      - name: Create manifest file
-        run: |
-          readlink -f ./cairo/Cargo.toml >> ./pragma/tests/manifest-path
-
-      - name: List directories
-        run: ls -R
+          curl -L https://install.dojoengine.org | bash
+      
+      - name: Install dojo
+        run: |-
+          /home/runner/.config/.dojo/bin/dojoup
+          sudo mv /home/runner/.config/.dojo/bin/katana /usr/local/bin/
 
       # ====================== RUN TESTS ====================== #
 
@@ -181,7 +151,11 @@ jobs:
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
+          FORK_NETWORK: testnet
+          TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
+          TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
         run: |
+          poetry run poe test_ci_update_client
           poetry run poe test_ci_client
           poetry run poe test_ci_fetchers
           poetry run poe test_ci_publisher

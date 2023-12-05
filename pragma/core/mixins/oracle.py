@@ -10,7 +10,7 @@ from starknet_py.net.client import Client
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataType, DataTypes
-from pragma.core.utils import str_to_felt, felt_to_str
+from pragma.core.utils import felt_to_str, str_to_felt
 
 logger = logging.getLogger(__name__)
 
@@ -386,4 +386,19 @@ class OracleMixin:
                 max_fee=max_fee,
             )
 
+        return invocation
+
+    async def get_admin_address(self) -> int:
+        (response,) = await self.oracle.functions["get_admin_address"].call()
+        return response
+
+    async def update_oracle(
+        self,
+        implementation_hash: int,
+        max_fee=int(1e18),
+    ) -> InvokeResult:
+        invocation = await self.oracle.functions["upgrade"].invoke(
+            implementation_hash,
+            max_fee=max_fee,
+        )
         return invocation

@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 import json
+import random
 import subprocess
 import time
 from unittest import mock
@@ -12,7 +13,7 @@ from aioresponses import aioresponses
 from starknet_py.net.client import Client
 
 from pragma.core.client import PragmaClient
-from pragma.publisher.fetchers.avnu import AvnuFetcher
+from pragma.core.types import RPC_URLS
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
@@ -25,7 +26,7 @@ from pragma.tests.fetcher_configs import (
     ONCHAIN_FETCHER_CONFIGS,
     PUBLISHER_NAME,
 )
-from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
+from pragma.tests.fixtures.devnet import get_available_port
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
@@ -36,19 +37,20 @@ PUBLISHER_NAME = "TEST_PUBLISHER"
 @pytest.fixture(scope="module")
 def forked_client(module_mocker, pytestconfig) -> Client:
     """
-    This module-scope fixture prepares a forked starknet-dev
+    This module-scope fixture prepares a forked katana
     client for e2e testing.
 
     :return: a starknet Client
     """
     # net = pytestconfig.getoption("--net")
     port = get_available_port()
+
+    rpc_url = RPC_URLS["mainnet"][random.randint(0, len(RPC_URLS["mainnet"]) - 1)]
+
     command = [
-        "poetry",
-        "run",
-        "starknet-devnet",
-        "--fork-network",
-        "alpha-mainnet",
+        "katana",
+        "--rpc-url",
+        str(rpc_url),
         "--host",
         "127.0.0.1",
         "--port",
@@ -57,16 +59,11 @@ def forked_client(module_mocker, pytestconfig) -> Client:
         str(1),
         "--seed",  # generates same accounts each time
         str(1),
-        *get_compiler_manifest(),
+        "--disable-fee",
     ]
     subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)
     pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name="mainnet")
-    module_mocker.patch.object(
-        AvnuFetcher,
-        "_pragma_client",
-        return_value=pragma_client,
-    )
     return pragma_client.client
 
 
@@ -94,10 +91,8 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             base_asset = asset["pair"][1]
 
             # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
-            if fetcher_config["name"] == "AVNU":
-                url = await fetcher.format_url_async(quote_asset, base_asset)
-            else:
-                url = fetcher.format_url(quote_asset, base_asset)
+
+            url = fetcher.format_url(quote_asset, base_asset)
 
             if fetcher_config["name"] == "TheGraph":
                 query = fetcher.query_body(quote_asset)
@@ -125,10 +120,8 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
-            if fetcher_config["name"] == "AVNU":
-                url = await fetcher.format_url_async(quote_asset, base_asset)
-            else:
-                url = fetcher.format_url(quote_asset, base_asset)
+
+            url = fetcher.format_url(quote_asset, base_asset)
 
             mock.get(url, status=404)
             mock.post(url, status=404)

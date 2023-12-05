@@ -1,13 +1,13 @@
 {
-  "R": {
+  "LUSD": {
     "data": {
       "id": "eth_0x183015a9ba6ff60230fdeadc3f43b3d788b13e21",
       "type": "token",
       "attributes": {
         "address": "0x183015a9ba6ff60230fdeadc3f43b3d788b13e21",
-        "name": "R Stablecoin",
-        "symbol": "R",
-        "coingecko_coin_id": "r",
+        "name": "Liquity Stablecoin",
+        "symbol": "LUSD",
+        "coingecko_coin_id": "liquity-coin",
         "decimals": 18,
         "total_supply": "23869109480286905483367343.0",
         "price_usd": "0.98898157",

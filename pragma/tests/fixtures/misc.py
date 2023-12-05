@@ -3,13 +3,23 @@
 
 import pytest
 
+from pragma.core.types import get_rpc_url
+
 
 def pytest_addoption(parser):
     parser.addoption(
         "--net",
         action="store",
         default="devnet",
-        help="Network to run tests on: possible 'testnet', 'devnet', 'all'",
+        help="Network to run tests on, one of: "
+        "`mainnet`, `testnet`, `sharingan`, `pragma_testnet`, `fork_devnet`",
+    )
+    parser.addoption(
+        "--fork-block-number",
+        action="store",
+        default="",
+        help="The block number to fork from. See: "
+        "https://book.dojoengine.org/toolchain/katana/reference.html",
     )
     parser.addoption(
         "--client",
@@ -20,12 +30,13 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="package")
-def network(pytestconfig, run_devnet: str) -> str:
+def network(pytestconfig, run_devnet: str, fork_testnet_devnet: str) -> str:
     """
     Returns network address depending on the --net parameter.
     """
     net = pytestconfig.getoption("--net")
     net_address = {
+        "fork_devnet": fork_testnet_devnet,
         "devnet": run_devnet,
         "testnet": "testnet",
         "integration": "https://external.integration.starknet.io",
@@ -40,11 +51,15 @@ def pytest_collection_modifyitems(config, items):
 
     run_testnet = config.getoption("--net") == "testnet"
     run_devnet = config.getoption("--net") == "devnet"
+    fork_testnet_devnet = config.getoption("--net") == "fork_devnet"
     for item in items:
         runs_on_testnet = "run_on_testnet" in item.keywords
         runs_on_devnet = "run_on_devnet" in item.keywords
-        should_not_run = (runs_on_devnet and not run_devnet) or (
-            runs_on_testnet and not run_testnet
+        runs_on_fork_devnet = "run_on_fork_devnet" in item.keywords
+        should_not_run = (
+            (runs_on_devnet and not run_devnet)
+            or (runs_on_testnet and not run_testnet)
+            or (runs_on_fork_devnet and not fork_testnet_devnet)
         )
         if should_not_run:
             item.add_marker(pytest.mark.skip())
@@ -53,8 +68,3 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(name="tx_receipt_full_node_path", scope="package")
 def get_tx_receipt_full_node_client():
     return "starknet_py.net.full_node_client.FullNodeClient.get_transaction_receipt"
-
-
-@pytest.fixture(name="tx_receipt_gateway_path", scope="package")
-def get_tx_receipt_gateway_client():
-    return "starknet_py.net.gateway_client.GatewayClient.get_transaction_receipt"

@@ -12,7 +12,6 @@ from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
     AscendexFetcher,
-    AvnuFetcher,
     BitstampFetcher,
     CexFetcher,
     CoinbaseFetcher,

@@ -129,27 +129,6 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
-    "AvnuFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "avnu.json",
-        "fetcher_class": AvnuFetcher,
-        "name": "AVNU",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2623400000000,
-                12345,
-                "AVNU",
-                PUBLISHER_NAME,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                158913000000,
-                12345,
-                "AVNU",
-                PUBLISHER_NAME,
-            ),
-        ],
-    },
     "TheGraphFetcher": {
         "mock_file": MOCK_DIR / "responses" / "thegraph.json",
         "fetcher_class": TheGraphFetcher,
@@ -283,7 +262,7 @@ ONCHAIN_FETCHER_CONFIGS = {
         "name": "GeckoTerminal",
         "expected_result": [
             SpotEntry(
-                "R/USD",
+                "LUSD/USD",
                 98898157,
                 12345,
                 "GECKOTERMINAL",

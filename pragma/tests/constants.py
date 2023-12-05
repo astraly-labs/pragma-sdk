@@ -28,6 +28,7 @@ MOCK_DIR = repo_root / "pragma/tests" / "mock"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 
+DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 print("Current Directory:", os.getcwd())
 print("SUBMODULE_DIR:", SUBMODULE_DIR)
@@ -68,9 +69,11 @@ PREDEPLOYED_MAP_CONTRACT_ADDRESS = (
 # -----------------------------------------------------------------------------
 
 DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS = (
-    "0x7d2f37b75a5e779f7da01c22acee1b66c39e8ba470ee5448f05e1462afcedb4"
+    "0x7b245927f60309cb2fdcbc3f7d37a21ce5bc05a4305104b43b72b91aa3f53e1"
 )
-DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY = "0xcd613e30d8f16adf91b7584a2265b1f5"
+DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY = (
+    "0x100801800000000310080180000000010030000000000005106801800206800"
+)
 
 MAX_FEE = int(1e16)
 
@@ -140,6 +143,6 @@ SAMPLE_FUTURE_ASSETS = [
 ]
 
 SAMPLE_ONCHAIN_ASSETS = [
-    {"type": "SPOT", "pair": ("R", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("LUSD", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]

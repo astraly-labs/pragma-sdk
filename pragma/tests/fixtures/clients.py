@@ -8,15 +8,6 @@ from typing import List
 import pytest
 from starknet_py.net.client import Client
 from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.gateway_client import GatewayClient
-
-
-@pytest.fixture(name="gateway_client", scope="package")
-def create_gateway_client(network: str) -> GatewayClient:
-    """
-    Creates and returns GatewayClient.
-    """
-    return GatewayClient(net=network)
 
 
 @pytest.fixture(name="full_node_client", scope="package")
@@ -24,7 +15,7 @@ def create_full_node_client(network: str) -> FullNodeClient:
     """
     Creates and returns FullNodeClient.
     """
-    return FullNodeClient(node_url=network + "/rpc")
+    return FullNodeClient(node_url=network)
 
 
 def net_to_clients() -> List[str]:

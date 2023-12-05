@@ -111,7 +111,7 @@ class PragmaClient(
             cairo_version=1,
         )
 
-    def full_node_client(self, network, port=None):
+    def full_node_client(self, network, port=None) -> FullNodeClient:
         return get_client_from_network(network, port=port)
 
     async def get_balance(self, account_contract_address, token_address=None):
