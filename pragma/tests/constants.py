@@ -24,10 +24,11 @@ repo_root = find_repo_root(current_file_directory)
 
 SUBMODULE_DIR = repo_root / "pragma-oracle"
 MOCK_DIR = repo_root / "pragma/tests" / "mock"
+ERC_DIR = repo_root / "pragma" / "core" 
 
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
-
+ERC20_COMPILED_DIR = ERC_DIR / "abis" 
 DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 print("Current Directory:", os.getcwd())

@@ -63,11 +63,10 @@ CONTRACTS_NAMES = [
     "pragma_YieldCurve",
     "pragma_Randomness",
     "pragma_ExampleRandomness", 
+    "openzeppelin_ERC20"
 ]
 ABIS = {
     contract_name: json.loads(get_abi(contract_name))
     for contract_name in CONTRACTS_NAMES
 }
 
-def get_erc20_abi(): 
-    return json.loads(Path(BUILD_DIR / "ERC20.json").read_text(encoding="utf-8"))

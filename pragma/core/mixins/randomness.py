@@ -268,7 +268,7 @@ class RandomnessMixin:
         seed: int,
         callback_address: int,
         callback_fee_limit: int,
-        publish_delay: int,
+        minimum_block_number: int,
         num_words: int,
         max_fee=int(1e16),
     ) -> InvokeResult:
@@ -276,8 +276,6 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        block_number = await self.full_node_client.get_block_number()
-        minimum_block_number = block_number + publish_delay
         invocation = await self.randomness.functions["cancel_random_request"].invoke(
             request_id,
             requestor_address,
@@ -298,16 +296,14 @@ class RandomnessMixin:
         seed: int,
         callback_address: int,
         callback_fee_limit: int,
-        publish_delay: int,
+        minimum_block_number: int,
         num_words: int,
-        block_number: int,
         max_fee=int(1e16),
     ):
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        minimum_block_number = block_number + publish_delay
         prepared_call = self.randomness.functions["cancel_random_request"].prepare(
             request_id,
             requestor_address,
@@ -337,7 +333,7 @@ class RandomnessMixin:
         return invocation
 
         
-    async def handle_random(self, private_key: int, min_block: int = 0):
+    async def handle_random(self, private_key: int,min_block: int = 0,):
         block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
