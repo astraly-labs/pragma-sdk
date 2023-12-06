@@ -11,7 +11,7 @@ from pragma.core.client import PragmaClient
 from pragma.tests.constants import FEE_TOKEN_ADDRESS
 from pragma.tests.utils import read_contract
 from starknet_py.net.client_errors import ClientError
-
+from pragma.core.abis import get_erc20_abi
 
 MAX_PREMIUM_FEE = 100000000;
 ORACLE_FEE_PRICE = 100000000000   
@@ -135,9 +135,12 @@ async def vrf_pragma_client(
     client.init_randomness_contract(randomness.address, example.address)
 
     # Approve randomness contract to transfer fee tokens
-    fee_contract = await Contract.from_address(
-        FEE_TOKEN_ADDRESS, provider=client.account
-    )
+    fee_contract = Contract(
+    address=FEE_TOKEN_ADDRESS,
+    abi= get_erc20_abi(),
+    provider=client.account,
+)
+    
     await fee_contract.functions["approve"].invoke(
         randomness.address, 0xFFFFFFFFFFFFFFFFFFFFFFFF, auto_estimate=True
     )
@@ -301,9 +304,11 @@ async def test_balance_evolution(vrf_pragma_client: PragmaClient, randomness_con
     num_words = 1
     caller_address = vrf_pragma_client.account_address()
 
-    fee_contract = await Contract.from_address(
-        FEE_TOKEN_ADDRESS, provider=vrf_pragma_client.account
-    )
+    fee_contract = Contract(
+    address=FEE_TOKEN_ADDRESS,
+    abi= get_erc20_abi(),
+    provider=vrf_pragma_client.account,
+)
 
     # Fetching user initial balance
     initial_balance = await fee_contract.functions['balanceOf'].call(caller_address)
@@ -371,9 +376,11 @@ async def test_balance_evolution_cancel(vrf_pragma_client: PragmaClient, randomn
     num_words = 1
     caller_address = vrf_pragma_client.account_address()
 
-    fee_contract = await Contract.from_address(
-        FEE_TOKEN_ADDRESS, provider=vrf_pragma_client.account
-    )
+    fee_contract = Contract(
+    address=FEE_TOKEN_ADDRESS,
+    abi= get_erc20_abi(),
+    provider= vrf_pragma_client.account,
+)
 
     # Fetching user initial balance
     initial_balance = await fee_contract.functions['balanceOf'].call(caller_address)

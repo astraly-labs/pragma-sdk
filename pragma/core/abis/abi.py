@@ -48,12 +48,12 @@ def get_casm_artifact(contract_name):
 
 
 def get_abi(contract_name):
+    print(f'the build directory is {BUILD_DIR}')
     sierra_artifact = get_sierra_artifact(contract_name)
     contract_compiled_sierra = Path(sierra_artifact).read_text(encoding="utf-8")
     return create_sierra_compiled_contract(
         compiled_contract=contract_compiled_sierra
     ).abi
-
 
 CONTRACTS_NAMES = [
     # "pragma_Ownable",
@@ -62,8 +62,12 @@ CONTRACTS_NAMES = [
     "pragma_SummaryStats",
     "pragma_YieldCurve",
     "pragma_Randomness",
+    "pragma_ExampleRandomness", 
 ]
 ABIS = {
     contract_name: json.loads(get_abi(contract_name))
     for contract_name in CONTRACTS_NAMES
 }
+
+def get_erc20_abi(): 
+    return json.loads(Path(BUILD_DIR / "ERC20.json").read_text(encoding="utf-8"))
