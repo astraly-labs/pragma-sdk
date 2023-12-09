@@ -25,9 +25,7 @@ class RandomnessMixin:
     example_randomness: Optional[Contract] = None
 
     def init_randomness_contract(
-        self,
-        contract_address: int,
-        example_contract_address: int
+        self, contract_address: int, example_contract_address: int
     ):
         provider = self.account if self.account else self.client
         self.randomness = Contract(
@@ -65,7 +63,7 @@ class RandomnessMixin:
             max_fee=max_fee,
         )
         return invocation
-    
+
     async def estimate_gas_request_random_op(
         self,
         seed: int,
@@ -90,22 +88,15 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
-    async def estimate_gas_call(
-            self, 
-            caller_address: int, 
-            method: str
-    ): 
+    async def estimate_gas_call(self, caller_address: int, method: str):
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions[method].prepare(
-           caller_address
-        )
+        prepared_call = self.randomness.functions[method].prepare(caller_address)
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
-        
-        
+
     async def submit_random(
         self,
         request_id: int,
@@ -224,23 +215,22 @@ class RandomnessMixin:
         )
 
         return response
-    
-    async def get_total_fees(self, caller_address: int, request_id: int): 
+
+    async def get_total_fees(self, caller_address: int, request_id: int):
         (response,) = await self.randomness.functions["get_total_fees"].call(
-            caller_address, 
-            request_id
+            caller_address, request_id
         )
 
         return response
-    
-    async def compute_premium_fee(self, caller_address: int): 
+
+    async def compute_premium_fee(self, caller_address: int):
         (response,) = await self.randomness.functions["compute_premium_fee"].call(
             caller_address
         )
 
         return response
-    
-    async def requestor_current_index(self, caller_address: int): 
+
+    async def requestor_current_index(self, caller_address: int):
         (response,) = await self.randomness.functions["requestor_current_index"].call(
             caller_address
         )
@@ -285,7 +275,6 @@ class RandomnessMixin:
             callback_fee_limit,
             num_words,
             max_fee=max_fee,
-            
         )
         return invocation
 
@@ -316,7 +305,7 @@ class RandomnessMixin:
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
-    
+
     async def refund_operation(
         self,
         request_id: int,
@@ -332,8 +321,11 @@ class RandomnessMixin:
         )
         return invocation
 
-        
-    async def handle_random(self, private_key: int,min_block: int = 0,):
+    async def handle_random(
+        self,
+        private_key: int,
+        min_block: int = 0,
+    ):
         block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
@@ -384,7 +376,7 @@ class RandomnessMixin:
                     int.from_bytes(p, sys.byteorder)
                     for p in [pi_string[:31], pi_string[31:62], pi_string[62:]]
                 ]
-                
+
                 random_words = [beta_string]
 
                 invocation = await self.submit_random(
@@ -403,10 +395,7 @@ class RandomnessMixin:
                 # Wait for Tx to pass
                 await asyncio.sleep(5)
 
-    
-    async def get_last_example_random(
-            self
-    ): 
+    async def get_last_example_random(self):
         (response,) = await self.example_randomness.functions["get_last_random"].call()
         return response
 
@@ -416,8 +405,8 @@ class RandomnessMixin:
         callback_address: int,
         callback_fee_limit: int,
         publish_delay: int,
-        num_words: int
-    ): 
+        num_words: int,
+    ):
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"

@@ -12,15 +12,19 @@ from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
-from pragma.tests.constants import CONTRACTS_COMPILED_DIR, DEPLOYMENTS_DIR, MAX_FEE, ERC20_COMPILED_DIR
+from pragma.tests.constants import (
+    CONTRACTS_COMPILED_DIR,
+    DEPLOYMENTS_DIR,
+    MAX_FEE,
+    ORACLE_DECIMALS,
+    ORACLE_FEE_PRICE,
+)
 
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
     """
     Return contents of file_name from directory.
     """
-    if file_name == "openzeppelin_ERC20.sierra.json" or file_name == "openzeppelin_ERC20.casm.json":
-        directory = ERC20_COMPILED_DIR
     if directory is None:
         directory = CONTRACTS_COMPILED_DIR
 
@@ -62,3 +66,10 @@ def get_declarations(network: Network):
 
 def get_deployments(network: Network):
     return json.load(open(DEPLOYMENTS_DIR / f"{network}" / "deployments.json", "r"))
+
+
+def convert_to_wei(usd):
+    res = (usd * 1000000000000000000 * 10**ORACLE_DECIMALS) / (
+        ORACLE_FEE_PRICE * 100000000
+    )
+    return res
