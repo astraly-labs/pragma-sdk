@@ -8,6 +8,7 @@ import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
+
 from pragma.core.abis.abi import get_erc20_abi
 from pragma.core.client import PragmaClient
 from pragma.tests.constants import (
