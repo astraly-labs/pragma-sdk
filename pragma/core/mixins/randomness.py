@@ -5,6 +5,7 @@ from typing import Any, Callable, List, Optional
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
+from starknet_py.net.client_errors import ClientError
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.abis import ABIS
@@ -85,7 +86,11 @@ class RandomnessMixin:
             random_words,
             proof,
         )
-        estimate_fee = await prepared_call.estimate_fee()
+        try:
+            estimate_fee = await prepared_call.estimate_fee()
+        except ClientError as e:
+            print("Error while estimating fee: ", e)
+            return None
 
         if estimate_fee.overall_fee > callback_fee_limit:
             logger.error(
@@ -251,6 +256,10 @@ class RandomnessMixin:
                     random_words,
                     proof,
                 )
+
+                if invocation is None:
+                    print("Failed to submit random")
+                    continue
 
                 print(f"Submitted: {hex(invocation.hash)}\n\n")
 
