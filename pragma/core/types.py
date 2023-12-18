@@ -1,14 +1,14 @@
 import logging
+import os
 import random
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import List, Literal, Optional
 
+from dotenv import load_dotenv
 from starknet_py.net.full_node_client import FullNodeClient
 
-from pragma.core.utils import str_to_felt, felt_to_str
-import os 
-from dotenv import load_dotenv
+from pragma.core.utils import felt_to_str, str_to_felt
 
 load_dotenv()
 # from starknet_py.net.gateway_client import GatewayClient
@@ -29,7 +29,9 @@ SHARINGAN = "sharingan"
 SEPOLIA = "sepolia"
 PRAGMA_TESTNET = "pragma_testnet"
 
-Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "sepolia"]
+Network = Literal[
+    "devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "sepolia"
+]
 
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
@@ -67,14 +69,12 @@ RPC_URLS = {
     SEPOLIA: [
         # "https://starknet-sepolia.public.blastapi.io"
         f"https://rpc.nethermind.io/sepolia-juno/?apikey={os.getenv('RPC_SEPOLIA_KEY')}"
-    ]
+    ],
 }
 
 
-
-
 def get_rpc_url(network=TESTNET, port=5050):
-    print(os.getenv('RPC_SEPOLIA_KEY'))
+    print(os.getenv("RPC_SEPOLIA_KEY"))
     if network.startswith("http"):
         return network
     if network == TESTNET:
@@ -122,8 +122,8 @@ CONTRACT_ADDRESSES = {
         1202089834814778579992154020333959781277480478747022471664051891421849487195,
     ),
     SEPOLIA: ContractAddresses(
-        12717926086151395579460697164825897649707548956975430521643032255071360459, 
-        2566635638035808388088693173584726575076117841557660743089904485938823443923
+        12717926086151395579460697164825897649707548956975430521643032255071360459,
+        2566635638035808388088693173584726575076117841557660743089904485938823443923,
     ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),

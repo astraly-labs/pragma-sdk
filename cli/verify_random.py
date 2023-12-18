@@ -1,13 +1,16 @@
-import sys
-from pragma.core.randomness.randomness_utils import ecvrf_verify
-import typer
-import os 
-from pymongo import MongoClient
-from dotenv import load_dotenv
-from pragma.core.types import get_client_from_network
 import asyncio
+import os
+import sys
+
+import typer
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+from pragma.core.randomness.randomness_utils import ecvrf_verify
+from pragma.core.types import get_client_from_network
 
 load_dotenv()
+
 
 async def verify_random(transaction_hash: str, network):
     """provide the hex transaction number to verify the proof for that transaction.  If no event is found will alert the user"""
@@ -18,10 +21,10 @@ async def verify_random(transaction_hash: str, network):
     if document is None:
         typer.echo("No event found")
         return
-    pub_key=b'V\xf9\x10\xb2\x15\xd9\xedM\x12\xc6\x06\x1d\rZ\xf4!\x04?\x04B\x8d\xb7f\xa5_\xe8\xec;\xe6\xbe\x98\xb6'
+    pub_key = b"V\xf9\x10\xb2\x15\xd9\xedM\x12\xc6\x06\x1d\rZ\xf4!\x04?\x04B\x8d\xb7f\xa5_\xe8\xec;\xe6\xbe\x98\xb6"
     client = get_client_from_network(network)
     print(int(document["minimum_block_number"]))
-    block= await client.get_block(block_number=int(document["minimum_block_number"]))
+    block = await client.get_block(block_number=int(document["minimum_block_number"]))
     block_hash = block.block_hash
     seed = int(document["seed"])
     request_id = int(document["request_id"])
@@ -43,5 +46,3 @@ async def verify_random(transaction_hash: str, network):
     typer.echo(f"status: {status}")
     typer.echo(f"verified random value: {int.from_bytes(val, sys.byteorder)}")
     typer.echo(f"onchain random value:  {random_word}")
-
-

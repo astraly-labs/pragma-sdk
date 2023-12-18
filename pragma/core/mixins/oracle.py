@@ -10,7 +10,7 @@ from starknet_py.net.client import Client
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataType, DataTypes
-from pragma.core.utils import str_to_felt, felt_to_str
+from pragma.core.utils import felt_to_str, str_to_felt
 
 logger = logging.getLogger(__name__)
 
