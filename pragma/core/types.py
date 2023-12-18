@@ -7,7 +7,10 @@ from typing import List, Literal, Optional
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import str_to_felt, felt_to_str
+import os 
+from dotenv import load_dotenv
 
+load_dotenv()
 # from starknet_py.net.gateway_client import GatewayClient
 
 
@@ -23,14 +26,16 @@ DEVNET = "devnet"
 TESTNET = "testnet"
 MAINNET = "mainnet"
 SHARINGAN = "sharingan"
+SEPOLIA = "sepolia"
 PRAGMA_TESTNET = "pragma_testnet"
 
-Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet"]
+Network = Literal["devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "sepolia"]
 
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
     SHARINGAN: 1536727068981429685321,
     TESTNET: 1536727068981429685321,
+    SEPOLIA: 393402133025997798000961,
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
 }
@@ -41,6 +46,7 @@ STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
     TESTNET: "https://testnet.starkscan.co",
     DEVNET: "https://devnet.starkscan.co",
+    SEPOLIA: "https://sepolia.starkscan.co",
     SHARINGAN: "https://sharingan-explorer.madara.zone",
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
 }
@@ -58,10 +64,17 @@ RPC_URLS = {
         "https://rpc.starknet-testnet.lava.build",
         "https://limited-rpc.nethermind.io/goerli-juno",
     ],
+    SEPOLIA: [
+        # "https://starknet-sepolia.public.blastapi.io"
+        f"https://rpc.nethermind.io/sepolia-juno/?apikey={os.getenv('RPC_SEPOLIA_KEY')}"
+    ]
 }
 
 
+
+
 def get_rpc_url(network=TESTNET, port=5050):
+    print(os.getenv('RPC_SEPOLIA_KEY'))
     if network.startswith("http"):
         return network
     if network == TESTNET:
@@ -70,6 +83,9 @@ def get_rpc_url(network=TESTNET, port=5050):
     if network == MAINNET:
         random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
         return RPC_URLS[MAINNET][random_index]
+    if network == SEPOLIA:
+        random_index = random.randint(0, len(RPC_URLS[SEPOLIA]) - 1)
+        return RPC_URLS[SEPOLIA][random_index]
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
@@ -104,6 +120,10 @@ CONTRACT_ADDRESSES = {
     MAINNET: ContractAddresses(
         1035964020232444284030697086969999610062982650901949616270651804992179237909,
         1202089834814778579992154020333959781277480478747022471664051891421849487195,
+    ),
+    SEPOLIA: ContractAddresses(
+        12717926086151395579460697164825897649707548956975430521643032255071360459, 
+        2566635638035808388088693173584726575076117841557660743089904485938823443923
     ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
