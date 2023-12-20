@@ -22,10 +22,9 @@ logger = logging.getLogger(__name__)
 class RandomnessMixin:
     client: Client
     randomness: Optional[Contract] = None
-    example_randomness: Optional[Contract] = None
 
     def init_randomness_contract(
-        self, contract_address: int, example_contract_address: int
+        self, contract_address: int
     ):
         provider = self.account if self.account else self.client
         self.randomness = Contract(
@@ -34,12 +33,7 @@ class RandomnessMixin:
             provider=provider,
             cairo_version=1,
         )
-        self.example_randomness = Contract(
-            address=example_contract_address,
-            abi=ABIS["pragma_ExampleRandomness"],
-            provider=provider,
-            cairo_version=1,
-        )
+        
 
     async def request_random(
         self,
@@ -395,23 +389,4 @@ class RandomnessMixin:
                 # Wait for Tx to pass
                 await asyncio.sleep(5)
 
-    async def get_last_example_random(self):
-        (response,) = await self.example_randomness.functions["get_last_random"].call()
-        return response
-
-    async def example_request_random(
-        self,
-        seed: int,
-        callback_address: int,
-        callback_fee_limit: int,
-        publish_delay: int,
-        num_words: int,
-    ):
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
-            )
-        invocation = await self.example_randomness.functions["request_random"].invoke(
-            seed, callback_address, callback_fee_limit, publish_delay, num_words
-        )
-        return invocation
+    
