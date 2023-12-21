@@ -23,9 +23,7 @@ class RandomnessMixin:
     client: Client
     randomness: Optional[Contract] = None
 
-    def init_randomness_contract(
-        self, contract_address: int
-    ):
+    def init_randomness_contract(self, contract_address: int):
         provider = self.account if self.account else self.client
         self.randomness = Contract(
             address=contract_address,
@@ -33,7 +31,6 @@ class RandomnessMixin:
             provider=provider,
             cairo_version=1,
         )
-        
 
     async def request_random(
         self,
@@ -42,18 +39,21 @@ class RandomnessMixin:
         callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
+        calldata: List[int] = [],
         max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
+
         invocation = await self.randomness.functions["request_random"].invoke(
             seed,
             callback_address,
             callback_fee_limit,
             publish_delay,
             num_words,
+            calldata,
             max_fee=max_fee,
         )
         return invocation
@@ -65,6 +65,7 @@ class RandomnessMixin:
         callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
+        calldata: List[int] = [],
         max_fee=int(1e16),
     ):
         if not self.is_user_client:
@@ -77,6 +78,7 @@ class RandomnessMixin:
             callback_fee_limit,
             publish_delay,
             num_words,
+            calldata,
             max_fee=max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
@@ -100,7 +102,8 @@ class RandomnessMixin:
         callback_fee_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
-        proof: List[int],  # randomness proof
+        proof: List[int],  # randomness proof,
+        calldata: List[int],
         max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
@@ -117,6 +120,8 @@ class RandomnessMixin:
             callback_fee_limit,
             random_words,
             proof,
+            calldata,
+            max_fee=max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         if estimate_fee.overall_fee > callback_fee_limit:
@@ -144,8 +149,10 @@ class RandomnessMixin:
             estimate_fee.overall_fee,
             random_words,
             proof,
+            calldata,
             max_fee=max_fee,
         )
+        print(invocation)
         logger.info(f"Sumbitted random {invocation.hash}")
 
         return invocation
@@ -159,7 +166,8 @@ class RandomnessMixin:
         callback_fee_limit: int,  # =1000000
         minimum_block_number: int,
         random_words: List[int],  # List with 1 item
-        proof: List[int],  # randomness proof
+        proof: List[int],  # randomness proof,
+        calldata: List[int],
         max_fee=int(1e16),
     ):
         if not self.is_user_client:
@@ -176,6 +184,7 @@ class RandomnessMixin:
             callback_fee_limit,
             random_words,
             proof,
+            calldata,
             max_fee=max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
@@ -326,7 +335,7 @@ class RandomnessMixin:
         more_pages = True
         continuation_token = None
 
-        # TODO(#000): add nonce tracking
+        # # TODO(#000): add nonce tracking
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
@@ -338,6 +347,12 @@ class RandomnessMixin:
                 continuation_token=continuation_token,
                 chunk_size=50,
             )
+            for event in event_list.events:
+                index_to_split = 7
+                event.data.pop(index_to_split)
+                first_part = event.data[:index_to_split]
+                second_part = event.data[index_to_split:]
+                event.data = first_part + [second_part]
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
@@ -382,11 +397,10 @@ class RandomnessMixin:
                     event.minimum_block_number,
                     random_words,
                     proof,
+                    event.calldata,
                 )
 
                 print(f"Submitted: {hex(invocation.hash)}\n\n")
 
                 # Wait for Tx to pass
                 await asyncio.sleep(5)
-
-    
