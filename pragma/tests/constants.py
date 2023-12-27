@@ -27,7 +27,6 @@ MOCK_DIR = repo_root / "pragma/tests" / "mock"
 
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
-
 DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 print("Current Directory:", os.getcwd())
@@ -146,3 +145,7 @@ SAMPLE_ONCHAIN_ASSETS = [
     {"type": "SPOT", "pair": ("LUSD", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]
+ORACLE_DECIMALS = 8
+ORACLE_FEE_PRICE = 100000000000
+MAX_PREMIUM_FEE = 100000000
+ESTIMATED_FEE_MULTIPLIER = 1.5

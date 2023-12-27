@@ -2,9 +2,8 @@ import json
 import os
 import random
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 
-from starknet_py.constants import EC_ORDER
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.net.models import StarknetChainId
@@ -12,7 +11,17 @@ from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
-from pragma.tests.constants import CONTRACTS_COMPILED_DIR, DEPLOYMENTS_DIR, MAX_FEE
+from pragma.core.abis import ABIS
+from pragma.core.client import PragmaClient
+from pragma.core.contract import Contract
+from pragma.core.types import PRAGMA_API_URL, ContractAddresses
+from pragma.tests.constants import (
+    CONTRACTS_COMPILED_DIR,
+    DEPLOYMENTS_DIR,
+    MAX_FEE,
+    ORACLE_DECIMALS,
+    ORACLE_FEE_PRICE,
+)
 
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
@@ -60,3 +69,73 @@ def get_declarations(network: Network):
 
 def get_deployments(network: Network):
     return json.load(open(DEPLOYMENTS_DIR / f"{network}" / "deployments.json", "r"))
+
+
+def convert_to_wei(usd):
+    res = (usd * 1000000000000000000 * 10**ORACLE_DECIMALS) / (
+        ORACLE_FEE_PRICE * 100000000
+    )
+    return res
+
+
+class ExampleRandomnessMixin:
+    client: Client
+    example_randomness: Optional[Contract] = None
+
+    def init_example_randomness_contract(self, example_contract_address: int):
+        provider = self.account if self.account else self.client
+
+        self.example_randomness = Contract(
+            address=example_contract_address,
+            abi=ABIS["pragma_ExampleRandomness"],
+            provider=provider,
+            cairo_version=1,
+        )
+
+    async def get_last_example_random(self):
+        (response,) = await self.example_randomness.functions["get_last_random"].call()
+        return response
+
+    async def example_request_random(
+        self,
+        seed: int,
+        callback_address: int,
+        callback_fee_limit: int,
+        publish_delay: int,
+        num_words: int,
+    ):
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+        invocation = await self.example_randomness.functions["request_random"].invoke(
+            seed, callback_address, callback_fee_limit, publish_delay, num_words
+        )
+        return invocation
+
+
+class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
+    def __init__(
+        self,
+        network: str = "testnet",
+        account_private_key: Optional[int] = None,
+        account_contract_address: Optional[int] = None,
+        contract_addresses_config: Optional[ContractAddresses] = None,
+        port: Optional[int] = None,
+        chain_name: Optional[str] = None,
+        api_url: Optional[str] = PRAGMA_API_URL,
+        api_key: Optional[str] = None,
+    ):
+        super().__init__(
+            network=network,
+            account_private_key=account_private_key,
+            account_contract_address=account_contract_address,
+            contract_addresses_config=contract_addresses_config,
+            port=port,
+            chain_name=chain_name,
+            api_url=api_url,
+            api_key=api_key,
+        )
+        # Any additional initialization for ExampleRandomnessMixin can be done here
+
+    # You can override or add new methods here if needed
