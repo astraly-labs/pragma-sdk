@@ -19,13 +19,20 @@ HEX_STR = str  # pylint: disable=invalid-name
 # Network Types
 DEVNET = "devnet"
 TESTNET = "testnet"
+SEPOLIA = "sepolia"
 MAINNET = "mainnet"
 SHARINGAN = "sharingan"
 FORK_DEVNET = "fork_devnet"
 PRAGMA_TESTNET = "pragma_testnet"
 
 Network = Literal[
-    "devnet", "testnet", "mainnet", "sharingan", "pragma_testnet", "fork_devnet"
+    "devnet",
+    "testnet",
+    "mainnet",
+    "sharingan",
+    "pragma_testnet",
+    "fork_devnet",
+    "sepolia",
 ]
 
 CHAIN_IDS = {
@@ -35,6 +42,7 @@ CHAIN_IDS = {
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
     FORK_DEVNET: 1536727068981429685321,
+    SEPOLIA: 393402133025997798000961,
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
@@ -42,6 +50,7 @@ CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
 STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
     TESTNET: "https://testnet.starkscan.co",
+    SEPOLIA: "https://sepolia.starkscan.co",
     DEVNET: "https://devnet.starkscan.co",
     SHARINGAN: "https://sharingan-explorer.madara.zone",
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
@@ -54,12 +63,16 @@ RPC_URLS = {
     MAINNET: [
         "https://starknet-mainnet.public.blastapi.io",
         "https://rpc.starknet.lava.build",
-        "https://limited-rpc.nethermind.io/mainnet-juno",
+        "https://free-rpc.nethermind.io/mainnet-juno",
     ],
     TESTNET: [
         "https://starknet-testnet.public.blastapi.io",
         "https://rpc.starknet-testnet.lava.build",
-        "https://limited-rpc.nethermind.io/goerli-juno",
+        "https://free-rpc.nethermind.io/goerli-juno",
+    ],
+    SEPOLIA: [
+        "https://starknet-sepolia.public.blastapi.io",
+        "https://free-rpc.nethermind.io/sepolia-juno",
     ],
 }
 
@@ -70,6 +83,9 @@ def get_rpc_url(network=TESTNET, port=5050):
     if network == TESTNET:
         random_index = random.randint(0, len(RPC_URLS[TESTNET]) - 1)
         return RPC_URLS[TESTNET][random_index]
+    if network == SEPOLIA:
+        random_index = random.randint(0, len(RPC_URLS[SEPOLIA]) - 1)
+        return RPC_URLS[SEPOLIA][random_index]
     if network == MAINNET:
         random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
         return RPC_URLS[MAINNET][random_index]
@@ -81,6 +97,7 @@ def get_rpc_url(network=TESTNET, port=5050):
         return f"http://127.0.0.1:{port}/rpc"
     if network == FORK_DEVNET:
         return f"http://127.0.0.1:{port}/rpc"
+
     raise ClientException("Must provide a network name or an RPC URL.")
 
 
@@ -103,6 +120,10 @@ CONTRACT_ADDRESSES = {
     MAINNET: ContractAddresses(
         1035964020232444284030697086969999610062982650901949616270651804992179237909,
         1202089834814778579992154020333959781277480478747022471664051891421849487195,
+    ),
+    SEPOLIA: ContractAddresses(
+        12717926086151395579460697164825897649707548956975430521643032255071360459,
+        2566635638035808388088693173584726575076117841557660743089904485938823443923,
     ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
