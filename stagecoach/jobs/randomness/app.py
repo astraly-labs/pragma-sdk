@@ -27,3 +27,7 @@ async def main():
     client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
 
     await client.handle_random(ADMIN_PRIVATE_KEY, START_BLOCK)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -130,9 +130,11 @@ class OffchainMixin:
 
         url = self.api_url + "/v1/data/publish"
 
-        logging.info(f"POST {url}")
-        logging.info(f"Headers: {headers}")
-        logging.info(f"Body: {body}")
+        logger.info(f"POST {url}")
+        logger.info(f"Headers: {headers}")
+        logger.info(f"Body: {body}")
+
+        print("body", body)
 
         if self.ssl_context is not None:
             # Call Pragma API
@@ -143,13 +145,13 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Publish successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Publish successful")
                         return response
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to POST /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to POST /v1/data")
         else:
             # Call Pragma API
             async with aiohttp.ClientSession() as session:
@@ -157,13 +159,13 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Publish successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Publish successful")
                         return response
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to POST /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to POST /v1/data")
 
         return response
 
@@ -190,7 +192,7 @@ class OffchainMixin:
             "x-api-key": self.api_key,
         }
 
-        logging.info(f"GET {url}")
+        logger.info(f"GET {url}")
 
         if self.ssl_context is not None:
             async with aiohttp.ClientSession(
@@ -200,23 +202,23 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Get Data successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Get Data successful")
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to GET /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to GET /v1/data")
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers) as response:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Get Data successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Get Data successful")
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to GET /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to GET /v1/data")
 
         return response
