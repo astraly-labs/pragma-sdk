@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Tuple
 from urllib.parse import urlparse
 
@@ -7,7 +6,7 @@ import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
-from starknet_py.net.client_errors import ClientError
+from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.core.abis.abi import get_erc20_abi
 from pragma.tests.constants import (
@@ -252,7 +251,7 @@ async def test_randomness_mixin(
             num_words,
         )
         assert False
-    except ClientError as err:
+    except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x7265717565737420616c72656164792066756c66696c6c6564]"
         # err_msg = "Contract Error"
         # if not err_msg in err.message:
@@ -371,13 +370,14 @@ async def test_balance_evolution(
         block_number + publish_delay,
         random_words,
         proof,
+        [],
     )
 
     # Generate the random number and send it to the callback contract
-
     pre_op_balance = await vrf_pragma_client.get_balance(caller_address)
 
     await vrf_pragma_client.handle_random(int(private_key, 16), min_block=0)
+
     # Check post op balance
     post_op_balance = await vrf_pragma_client.get_balance(caller_address)
 
