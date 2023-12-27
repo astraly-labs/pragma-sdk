@@ -340,7 +340,7 @@ class RandomnessMixin:
         more_pages = True
         continuation_token = None
 
-        # # TODO(#000): add nonce tracking
+        # TODO(#000): add nonce tracking
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
