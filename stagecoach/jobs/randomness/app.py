@@ -4,9 +4,9 @@ import os
 from pragma.core.client import PragmaClient
 
 START_BLOCK = int(os.environ.get("START_BLOCK", 0))
-NETWORK = os.environ.get("NETWORK", "testnet")
-ADMIN_PRIVATE_KEY = int(os.environ["ADMIN_PRIVATE_KEY"], 0)
-ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 0)
+NETWORK = os.environ.get("NETWORK", "sepolia")
+ADMIN_PRIVATE_KEY = int(os.environ["ADMIN_PRIVATE_KEY"], 16)
+ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 16)
 VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
 
 

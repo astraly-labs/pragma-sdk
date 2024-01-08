@@ -16,7 +16,7 @@ NETWORK = os.environ["NETWORK"]
 ASSETS = os.environ["ASSETS"]
 ASSET_TYPE = os.environ.get("ASSET_TYPE", "SPOT")
 ACCOUNT_ADDRESS = int(os.environ.get("ACCOUNT_ADDRESS"), 16)
-MAX_FEE = int(os.environ.get("MAX_FEE", int(1e18)))
+MAX_FEE = int(os.environ.get("MAX_FEE", int(1e17)))
 
 
 def handler(event, context):
@@ -39,7 +39,7 @@ def _get_pvt_key():
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
         json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
-        10,
+        16,
     )
 
 
