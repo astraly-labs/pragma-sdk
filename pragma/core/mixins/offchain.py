@@ -36,13 +36,15 @@ price': 1000,
 """
 
 
-def build_publish_message(entries: List[SpotEntry]) -> TypedData:
+def build_publish_message(entries: List[SpotEntry], now: int, expiry: int) -> TypedData:
     message = {
         "domain": {"name": "Pragma", "version": "1"},
         "primaryType": "Request",
         "message": {
             "action": "Publish",
             "entries": SpotEntry.serialize_entries(entries),
+            "timestamp": now,
+            "expiration": expiry,
         },
         "types": {
             "StarkNetDomain": [
@@ -77,12 +79,13 @@ class OffchainMixin:
     ssl_context: ssl.SSLContext
     api_key: str
 
-    def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
+    def sign_publish_message(
+        self, entries: List[SpotEntry], now: int, expiry: int
+    ) -> (List[int], int):
         """
         Sign a publish message
         """
-
-        message = build_publish_message(entries)
+        message = build_publish_message(entries, now, expiry)
         hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
@@ -110,11 +113,11 @@ class OffchainMixin:
             entries (List[SpotEntry]): List of SpotEntry to publish
         """
 
-        # Sign message
-        sig, _ = self.sign_publish_message(entries)
-
         now = int(time.time())
         expiry = now + 24 * 60 * 60
+
+        # Sign message
+        sig, _ = self.sign_publish_message(entries, now, expiry)
 
         # Add headers
         headers: Dict = {
