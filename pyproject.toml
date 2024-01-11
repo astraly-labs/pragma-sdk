@@ -78,6 +78,10 @@ source = ["pragma"]
 omit = ["*_test.py", "pragma/tests/*"]
 skip_empty = true
 
+[tool.poetry.scripts]
+random = "cli.random:main"
+
+
 
 [tool.black]
 target-version = ["py38"]
