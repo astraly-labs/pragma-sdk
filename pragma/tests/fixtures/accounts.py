@@ -14,8 +14,6 @@ from dotenv import load_dotenv
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.gateway_client import GatewayClient
-from starknet_py.net.http_client import GatewayHttpClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
@@ -76,16 +74,7 @@ def full_node_account(
 
 
 def net_to_base_accounts() -> List[str]:
-    if "--client=gateway" in sys.argv:
-        return ["gateway_account"]
-    if "--client=full_node" in sys.argv:
-        return ["full_node_account"]
-    accounts = ["gateway_account"]
-    nets = ["--net=integration", "--net=testnet", "testnet", "integration"]
-
-    if set(nets).isdisjoint(sys.argv):
-        accounts.extend(["full_node_account"])
-    return accounts
+    return ["full_node_account"]
 
 
 @pytest.fixture(
