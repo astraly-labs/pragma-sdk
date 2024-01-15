@@ -72,7 +72,6 @@ RPC_URLS = {
     ],
     SEPOLIA: [
         "https://starknet-sepolia.public.blastapi.io",
-        "https://free-rpc.nethermind.io/sepolia-juno",
     ],
 }
 
