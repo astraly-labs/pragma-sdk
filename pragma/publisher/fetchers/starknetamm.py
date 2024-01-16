@@ -96,13 +96,14 @@ class StarknetAMMFetcher:
 
     async def on_fetch_ekubo_price(self) -> Union[float, PublisherFetchError]:
         token_0, token_1 = min(self.ETH_ADDRESS, self.USDC_ADDRESS), max(self.ETH_ADDRESS, self.USDC_ADDRESS)
-        fee = math.floor(self.POOL_FEE * 2e128)
+        fee = math.floor(self.POOL_FEE * 2**128)
 
         # An TICK_SPACING increaese of a price means the new price is price*(1+TICK_SPACING)
         # We want to know the number of tick for a price increase of TICK_SPACING
         # Since the tick spacing is represented as an exponent of TICK_BASE, we can use the logarithm to find the number of tick
         tick = round(math.log(1 + self.TICK_SPACING)/math.log(self.TICK_BASE))
         pool_key = PoolKey(int(token_0, 16), int(token_1, 16), int(fee), int(tick),int(self.POOL_EXTENSION))
+        print(pool_key.serialize())
         call = Call(
             to_addr=self.EKUBO_CORE_CONTRACT,
             selector=get_selector_from_name("get_pool_price"),
