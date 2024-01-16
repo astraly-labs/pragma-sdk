@@ -1,12 +1,12 @@
 import requests
 import asyncio
 import time 
+import logging
 from pragma.publisher.types import PublisherFetchError
 from typing import Union, List
 from starknet_py.net.client_models import Call
-from starknet_py.net.client import Client
-from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.account.account import Account
+from pragma.core.entry import SpotEntry
+from pragma.core.utils import currency_pair_to_pair_id
 from starknet_py.hash.selector import get_selector_from_name
 import math
 import os 
@@ -16,6 +16,10 @@ from pragma.core.types import get_client_from_network
 load_dotenv()
 WALLET_ADDRESS: str = '0x0092cC9b7756E6667b654C0B16d9695347AF788EFBC00a286efE82a6E46Bce4b'
 PRIVATE_KEY: str = os.getenv("PRIVATE_KEY")
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 class PoolKey: 
     # token0 is the the token with the smaller adddress (sorted by integer value)
     # token1 is the token with the larger address (sorted by integer value)
@@ -62,10 +66,10 @@ class PoolKey:
         return f"PoolKey({self.token_0}, {self.token_1}, {self.fee}, {self.tick_spacing}, {self.extension})"
 
 class StarknetAMMFetcher: 
-    client = get_client_from_network("mainnet")
-    EKUBO_PUBLIC_API: str = 'https://mainnet-api.ekubo.org'
+    client = get_client_from_network("testnet")
+    EKUBO_PUBLIC_API: str = 'https://goerli-api.ekubo.org'
     EKUBO_CORE_CONTRACT: str = '0x031e8a7ab6a6a556548ac85cbb8b5f56e8905696e9f13e9a858142b8ee0cc221'
-    JEDISWAP_ETH_USDC_POOL: str = '0x04d0390b777b424e43839cd1e744799f3de6c176c7e32c1812a41dbd9c19db6a'
+    JEDISWAP_STRK_ETH_POOL: str = '0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0'
     # Parameters for the pool 
 
     # These are the parameters of the most used pool in Ekubo for the testing pair ETH/USDC
@@ -74,16 +78,17 @@ class StarknetAMMFetcher:
     TICK_BASE = 1.000001  
     POOL_EXTENSION = 0
 
-    STRK_ADDRESS: str = ''  
+    STRK_ADDRESS: str = '0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d'  
     ETH_ADDRESS: str = '0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7' 
-    USDC_ADDRESS: str = '0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8' #for testing purpose 
     ETH_DECIMALS: int = 18 
-    USDC_DECIMALS: int = 6
+    STRK_DECIMALS: int = 18
 
+    SOURCE= "JEDISWAP"
+    PUBLISHER= "PRAGMA"
    
     # Version1: fetching the price using the Ekubo API 
     async def off_fetch_ekubo_price(self) -> Union[float, PublisherFetchError]:
-        url = f"{self.EKUBO_PUBLIC_API}/price/{self.ETH_ADDRESS}/{self.USDC_ADDRESS}"
+        url = f"{self.EKUBO_PUBLIC_API}/price/{self.ETH_ADDRESS}/{self.STRK_ADDRESS}"
         try: 
             response = requests.get(url)
             if response.status_code == 200:
@@ -95,7 +100,7 @@ class StarknetAMMFetcher:
 
 
     async def on_fetch_ekubo_price(self) -> float:
-        token_0, token_1 = min(self.ETH_ADDRESS, self.USDC_ADDRESS), max(self.ETH_ADDRESS, self.USDC_ADDRESS)
+        token_0, token_1 = min(self.ETH_ADDRESS, self.STRK_ADDRESS), max(self.ETH_ADDRESS, self.STRK_ADDRESS)
         fee = math.floor(self.POOL_FEE * 2**128)
 
         # An TICK_SPACING increaese of a price means the new price is price*(1+TICK_SPACING)
@@ -110,33 +115,52 @@ class StarknetAMMFetcher:
         )
         pool_info= await self.client.call_contract(call)
         sqrt_ratio = pool_info[0]
-        assert sqrt_ratio != 0, " sqrt_ratio is null"
-        return (sqrt_ratio/2**128)**2 * 10*(self.ETH_DECIMALS - self.USDC_DECIMALS)
+        if sqrt_ratio == 0:
+            logger.error("Ekubo: Pool is empty")
+        return (sqrt_ratio/2**128)**2 * 10*(self.ETH_DECIMALS - self.STRK_DECIMALS)
 
     
     async def on_fetch_jedi_price(self) -> float:
         call = Call(
-            to_addr=self.JEDISWAP_ETH_USDC_POOL,
+            to_addr=self.JEDISWAP_STRK_ETH_POOL,
             selector=get_selector_from_name("get_reserves"),
             calldata=[],
         )
         reserves_infos = await self.client.call_contract(call)
         token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
         token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
-        return token_1_reserve/token_0_reserve * 10**(self.ETH_DECIMALS - self.USDC_DECIMALS)
+        return token_1_reserve/token_0_reserve * 10**(self.ETH_DECIMALS - self.STRK_DECIMALS)
 
 
     async def fetch_strk_price(self) -> Union[float, PublisherFetchError]:
-        ekubo_price = await self.off_fetch_ekubo_price()
+        ekubo_price = await self.on_fetch_ekubo_price()
         jedi_swap_price = await self.on_fetch_jedi_price()
-        # TODO: operation with the elements
 
+        if ekubo_price is not None and jedi_swap_price is not None:
+            return (ekubo_price + jedi_swap_price) / 2
+        elif ekubo_price is not None:
+            return ekubo_price
+        elif jedi_swap_price is not None:
+            return jedi_swap_price
+        else:
+            logger.error("Both ekubo_price and jedi_swap_price are null")
+            return PublisherFetchError("Both prices are unavailable")
+        
+    async def construct(self):
+        price = await self.fetch_strk_price()
+        return SpotEntry(
+            pair_id=currency_pair_to_pair_id("STRK", "ETH"),
+            price=price,
+            timestamp=int(time.time()),
+            source= self.SOURCE,
+            publisher= self.PUBLISHER,
+        )
+    
 
+# async def main():
+#     fetcher = StarknetAMMFetcher()
+#     price = await fetcher.construct()
+#     print(price)
 
-async def main():
-    fetcher = StarknetAMMFetcher()
-    price = await fetcher.on_fetch_jedi_price()
-    print(price)
-
-# Run the main function in the asyncio event loop
-asyncio.run(main())
+# # Run the main function in the asyncio event loop
+# asyncio.run(main())
