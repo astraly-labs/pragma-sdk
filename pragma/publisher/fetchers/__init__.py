@@ -9,3 +9,4 @@ from .gemini import GeminiFetcher
 from .kaiko import KaikoFetcher
 from .okx import OkxFetcher
 from .thegraph import TheGraphFetcher
+from .starknetamm import StarknetAMMFetcher
