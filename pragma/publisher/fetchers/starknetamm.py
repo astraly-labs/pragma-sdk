@@ -10,6 +10,7 @@ from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.utils import currency_pair_to_pair_id
 from starknet_py.hash.selector import get_selector_from_name
 import math
+import aiohttp
 import os 
 from aiohttp import ClientSession
 from pragma.core.assets import PRAGMA_ALL_ASSETS
@@ -161,6 +162,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     async def fetch(
         self,
+        session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
@@ -192,9 +194,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     
 
 async def main():
-    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
-    price = await fetcher.fetch()
-    print(price)
+    async with aiohttp.ClientSession() as session:
+        fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
+        price = await fetcher.fetch(session)
+        print(price)
 
 # Run the main function in the asyncio event loop
 asyncio.run(main())
