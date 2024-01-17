@@ -151,6 +151,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         reserves_infos = await self.client.call_contract(call)
         token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
         token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
+        if token_0_reserve == 0 or token_1_reserve == 0:
+            logger.error("JediSwap: Pool is empty")
         return token_1_reserve/token_0_reserve * 10**(self.ETH_DECIMALS - self.STRK_DECIMALS)
 
     def on_fetch_jedi_price_sync(self) -> float:
