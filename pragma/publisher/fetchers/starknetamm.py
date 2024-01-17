@@ -2,14 +2,18 @@ import requests
 import asyncio
 import time 
 import logging
-from pragma.publisher.types import PublisherFetchError
+from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 from typing import Union, List
 from starknet_py.net.client_models import Call
 from pragma.core.entry import SpotEntry
+from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.utils import currency_pair_to_pair_id
 from starknet_py.hash.selector import get_selector_from_name
 import math
 import os 
+from aiohttp import ClientSession
+from pragma.core.assets import PRAGMA_ALL_ASSETS
+
 from dotenv import load_dotenv
 from pragma.core.types import get_client_from_network
 
@@ -65,7 +69,7 @@ class PoolKey:
     def __repr__(self): 
         return f"PoolKey({self.token_0}, {self.token_1}, {self.fee}, {self.tick_spacing}, {self.extension})"
 
-class StarknetAMMFetcher: 
+class StarknetAMMFetcher(PublisherInterfaceT): 
     client = get_client_from_network("testnet")
     EKUBO_PUBLIC_API: str = 'https://goerli-api.ekubo.org'
     EKUBO_CORE_CONTRACT: str = '0x031e8a7ab6a6a556548ac85cbb8b5f56e8905696e9f13e9a858142b8ee0cc221'
@@ -83,12 +87,17 @@ class StarknetAMMFetcher:
     ETH_DECIMALS: int = 18 
     STRK_DECIMALS: int = 18
 
-    SOURCE= "JEDISWAP"
-    PUBLISHER= "PRAGMA"
+    SOURCE= "JEDISWAP,EKUBO"
+
+    publisher: str
    
+    def __init__(self, assets: List[PragmaAsset], publisher):
+        self.assets = assets
+        self.publisher = publisher
+    
     # Version1: fetching the price using the Ekubo API 
     async def off_fetch_ekubo_price(self) -> Union[float, PublisherFetchError]:
-        url = f"{self.EKUBO_PUBLIC_API}/price/{self.ETH_ADDRESS}/{self.STRK_ADDRESS}"
+        url = self.format_url(self.ETH_ADDRESS, self.STRK_ADDRESS)
         try: 
             response = requests.get(url)
             if response.status_code == 200:
@@ -102,7 +111,6 @@ class StarknetAMMFetcher:
     async def on_fetch_ekubo_price(self) -> float:
         token_0, token_1 = min(self.ETH_ADDRESS, self.STRK_ADDRESS), max(self.ETH_ADDRESS, self.STRK_ADDRESS)
         fee = math.floor(self.POOL_FEE * 2**128)
-
         # An TICK_SPACING increaese of a price means the new price is price*(1+TICK_SPACING)
         # We want to know the number of tick for a price increase of TICK_SPACING
         # Since the tick spacing is represented as an exponent of TICK_BASE, we can use the logarithm to find the number of tick
@@ -146,21 +154,47 @@ class StarknetAMMFetcher:
             logger.error("Both ekubo_price and jedi_swap_price are null")
             return PublisherFetchError("Both prices are unavailable")
         
-    async def construct(self):
+
+    def format_url(self, quote_asset, base_asset):
+        url = f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}"
+        return url
+
+    async def fetch(
+        self,
+    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+        entries = []
+        for asset in self.assets:
+            if asset["type"] != "SPOT" or asset["pair"] != ("STRK", "ETH"):
+                logger.debug(f"Skipping StarknetAMM for non STRK or non ETH pair: {asset}")
+                continue
+            entries.append(asyncio.ensure_future(self._construct(asset)))
+        return await asyncio.gather(*entries, return_exceptions=True)
+
+    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
+        entries = []
+        # for asset in self.assets:
+        #     if asset["type"] != "SPOT" or asset["pair"] != ("STRK", "ETH"):
+        #         logger.debug(f"Skipping StarknetAMM for non STRK or non ETH pair: {asset}")
+        #         continue
+        #     entries.append(self._construct(asset))
+        return entries
+
+
+    async def _construct(self, asset) -> SpotEntry:
         price = await self.fetch_strk_price()
         return SpotEntry(
-            pair_id=currency_pair_to_pair_id("STRK", "ETH"),
+            pair_id=currency_pair_to_pair_id(asset["pair"][0], asset["pair"][1]),
             price=price,
             timestamp=int(time.time()),
             source= self.SOURCE,
-            publisher= self.PUBLISHER,
+            publisher= self.publisher,
         )
     
 
-# async def main():
-#     fetcher = StarknetAMMFetcher()
-#     price = await fetcher.construct()
-#     print(price)
+async def main():
+    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
+    price = await fetcher.fetch()
+    print(price)
 
-# # Run the main function in the asyncio event loop
-# asyncio.run(main())
+# Run the main function in the asyncio event loop
+asyncio.run(main())
