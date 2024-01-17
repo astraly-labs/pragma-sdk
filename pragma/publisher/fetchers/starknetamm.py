@@ -114,14 +114,25 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
         return call
     # Version1: fetching the price using the Ekubo API 
-    async def off_fetch_ekubo_price(self) -> Union[float, PublisherFetchError]:
+    def off_fetch_ekubo_price_sync(self) -> Union[float, PublisherFetchError]:
         url = self.format_url(self.ETH_ADDRESS, self.STRK_ADDRESS)
         try: 
             response = requests.get(url)
             if response.status_code == 200:
                 return response.json()['price']
             else: 
-                return f"Error: Unable to retrieve data, status code {response.status_code}"
+                return PublisherFetchError(f"Error: Unable to retrieve data, status code {response.status_code}")
+        except Exception as e:
+            return f"Error: {e}"
+    
+    async def off_fetch_ekubo_price(self, session: ClientSession) -> Union[float, PublisherFetchError]:
+        url = self.format_url(self.ETH_ADDRESS, self.STRK_ADDRESS)
+        try: 
+            async with session.get(url) as resp:
+                if resp.status_code == 200:
+                    return resp.json()['price']
+                else: 
+                    return PublisherFetchError(f"Error: Unable to retrieve data, status code {response.status_code}")
         except Exception as e:
             return f"Error: {e}"
 
@@ -197,7 +208,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             return PublisherFetchError("Both prices are unavailable")
         
     def format_url(self, quote_asset, base_asset):
-        url = f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}"
+        url = f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
         return url
     
 
