@@ -172,15 +172,15 @@ FETCHER_CONFIGS = {
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
-            ), 
+            ),
             SpotEntry(
                 "WBTC/USDC",
-                66247877310000000, 
+                66247877310000000,
                 12345,
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
-            )
+            ),
         ],
     },
 }
@@ -310,5 +310,4 @@ ONCHAIN_FETCHER_CONFIGS = {
             ),
         ],
     },
-    
 }

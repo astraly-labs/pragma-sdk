@@ -19,7 +19,7 @@ from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
     SAMPLE_ONCHAIN_ASSETS,
-    STARKNET_SAMPLE_ASSETS
+    STARKNET_SAMPLE_ASSETS,
 )
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,
@@ -110,47 +110,59 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
 
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
-                for asset in STARKNET_SAMPLE_ASSETS: 
+                for asset in STARKNET_SAMPLE_ASSETS:
                     quote_asset = asset["pair"][0]
                     base_asset = asset["pair"][1]
-                    url = fetcher.format_url(quote_asset,base_asset,"2024-01-01T00%3A00%3A00")
+                    url = fetcher.format_url(
+                        quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
+                    )
                     mock.get(url, status=200, payload=mock_data[quote_asset])
-                    price = await fetcher.off_fetch_ekubo_price(asset,session,"2024-01-01T00%3A00%3A00")
+                    price = await fetcher.off_fetch_ekubo_price(
+                        asset, session, "2024-01-01T00%3A00%3A00"
+                    )
                     array_starknet.append(price)
-        if fetcher_config["name"] != "Starknet": 
+        if fetcher_config["name"] != "Starknet":
             async with aiohttp.ClientSession() as session:
                 result = await fetcher.fetch(session)
             assert result == fetcher_config["expected_result"]
-        else: 
+        else:
             for i in range(len(array_starknet)):
-                assert float(array_starknet[i]) == fetcher_config["expected_result"][i].price/10**18
+                assert (
+                    float(array_starknet[i])
+                    == fetcher_config["expected_result"][i].price / 10**18
+                )
+
 
 @pytest.mark.asyncio
 async def test_async_fetcher_404_error(fetcher_config, forked_client):
     array_starknet = []
     with aioresponses(passthrough=[forked_client.url]) as mock:
-
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
-                fetcher = fetcher_config["fetcher_class"](STARKNET_SAMPLE_ASSETS, PUBLISHER_NAME)
+                fetcher = fetcher_config["fetcher_class"](
+                    STARKNET_SAMPLE_ASSETS, PUBLISHER_NAME
+                )
                 for asset in STARKNET_SAMPLE_ASSETS:
                     quote_asset = asset["pair"][0]
                     base_asset = asset["pair"][1]
-                    url = fetcher.format_url(quote_asset,base_asset,"2024-01-01T00%3A00%3A00")
+                    url = fetcher.format_url(
+                        quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
+                    )
                     mock.get(url, status=404)
                     mock.post(url, status=404)
-                    price = await fetcher.off_fetch_ekubo_price(asset,session,"2024-01-01T00%3A00%3A00")
+                    price = await fetcher.off_fetch_ekubo_price(
+                        asset, session, "2024-01-01T00%3A00%3A00"
+                    )
                     array_starknet.append(price)
                     print()
             expected_result = [
-            PublisherFetchError(
-                f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
-            )
-            for asset in STARKNET_SAMPLE_ASSETS
+                PublisherFetchError(
+                    f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
+                )
+                for asset in STARKNET_SAMPLE_ASSETS
             ]
 
             assert array_starknet == expected_result
-
 
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
 
@@ -164,7 +176,6 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
             mock.get(url, status=404)
             mock.post(url, status=404)
 
-    
         if fetcher_config["name"] == "Starknet":
             pass
         else:
@@ -207,44 +218,58 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
             else:
                 mocker.get(url, json=mock_data[quote_asset])
         if fetcher_config["name"] == "Starknet":
-            for asset in STARKNET_SAMPLE_ASSETS: 
-                quote_asset = asset["pair"][0]
-                base_asset = asset["pair"][1]
-                url = fetcher.format_url(quote_asset,base_asset,"2024-01-01T00%3A00%3A00")
-                mocker.get(url, json=mock_data[quote_asset])
-                array_starknet.append(fetcher.off_fetch_ekubo_price_sync(asset,"2024-01-01T00%3A00%3A00"))
-        if fetcher_config["name"] != "Starknet": 
-            result = fetcher.fetch_sync()
-            assert result == fetcher_config["expected_result"]
-        else: 
-            result = array_starknet
-            for i in range(len(result)):
-                assert float(result[i]) == fetcher_config["expected_result"][i].price/10**18
-
-
-
-def test_fetcher_sync_404(fetcher_config):
-    
-    array_starknet = []
-    with requests_mock.Mocker() as mocker:
-        if fetcher_config["name"] == "Starknet":
-            fetcher = fetcher_config["fetcher_class"](STARKNET_SAMPLE_ASSETS, PUBLISHER_NAME)
             for asset in STARKNET_SAMPLE_ASSETS:
                 quote_asset = asset["pair"][0]
                 base_asset = asset["pair"][1]
-                url = fetcher.format_url(quote_asset, base_asset, "2024-01-01T00%3A00%3A00")
+                url = fetcher.format_url(
+                    quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
+                )
+                mocker.get(url, json=mock_data[quote_asset])
+                array_starknet.append(
+                    fetcher.off_fetch_ekubo_price_sync(asset, "2024-01-01T00%3A00%3A00")
+                )
+        if fetcher_config["name"] != "Starknet":
+            result = fetcher.fetch_sync()
+            assert result == fetcher_config["expected_result"]
+        else:
+            result = array_starknet
+            for i in range(len(result)):
+                assert (
+                    float(result[i])
+                    == fetcher_config["expected_result"][i].price / 10**18
+                )
+
+
+def test_fetcher_sync_404(fetcher_config):
+    array_starknet = []
+    with requests_mock.Mocker() as mocker:
+        if fetcher_config["name"] == "Starknet":
+            fetcher = fetcher_config["fetcher_class"](
+                STARKNET_SAMPLE_ASSETS, PUBLISHER_NAME
+            )
+            for asset in STARKNET_SAMPLE_ASSETS:
+                quote_asset = asset["pair"][0]
+                base_asset = asset["pair"][1]
+                url = fetcher.format_url(
+                    quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
+                )
                 mocker.get(url, status_code=404)
                 mocker.post(url, status_code=404)
-                price = fetcher.off_fetch_ekubo_price_sync(asset, "2024-01-01T00%3A00%3A00")
+                price = fetcher.off_fetch_ekubo_price_sync(
+                    asset, "2024-01-01T00%3A00%3A00"
+                )
                 array_starknet.append(price)
-            
-            expected_result = [PublisherFetchError(
-                f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
-            ) for asset in STARKNET_SAMPLE_ASSETS]
+
+            expected_result = [
+                PublisherFetchError(
+                    f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
+                )
+                for asset in STARKNET_SAMPLE_ASSETS
+            ]
             assert array_starknet == expected_result
 
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
-        
+
         for asset in SAMPLE_ASSETS:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
