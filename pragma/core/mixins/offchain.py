@@ -43,8 +43,8 @@ def build_publish_message(entries: List[SpotEntry], now: int, expiry: int) -> Ty
         "message": {
             "action": "Publish",
             "entries": SpotEntry.serialize_entries(entries),
-            "timestamp": now,
-            "expiration": expiry,
+            # "timestamp": now,
+            # "expiration": expiry,
         },
         "types": {
             "StarkNetDomain": [
