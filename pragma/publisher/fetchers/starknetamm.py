@@ -114,10 +114,15 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
         return call
     # Version1: fetching the price using the Ekubo API 
-    def off_fetch_ekubo_price_sync(self) -> Union[float, PublisherFetchError]:
-        url = self.format_url(self.ETH_ADDRESS, self.STRK_ADDRESS)
+    def off_fetch_ekubo_price_sync(self, asset, time = None) -> Union[float, PublisherFetchError]:
+        url = self.format_url(asset["pair"][0], asset["pair"][1], time)
+        pair = asset["pair"]    
         try: 
             response = requests.get(url)
+            if response.status_code == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Starknet"
+                )
             if response.status_code == 200:
                 return response.json()['price']
             else: 
@@ -125,14 +130,21 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         except Exception as e:
             return f"Error: {e}"
     
-    async def off_fetch_ekubo_price(self, session: ClientSession) -> Union[float, PublisherFetchError]:
-        url = self.format_url(self.ETH_ADDRESS, self.STRK_ADDRESS)
+    async def off_fetch_ekubo_price(self, asset,session: ClientSession, time = None) -> Union[float, PublisherFetchError]:
+        url = self.format_url(asset["pair"][0], asset["pair"][1], time)
+        pair = asset["pair"]    
+
         try: 
             async with session.get(url) as resp:
-                if resp.status_code == 200:
-                    return resp.json()['price']
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Starknet"
+                    )
+                if resp.status == 200:
+                    result_json = await resp.json()
+                    return result_json["price"]
                 else: 
-                    return PublisherFetchError(f"Error: Unable to retrieve data, status code {response.status_code}")
+                    return PublisherFetchError(f"Error: Unable to retrieve data, status code {resp.status_code}")
         except Exception as e:
             return f"Error: {e}"
 
@@ -179,9 +191,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("JediSwap: Pool is empty")
         return token_1_reserve/token_0_reserve * 10**(self.ETH_DECIMALS - self.STRK_DECIMALS)
 
-    async def fetch_strk(self, asset) -> Union[SpotEntry, PublisherFetchError]:
+    async def fetch_strk(self, asset, session: ClientSession) -> Union[SpotEntry, PublisherFetchError]:
          
-        ekubo_price = await self.on_fetch_ekubo_price()
+        # ekubo_price = await self.on_fetch_ekubo_price()
+        ekubo_price =  await self.off_fetch_ekubo_price(asset,session) if isinstance(await self.off_fetch_ekubo_price(asset,session), float) else 0
         jedi_swap_price = await self.on_fetch_jedi_price()
         if ekubo_price is not None and jedi_swap_price is not None:
             return self._construct(asset,(ekubo_price + jedi_swap_price) / 2)
@@ -195,7 +208,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         
     def fetch_strk_sync(self, asset) -> Union[SpotEntry, PublisherFetchError]:
          
-        ekubo_price =  self.on_fetch_ekubo_price_sync()
+        # ekubo_price =  self.on_fetch_ekubo_price_sync()
+        ekubo_price =  self.off_fetch_ekubo_price_sync(asset)if isinstance(self.off_fetch_ekubo_price_sync(asset), float) else 0
         jedi_swap_price = self.on_fetch_jedi_price_sync()
         if ekubo_price is not None and jedi_swap_price is not None:
             return self._construct(asset,(ekubo_price + jedi_swap_price) / 2)
@@ -207,9 +221,11 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Both ekubo_price and jedi_swap_price are null")
             return PublisherFetchError("Both prices are unavailable")
         
-    def format_url(self, quote_asset, base_asset):
-        url = f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
-        return url
+    def format_url(self, quote_asset, base_asset, time = None):
+        if time: 
+            return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={time}&period=3600"
+        else: 
+            return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
     
 
     async def fetch(
@@ -221,7 +237,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT" or asset["pair"] != ("STRK", "ETH"):
                 logger.debug(f"Skipping StarknetAMM for non STRK or non ETH pair: {asset}")
                 continue
-            entries.append(asyncio.ensure_future(self.fetch_strk(asset)))
+            entries.append(asyncio.ensure_future(self.fetch_strk(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -245,10 +261,11 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
     
 
-def main():
+async def main():
     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
-    price = fetcher.fetch_sync()
-    print(price)
+    async with aiohttp.ClientSession() as session:
+        price = await fetcher.fetch(session)
+        print(price)
 
 # Run the main function in the asyncio event loop
-main()
+asyncio.run(main())

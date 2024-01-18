@@ -152,6 +152,37 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
+    "StarknetAMMFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "starknet_amm.json",
+        "fetcher_class": StarknetAMMFetcher,
+        "name": "Starknet",
+        "expected_result": [
+            SpotEntry(
+                "ETH/USDC",
+                10013545370000000000000,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "DAI/USDC",
+                12095527530000000000,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ), 
+            SpotEntry(
+                "WBTC/USDC",
+                66247877310000000, 
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            )
+        ],
+    },
 }
 
 FUTURE_FETCHER_CONFIGS = {
@@ -279,4 +310,5 @@ ONCHAIN_FETCHER_CONFIGS = {
             ),
         ],
     },
+    
 }
