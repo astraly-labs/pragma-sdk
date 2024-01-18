@@ -191,7 +191,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     async def fetch_strk(self, asset, session: ClientSession) -> Union[SpotEntry, PublisherFetchError]:
          
         # ekubo_price = await self.on_fetch_ekubo_price()
-        ekubo_price =  await self.off_fetch_ekubo_price(asset,session) if isinstance(await self.off_fetch_ekubo_price(asset,session), float) else 0
+        ekubo_price =  await self.off_fetch_ekubo_price(asset,session) if isinstance(await self.off_fetch_ekubo_price(asset,session), float) else None
         jedi_swap_price = await self.on_fetch_jedi_price()
         if ekubo_price is not None and jedi_swap_price is not None:
             return self._construct(asset,(ekubo_price + jedi_swap_price) / 2)
@@ -206,7 +206,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     def fetch_strk_sync(self, asset) -> Union[SpotEntry, PublisherFetchError]:
          
         # ekubo_price =  self.on_fetch_ekubo_price_sync()
-        ekubo_price =  self.off_fetch_ekubo_price_sync(asset)if isinstance(self.off_fetch_ekubo_price_sync(asset), float) else 0
+        ekubo_price =  self.off_fetch_ekubo_price_sync(asset)if isinstance(self.off_fetch_ekubo_price_sync(asset), float) else None
         jedi_swap_price = self.on_fetch_jedi_price_sync()
         if ekubo_price is not None and jedi_swap_price is not None:
             return self._construct(asset,(ekubo_price + jedi_swap_price) / 2)
@@ -258,10 +258,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
     
 
-# async def main():
+# def main():
 #     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
-#     price = await fetcher.on_fetch_jedi_price()
+#     price = fetcher.fetch_sync()
 #     print(price)
 
 # # Run the main function in the asyncio event loop
-# asyncio.run(main())
+# main()
