@@ -248,9 +248,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         return entries
 
     def _construct(self, asset, result) -> SpotEntry:
+        price_int = int(result * (10 ** asset["decimals"]))
         return SpotEntry(
             pair_id=currency_pair_to_pair_id(asset["pair"][0], asset["pair"][1]),
-            price=result,
+            price=price_int,
             timestamp=int(time.time()),
             source=self.SOURCE,
             publisher=self.publisher,
