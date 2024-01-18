@@ -129,11 +129,20 @@ PAIRS = [
     Pair("USDC/USD", "USDC", "USD"),
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
+    Pair("WBTC/USDC", "WBTC", "BTC"),
+    Pair("ETH/USDC", "ETH", "USDC"),
+    Pair("DAI/USDC", "DAI", "USDC"),
 ]
 
 SAMPLE_ASSETS = [
     {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+]
+
+STARKNET_SAMPLE_ASSETS = [
+    {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 8},
+    {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 8},
+    {"type": "SPOT", "pair": ("WBTC", "USDC"), "decimals": 8},
 ]
 
 SAMPLE_FUTURE_ASSETS = [

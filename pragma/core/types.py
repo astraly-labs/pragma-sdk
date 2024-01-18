@@ -290,3 +290,51 @@ class UnsupportedAssetError(BasePragmaException):
 
 class ClientException(BasePragmaException):
     pass
+
+
+class PoolKey:
+    # token0 is the the token with the smaller adddress (sorted by integer value)
+    # token1 is the token with the larger address (sorted by integer value)
+    # fee is specified as a 0.128 number, so 1% == 2**128 / 100
+    # tick_spacing is the minimum spacing between initialized ticks, i.e. ticks that positions may use
+    # extension is the address of a contract that implements additional functionality for the pool
+    token_0: int
+    token_1: int
+    fee: int
+    tick_spacing: int
+    extension: int
+
+    def __init__(
+        self,
+        token_0: int,
+        token_1: int,
+        fee: int,
+        tick_spacing: int,
+        extension: int = 0,
+    ):
+        self.token_0 = token_0
+        self.token_1 = token_1
+        self.fee = fee
+        self.tick_spacing = tick_spacing
+        self.extension = extension
+
+    def serialize(self) -> List[str]:
+        return [
+            self.token_0,
+            self.token_1,
+            self.fee,
+            self.tick_spacing,
+            self.extension,
+        ]
+
+    def to_dict(self) -> dict:
+        return {
+            "token_0": self.token_0,
+            "token_1": self.token_1,
+            "fee": self.fee,
+            "tick_spacing": self.tick_spacing,
+            "extension": self.extension,
+        }
+
+    def __repr__(self):
+        return f"PoolKey({self.token_0}, {self.token_1}, {self.fee}, {self.tick_spacing}, {self.extension})"

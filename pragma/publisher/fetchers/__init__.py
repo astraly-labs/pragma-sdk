@@ -8,4 +8,5 @@ from .gecko import GeckoTerminalFetcher
 from .gemini import GeminiFetcher
 from .kaiko import KaikoFetcher
 from .okx import OkxFetcher
+from .starknetamm import StarknetAMMFetcher
 from .thegraph import TheGraphFetcher
