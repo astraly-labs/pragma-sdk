@@ -25,7 +25,7 @@ def pytest_addoption(parser):
         "--client",
         action="store",
         default="",
-        help="Client to run tests with: possible 'gateway', 'full_node'",
+        help="Client to run tests with: possible 'full_node'",
     )
 
 

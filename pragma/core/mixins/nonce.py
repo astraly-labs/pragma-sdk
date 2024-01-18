@@ -92,4 +92,4 @@ class NonceMixin:
         transaction_hash: int,
     ) -> TransactionReceipt:
         receipt = await self.client.get_transaction_receipt(transaction_hash)
-        return receipt.status
+        return receipt
