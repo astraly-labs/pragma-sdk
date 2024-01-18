@@ -53,16 +53,14 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     {"type": "SPOT", "pair": ("USDC", "USD"), "decimals": 6},
     {"type": "SPOT", "pair": ("MATIC", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("LORDS", "USD"), "decimals": 8},
-    # Do we really want to add the pair below?
-    {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 18},
-    {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 18},
-    {"type": "SPOT", "pair": ("WBTC", "USDC"), "decimals": 18},
-    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 18},
-    ###
     {"type": "FUTURE", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "FUTURE", "pair": ("BTC", "USDT"), "decimals": 6},
     {"type": "FUTURE", "pair": ("ETH", "USD"), "decimals": 8},
     {"type": "FUTURE", "pair": ("ETH", "USDT"), "decimals": 6},
+    {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 6},
+    {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 6},
+    {"type": "SPOT", "pair": ("WBTC", "USDC"), "decimals": 6},
+    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 18},
 ]
 
 
