@@ -57,7 +57,7 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 18},
     {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 18},
     {"type": "SPOT", "pair": ("WBTC", "USDC"), "decimals": 18},
-    {"type": "SPOT", "pair": ("STRK", "ETH"), "decimals": 18},
+    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 18},
     ###
     {"type": "FUTURE", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "FUTURE", "pair": ("BTC", "USDT"), "decimals": 6},

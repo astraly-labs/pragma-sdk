@@ -10,8 +10,6 @@ from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.utils import currency_pair_to_pair_id
 from starknet_py.hash.selector import get_selector_from_name
 import math
-import aiohttp
-import os 
 from aiohttp import ClientSession
 from pragma.core.assets import PRAGMA_ALL_ASSETS
 
@@ -19,8 +17,7 @@ from dotenv import load_dotenv
 from pragma.core.types import get_client_from_network
 
 load_dotenv()
-WALLET_ADDRESS: str = '0x0092cC9b7756E6667b654C0B16d9695347AF788EFBC00a286efE82a6E46Bce4b'
-PRIVATE_KEY: str = os.getenv("PRIVATE_KEY")
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -74,7 +71,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     client = get_client_from_network("testnet")
     EKUBO_PUBLIC_API: str = 'https://goerli-api.ekubo.org'
     EKUBO_CORE_CONTRACT: str = '0x031e8a7ab6a6a556548ac85cbb8b5f56e8905696e9f13e9a858142b8ee0cc221'
-    JEDISWAP_STRK_ETH_POOL: str = '0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0'
+    JEDISWAP_ETH_STRK_POOL: str = '0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0'
     # Parameters for the pool 
 
     # These are the parameters of the most used pool in Ekubo for the testing pair ETH/USDC
@@ -167,7 +164,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     
     async def on_fetch_jedi_price(self) -> float:
         call = Call(
-            to_addr=self.JEDISWAP_STRK_ETH_POOL,
+            to_addr=self.JEDISWAP_ETH_STRK_POOL,
             selector=get_selector_from_name("get_reserves"),
             calldata=[],
         )
@@ -180,7 +177,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     def on_fetch_jedi_price_sync(self) -> float:
         call = Call(
-            to_addr=self.JEDISWAP_STRK_ETH_POOL,
+            to_addr=self.JEDISWAP_ETH_STRK_POOL,
             selector=get_selector_from_name("get_reserves"),
             calldata=[],
         )
@@ -234,8 +231,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT" or asset["pair"] != ("STRK", "ETH"):
-                logger.debug(f"Skipping StarknetAMM for non STRK or non ETH pair: {asset}")
+            if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
+                logger.debug(f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}")
                 continue
             entries.append(asyncio.ensure_future(self.fetch_strk(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -243,8 +240,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT" or asset["pair"] != ("STRK", "ETH"):
-                logger.debug(f"Skipping StarknetAMM for non STRK or non ETH pair: {asset}")
+            if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
+                logger.debug(f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}")
                 continue
             entries.append(self.fetch_strk_sync(asset))
         return entries
@@ -261,11 +258,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
     
 
-async def main():
-    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
-    async with aiohttp.ClientSession() as session:
-        price = await fetcher.fetch(session)
-        print(price)
+# async def main():
+#     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
+#     price = await fetcher.on_fetch_jedi_price()
+#     print(price)
 
-# Run the main function in the asyncio event loop
-asyncio.run(main())
+# # Run the main function in the asyncio event loop
+# asyncio.run(main())
