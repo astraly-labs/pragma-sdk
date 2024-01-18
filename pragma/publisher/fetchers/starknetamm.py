@@ -107,21 +107,18 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         url = self.format_url(asset["pair"][0], asset["pair"][1], time)
         pair = asset["pair"]
 
-        try:
-            async with session.get(url) as resp:
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Starknet"
-                    )
-                if resp.status == 200:
-                    result_json = await resp.json()
-                    return result_json["price"]
-                else:
-                    return PublisherFetchError(
-                        f"Error: Unable to retrieve data, status code {resp.status_code}"
-                    )
-        except Exception as e:
-            return f"Error: {e}"
+        async with session.get(url) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Starknet"
+                )
+            if resp.status == 200:
+                result_json = await resp.json()
+                return result_json["price"]
+            else:
+                return PublisherFetchError(
+                    f"Error: Unable to retrieve data, status code {resp.status_code}"
+                )
 
     async def on_fetch_ekubo_price(self) -> float:
         call = self.prepare_call()
@@ -143,22 +140,23 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             (sqrt_ratio / 2**128) ** 2 * 10 * (self.ETH_DECIMALS - self.STRK_DECIMALS)
         )
 
-    async def on_fetch_jedi_price(self) -> float:
+    async def on_fetch_jedi_price(self, session: ClientSession) -> float:
         call = Call(
             to_addr=self.JEDISWAP_ETH_STRK_POOL,
             selector=get_selector_from_name("get_reserves"),
             calldata=[],
         )
-        reserves_infos = await self.client.call_contract(call)
-        token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
-        token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
-        if token_0_reserve == 0 or token_1_reserve == 0:
-            logger.error("JediSwap: Pool is empty")
-        return (
-            token_1_reserve
-            / token_0_reserve
-            * 10 ** (self.ETH_DECIMALS - self.STRK_DECIMALS)
-        )
+        async with session:
+            reserves_infos = await self.client.call_contract(call)
+            token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
+            token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
+            if token_0_reserve == 0 or token_1_reserve == 0:
+                logger.error("JediSwap: Pool is empty")
+            return (
+                token_1_reserve
+                / token_0_reserve
+                * 10 ** (self.ETH_DECIMALS - self.STRK_DECIMALS)
+            )
 
     def on_fetch_jedi_price_sync(self) -> float:
         call = Call(
@@ -177,16 +175,14 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             * 10 ** (self.ETH_DECIMALS - self.STRK_DECIMALS)
         )
 
-    async def fetch_strk(
-        self, asset, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    async def _fetch_strk(self, asset, session: ClientSession) -> SpotEntry:
         # ekubo_price = await self.on_fetch_ekubo_price()
         ekubo_price = (
             await self.off_fetch_ekubo_price(asset, session)
             if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
             else None
         )
-        jedi_swap_price = await self.on_fetch_jedi_price()
+        jedi_swap_price = await self.on_fetch_jedi_price(session)
         if ekubo_price is not None and jedi_swap_price is not None:
             return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
         elif ekubo_price is not None:
@@ -197,7 +193,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Both ekubo_price and jedi_swap_price are null")
             return PublisherFetchError("Both prices are unavailable")
 
-    def fetch_strk_sync(self, asset) -> Union[SpotEntry, PublisherFetchError]:
+    def _fetch_strk_sync(self, asset) -> SpotEntry:
         # ekubo_price =  self.on_fetch_ekubo_price_sync()
         ekubo_price = (
             self.off_fetch_ekubo_price_sync(asset)
@@ -223,9 +219,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
             )
 
-    async def fetch(
-        self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
@@ -233,10 +227,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                     f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
                 )
                 continue
-            entries.append(asyncio.ensure_future(self.fetch_strk(asset, session)))
+            entries.append(asyncio.ensure_future(self._fetch_strk(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
+    def fetch_sync(self) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
             if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
@@ -244,13 +238,13 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                     f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
                 )
                 continue
-            entries.append(self.fetch_strk_sync(asset))
+            entries.append(self._fetch_strk_sync(asset))
         return entries
 
     def _construct(self, asset, result) -> SpotEntry:
         price_int = int(result * (10 ** asset["decimals"]))
         return SpotEntry(
-            pair_id=currency_pair_to_pair_id(asset["pair"][0], asset["pair"][1]),
+            pair_id=currency_pair_to_pair_id(*asset["pair"]),
             price=price_int,
             timestamp=int(time.time()),
             source=self.SOURCE,

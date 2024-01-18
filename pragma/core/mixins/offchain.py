@@ -137,8 +137,6 @@ class OffchainMixin:
         logger.info(f"Headers: {headers}")
         logger.info(f"Body: {body}")
 
-        print("body", body)
-
         if self.ssl_context is not None:
             # Call Pragma API
             async with aiohttp.ClientSession(
