@@ -15,6 +15,7 @@ from pragma.core.entry import SpotEntry
 from pragma.core.types import PoolKey, get_client_from_network
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.fetchers.defillama import DefillamaFetcher
 
 load_dotenv()
 
@@ -50,6 +51,9 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     STRK_DECIMALS: int = 18
 
     SOURCE = "STARKNET"
+
+    ETH_USD = [{"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 18}]
+
 
     publisher: str
 
@@ -176,40 +180,89 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
 
     async def _fetch_strk(self, asset, session: ClientSession) -> SpotEntry:
-        # ekubo_price = await self.on_fetch_ekubo_price()
-        ekubo_price = (
-            await self.off_fetch_ekubo_price(asset, session)
-            if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
-            else None
-        )
-        jedi_swap_price = await self.on_fetch_jedi_price(session)
-        if ekubo_price is not None and jedi_swap_price is not None:
-            return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
-        elif ekubo_price is not None:
-            return self._construct(asset, ekubo_price)
-        elif jedi_swap_price is not None:
-            return self._construct(asset, jedi_swap_price)
-        else:
-            logger.error("Both ekubo_price and jedi_swap_price are null")
-            return PublisherFetchError("Both prices are unavailable")
+        if asset["pair"] == ("ETH", "STRK"):
+            # ekubo_price = await self.on_fetch_ekubo_price()
+            ekubo_price = (
+                await self.off_fetch_ekubo_price(asset, session)
+                if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
+                else None
+            )
+            jedi_swap_price = await self.on_fetch_jedi_price(session)
+            if ekubo_price is not None and jedi_swap_price is not None:
+                return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
+            elif ekubo_price is not None:
+                return self._construct(asset, ekubo_price)
+            elif jedi_swap_price is not None:
+                return self._construct(asset, jedi_swap_price)
+            else:
+                logger.error("Both ekubo_price and jedi_swap_price are null")
+                return PublisherFetchError("Both prices are unavailable")
+
+        else: 
+            defillama_fetcher = DefillamaFetcher(self.ETH_USD, self.publisher)
+            eth_usd_entry = await defillama_fetcher._fetch_pair(self.ETH_USD[0], session)
+             # ekubo_price = await self.on_fetch_ekubo_price()
+            ekubo_price = (
+                await self.off_fetch_ekubo_price(asset, session)
+                if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
+                else None
+            )
+            jedi_swap_price = await self.on_fetch_jedi_price(session)
+            if ekubo_price is not None and jedi_swap_price is not None:
+                price = eth_usd_entry.price/((ekubo_price + jedi_swap_price) / 2)
+                return self._construct(asset, price)
+            elif ekubo_price is not None:
+                price = eth_usd_entry.price/ekubo_price
+                return self._construct(asset, price)
+            elif jedi_swap_price is not None:
+                price = eth_usd_entry.price/jedi_swap_price
+                return self._construct(asset, price)
+            else:
+                logger.error("Both ekubo_price and jedi_swap_price are null")
+                return PublisherFetchError("Both prices are unavailable")
+
 
     def _fetch_strk_sync(self, asset) -> SpotEntry:
-        # ekubo_price =  self.on_fetch_ekubo_price_sync()
-        ekubo_price = (
-            self.off_fetch_ekubo_price_sync(asset)
-            if isinstance(self.off_fetch_ekubo_price_sync(asset), float)
-            else None
-        )
-        jedi_swap_price = self.on_fetch_jedi_price_sync()
-        if ekubo_price is not None and jedi_swap_price is not None:
-            return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
-        elif ekubo_price is not None:
-            return self._construct(asset, ekubo_price)
-        elif jedi_swap_price is not None:
-            return self._construct(asset, jedi_swap_price)
-        else:
-            logger.error("Both ekubo_price and jedi_swap_price are null")
-            return PublisherFetchError("Both prices are unavailable")
+        if asset["pair"] == ("ETH", "STRK"):
+            # ekubo_price =  self.on_fetch_ekubo_price_sync()
+            ekubo_price = (
+                self.off_fetch_ekubo_price_sync(asset)
+                if isinstance(self.off_fetch_ekubo_price_sync(asset), float)
+                else None
+            )
+            jedi_swap_price = self.on_fetch_jedi_price_sync()
+            if ekubo_price is not None and jedi_swap_price is not None:
+                return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
+            elif ekubo_price is not None:
+                return self._construct(asset, ekubo_price)
+            elif jedi_swap_price is not None:
+                return self._construct(asset, jedi_swap_price)
+            else:
+                logger.error("Both ekubo_price and jedi_swap_price are null")
+                return PublisherFetchError("Both prices are unavailable")
+        else: 
+            defillama_fetcher = DefillamaFetcher(self.ETH_USD, self.publisher)
+            eth_usd_entry = defillama_fetcher._fetch_pair_sync(self.ETH_USD[0])
+             # ekubo_price = await self.on_fetch_ekubo_price()
+            ekubo_price = (
+                self.off_fetch_ekubo_price_sync(asset)
+                if isinstance(self.off_fetch_ekubo_price_sync(asset), float)
+                else None
+            )
+            jedi_swap_price = self.on_fetch_jedi_price_sync()
+            if ekubo_price is not None and jedi_swap_price is not None:
+                price = eth_usd_entry.price/((ekubo_price + jedi_swap_price) / 2)
+                return self._construct(asset, price)
+            elif ekubo_price is not None:
+                price = eth_usd_entry.price/ekubo_price
+                return self._construct(asset, price)
+            elif jedi_swap_price is not None:
+                price = eth_usd_entry.price/jedi_swap_price
+                return self._construct(asset, price)
+            else:
+                logger.error("Both ekubo_price and jedi_swap_price are null")
+                return PublisherFetchError("Both prices are unavailable")
+
 
     def format_url(self, quote_asset, base_asset, time=None):
         if time:
@@ -222,23 +275,25 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
+            if asset["type"] == "SPOT" and ( asset["pair"] == ("ETH", "STRK") or asset["pair"] == ("STRK", "USD")):
+                entries.append(asyncio.ensure_future(self._fetch_strk(asset, session)))
+            else: 
                 logger.debug(
                     f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
                 )
-                continue
-            entries.append(asyncio.ensure_future(self._fetch_strk(asset, session)))
+                
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def fetch_sync(self) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT" or asset["pair"] != ("ETH", "STRK"):
+            if asset["type"] == "SPOT" and ( asset["pair"] == ("ETH", "STRK") or asset["pair"] == ("STRK", "USD")):
+                print(asset)
+                entries.append(self._fetch_strk_sync(asset))
+            else:
                 logger.debug(
                     f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
-                )
-                continue
-            entries.append(self._fetch_strk_sync(asset))
+                )   
         return entries
 
     def _construct(self, asset, result) -> SpotEntry:
@@ -250,12 +305,3 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
-
-# def main():
-#     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS,"PRAGMA")
-#     price = fetcher.fetch_sync()
-#     print(price)
-
-# # Run the main function in the asyncio event loop
-# main()
