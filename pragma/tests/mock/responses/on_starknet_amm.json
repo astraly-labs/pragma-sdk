@@ -1,0 +1,22 @@
+{
+	"BTC": {
+		"coins": {
+			"coingecko:bitcoin": {
+				"price": 26048,
+				"symbol": "BTC",
+				"timestamp": 1692779346,
+				"confidence": 0.99
+			}
+		}
+	},
+	"ETH": {
+		"coins": {
+			"coingecko:ethereum": {
+				"price": 1645.07,
+				"symbol": "ETH",
+				"timestamp": 1692779707,
+				"confidence": 0.99
+			}
+		}
+	}
+}
