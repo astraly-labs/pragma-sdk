@@ -120,7 +120,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 return result_json["price"]
             else:
                 return PublisherFetchError(
-                    f"Error: Unable to retrieve data, status code {resp.status_code}"
+                    f"Error: Unable to retrieve data, status code {resp.status}"
                 )
 
     async def on_fetch_ekubo_price(self) -> float:
@@ -208,6 +208,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
                 else None
             )
+            ekubo_price = None
             eth_usd_price = eth_usd_entry.price / (10 ** self.ETH_USD[0]["decimals"])
             jedi_swap_price = await self.on_fetch_jedi_price(session)
             if ekubo_price is not None and jedi_swap_price is not None:
@@ -246,7 +247,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         elif asset["pair"] == ("STRK", "USD"):
             defillama_fetcher = DefillamaFetcher(self.ETH_USD, self.publisher)
             eth_usd_entry = defillama_fetcher._fetch_pair_sync(self.ETH_USD[0])
-            print(f"here is the price {eth_usd_entry}")
             # ekubo_price = await self.on_fetch_ekubo_price()
             ekubo_price = (
                 self.off_fetch_ekubo_price_sync(asset)
@@ -316,12 +316,20 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
 
 
-async def main():
-    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
-    async with ClientSession() as session:
-        price = await fetcher.fetch(session)
-        print(price)
+# async def f1():
+#     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
+#     async with ClientSession() as session:
+#         price1 = await fetcher.fetch(session)
 
+#     return price1
 
-# Run the main function in the asyncio event loop
-asyncio.run(main())
+# def f2(): 
+#     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
+#     price2 = fetcher.fetch_sync()
+#     return price2
+
+# # Run the main function in the asyncio event loop
+# price1= asyncio.run(f1())
+# price2 = f2()
+# print(price1)
+# print(price2)

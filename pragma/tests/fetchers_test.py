@@ -170,7 +170,6 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
                         asset, session, "2024-01-01T00%3A00%3A00"
                     )
                     array_starknet.append(price)
-                    print()
             expected_result = [
                 PublisherFetchError(
                     f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
@@ -649,7 +648,6 @@ async def test_onchain_starknet_async_fetcher_full(
                 session
             )  # Make sure the fetch method is awaited
 
-        print(f"testing : {result}")
 
         expected_result = starknet_onchain_fetcher_config["expected_result"]
         for element in expected_result:
@@ -682,7 +680,6 @@ def test_onchain_starknet_sync_fetcher_full(
                 )
 
         result = fetcher.fetch_sync()
-        print(f"testing : {result}")
 
         expected_result = starknet_onchain_fetcher_config["expected_result"]
         # for element in expected_result:
