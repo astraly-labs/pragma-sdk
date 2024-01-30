@@ -16,7 +16,7 @@ from starknet_py.net.client import Client
 from starknet_py.net.client_models import Call
 
 from pragma.core.client import PragmaClient
-from pragma.core.types import RPC_URLS
+from pragma.core.types import RPC_URLS, get_client_from_network
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
@@ -576,7 +576,9 @@ async def test_onchain_starknet_async_fetcher(
 ):
     with requests_mock.Mocker() as mocker:
         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS, PUBLISHER_NAME
+            STARKNET_ONCHAIN_ASSETS,
+            PUBLISHER_NAME,
+            client=forked_client.full_node_client,
         )
 
         for asset in STARKNET_ONCHAIN_ASSETS:
@@ -599,8 +601,11 @@ async def test_onchain_starknet_async_fetcher(
 )
 def test_onchain_starknet_sync_fetcher(starknet_onchain_fetcher_config, forked_client):
     with requests_mock.Mocker() as mocker:
+        print(forked_client.full_node_client)
         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS, PUBLISHER_NAME
+            STARKNET_ONCHAIN_ASSETS,
+            PUBLISHER_NAME,
+            client=forked_client.full_node_client,
         )
 
         # Mocking the expected call for assets
@@ -628,7 +633,9 @@ async def test_onchain_starknet_async_fetcher_full(
 ):
     with aioresponses(passthrough=[forked_client.client.url]) as m:
         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS, PUBLISHER_NAME
+            STARKNET_ONCHAIN_ASSETS,
+            PUBLISHER_NAME,
+            client=forked_client.full_node_client,
         )
 
         for asset in STARKNET_ONCHAIN_ASSETS:
@@ -648,7 +655,6 @@ async def test_onchain_starknet_async_fetcher_full(
                 session
             )  # Make sure the fetch method is awaited
 
-
         expected_result = starknet_onchain_fetcher_config["expected_result"]
         for element in expected_result:
             element.price = math.floor(element.price * 10**8)
@@ -664,7 +670,9 @@ def test_onchain_starknet_sync_fetcher_full(
 ):
     with requests_mock.Mocker() as mocker:
         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS, PUBLISHER_NAME
+            STARKNET_ONCHAIN_ASSETS,
+            PUBLISHER_NAME,
+            client=forked_client.full_node_client,
         )
 
         for asset in STARKNET_ONCHAIN_ASSETS:

@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 from dotenv import load_dotenv
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client_models import Call
+from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset
 from pragma.core.entry import SpotEntry
@@ -25,7 +26,7 @@ logger.setLevel(logging.INFO)
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
-    client = get_client_from_network("testnet")
+    client: FullNodeClient
     EKUBO_PUBLIC_API: str = "https://goerli-api.ekubo.org"
     EKUBO_CORE_CONTRACT: str = (
         "0x031e8a7ab6a6a556548ac85cbb8b5f56e8905696e9f13e9a858142b8ee0cc221"
@@ -56,9 +57,10 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher):
+    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
+        self.client = client or get_client_from_network("testnet")
 
     def prepare_call(self) -> Call:
         token_0, token_1 = min(self.ETH_ADDRESS, self.STRK_ADDRESS), max(
@@ -323,7 +325,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
 #     return price1
 
-# def f2(): 
+# def f2():
 #     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
 #     price2 = fetcher.fetch_sync()
 #     return price2

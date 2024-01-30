@@ -62,11 +62,9 @@ PRAGMA_API_URL = "https://api.dev.pragma.build"
 RPC_URLS = {
     MAINNET: [
         "https://starknet-mainnet.public.blastapi.io/rpc/v0_6",
-        "https://rpc.starknet.lava.build",
     ],
     TESTNET: [
         "https://starknet-testnet.public.blastapi.io/rpc/v0_6",
-        "https://rpc.starknet-testnet.lava.build",
     ],
     SEPOLIA: [
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
