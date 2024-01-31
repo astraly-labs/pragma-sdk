@@ -320,16 +320,16 @@ ONCHAIN_STARKNET_FETCHER_CONFIGS = {
         "name": "ONStarknetAMM",
         "expected_result": [
             SpotEntry(
-                "ETH/STRK",
-                71651396007433143 / 3381524279075682,
+                "STRK/USD",
+                (226416500000 / 10**8) / (71651396007433143 / 3381524279075682),
                 12345,
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
             ),
             SpotEntry(
-                "STRK/USD",
-                1645.07 / (71651396007433143 / 3381524279075682),
+                "ETH/STRK",
+                71651396007433143 / 3381524279075682,
                 12345,
                 "STARKNET",
                 PUBLISHER_NAME,

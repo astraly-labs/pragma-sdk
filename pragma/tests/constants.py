@@ -146,8 +146,8 @@ STARKNET_SAMPLE_ASSETS = [
 ]
 
 STARKNET_ONCHAIN_ASSETS = [
-    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 8},
     {"type": "SPOT", "pair": ("STRK", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 8},
 ]
 
 SAMPLE_FUTURE_ASSETS = [
