@@ -660,7 +660,7 @@ async def test_onchain_starknet_async_fetcher_full(
         assert result == expected_result
 
 
-# TODO: Write sync version of the oracle mixin before uncommenting this
+# TODO(#65):Write sync version of the oracle mixin before uncommenting this
 # @mock.patch("time.time", mock.MagicMock(return_value=12345))
 # @pytest.mark.parametrize(
 #     "forked_client", [{"block_number": 939346, "network": "testnet"}], indirect=True

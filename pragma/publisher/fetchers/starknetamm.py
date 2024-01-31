@@ -137,7 +137,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     async def on_fetch_ekubo_price(self) -> float:
         call = self.prepare_call()
-        pool_info = await self.client.client.call_contract(call)
+        pool_info = await self.client.full_node_client.call_contract(call)
         sqrt_ratio = pool_info[0]
         if sqrt_ratio == 0:
             logger.error("Ekubo: Pool is empty")
@@ -147,7 +147,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     def on_fetch_ekubo_price_sync(self) -> float:
         call = self.prepare_call()
-        pool_info = self.client.client.call_contract_sync(call)
+        pool_info = self.client.full_node_client.call_contract_sync(call)
         sqrt_ratio = pool_info[0]
         if sqrt_ratio == 0:
             logger.error("Ekubo: Pool is empty")
@@ -162,7 +162,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             calldata=[],
         )
         async with session:
-            reserves_infos = await self.client.client.call_contract(call)
+            reserves_infos = await self.client.full_node_client.call_contract(call)
             token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
             token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
             if token_0_reserve == 0 or token_1_reserve == 0:
@@ -179,7 +179,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             selector=get_selector_from_name("get_reserves"),
             calldata=[],
         )
-        reserves_infos = self.client.client.call_contract_sync(call)
+        reserves_infos = self.client.full_node_client.call_contract_sync(call)
         token_0_reserve = reserves_infos[0] + reserves_infos[1] * 2**128
         token_1_reserve = reserves_infos[2] + reserves_infos[3] * 2**128
         if token_0_reserve == 0 or token_1_reserve == 0:
@@ -254,7 +254,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 logger.error("Both ekubo_price and jedi_swap_price are null")
                 return PublisherFetchError("Both prices are unavailable")
 
-        # TODO: Handle sync version of the oracle mixin before uncommenting this part
+        # TODO(#65): Handle sync version of the oracle mixin before uncommenting this part
         # elif asset["pair"] == ("STRK", "USD"):
         #     eth_usd_entry =  self.client.get_spot_sync(ETH_PAIR)
         #     # ekubo_price = await self.on_fetch_ekubo_price()
