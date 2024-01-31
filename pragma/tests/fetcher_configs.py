@@ -311,3 +311,30 @@ ONCHAIN_FETCHER_CONFIGS = {
         ],
     },
 }
+
+
+ONCHAIN_STARKNET_FETCHER_CONFIGS = {
+    "StarknetAMMFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "on_starknet_amm.json",
+        "fetcher_class": StarknetAMMFetcher,
+        "name": "ONStarknetAMM",
+        "expected_result": [
+            SpotEntry(
+                "STRK/USD",
+                (226416500000 / 10**8) / (71651396007433143 / 3381524279075682),
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "ETH/STRK",
+                71651396007433143 / 3381524279075682,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+        ],
+    },
+}

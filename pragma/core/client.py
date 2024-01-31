@@ -40,7 +40,7 @@ class PragmaClient(
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
-    fullnode_client: FullNodeClient = None
+    full_node_client: FullNodeClient = None
 
     def __init__(
         self,

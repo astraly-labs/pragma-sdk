@@ -7,10 +7,7 @@ from warnings import warn
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
 from starknet_py.net.client_errors import ClientError
-from starknet_py.net.client_models import (
-    Hash,
-    SentTransactionResponse,
-)
+from starknet_py.net.client_models import Hash, SentTransactionResponse
 
 
 class Contract(StarknetContract):
