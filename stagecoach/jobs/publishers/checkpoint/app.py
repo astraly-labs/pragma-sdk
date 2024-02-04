@@ -7,7 +7,7 @@ import boto3
 from pragma.core.assets import get_asset_spec_for_pair_id_by_type
 from pragma.core.logger import get_stream_logger
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient
 
 logger = get_stream_logger()
 
@@ -46,7 +46,7 @@ def _get_pvt_key():
 async def _handler(assets):
     private_key = _get_pvt_key()
 
-    publisher_client = PragmaPublisherClient(
+    publisher_client = PragmaAPIClient(
         account_private_key=private_key,
         account_contract_address=ACCOUNT_ADDRESS,
         network=NETWORK,

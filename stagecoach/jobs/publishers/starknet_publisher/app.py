@@ -9,7 +9,7 @@ from pragma.core.assets import (
     get_spot_asset_spec_for_pair_id,
 )
 from pragma.core.logger import get_stream_logger
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient
 from pragma.publisher.fetchers import (
     AscendexFetcher,
     BitstampFetcher,
@@ -76,13 +76,13 @@ async def _handler(assets):
     rpc_url = os.getenv("RPC_URL")
 
     if not rpc_url:
-        publisher_client = PragmaPublisherClient(
+        publisher_client = PragmaAPIClient(
             network=NETWORK,
             account_private_key=publisher_private_key,
             account_contract_address=PUBLISHER_ADDRESS,
         )
     else:
-        publisher_client = PragmaPublisherClient(
+        publisher_client = PragmaAPIClient(
             network=rpc_url + "/rpc",
             account_private_key=publisher_private_key,
             account_contract_address=PUBLISHER_ADDRESS,
