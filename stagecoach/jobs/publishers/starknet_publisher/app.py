@@ -19,6 +19,7 @@ from pragma.publisher.fetchers import (
     GeckoTerminalFetcher,
     KaikoFetcher,
     OkxFetcher,
+    StarknetAMMFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
@@ -100,6 +101,7 @@ async def _handler(assets):
                 DefillamaFetcher,
                 OkxFetcher,
                 GeckoTerminalFetcher,
+                StarknetAMMFetcher,
                 BinanceFutureFetcher,
                 OkxFutureFetcher,
                 ByBitFutureFetcher,
