@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 import requests
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
@@ -59,7 +59,6 @@ class PropellerFetcher(PublisherInterfaceT):
         address_0 = ASSET_MAPPING.get(sell_token)
         address_1 = ASSET_MAPPING.get(buy_token)
         sell_amount = 10 ** DECIMALS_MAPPING.get(sell_token) * SELL_AMOUNTS[0]
-        print(sell_amount, f"{sell_token}/{buy_token}")
         if address_0 is None or address_1 is None:
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Propeller for {sell_token}/{buy_token}"

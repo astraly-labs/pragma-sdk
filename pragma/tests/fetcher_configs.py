@@ -183,6 +183,27 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
+    "PropellerFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "propeller.json",
+        "fetcher_class": PropellerFetcher,
+        "name": "PROPELLER",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                4891252302700,
+                12345,
+                "PROPELLER",
+                PUBLISHER_NAME,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                262209039700,
+                12345,
+                "PROPELLER",
+                PUBLISHER_NAME,
+            ),
+        ],
+    },
 }
 
 FUTURE_FETCHER_CONFIGS = {
