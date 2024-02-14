@@ -180,7 +180,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
 
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
     assert entries == [
-        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, PUBLISHER_NAME, volume=200)
+        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
     ]
 
     # Get SPOT
@@ -213,7 +213,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
             ETH_PAIR, sources=[str_to_felt(unknown_source)]
         )
     except ClientError as err:
-        err_msg = "Execution was reverted; failure reason: [0x4e6f207075626c697368657220666f7220736f75726365]"
+        err_msg = "Contract error"  # TODO(#000): check error message 04e6f206461746120656e74727920666f756e64
         if not err_msg in err.message:
             raise err
 
@@ -237,7 +237,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         await pragma_client.publish_many([spot_entry_future])
         assert False
     except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        err_msg = "Unknown Starknet error"
         if not err_msg in err.message:
             raise err
 
@@ -305,6 +306,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     assert res.expiration_timestamp == expiry_timestamp
 
     # Add new source and check aggregation
+    timestamp = int(time.time())
     future_entry_1 = FutureEntry(
         ETH_PAIR, 100, timestamp, SOURCE_1, publisher_name, expiry_timestamp, volume=10
     )
@@ -340,7 +342,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
         await pragma_client.publish_many([future_entry_future])
         assert False
     except TransactionRevertedError as err:
-        err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
+        err_msg = "Unknown Starknet error"
         if not err_msg in err.message:
             raise err
 

@@ -387,3 +387,18 @@ class OracleMixin:
             )
 
         return invocation
+
+    async def get_admin_address(self) -> int:
+        (response,) = await self.oracle.functions["get_admin_address"].call()
+        return response
+
+    async def update_oracle(
+        self,
+        implementation_hash: int,
+        max_fee=int(1e18),
+    ) -> InvokeResult:
+        invocation = await self.oracle.functions["upgrade"].invoke(
+            implementation_hash,
+            max_fee=max_fee,
+        )
+        return invocation

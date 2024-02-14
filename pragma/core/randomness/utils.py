@@ -23,6 +23,7 @@ class RandomnessRequest:
         callback_address,
         callback_fee_limit,
         num_words,
+        calldata: List[int],
     ):
         self.request_id = request_id
         self.caller_address = caller_address
@@ -31,6 +32,7 @@ class RandomnessRequest:
         self.callback_address = callback_address
         self.callback_fee_limit = callback_fee_limit
         self.num_words = num_words
+        self.calldata = calldata
 
     def __repr__(self):
         return (

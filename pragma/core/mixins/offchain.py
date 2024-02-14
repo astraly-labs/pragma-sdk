@@ -36,13 +36,15 @@ price': 1000,
 """
 
 
-def build_publish_message(entries: List[SpotEntry]) -> TypedData:
+def build_publish_message(entries: List[SpotEntry], now: int, expiry: int) -> TypedData:
     message = {
         "domain": {"name": "Pragma", "version": "1"},
         "primaryType": "Request",
         "message": {
             "action": "Publish",
             "entries": SpotEntry.serialize_entries(entries),
+            # "timestamp": now,
+            # "expiration": expiry,
         },
         "types": {
             "StarkNetDomain": [
@@ -77,12 +79,13 @@ class OffchainMixin:
     ssl_context: ssl.SSLContext
     api_key: str
 
-    def sign_publish_message(self, entries: List[SpotEntry]) -> (List[int], int):
+    def sign_publish_message(
+        self, entries: List[SpotEntry], now: int, expiry: int
+    ) -> (List[int], int):
         """
         Sign a publish message
         """
-
-        message = build_publish_message(entries)
+        message = build_publish_message(entries, now, expiry)
         hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
@@ -110,11 +113,11 @@ class OffchainMixin:
             entries (List[SpotEntry]): List of SpotEntry to publish
         """
 
-        # Sign message
-        sig, _ = self.sign_publish_message(entries)
-
         now = int(time.time())
         expiry = now + 24 * 60 * 60
+
+        # Sign message
+        sig, _ = self.sign_publish_message(entries, now, expiry)
 
         # Add headers
         headers: Dict = {
@@ -130,9 +133,9 @@ class OffchainMixin:
 
         url = self.api_url + "/v1/data/publish"
 
-        logging.info(f"POST {url}")
-        logging.info(f"Headers: {headers}")
-        logging.info(f"Body: {body}")
+        logger.info(f"POST {url}")
+        logger.info(f"Headers: {headers}")
+        logger.info(f"Body: {body}")
 
         if self.ssl_context is not None:
             # Call Pragma API
@@ -143,13 +146,13 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Publish successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Publish successful")
                         return response
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to POST /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to POST /v1/data")
         else:
             # Call Pragma API
             async with aiohttp.ClientSession() as session:
@@ -157,13 +160,13 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Publish successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Publish successful")
                         return response
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to POST /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to POST /v1/data")
 
         return response
 
@@ -190,7 +193,7 @@ class OffchainMixin:
             "x-api-key": self.api_key,
         }
 
-        logging.info(f"GET {url}")
+        logger.info(f"GET {url}")
 
         if self.ssl_context is not None:
             async with aiohttp.ClientSession(
@@ -200,23 +203,23 @@ class OffchainMixin:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Get Data successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Get Data successful")
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to GET /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to GET /v1/data")
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers) as response:
                     status_code: int = response.status
                     response: Dict = await response.json()
                     if status_code == 200:
-                        logging.info(f"Success: {response}")
-                        logging.info("Get Data successful")
+                        logger.info(f"Success: {response}")
+                        logger.info("Get Data successful")
 
-                    logging.error(f"Status Code: {status_code}")
-                    logging.error(f"Response Text: {response}")
-                    logging.error("Unable to GET /v1/data")
+                    logger.error(f"Status Code: {status_code}")
+                    logger.error(f"Response Text: {response}")
+                    logger.error("Unable to GET /v1/data")
 
         return response

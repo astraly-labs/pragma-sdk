@@ -20,6 +20,7 @@ jobs:
           "stagecoach/base_images/lambda",
           "stagecoach/jobs/publishers/checkpoint",
           "stagecoach/jobs/publishers/starknet_publisher",
+          "stagecoach/jobs/publishers/offchain_publisher",
           "stagecoach/jobs/randomness",
         ]
     steps:

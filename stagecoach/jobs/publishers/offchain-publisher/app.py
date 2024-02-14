@@ -12,7 +12,6 @@ from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
     AscendexFetcher,
-    AvnuFetcher,
     BitstampFetcher,
     CexFetcher,
     CoinbaseFetcher,
@@ -34,6 +33,7 @@ SPOT_ASSETS = os.environ["SPOT_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"))
 KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
+API_KEY = os.environ.get("API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 API_URL = os.environ.get("API_URL", "https://api.dev.pragma.build/node")
 if PAGINATION is not None:
@@ -64,12 +64,13 @@ def _get_pvt_key():
 
 async def _handler(assets):
     publisher_private_key = _get_pvt_key()
-    # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 10)
+    # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 16)
 
     publisher_client = PragmaPublisherClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
         api_url=API_URL,
+        api_key=API_KEY,
     )
 
     publisher_client.add_fetchers(

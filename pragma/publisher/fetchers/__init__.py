@@ -1,5 +1,4 @@
 from .ascendex import AscendexFetcher
-from .avnu import AvnuFetcher
 from .bitstamp import BitstampFetcher
 from .cex import CexFetcher
 from .coinbase import CoinbaseFetcher
@@ -9,4 +8,6 @@ from .gecko import GeckoTerminalFetcher
 from .gemini import GeminiFetcher
 from .kaiko import KaikoFetcher
 from .okx import OkxFetcher
+from .propeller import PropellerFetcher
+from .starknetamm import StarknetAMMFetcher
 from .thegraph import TheGraphFetcher

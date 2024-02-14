@@ -129,27 +129,6 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
-    "AvnuFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "avnu.json",
-        "fetcher_class": AvnuFetcher,
-        "name": "AVNU",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2623400000000,
-                12345,
-                "AVNU",
-                PUBLISHER_NAME,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                158913000000,
-                12345,
-                "AVNU",
-                PUBLISHER_NAME,
-            ),
-        ],
-    },
     "TheGraphFetcher": {
         "mock_file": MOCK_DIR / "responses" / "thegraph.json",
         "fetcher_class": TheGraphFetcher,
@@ -170,6 +149,58 @@ FETCHER_CONFIGS = {
                 "THEGRAPH",
                 PUBLISHER_NAME,
                 volume=406618849947.3046337346962943997025,
+            ),
+        ],
+    },
+    "StarknetAMMFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "starknet_amm.json",
+        "fetcher_class": StarknetAMMFetcher,
+        "name": "Starknet",
+        "expected_result": [
+            SpotEntry(
+                "ETH/USDC",
+                10013545370000000000000,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "DAI/USDC",
+                12095527530000000000,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "WBTC/USDC",
+                66247877310000000,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+        ],
+    },
+    "PropellerFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "propeller.json",
+        "fetcher_class": PropellerFetcher,
+        "name": "PROPELLER",
+        "expected_result": [
+            SpotEntry(
+                "BTC/USD",
+                4891252302700,
+                12345,
+                "PROPELLER",
+                PUBLISHER_NAME,
+            ),
+            SpotEntry(
+                "ETH/USD",
+                262209039700,
+                12345,
+                "PROPELLER",
+                PUBLISHER_NAME,
             ),
         ],
     },
@@ -283,7 +314,7 @@ ONCHAIN_FETCHER_CONFIGS = {
         "name": "GeckoTerminal",
         "expected_result": [
             SpotEntry(
-                "R/USD",
+                "LUSD/USD",
                 98898157,
                 12345,
                 "GECKOTERMINAL",
@@ -297,6 +328,33 @@ ONCHAIN_FETCHER_CONFIGS = {
                 "GECKOTERMINAL",
                 PUBLISHER_NAME,
                 volume=90241580.528001091809493184,
+            ),
+        ],
+    },
+}
+
+
+ONCHAIN_STARKNET_FETCHER_CONFIGS = {
+    "StarknetAMMFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "on_starknet_amm.json",
+        "fetcher_class": StarknetAMMFetcher,
+        "name": "ONStarknetAMM",
+        "expected_result": [
+            SpotEntry(
+                "STRK/USD",
+                (226416500000 / 10**8) / (71651396007433143 / 3381524279075682),
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "ETH/STRK",
+                71651396007433143 / 3381524279075682,
+                12345,
+                "STARKNET",
+                PUBLISHER_NAME,
+                volume=0,
             ),
         ],
     },

@@ -56,14 +56,21 @@ def get_abi(contract_name):
 
 
 CONTRACTS_NAMES = [
-    "pragma_Admin",
+    # "pragma_Ownable",
     "pragma_Oracle",
     "pragma_PublisherRegistry",
     "pragma_SummaryStats",
     "pragma_YieldCurve",
     "pragma_Randomness",
+    "pragma_ExampleRandomness",
 ]
 ABIS = {
     contract_name: json.loads(get_abi(contract_name))
     for contract_name in CONTRACTS_NAMES
 }
+
+
+def get_erc20_abi():
+    with open(BUILD_DIR / "pragma_ERC20.json", "r") as file:
+        ERC20_ABI = json.load(file)
+    return ERC20_ABI

@@ -14,8 +14,7 @@ async def declare_account(account: Account, compiled_account_contract: str) -> i
     """
     Declares a specified account.
     """
-
-    declare_tx = await account.sign_declare_transaction(
+    declare_tx = await account.sign_declare_v2_transaction(
         compiled_contract=compiled_account_contract,
         max_fee=MAX_FEE,
     )
@@ -38,7 +37,7 @@ async def account_with_validate_deploy_class_hash(
 
 
 @pytest.fixture(scope="package")
-def fee_contract(gateway_account: Account) -> Contract:
+def fee_contract(full_node_account: Account) -> Contract:
     """
     Returns an instance of the fee contract. It is used to transfer tokens.
     """
@@ -66,5 +65,5 @@ def fee_contract(gateway_account: Account) -> Contract:
     return Contract(
         address=FEE_CONTRACT_ADDRESS,
         abi=abi,
-        provider=gateway_account,
+        provider=full_node_account,
     )

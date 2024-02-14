@@ -27,7 +27,7 @@ MOCK_DIR = repo_root / "pragma/tests" / "mock"
 
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
-
+DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 print("Current Directory:", os.getcwd())
 print("SUBMODULE_DIR:", SUBMODULE_DIR)
@@ -68,9 +68,11 @@ PREDEPLOYED_MAP_CONTRACT_ADDRESS = (
 # -----------------------------------------------------------------------------
 
 DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS = (
-    "0x7d2f37b75a5e779f7da01c22acee1b66c39e8ba470ee5448f05e1462afcedb4"
+    "0x4d75495e10ee26cae76478b6e491646ff0a10e0a062db1555131e47b07b7d24"
 )
-DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY = "0xcd613e30d8f16adf91b7584a2265b1f5"
+DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY = (
+    "0x100801800000000310080180000000010030000000000005106801800206800"
+)
 
 MAX_FEE = int(1e16)
 
@@ -127,11 +129,25 @@ PAIRS = [
     Pair("USDC/USD", "USDC", "USD"),
     Pair("USDT/USD", "USDT", "USD"),
     Pair("DAI/USD", "DAI", "USD"),
+    Pair("WBTC/USDC", "WBTC", "BTC"),
+    Pair("ETH/USDC", "ETH", "USDC"),
+    Pair("DAI/USDC", "DAI", "USDC"),
 ]
 
 SAMPLE_ASSETS = [
     {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+]
+
+STARKNET_SAMPLE_ASSETS = [
+    {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 8},
+    {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 8},
+    {"type": "SPOT", "pair": ("WBTC", "USDC"), "decimals": 8},
+]
+
+STARKNET_ONCHAIN_ASSETS = [
+    {"type": "SPOT", "pair": ("STRK", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 8},
 ]
 
 SAMPLE_FUTURE_ASSETS = [
@@ -140,6 +156,10 @@ SAMPLE_FUTURE_ASSETS = [
 ]
 
 SAMPLE_ONCHAIN_ASSETS = [
-    {"type": "SPOT", "pair": ("R", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("LUSD", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("WBTC", "USD"), "decimals": 8},
 ]
+ORACLE_DECIMALS = 8
+ORACLE_FEE_PRICE = 100000000000
+MAX_PREMIUM_FEE = 100000000
+ESTIMATED_FEE_MULTIPLIER = 1.5

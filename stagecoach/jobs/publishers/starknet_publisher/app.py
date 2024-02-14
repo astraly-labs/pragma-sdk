@@ -19,6 +19,8 @@ from pragma.publisher.fetchers import (
     GeckoTerminalFetcher,
     KaikoFetcher,
     OkxFetcher,
+    StarknetAMMFetcher,
+    PropellerFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
@@ -33,8 +35,9 @@ SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
 FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
-PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 0)
+PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
+PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
 MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
@@ -65,13 +68,13 @@ def _get_pvt_key():
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
         json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
-        0,
+        16,
     )
 
 
 async def _handler(assets):
     publisher_private_key = _get_pvt_key()
-    # publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 0)
+    # publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 16)
 
     rpc_url = os.getenv("RPC_URL")
 
@@ -100,6 +103,7 @@ async def _handler(assets):
                 DefillamaFetcher,
                 OkxFetcher,
                 GeckoTerminalFetcher,
+                StarknetAMMFetcher,
                 BinanceFutureFetcher,
                 OkxFutureFetcher,
                 ByBitFutureFetcher,
@@ -107,6 +111,7 @@ async def _handler(assets):
         ]
     )
 
+    publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
     publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
 
     _entries = await publisher_client.fetch()

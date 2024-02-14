@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import subprocess
 import time
 
@@ -8,7 +9,7 @@ import pytest
 from moto import mock_secretsmanager
 
 from pragma.core import PragmaClient
-from pragma.publisher.fetchers import AvnuFetcher
+from pragma.core.types import RPC_URLS
 from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
 
 
@@ -36,17 +37,17 @@ def port() -> int:
 @pytest.fixture(scope="module")
 def devnet_node(module_mocker, port) -> str:
     """
-    This fixture prepares a forked starknet-dev
+    This fixture prepares a forked katana
     client for e2e testing.
 
     :return: a starknet Client
     """
+    rpc_url = RPC_URLS["testnet"][random.randint(0, len(RPC_URLS["testnet"]) - 1)]
+
     command = [
-        "poetry",
-        "run",
-        "starknet-devnet",
-        "--fork-network",
-        "alpha-goerli",
+        "katana",
+        "--rpc-url",
+        str(rpc_url),
         "--host",
         "127.0.0.1",
         "--port",
@@ -55,14 +56,8 @@ def devnet_node(module_mocker, port) -> str:
         str(1),
         "--seed",  # generates same accounts each time
         str(1),
-        *get_compiler_manifest(),
     ]
     subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)
     pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name="testnet")
-    module_mocker.patch.object(
-        AvnuFetcher,
-        "_pragma_client",
-        return_value=pragma_client,
-    )
     yield f"http://127.0.0.1:{port}"

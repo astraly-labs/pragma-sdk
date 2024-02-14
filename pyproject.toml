@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.0.9"
-authors = ["0xevolve <matthias@pragmaoracle.com>"]
+version = "1.1.9"
+authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
-homepage = "https://pragmaoracle.com"
-repository = "https://github.com/Astraly-Labs/Pragma"
-documentation = "https://docs.pragmaoracle.com"
+homepage = "https://pragma.build"
+repository = "https://github.com/Astraly-Labs/pragma-sdk"
+documentation = "https://docs.pragma.build"
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
@@ -18,9 +18,8 @@ packages = [{ include = "pragma" }]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-"starknet.py" = "0.18.3"
+"starknet.py" = "0.19.0a0"
 cairo-lang = "^0.12"
-starknet-devnet = "^0.6.3"
 typer = "0.6.1"
 deprecated = "^1.2.14"
 aioresponses = "^0.7.4"
@@ -54,11 +53,13 @@ format.shell = "isort . && black ."
 format_check.shell = "isort --check . && black --check ."
 format_diff.shell = "isort --diff . && black --diff ."
 typecheck = "pyright pragma"
-test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py"
+test_ci_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/client_test.py -s"
+test_ci_update_client = "coverage run -m pytest --net=fork_devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/update_client_test.py -s"
 test_ci_publisher = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/publisher_test.py -s"
 test_ci_fetchers = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/fetchers_test.py -s"
 test_ci_vrf = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/vrf_test.py -s"
 test_stagecoach = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError stagecoach/ -s"
+
 circular_imports_check.shell = "poetry run pytest circular.py"
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
 
