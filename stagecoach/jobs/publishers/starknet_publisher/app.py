@@ -20,6 +20,7 @@ from pragma.publisher.fetchers import (
     KaikoFetcher,
     OkxFetcher,
     StarknetAMMFetcher,
+    PropellerFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
@@ -36,6 +37,7 @@ FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
+PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
 MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
@@ -109,6 +111,7 @@ async def _handler(assets):
         ]
     )
 
+    publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
     publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
 
     _entries = await publisher_client.fetch()
