@@ -2,15 +2,20 @@ import asyncio
 from typing import List
 
 import aiohttp
+import http.client
 import requests
-
+import os
+import json
 from pragma.core.client import PragmaClient
 from pragma.publisher.types import PublisherInterfaceT
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ALLOWED_INTERVALS = ["1m", "15m", "1h"]
 
 
-class PragmaAPIClient(PragmaClient):
+class PragmaPublisherClient(PragmaClient):
     """
     This client extends the pragma client with functionality for fetching from our third party sources.
     It can be used to synchronously or asynchronously fetch assets using the Asset format, ie.
@@ -28,7 +33,7 @@ class PragmaAPIClient(PragmaClient):
         cex_fetcher,
         gemini_fetcher,
     ]
-    eapc = PragmaAPIClient('testnet')
+    eapc = PragmaPublisherClient('testnet')
     eapc.add_fetchers(fetchers)
     await eapc.fetch()
     eapc.fetch_sync()
@@ -41,17 +46,11 @@ class PragmaAPIClient(PragmaClient):
 
     """
 
-    def __init__(
-        self,
-        api_base_url="https://docs.pragmaoracle.com/node/v1",
-        api_key="",
-    ):
-        super().__init__(api_key, api_base_url)
-        self.fetchers: List[PublisherInterfaceT] = []
+    fetchers: List[PublisherInterfaceT] = []
 
     @staticmethod
     def convert_to_publisher(client: PragmaClient):
-        client.__class__ = PragmaAPIClient
+        client.__class__ = PragmaPublisherClient
         return client
 
     def add_fetchers(self, fetchers: List[PublisherInterfaceT]):
@@ -89,6 +88,19 @@ class PragmaAPIClient(PragmaClient):
             results.extend(data)
         return results
 
+
+class PragmaAPIClient(PragmaClient):
+
+    api_base_url=os.getenv("PRAGMA_API_BASE_URL"),
+    api_key=os.getenv("PRAGMA_API_KEY"),
+    
+    
+    @staticmethod
+    def convert_to_publisher(client: PragmaClient):
+        client.__class__ = PragmaAPIClient
+        return client
+
+
     def api_get_ohlc(
         self,
         pair: str,
@@ -101,16 +113,7 @@ class PragmaAPIClient(PragmaClient):
         base_asset, quote_asset = pair.split("/")
 
         # Define the endpoint
-        endpoint = f"/aggregation/candlestick/{base_asset}/{quote_asset}"  # Replace with the actual endpoint
-
-        # Construct the complete URL
-        url = f"{self.base_url}{endpoint}"
-
-        if interval not in ALLOWED_INTERVALS:
-            print(
-                f"Error: Invalid interval. Allowed values are {', '.join(ALLOWED_INTERVALS)}"
-            )
-            return None
+        endpoint = f"/aggregation/candlestick/{base_asset}/{quote_asset}"
 
         # Prepare path parameters
         path_params = {
@@ -119,90 +122,139 @@ class PragmaAPIClient(PragmaClient):
             "timestamp": timestamp,
             "interval": interval,
         }
-        headers = {
-            "Content-Type": "application/json",
-        }
+
+        # Construct the complete URL
+        url = f"{self.api_base_url}{endpoint}"
 
         # Prepare query parameters
         query_params = {"routing": routing, "aggregation": aggregation}
 
-        # Make the GET request
-        response = requests.get(
-            url, params=path_params, json=query_params, headers=headers
-        )
+        # Add limit parameter
+        query_params["limit"] = limit
 
-        # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            # Parse and return the JSON response
-            return response.json()
+        # Prepare headers
+        headers = {
+            "x-api-key": self.api_key[0],
+            "Content-Type": "application/json",
+        }
+
+        # Create connection
+        conn = http.client.HTTPSConnection("api.dev.pragma.build")
+
+        # Add path parameters to endpoint
+        endpoint += "?" + "&".join([f"{key}={path_params[key]}" for key in path_params])
+
+        # Send GET request with headers
+        conn.request("GET", endpoint, headers=headers)
+
+        # Get response
+        response = conn.getresponse()
+
+        if response.status == 200:
+            # Read and parse JSON response
+            data = response.read().decode("utf-8")
+            return json.loads(data)
         else:
             # Print an error message if the request was unsuccessful
-            print(f"Error: {response.status_code}")
+            print(f"Error: {response.status}")
             return None
 
     def create_entries(self, entries):
-        endpoint = f"{self.api_base_url}/data/publish"
+        endpoint = "/data/publish"
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "x-api-key": self.api_key[0],
             "Content-Type": "application/json",
         }
 
-        data = {"entries": entries}
+        # Convert entries to JSON string
+        data = json.dumps({"entries": entries})
 
-        response = requests.post(endpoint, headers=headers, json=data)
+        # Create connection
+        conn = http.client.HTTPSConnection("api.dev.pragma.build")
 
-        if response.status_code == 200:
-            return response.json()
+        # Send POST request with headers
+        conn.request("POST", endpoint, body=data, headers=headers)
+
+        # Get response
+        response = conn.getresponse()
+
+        if response.status == 200:
+            # Read and parse JSON response
+            data = response.read().decode("utf-8")
+            return json.loads(data)
         else:
-            raise Exception(f"Error {response.status_code}: {response.text}")
+            raise Exception(f"Error {response.status}: {response.reason}")
 
-    def get_entry(self, pair: str, timestamp: int, interval, routing, aggregation):
+
+    def get_entry(self, pair: str, timestamp=None, interval=None, routing=None, aggregation=None):
         base_asset, quote_asset = pair.split("/")
 
-        if interval not in ALLOWED_INTERVALS:
-            print(
-                f"Error: Invalid interval. Allowed values are {', '.join(ALLOWED_INTERVALS)}"
-            )
-            return None
-
-        endpoint = f"{self.api_base_url}/node/v1/data/{base_asset}/{quote_asset}"
-
-        params = {
-            "timestamp": timestamp,
-            "interval": interval,
-            "routing": routing,
-            "aggregation": aggregation,
-        }
+        endpoint = f"/node/v1/data/{base_asset}/{quote_asset}"
+        
+        # Construct query parameters based on provided arguments
+        params = {}
+        if timestamp is not None:
+            params["timestamp"] = timestamp
+        if interval is not None:
+            params["interval"] = interval
+        if routing is not None:
+            params["routing"] = routing
+        if aggregation is not None:
+            params["aggregation"] = aggregation
 
         headers = {
+            "x-api-key": self.api_key[0],
             "Content-Type": "application/json",
         }
 
-        response = requests.get(endpoint, params=params, headers=headers)
+        # Create connection
+        conn = http.client.HTTPSConnection("api.dev.pragma.build")
 
-        if response.status_code == 200:
-            return response.json()
+        # Construct URL with parameters
+        url = f"{endpoint}?{'&'.join([f'{key}={value}' for key, value in params.items()])}"
+
+        # Send GET request with headers
+        conn.request("GET", url, headers=headers)
+
+        # Get response
+        response = conn.getresponse()
+
+        if response.status == 200:
+            # Read and parse JSON response
+            data = response.read().decode("utf-8")
+            return json.loads(data)
         else:
-            raise Exception(f"Error {response.status_code}: {response.text}")
+            raise Exception(f"Error {response.status}: {response.reason}")
 
     def get_volatility(self, pair: str, start: int, end: int):
         base_asset, quote_asset = pair.split("/")
 
-        endpoint = f"{self.api_base_url}/node/v1/volatility/{base_asset}/{quote_asset}"
+        endpoint = f"/node/v1/volatility/{base_asset}/{quote_asset}"
 
-        params = {
-            "start": start,
-            "end": end,
-        }
+        # Construct query parameters
+        params = f"start={start}&end={end}"
 
         headers = {
+            "x-api-key": self.api_key[0],
             "Content-Type": "application/json",
         }
 
-        response = requests.get(endpoint, params=params, headers=headers)
+        # Create connection
+        conn = http.client.HTTPSConnection(self.api_base_url[0])
 
-        if response.status_code == 200:
-            return response.json()
+        # Construct URL with parameters
+        url = f"{endpoint}?{params}"
+
+        # Send GET request with headers
+        conn.request("GET", url, headers=headers)
+
+        # Get response
+        response = conn.getresponse()
+
+        if response.status == 200:
+            # Read and parse JSON response
+            data = response.read().decode("utf-8")
+            return json.loads(data)
         else:
-            raise Exception(f"Error {response.status_code}: {response.text}")
+            raise Exception(f"Error {response.status}: {response.reason}")

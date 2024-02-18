@@ -10,7 +10,7 @@ from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.client import PragmaClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.utils import str_to_felt
-from pragma.publisher.client import PragmaAPIClient
+from pragma.publisher.client import PragmaPublisherClient, PragmaAPIClient
 from pragma.publisher.fetchers import *
 from pragma.publisher.future_fetchers import *
 from pragma.publisher.types import PublisherFetchError
@@ -36,7 +36,6 @@ load_dotenv()
 
 PUBLISHER_NAME = "PRAGMA"
 PAGINATION = 40
-
 SOURCES = [
     "ASCENDEX",
     "BITSTAMP",
@@ -66,7 +65,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(s) for s in SOURCES]
 
-    publisher: PragmaAPIClient = PragmaAPIClient.convert_to_publisher(pragma_client)
+    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [fetcher(SAMPLE_ASSETS, PUBLISHER_NAME) for fetcher in ALL_SPOT_FETCHERS]
@@ -96,7 +95,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
 @pytest.mark.asyncio
 async def test_publisher_client_future(pragma_client: PragmaClient):
-    publisher: PragmaAPIClient = PragmaAPIClient.convert_to_publisher(pragma_client)
+    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [
@@ -125,7 +124,7 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
 
 @pytest.mark.asyncio
 async def test_publisher_client_all_assets(pragma_client: PragmaClient):
-    publisher: PragmaAPIClient = PragmaAPIClient.convert_to_publisher(pragma_client)
+    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [fetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME) for fetcher in ALL_FETCHERS]
@@ -159,6 +158,7 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient):
     await publisher.publish_many(data, pagination=PAGINATION)
 
 
+
 def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
     errors = [entry for entry in data if not isinstance(entry, data_type)]
 
@@ -166,3 +166,5 @@ def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
         print("⚠️ Invalid Data Types :", errors)
 
     assert all(isinstance(entry, data_type) for entry in data)
+
+

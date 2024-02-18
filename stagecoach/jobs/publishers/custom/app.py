@@ -7,7 +7,7 @@ from typing import List
 from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id, log_entry
-from pragma.publisher.client import PragmaAPIClient
+from pragma.publisher.client import PragmaPublisherClient
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ async def publish_all(assets):
     publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 0)
     publisher_address = int(os.environ.get("PUBLISHER_ADDRESS"), 0)
 
-    publisher_client = PragmaAPIClient(
+    publisher_client = PragmaPublisherClient(
         account_private_key=publisher_private_key,
         account_contract_address=publisher_address,
         network=os.environ["NETWORK"],  # ENV var set to `testnet | mainnet`
