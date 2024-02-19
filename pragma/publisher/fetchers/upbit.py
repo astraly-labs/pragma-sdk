@@ -13,6 +13,7 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_ASSETS = [("BTC", "ETH")]
 
 class UpbitFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://sg-api.upbit.com/v1/ticker"
@@ -57,19 +58,21 @@ class UpbitFetcher(PublisherInterfaceT):
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT":
+            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
+                entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            else: 
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "SPOT":
+            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
+                entries.append(self._fetch_pair_sync(asset))
+            else: 
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
-            entries.append(self._fetch_pair_sync(asset))
         return entries
 
     def format_url(self, quote_asset, base_asset):
@@ -77,7 +80,6 @@ class UpbitFetcher(PublisherInterfaceT):
         return url
 
     def _construct(self, asset, result) -> SpotEntry:
-        print(result)
         pair = asset["pair"]
         data = result[0]
         timestamp = int(time.time())
