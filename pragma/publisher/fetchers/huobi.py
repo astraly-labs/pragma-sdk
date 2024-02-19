@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 from typing import List, Union
+
 import requests
 from aiohttp import ClientSession
 
@@ -34,7 +35,7 @@ class HuobiFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Huobi"
                 )
             result = await resp.json()
-            if result['status'] != "ok":
+            if result["status"] != "ok":
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Huobi"
                 )
@@ -47,14 +48,10 @@ class HuobiFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={pair[0].lower()}{pair[1].lower()}"
         resp = requests.get(url)
         if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Huobi"
-            )
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
         result = resp.json()
-        if result['status'] != "ok":
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Huobi"
-            )
+        if result["status"] != "ok":
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
         return self._construct(asset, result)
 
     async def fetch(
@@ -72,9 +69,9 @@ class HuobiFetcher(PublisherInterfaceT):
     def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] == "SPOT" :
+            if asset["type"] == "SPOT":
                 entries.append(self._fetch_pair_sync(asset))
-            else: 
+            else:
                 logger.debug("Skipping Huobi for non-spot asset %s", asset)
                 continue
         return entries
@@ -86,7 +83,7 @@ class HuobiFetcher(PublisherInterfaceT):
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
         data = result["tick"]
-        timestamp = int(time.time())
+        timestamp = int(result["ts"] / 1000)
         ask = float(data["ask"][0])
         bid = float(data["bid"][0])
         price = (ask + bid) / 2.0
@@ -104,4 +101,3 @@ class HuobiFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
