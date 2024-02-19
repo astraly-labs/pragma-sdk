@@ -29,14 +29,13 @@ class KucoinFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
-
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin"
                 )
             result = await resp.json()
-            if result["code"] == "100002" and result["reason"] == "DATA_NOT_AVAILABLE":
+            if result["data"] == None:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin"
                 )
@@ -54,7 +53,7 @@ class KucoinFetcher(PublisherInterfaceT):
                 f"No data found for {'/'.join(pair)} from Kucoin"
             )
         result = resp.json()
-        if result["code"] == "100002" and result["reason"] == "DATA_NOT_AVAILABLE":
+        if result["data"] == None:
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Kucoin"
             )
