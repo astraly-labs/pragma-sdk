@@ -57,7 +57,7 @@ STARKSCAN_URLS = {
     FORK_DEVNET: "https://devnet.starkscan.co",
 }
 
-PRAGMA_API_URL = "https://api.dev.pragma.build"
+PRAGMA_API_URL = "https://api.dev.pragma.build/node"
 
 RPC_URLS = {
     MAINNET: [
