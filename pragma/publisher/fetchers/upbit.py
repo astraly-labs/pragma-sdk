@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_ASSETS = [("BTC", "ETH")]
 
+
 class UpbitFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://sg-api.upbit.com/v1/ticker"
     SOURCE: str = "UPBIT"
@@ -29,7 +30,7 @@ class UpbitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?markets={pair[0]}-{pair[1]}"
+        url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -42,13 +43,11 @@ class UpbitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?markets={pair[0]}-{pair[1]}"
+        url = self.format_url(pair[0], pair[1])
 
         resp = requests.get(url)
         if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Upbit"
-            )
+            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Upbit")
         result = resp.json()
 
         return self._construct(asset, result)
@@ -60,7 +59,7 @@ class UpbitFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
                 entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
-            else: 
+            else:
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -70,13 +69,13 @@ class UpbitFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
                 entries.append(self._fetch_pair_sync(asset))
-            else: 
+            else:
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
         return entries
 
     def format_url(self, quote_asset, base_asset):
-        url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
+        url = f"{self.BASE_URL}?markets={quote_asset}-{base_asset}"
         return url
 
     def _construct(self, asset, result) -> SpotEntry:
@@ -98,4 +97,3 @@ class UpbitFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
