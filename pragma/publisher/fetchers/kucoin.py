@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class KucoinFetcher(PublisherInterfaceT):
-    BASE_URL: str = " https://api.kucoin.com/api/v1/market/orderbook/level1"
+    BASE_URL: str = "https://api.kucoin.com/api/v1/market/orderbook/level1"
     SOURCE: str = "KUCOIN"
 
     publisher: str
@@ -87,7 +87,7 @@ class KucoinFetcher(PublisherInterfaceT):
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"]
-        timestamp = int(time.time())
+        timestamp = int(data["time"])
         price = float(data["price"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
