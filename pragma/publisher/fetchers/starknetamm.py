@@ -28,7 +28,7 @@ logger.setLevel(logging.INFO)
 
 
 ETH_PAIR = str_to_felt("ETH/USD")
-SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USD")]
+SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USDT")]
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
@@ -126,7 +126,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     ) -> Union[float, PublisherFetchError]:
         url = self.format_url(asset["pair"][0], asset["pair"][1], time)
         pair = asset["pair"]
-
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -144,8 +143,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         call = self.prepare_call()
         pool_info = await self.client.full_node_client.call_contract(call)
         sqrt_ratio = pool_info[0]
-        print((sqrt_ratio / 2**128) ** 2)
-        print((self.ETH_DECIMALS - self.STRK_DECIMALS))
         if sqrt_ratio == 0:
             logger.error("Ekubo: Pool is empty")
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
@@ -197,7 +194,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     async def _fetch_strk(self, asset, session: ClientSession) -> SpotEntry:
         if asset["pair"] == ("ETH", "STRK"):
-            ekubo_price = await self.on_fetch_ekubo_price()
+            ekubo_price = await self.off_fetch_ekubo_price(asset,session)
             # ekubo_price = (
             #     await self.off_fetch_ekubo_price(asset, session)
             #     if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
@@ -205,7 +202,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             # )
             # jedi_swap_price = await self.on_fetch_jedi_price(session)
             if ekubo_price is not None:
-                return self._construct(asset, ekubo_price)
+                return self._construct(asset, float(ekubo_price))
             # if ekubo_price is not None and jedi_swap_price is not None:
             #     return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
             # elif ekubo_price is not None:
@@ -250,7 +247,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 if isinstance(self.off_fetch_ekubo_price_sync(asset), float)
                 else None
             )
-            jedi_swap_price = self.on_fetch_jedi_price_sync()
+            # jedi_swap_price = self.on_fetch_jedi_price_sync()
+            jedi_swap_price = None
             if ekubo_price is not None and jedi_swap_price is not None:
                 return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
             elif ekubo_price is not None:
@@ -288,7 +286,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Pair not available for the Starknet fetcher")
             return PublisherFetchError("Pair not available for the Starknet fetcher")
 
-    def format_url(self, quote_asset, base_asset, time=None):
+    def format_url(self, base_asset, quote_asset, time=None):
         if time:
             return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={time}&period=3600"
         else:
@@ -328,25 +326,3 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
-
-# async def f1():
-#     fetcher = StarknetAMMFetcher(
-#         [{"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 18}], "PRAGMA"
-#     )
-#     async with ClientSession() as session:
-#         price1 = await fetcher._fetch()
-
-#     return price1
-
-
-# def f2():
-#     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
-#     price2 = fetcher.fetch_sync()
-#     return price2
-
-# # Run the main function in the asyncio event loop
-# price1 = asyncio.run(f1())
-# price2 = f2()
-# print(f"printaefeafe {price1}")
-# print(price2)
