@@ -30,20 +30,37 @@ class BinanceFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}?symbol={pair[0]}{pair[1]}"
-        async with session.get(url) as resp:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance"
-                )
-            result = await resp.json()
-            # if result["code"] == "-1121" or result["msg"] == "Invalid symbol.":
-            #     return PublisherFetchError(
-            #         f"No data found for {'/'.join(pair)} from Binance"
-            #     )
-            eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
-            eth_resp = await session.get(eth_url)
-            eth_result = await eth_resp.json()
-            return self._construct(asset, result, ((float(eth_result["bidPrice"]) + float(eth_result["askPrice"])))/2)
+        if pair == ("ETH", "STRK"):
+            url = f"{self.BASE_URL}?symbol=STRKUSDT"
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Binance"
+                    )
+                result = await resp.json()
+                if 'code' in result:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Binance"
+                    )
+                eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
+                eth_resp = await session.get(eth_url)
+                eth_result = await eth_resp.json()
+                return self._construct(asset, result, ((float(eth_result["bidPrice"]) + float(eth_result["askPrice"])))/2)
+        else: 
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Binance"
+                    )
+                result = await resp.json()
+                if 'code' in result:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Binance"
+                    )
+                eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
+                eth_resp = await session.get(eth_url)
+                eth_result = await eth_resp.json()
+                return self._construct(asset, result)
 
     def _fetch_pair_sync(
         self, asset: PragmaSpotAsset
@@ -91,7 +108,7 @@ class BinanceFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}{base_asset}"
         return url
 
-    def _construct(self, asset, result, eth_price) -> SpotEntry:
+    def _construct(self, asset, result, eth_price= None) -> SpotEntry:
 
         pair = asset["pair"]
 
@@ -119,15 +136,3 @@ class BinanceFetcher(PublisherInterfaceT):
         )
 
 
-import asyncio 
-
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-
-
-async def main():
-    fetcher = BinanceFetcher(PRAGMA_ALL_ASSETS, "test_publisher")
-    async with ClientSession() as session:
-        data = await fetcher.fetch(session)
-        print(data)
-
-asyncio.run(main())
