@@ -43,8 +43,8 @@ class BybitFetcher(PublisherInterfaceT):
                         f"No data found for {'/'.join(pair)} from Bybit"
                     )
                 eth_url = f"{self.BASE_URL}symbol=ETHUSDT"
-                eth_resp = requests.get(eth_url)
-                eth_result = eth_resp.json()
+                eth_resp = await session.get(eth_url)
+                eth_result = await eth_resp.json()
                 return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bid1Price"]) + float(eth_result["result"]["list"][0]["ask1Price"])))/2)
         else: 
             url = f"{self.BASE_URL}symbol={pair[0]}{pair[1]}"
@@ -83,7 +83,7 @@ class BybitFetcher(PublisherInterfaceT):
             eth_url = f"{self.BASE_URL}symbol=ETHUSDT"
             eth_resp = requests.get(eth_url)
             eth_result = eth_resp.json()
-            return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bidPrice"]) + float(eth_result["result"]["list"][0]["askPrice"])))/2)
+            return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bid1Price"]) + float(eth_result["result"]["list"][0]["ask1Price"])))/2)
         else: 
             url = f"{self.BASE_URL}symbol={pair[0]}{pair[1]}"
 

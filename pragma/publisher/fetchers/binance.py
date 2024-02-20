@@ -13,7 +13,6 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_ASSETS = [("BTC", "USDT"), ("ETH", "USDT")]
 
 class BinanceFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.binance.com/api/v3/ticker/24hr"
@@ -30,6 +29,8 @@ class BinanceFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}?symbol={pair[0]}{pair[1]}"
+        if pair == ("STRK", "USD"):
+            pair = ("STRK", "USDT")
         if pair == ("ETH", "STRK"):
             url = f"{self.BASE_URL}?symbol=STRKUSDT"
             async with session.get(url) as resp:
@@ -66,21 +67,37 @@ class BinanceFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?symbol={pair[0]}{pair[1]}"
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance"
-            )
-        result = resp.json()
-        # if result["code"] == "-1121" or result["msg"] == "Invalid symbol.":
-        #     return PublisherFetchError(
-        #         f"No data found for {'/'.join(pair)} from Binance"
-        #     )
-        eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
-        eth_resp = requests.get(eth_url)
-        eth_result = eth_resp.json()
-        return self._construct(asset, result, (eth_result["bidPrice"] + eth_result["askPrice"])/2)
+        if pair == ("STRK", "USD"):
+            pair = ("STRK", "USDT")
+        if pair == ("ETH", "STRK"):
+            url = f"{self.BASE_URL}?symbol=STRKUSDT"
+            resp = requests.get(url)
+            if resp.status_code == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance"
+                )
+            result = resp.json()
+            if 'code' in result:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance"
+                )
+            eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
+            eth_resp = requests.get(eth_url)
+            eth_result = eth_resp.json()
+            return self._construct(asset, result, (float(eth_result["bidPrice"]) + float(eth_result["askPrice"]))/2)
+        else:
+            url = f"{self.BASE_URL}?symbol={pair[0]}{pair[1]}"
+            resp = requests.get(url)
+            if resp.status_code == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance"
+                )
+            result = resp.json()
+            if 'code' in result:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance"
+                )
+            return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -97,7 +114,7 @@ class BinanceFetcher(PublisherInterfaceT):
     def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
+            if asset["type"] == "SPOT":
                 entries.append(self._fetch_pair_sync(asset))
             else: 
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
@@ -134,5 +151,4 @@ class BinanceFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
 

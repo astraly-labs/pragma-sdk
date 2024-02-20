@@ -28,37 +28,78 @@ class KucoinFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
-        async with session.get(url) as resp:
-            if resp.status == 404:
+        if (pair == ("STRK", "USD")):
+            pair = ("STRK", "USDT")
+        if (pair == ("ETH", "STRK")):
+            url = f"{self.BASE_URL}?symbol=STRK-USDT"
+            print(url)
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Kucoin"
+                    )
+                result = await resp.json()
+                if result["data"] == None:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Kucoin"
+                    )
+
+                eth_url = f"{self.BASE_URL}?symbol=ETH-USDT"
+                eth_resp = await session.get(eth_url)
+                eth_result = await eth_resp.json()
+                return self._construct(asset, result, ((float(eth_result["data"]["bestAsk"]) + float(eth_result["data"]["bestBid"]))/2))
+        else:
+            url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Kucoin"
+                    )
+                result = await resp.json()
+                if result["data"] == None:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Kucoin"
+                    )
+
+                return self._construct(asset, result)
+
+    def _fetch_pair_sync(
+        self, asset: PragmaSpotAsset
+    ) -> Union[SpotEntry, PublisherFetchError]:
+        pair = asset["pair"]
+        if (pair == ("STRK", "USD")):
+            pair = ("STRK", "USDT")
+        if (pair == ("ETH", "STRK")):
+            url = f"{self.BASE_URL}?symbol=STRK-USDT"
+            resp = requests.get(url)
+            if resp.status_code == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin"
                 )
-            result = await resp.json()
+            result = resp.json()
+            if result["data"] == None:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin"
+                )
+
+            eth_url = f"{self.BASE_URL}?symbol=ETH-USDT"
+            eth_resp = requests.get(eth_url)
+            eth_result = eth_resp.json()
+            return self._construct(asset, result, ((float(eth_result["data"]["bestAsk"]) + float(eth_result["data"]["bestBid"]))/2))
+        else:
+            url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
+            resp = requests.get(url)
+            if resp.status_code == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin"
+                )
+            result = resp.json()
             if result["data"] == None:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin"
                 )
 
             return self._construct(asset, result)
-
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Kucoin"
-            )
-        result = resp.json()
-        if result["data"] == None:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Kucoin"
-            )
-
-        return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -84,12 +125,19 @@ class KucoinFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
+    def _construct(self, asset, result, eth_price = None) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"]
+
+        if pair == ("ETH","STRK"): 
+            price = eth_price/float(data["price"])
+            price_int = int(price * (10 ** asset["decimals"]))
+            timestamp = int(data["time"])
+        else: 
+            price = float(data["price"])
+            price_int = int(price * (10 ** asset["decimals"]))
+
         timestamp = int(data["time"])
-        price = float(data["price"])
-        price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info("Fetched price %d for %s from Kucoin", price, "/".join(pair))
@@ -101,3 +149,25 @@ class KucoinFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+    
+
+import asyncio 
+
+from pragma.core.assets import PRAGMA_ALL_ASSETS
+
+async def main(): 
+    fetcher = KucoinFetcher(PRAGMA_ALL_ASSETS, "test")
+    async with ClientSession() as session: 
+        result = await fetcher.fetch(session)
+        print(result)
+
+asyncio.run(main())
+
+def main2(): 
+    fetcher = KucoinFetcher(PRAGMA_ALL_ASSETS, "test")
+    result = fetcher.fetch_sync()
+    print(result)
+
+
+main2()
+

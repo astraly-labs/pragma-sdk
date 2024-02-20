@@ -28,31 +28,65 @@ class HuobiFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?symbol={pair[0].lower()}{pair[1].lower()}"
-        async with session.get(url) as resp:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Huobi"
-                )
-            result = await resp.json()
-            if result["status"] != "ok":
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Huobi"
-                )
-            return self._construct(asset, result)
+        if (pair == ("STRK", "USD")):
+            pair = ("STRK", "USDT")
+        if (pair == ("ETH", "STRK")):
+            url = f"{self.BASE_URL}?symbol=strkusdt"
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Huobi"
+                    )
+                result = await resp.json()
+                if result["status"] != "ok":
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Huobi"
+                    )
+                eth_url = f"{self.BASE_URL}?symbol=ethusdt"
+                eth_resp = await session.get(eth_url)
+                eth_result = await eth_resp.json()
+                return self._construct(asset, result, ((float(eth_result["tick"]["ask"][0]) + float(eth_result["tick"]["bid"][0])))/2)
+        else:
+            url = f"{self.BASE_URL}?symbol={pair[0].lower()}{pair[1].lower()}"
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Huobi"
+                    )
+                result = await resp.json()
+                if result["status"] != "ok":
+                    return PublisherFetchError(
+                        f"No data found for {'/'.join(pair)} from Huobi"
+                    )
+                return self._construct(asset, result)
 
     def _fetch_pair_sync(
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = f"{self.BASE_URL}?symbol={pair[0].lower()}{pair[1].lower()}"
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
-        result = resp.json()
-        if result["status"] != "ok":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
-        return self._construct(asset, result)
+        if pair == ("STRK", "USD"):
+            pair = ("STRK", "USDT")
+        if pair == ("ETH", "STRK"):
+            url = f"{self.BASE_URL}?symbol=strkusdt"
+            resp = requests.get(url)
+            if resp.status_code == 404:
+                return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
+            result = resp.json()
+            if result["status"] != "ok":
+                return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
+            eth_url = f"{self.BASE_URL}?symbol=ethusdt"
+            eth_resp = requests.get(eth_url)
+            eth_result = eth_resp.json()
+            return self._construct(asset, result, ((float(eth_result["tick"]["ask"][0]) + float(eth_result["tick"]["bid"][0])))/2)
+        else:
+            url = f"{self.BASE_URL}?symbol={pair[0].lower()}{pair[1].lower()}"
+            resp = requests.get(url)
+            if resp.status_code == 404:
+                return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
+            result = resp.json()
+            if result["status"] != "ok":
+                return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi")
+            return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -80,14 +114,23 @@ class HuobiFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
+    def _construct(self, asset, result, eth_price = None) -> SpotEntry:
         pair = asset["pair"]
         data = result["tick"]
+
+        if pair == ("ETH", "STRK"):
+            ask = float(data["ask"][0])
+            bid = float(data["bid"][0])
+            price = (ask + bid) / 2.0
+            price_int = int((eth_price/price) * (10 ** asset["decimals"]))
+        else: 
+            ask = float(data["ask"][0])
+            bid = float(data["bid"][0])
+            price = (ask + bid) / 2.0
+            price_int = int(price * (10 ** asset["decimals"]))
+
+
         timestamp = int(result["ts"] / 1000)
-        ask = float(data["ask"][0])
-        bid = float(data["bid"][0])
-        price = (ask + bid) / 2.0
-        price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["vol"])
 
@@ -101,3 +144,6 @@ class HuobiFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+
+
+
