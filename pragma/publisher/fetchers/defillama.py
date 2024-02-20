@@ -65,8 +65,12 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
-        if pair[1] != "USD":
+        if pair[1] != "USD" and pair[1] != "STRK":
             return PublisherFetchError(f"Base asset not supported : {pair[1]}")
+
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            pair_id = "starknet"
+
         url = self.BASE_URL.format(pair_id=pair_id)
 
         async with session.get(url, headers=self.headers) as resp:
@@ -79,7 +83,15 @@ class DefillamaFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Defillama"
                 )
-            return self._construct(asset, result)
+
+            async with session.get(
+                self.BASE_URL.format(pair_id="ethereum"), headers=self.headers
+            ) as resp2:
+                eth_result = await resp2.json()
+
+                return self._construct(
+                    asset=asset, result=result, eth_result=eth_result
+                )
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
@@ -127,13 +139,25 @@ class DefillamaFetcher(PublisherInterfaceT):
         url = self.BASE_URL.format(pair_id=pair_id)
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
+    def _construct(self, asset, result, eth_result) -> SpotEntry:
         pair = asset["pair"]
         cg_id = ASSET_MAPPING.get(pair[0])
-        pair_id = currency_pair_to_pair_id(*pair)
-        price = result["coins"][f"coingecko:{cg_id}"]["price"]
-        price_int = int(price * (10 ** asset["decimals"]))
-        timestamp = int(result["coins"][f"coingecko:{cg_id}"]["timestamp"])
+
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            cg_id = "starknet"
+            pair_id = currency_pair_to_pair_id(*pair)
+            price = result["coins"][f"coingecko:{cg_id}"]["price"]
+            strk_usd_int = int(price * (10 ** asset["decimals"]))
+            timestamp = int(result["coins"][f"coingecko:{cg_id}"]["timestamp"])
+            # rebase price
+            eth_price = eth_result["coins"]["coingecko:ethereum"]["price"]
+            eth_usd_int = int(eth_price * (10 ** asset["decimals"]))
+            price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
+        else:
+            pair_id = currency_pair_to_pair_id(*pair)
+            price = result["coins"][f"coingecko:{cg_id}"]["price"]
+            price_int = int(price * (10 ** asset["decimals"]))
+            timestamp = int(result["coins"][f"coingecko:{cg_id}"]["timestamp"])
 
         logger.info("Fetched price %d for %s from Coingecko", price, pair_id)
 

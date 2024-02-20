@@ -28,7 +28,7 @@ ASSET_MAPPING: Dict[str, any] = {
     "LUSD": ("eth", "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"),
     "STRK": (
         "starknet-alpha",
-        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     ),
 }
 
@@ -53,13 +53,21 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
-        pool = ASSET_MAPPING.get(pair[0])
+        if pair[1] != "USD" and pair[1] != "STRK":
+            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
+
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            pool = ASSET_MAPPING.get("STRK")
+        elif pair[0] == "STRK" and pair[1] == "USD":
+            pool = ASSET_MAPPING.get("STRK")
+        else:
+            pool = ASSET_MAPPING.get(pair[0])
+
         if pool is None:
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query GeckoTerminal for {pair[0]}"
             )
-        if pair[1] != "USD":
-            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
+
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
 
         async with session.get(url, headers=self.headers) as resp:
@@ -75,7 +83,15 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from GeckoTerminal"
                 )
-            return self._construct(asset, result)
+
+            pool_eth = ASSET_MAPPING.get("ETH")
+            eth_url = self.BASE_URL.format(
+                network=pool_eth[0], token_address=pool_eth[1]
+            )
+            async with session.get(eth_url, headers=self.headers) as resp2:
+                eth_result = await resp2.json()
+
+                return self._construct(asset, result, eth_result)
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
@@ -126,11 +142,18 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
+    def _construct(self, asset, result, eth_result) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"]["attributes"]
 
         price = float(data["price_usd"])
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            strk_usd_int = int(price * (10 ** asset["decimals"]))
+            eth_usd_int = int(
+                float(eth_result["data"]["attributes"]["price_usd"]) * 10**18
+            )
+            price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
+
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume_usd"]["h24"])
 
