@@ -26,6 +26,10 @@ ASSET_MAPPING: Dict[str, any] = {
     "ETH": ("eth", "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
     "UNI": ("eth", "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"),
     "LUSD": ("eth", "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"),
+    "STRK": (
+        "starknet-alpha",
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    ),
 }
 
 
