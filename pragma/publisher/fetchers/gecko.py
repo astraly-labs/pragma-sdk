@@ -56,7 +56,9 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         if pair[1] != "USD" and pair[1] != "STRK":
             return PublisherFetchError(f"Base asset not supported : {pair[1]}")
 
-        if pair[1] == "STRK":
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            pool = ASSET_MAPPING.get("STRK")
+        elif pair[0] == "STRK" and pair[1] == "USD":
             pool = ASSET_MAPPING.get("STRK")
         else:
             pool = ASSET_MAPPING.get(pair[0])
@@ -145,9 +147,14 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         data = result["data"]["attributes"]
 
         price = float(data["price_usd"])
-        strk_usd_int = int(price * (10 ** asset["decimals"]))
-        eth_usd_int = int(float(eth_result["data"]["attributes"]["price_usd"]) * 10**18)
-        price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
+        if pair[1] == "STRK" and pair[0] == "ETH":
+            strk_usd_int = int(price * (10 ** asset["decimals"]))
+            eth_usd_int = int(
+                float(eth_result["data"]["attributes"]["price_usd"]) * 10**18
+            )
+            price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
+
+        price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume_usd"]["h24"])
 
         timestamp = int(time.time())
