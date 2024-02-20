@@ -36,6 +36,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "WSTETH": "wrapped-steth",
     "UNI": "uniswap",
     "LUSD": "liquity-usd",
+    "STRK": "starknet",
 }
 
 
