@@ -151,23 +151,4 @@ class KucoinFetcher(PublisherInterfaceT):
         )
     
 
-import asyncio 
-
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-
-async def main(): 
-    fetcher = KucoinFetcher(PRAGMA_ALL_ASSETS, "test")
-    async with ClientSession() as session: 
-        result = await fetcher.fetch(session)
-        print(result)
-
-asyncio.run(main())
-
-def main2(): 
-    fetcher = KucoinFetcher(PRAGMA_ALL_ASSETS, "test")
-    result = fetcher.fetch_sync()
-    print(result)
-
-
-main2()
 
