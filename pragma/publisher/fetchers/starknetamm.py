@@ -35,16 +35,15 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     client: PragmaClient
     EKUBO_PUBLIC_API: str = "https://mainnet-api.ekubo.org"
     EKUBO_MAINNET_CORE_CONTRACT: str = (
-        '0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b')
+        "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b"
+    )
     EKUBO_TESTNET_CORE_CONTRACT: str = (
         "0x031e8a7ab6a6a556548ac85cbb8b5f56e8905696e9f13e9a858142b8ee0cc221"
     )
     JEDISWAP_ETH_STRK_POOL: str = (
         "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
     )
-    JEDISWAP_ETH_STRK_MAINNET_POOL : str = (
-
-    )
+    JEDISWAP_ETH_STRK_MAINNET_POOL: str = ()
 
     PRAGMA_ORACLE_CONTRACT: str = (
         "0x2a85bd616f912537c50a49a4076db02c00b29b2cdc8a197ce92ed1837fa875b"
@@ -204,13 +203,15 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
                 else None
             )
-            jedi_swap_price = await self.on_fetch_jedi_price(session)
-            if ekubo_price is not None and jedi_swap_price is not None:
-                return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
-            elif ekubo_price is not None:
+            # jedi_swap_price = await self.on_fetch_jedi_price(session)
+            if ekubo_price is not None:
                 return self._construct(asset, ekubo_price)
-            elif jedi_swap_price is not None:
-                return self._construct(asset, jedi_swap_price)
+            # if ekubo_price is not None and jedi_swap_price is not None:
+            #     return self._construct(asset, (ekubo_price + jedi_swap_price) / 2)
+            # elif ekubo_price is not None:
+            #     return self._construct(asset, ekubo_price)
+            # elif jedi_swap_price is not None:
+            #     return self._construct(asset, jedi_swap_price)
             else:
                 logger.error("Both ekubo_price and jedi_swap_price are null")
                 return PublisherFetchError("Both prices are unavailable")
@@ -336,13 +337,14 @@ async def f1():
 
     return price1
 
+
 # def f2():
 #     fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
 #     price2 = fetcher.fetch_sync()
 #     return price2
 
 # # Run the main function in the asyncio event loop
-price1= asyncio.run(f1())
+price1 = asyncio.run(f1())
 # price2 = f2()
 print(f"printaefeafe {price1}")
 # print(price2)
