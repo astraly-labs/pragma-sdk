@@ -28,6 +28,8 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
+        if (pair == ("STRK", "USD")):
+            pair = ("STRK", "USDT")
         if (pair == ("ETH", "STRK")):
             url = f"{self.BASE_URL}symbol=STRKUSDT"
             async with session.get(url) as resp:
@@ -43,7 +45,6 @@ class BybitFetcher(PublisherInterfaceT):
                 eth_url = f"{self.BASE_URL}symbol=ETHUSDT"
                 eth_resp = requests.get(eth_url)
                 eth_result = eth_resp.json()
-                print(eth_url)
                 return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bid1Price"]) + float(eth_result["result"]["list"][0]["ask1Price"])))/2)
         else: 
             url = f"{self.BASE_URL}symbol={pair[0]}{pair[1]}"
@@ -64,7 +65,8 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-
+        if (pair == ("STRK", "USD")):
+            pair = ("STRK", "USDT")
         if (pair ==("ETH", "STRK")):
 
             url = f"{self.BASE_URL}symbol=STRKUSDT"
