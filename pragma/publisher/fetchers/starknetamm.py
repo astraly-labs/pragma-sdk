@@ -144,11 +144,11 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         call = self.prepare_call()
         pool_info = await self.client.full_node_client.call_contract(call)
         sqrt_ratio = pool_info[0]
+        print((sqrt_ratio / 2**128) ** 2)
+        print((self.ETH_DECIMALS - self.STRK_DECIMALS))
         if sqrt_ratio == 0:
             logger.error("Ekubo: Pool is empty")
-        return (
-            (sqrt_ratio / 2**128) ** 2 * 10 * (self.ETH_DECIMALS - self.STRK_DECIMALS)
-        )
+        return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
 
     def on_fetch_ekubo_price_sync(self) -> float:
         call = self.prepare_call()
@@ -197,12 +197,12 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     async def _fetch_strk(self, asset, session: ClientSession) -> SpotEntry:
         if asset["pair"] == ("ETH", "STRK"):
-            # ekubo_price = await self.on_fetch_ekubo_price()
-            ekubo_price = (
-                await self.off_fetch_ekubo_price(asset, session)
-                if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
-                else None
-            )
+            ekubo_price = await self.on_fetch_ekubo_price()
+            # ekubo_price = (
+            #     await self.off_fetch_ekubo_price(asset, session)
+            #     if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
+            #     else None
+            # )
             # jedi_swap_price = await self.on_fetch_jedi_price(session)
             if ekubo_price is not None:
                 return self._construct(asset, ekubo_price)
@@ -330,12 +330,14 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
 
 
-async def f1():
-    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "PRAGMA")
-    async with ClientSession() as session:
-        price1 = await fetcher.on_fetch_ekubo_price()
+# async def f1():
+#     fetcher = StarknetAMMFetcher(
+#         [{"type": "SPOT", "pair": ("ETH", "STRK"), "decimals": 18}], "PRAGMA"
+#     )
+#     async with ClientSession() as session:
+#         price1 = await fetcher._fetch()
 
-    return price1
+#     return price1
 
 
 # def f2():
@@ -344,7 +346,7 @@ async def f1():
 #     return price2
 
 # # Run the main function in the asyncio event loop
-price1 = asyncio.run(f1())
+# price1 = asyncio.run(f1())
 # price2 = f2()
-print(f"printaefeafe {price1}")
+# print(f"printaefeafe {price1}")
 # print(price2)
