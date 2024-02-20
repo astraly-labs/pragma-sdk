@@ -153,8 +153,9 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
                 float(eth_result["data"]["attributes"]["price_usd"]) * 10**18
             )
             price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
+        else:
+            price_int = int(price * (10 ** asset["decimals"]))
 
-        price_int = int(price * (10 ** asset["decimals"]))
         volume = float(data["volume_usd"]["h24"])
 
         timestamp = int(time.time())
