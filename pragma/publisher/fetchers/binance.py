@@ -67,7 +67,7 @@ class BinanceFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT":
                 entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
-            else: 
+            else:
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -77,7 +77,7 @@ class BinanceFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT":
                 entries.append(self._fetch_pair_sync(asset))
-            else: 
+            else:
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return entries

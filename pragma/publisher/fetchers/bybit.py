@@ -28,7 +28,7 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
@@ -45,7 +45,7 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         
         url = self.format_url(pair[0], pair[1])
