@@ -13,3 +13,5 @@ from .starknetamm import StarknetAMMFetcher
 from .thegraph import TheGraphFetcher
 from .bybit import BybitFetcher
 from .binance import BinanceFetcher
+from .huobi import HuobiFetcher
+from .kucoin import KucoinFetcher
