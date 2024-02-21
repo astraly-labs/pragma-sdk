@@ -151,12 +151,12 @@ class KucoinFetcher(PublisherInterfaceT):
         if pair == ("ETH", "STRK"):
             price = eth_price / float(data["price"])
             price_int = int(price * (10 ** asset["decimals"]))
-            timestamp = int(data["time"])
+            timestamp = int(data["time"] / 1000)
         else:
             price = float(data["price"])
             price_int = int(price * (10 ** asset["decimals"]))
 
-        timestamp = int(data["time"])
+        timestamp = int(data["time"] / 1000)
         pair_id = currency_pair_to_pair_id(*pair)
 
         logger.info("Fetched price %d for %s from Kucoin", price, "/".join(pair))
