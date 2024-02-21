@@ -29,7 +29,7 @@ class BinanceFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
 
-        # For now still leaving this line, 
+        # For now still leaving this line,
         if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         url = self.format_url(pair[0], pair[1])
@@ -39,7 +39,7 @@ class BinanceFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
             result = await resp.json()
-            if 'code' in result:
+            if "code" in result:
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset, result)
 
@@ -56,8 +56,8 @@ class BinanceFetcher(PublisherInterfaceT):
                 f"No data found for {'/'.join(pair)} from Binance"
             )
         result = resp.json()
-        if 'code' in result:
-            return  self.operate_usdt_hop_sync(asset)
+        if "code" in result:
+            return self.operate_usdt_hop_sync(asset)
         return self._construct(asset, result)
 
     async def fetch(
@@ -85,32 +85,31 @@ class BinanceFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset}{base_asset}"
         return url
-    
 
-    async def operate_usdt_hop(self, asset, session) -> SpotEntry: 
+    async def operate_usdt_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
-        async with session.get(url_pair1) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
-                    )
-                pair1_usdt = await resp.json()
-                if 'code' in pair1_usdt:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
-                    )
-        url_pair2 = self.format_url(asset['pair'][1], "USDT")
-        async with session.get(url_pair2) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
-                    )
-                pair2_usdt = await resp.json()
-                if 'code' in pair2_usdt:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
-                    )
+        async with session.get(url_pair1) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
+                )
+            pair1_usdt = await resp.json()
+            if "code" in pair1_usdt:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
+                )
+        url_pair2 = self.format_url(asset["pair"][1], "USDT")
+        async with session.get(url_pair2) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
+                )
+            pair2_usdt = await resp.json()
+            if "code" in pair2_usdt:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
+                )
         return self._construct(asset, pair2_usdt, pair1_usdt)
 
     def operate_usdt_hop_sync(self, asset) -> float:
@@ -122,33 +121,33 @@ class BinanceFetcher(PublisherInterfaceT):
                 f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
             )
         pair1_usdt = resp.json()
-        if 'code' in pair1_usdt:
+        if "code" in pair1_usdt:
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
             )
-        url2 = self.format_url(asset['pair'][1], "USDT")
+        url2 = self.format_url(asset["pair"][1], "USDT")
         resp2 = requests.get(url2)
         if resp2.status_code == 404:
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
             )
         pair2_usdt = resp2.json()
-        if 'code' in pair2_usdt:
+        if "code" in pair2_usdt:
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
             )
         return self._construct(asset, pair2_usdt, pair1_usdt)
 
-    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]
         bid = float(result["bidPrice"])
         ask = float(result["askPrice"])
         price = (bid + ask) / 2
-        if hop_result is not None: 
+        if hop_result is not None:
             hop_bid = float(hop_result["bidPrice"])
             hop_ask = float(hop_result["askPrice"])
             hop_price = (hop_bid + hop_ask) / 2
-            price = hop_price/price
+            price = hop_price / price
         timestamp = int(time.time())
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)

@@ -28,7 +28,7 @@ class HuobiFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
@@ -82,60 +82,68 @@ class HuobiFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset.lower()}{base_asset.lower()}"
         return url
 
-    async def operate_usdt_hop(self, asset, session) -> SpotEntry: 
+    async def operate_usdt_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
-        async with session.get(url_pair1) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
-                    )
-                pair1_usdt = await resp.json()
-                if pair1_usdt["status"] != "ok":
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
-                    )
-        url_pair2 = self.format_url(asset['pair'][1], "USDT")
-        async with session.get(url_pair2) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
-                    )
-                pair2_usdt = await resp.json()
-                if pair2_usdt["status"] != "ok":
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
-                    )
-        return self._construct(asset, pair2_usdt, pair1_usdt) 
+        async with session.get(url_pair1) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
+                )
+            pair1_usdt = await resp.json()
+            if pair1_usdt["status"] != "ok":
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
+                )
+        url_pair2 = self.format_url(asset["pair"][1], "USDT")
+        async with session.get(url_pair2) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
+                )
+            pair2_usdt = await resp.json()
+            if pair2_usdt["status"] != "ok":
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
+                )
+        return self._construct(asset, pair2_usdt, pair1_usdt)
 
     def operate_usdt_hop_sync(self, asset) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
         resp = requests.get(url_pair1)
         if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}")
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
+            )
         pair1_usdt = resp.json()
         if pair1_usdt["status"] != "ok":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}")
-        url_pair2 = self.format_url(asset['pair'][1], "USDT")
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[0]}"
+            )
+        url_pair2 = self.format_url(asset["pair"][1], "USDT")
         resp = requests.get(url_pair2)
         if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}")
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
+            )
         pair2_usdt = resp.json()
         if pair2_usdt["status"] != "ok":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}")
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
+            )
         return self._construct(asset, pair2_usdt, pair1_usdt)
-    
-    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+
+    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]
         bid = float(result["tick"]["bid"][0])
         ask = float(result["tick"]["ask"][0])
         price = (bid + ask) / 2
-        if hop_result is not None: 
+        if hop_result is not None:
             hop_bid = float(hop_result["tick"]["bid"][0])
             hop_ask = float(hop_result["tick"]["ask"][0])
             hop_price = (hop_bid + hop_ask) / 2
-            price = hop_price/price
+            price = hop_price / price
         timestamp = int(result["ts"] / 1000)
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
@@ -150,5 +158,3 @@ class HuobiFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
-

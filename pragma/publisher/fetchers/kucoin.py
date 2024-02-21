@@ -28,7 +28,7 @@ class KucoinFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
@@ -45,7 +45,7 @@ class KucoinFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
         url = self.format_url(pair[0], pair[1])
         resp = requests.get(url)
@@ -81,33 +81,33 @@ class KucoinFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset}-{base_asset}"
         return url
-    
-    async def operate_usdt_hop(self, asset, session) -> SpotEntry: 
+
+    async def operate_usdt_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
-        async with session.get(url_pair1) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
-                    )
-                pair1_usdt = await resp.json()
-                if pair1_usdt["data"] == None:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
-                    )
-        url_pair2 = self.format_url(asset['pair'][1], "USDT")
-        async with session.get(url_pair2) as resp: 
-                if resp.status == 404:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
-                    )
-                pair2_usdt = await resp.json()
-                if pair2_usdt["data"] == None:
-                    return PublisherFetchError(
-                        f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
-                    )
-        return self._construct(asset, pair2_usdt, pair1_usdt) 
-    
+        async with session.get(url_pair1) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
+                )
+            pair1_usdt = await resp.json()
+            if pair1_usdt["data"] == None:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
+                )
+        url_pair2 = self.format_url(asset["pair"][1], "USDT")
+        async with session.get(url_pair2) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
+                )
+            pair2_usdt = await resp.json()
+            if pair2_usdt["data"] == None:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
+                )
+        return self._construct(asset, pair2_usdt, pair1_usdt)
+
     def operate_usdt_hop_sync(self, asset) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
@@ -121,7 +121,7 @@ class KucoinFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
             )
-        url_pair2 = self.format_url(asset['pair'][1], "USDT")
+        url_pair2 = self.format_url(asset["pair"][1], "USDT")
         resp = requests.get(url_pair2)
         if resp.status_code == 404:
             return PublisherFetchError(
@@ -134,12 +134,12 @@ class KucoinFetcher(PublisherInterfaceT):
             )
         return self._construct(asset, pair2_usdt, pair1_usdt)
 
-    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]
-        price = float(result["data"]['price'])
-        if hop_result is not None: 
+        price = float(result["data"]["price"])
+        if hop_result is not None:
             hop_price = float(hop_result["data"]["price"])
-            price = hop_price/price
+            price = hop_price / price
         timestamp = int(result["data"]["time"] / 1000)
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
@@ -152,6 +152,3 @@ class KucoinFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
-
-
