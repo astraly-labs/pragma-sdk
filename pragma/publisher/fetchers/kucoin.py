@@ -28,11 +28,10 @@ class KucoinFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
-        if (pair == ("ETH", "STRK")):
+        if pair == ("ETH", "STRK"):
             url = f"{self.BASE_URL}?symbol=STRK-USDT"
-            print(url)
             async with session.get(url) as resp:
                 if resp.status == 404:
                     return PublisherFetchError(
@@ -47,7 +46,17 @@ class KucoinFetcher(PublisherInterfaceT):
                 eth_url = f"{self.BASE_URL}?symbol=ETH-USDT"
                 eth_resp = await session.get(eth_url)
                 eth_result = await eth_resp.json()
-                return self._construct(asset, result, ((float(eth_result["data"]["bestAsk"]) + float(eth_result["data"]["bestBid"]))/2))
+                return self._construct(
+                    asset,
+                    result,
+                    (
+                        (
+                            float(eth_result["data"]["bestAsk"])
+                            + float(eth_result["data"]["bestBid"])
+                        )
+                        / 2
+                    ),
+                )
         else:
             url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
             async with session.get(url) as resp:
@@ -67,9 +76,9 @@ class KucoinFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
-        if (pair == ("ETH", "STRK")):
+        if pair == ("ETH", "STRK"):
             url = f"{self.BASE_URL}?symbol=STRK-USDT"
             resp = requests.get(url)
             if resp.status_code == 404:
@@ -85,7 +94,17 @@ class KucoinFetcher(PublisherInterfaceT):
             eth_url = f"{self.BASE_URL}?symbol=ETH-USDT"
             eth_resp = requests.get(eth_url)
             eth_result = eth_resp.json()
-            return self._construct(asset, result, ((float(eth_result["data"]["bestAsk"]) + float(eth_result["data"]["bestBid"]))/2))
+            return self._construct(
+                asset,
+                result,
+                (
+                    (
+                        float(eth_result["data"]["bestAsk"])
+                        + float(eth_result["data"]["bestBid"])
+                    )
+                    / 2
+                ),
+            )
         else:
             url = f"{self.BASE_URL}?symbol={pair[0]}-{pair[1]}"
             resp = requests.get(url)
@@ -125,15 +144,15 @@ class KucoinFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
         return url
 
-    def _construct(self, asset, result, eth_price = None) -> SpotEntry:
+    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"]
 
-        if pair == ("ETH","STRK"): 
-            price = eth_price/float(data["price"])
+        if pair == ("ETH", "STRK"):
+            price = eth_price / float(data["price"])
             price_int = int(price * (10 ** asset["decimals"]))
             timestamp = int(data["time"])
-        else: 
+        else:
             price = float(data["price"])
             price_int = int(price * (10 ** asset["decimals"]))
 
@@ -149,6 +168,3 @@ class KucoinFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-    
-
-

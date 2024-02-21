@@ -194,7 +194,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
     async def _fetch_strk(self, asset, session: ClientSession) -> SpotEntry:
         if asset["pair"] == ("ETH", "STRK"):
-            ekubo_price = await self.off_fetch_ekubo_price(asset,session)
+            ekubo_price = await self.off_fetch_ekubo_price(asset, session)
             # ekubo_price = (
             #     await self.off_fetch_ekubo_price(asset, session)
             #     if isinstance(await self.off_fetch_ekubo_price(asset, session), float)

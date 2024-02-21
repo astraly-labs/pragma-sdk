@@ -39,22 +39,27 @@ class BinanceFetcher(PublisherInterfaceT):
                         f"No data found for {'/'.join(pair)} from Binance"
                     )
                 result = await resp.json()
-                if 'code' in result:
+                if "code" in result:
                     return PublisherFetchError(
                         f"No data found for {'/'.join(pair)} from Binance"
                     )
                 eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
                 eth_resp = await session.get(eth_url)
                 eth_result = await eth_resp.json()
-                return self._construct(asset, result, ((float(eth_result["bidPrice"]) + float(eth_result["askPrice"])))/2)
-        else: 
+                return self._construct(
+                    asset,
+                    result,
+                    ((float(eth_result["bidPrice"]) + float(eth_result["askPrice"])))
+                    / 2,
+                )
+        else:
             async with session.get(url) as resp:
                 if resp.status == 404:
                     return PublisherFetchError(
                         f"No data found for {'/'.join(pair)} from Binance"
                     )
                 result = await resp.json()
-                if 'code' in result:
+                if "code" in result:
                     return PublisherFetchError(
                         f"No data found for {'/'.join(pair)} from Binance"
                     )
@@ -77,14 +82,18 @@ class BinanceFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
             result = resp.json()
-            if 'code' in result:
+            if "code" in result:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
             eth_url = f"{self.BASE_URL}?symbol=ETHUSDT"
             eth_resp = requests.get(eth_url)
             eth_result = eth_resp.json()
-            return self._construct(asset, result, (float(eth_result["bidPrice"]) + float(eth_result["askPrice"]))/2)
+            return self._construct(
+                asset,
+                result,
+                (float(eth_result["bidPrice"]) + float(eth_result["askPrice"])) / 2,
+            )
         else:
             url = f"{self.BASE_URL}?symbol={pair[0]}{pair[1]}"
             resp = requests.get(url)
@@ -93,7 +102,7 @@ class BinanceFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
             result = resp.json()
-            if 'code' in result:
+            if "code" in result:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Binance"
                 )
@@ -106,7 +115,7 @@ class BinanceFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT":
                 entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
-            else: 
+            else:
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
@@ -116,7 +125,7 @@ class BinanceFetcher(PublisherInterfaceT):
         for asset in self.assets:
             if asset["type"] == "SPOT":
                 entries.append(self._fetch_pair_sync(asset))
-            else: 
+            else:
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return entries
@@ -125,16 +134,15 @@ class BinanceFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}{base_asset}"
         return url
 
-    def _construct(self, asset, result, eth_price= None) -> SpotEntry:
-
+    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
 
-        if pair == ("ETH", "STRK"): 
+        if pair == ("ETH", "STRK"):
             bid = float(result["bidPrice"])
             ask = float(result["askPrice"])
             strk_price = (bid + ask) / 2
-            price = eth_price/strk_price
-        else: 
+            price = eth_price / strk_price
+        else:
             bid = float(result["bidPrice"])
             ask = float(result["askPrice"])
             price = (bid + ask) / 2
@@ -151,4 +159,3 @@ class BinanceFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

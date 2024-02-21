@@ -28,9 +28,9 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
-        if (pair == ("ETH", "STRK")):
+        if pair == ("ETH", "STRK"):
             url = f"{self.BASE_URL}symbol=STRKUSDT"
             async with session.get(url) as resp:
                 if resp.status == 404:
@@ -45,8 +45,18 @@ class BybitFetcher(PublisherInterfaceT):
                 eth_url = f"{self.BASE_URL}symbol=ETHUSDT"
                 eth_resp = await session.get(eth_url)
                 eth_result = await eth_resp.json()
-                return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bid1Price"]) + float(eth_result["result"]["list"][0]["ask1Price"])))/2)
-        else: 
+                return self._construct(
+                    asset,
+                    result,
+                    (
+                        (
+                            float(eth_result["result"]["list"][0]["bid1Price"])
+                            + float(eth_result["result"]["list"][0]["ask1Price"])
+                        )
+                    )
+                    / 2,
+                )
+        else:
             url = f"{self.BASE_URL}symbol={pair[0]}{pair[1]}"
             async with session.get(url) as resp:
                 if resp.status == 404:
@@ -65,10 +75,9 @@ class BybitFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if (pair == ("STRK", "USD")):
+        if pair == ("STRK", "USD"):
             pair = ("STRK", "USDT")
-        if (pair ==("ETH", "STRK")):
-
+        if pair == ("ETH", "STRK"):
             url = f"{self.BASE_URL}symbol=STRKUSDT"
             resp = requests.get(url)
             if resp.status_code == 404:
@@ -83,8 +92,18 @@ class BybitFetcher(PublisherInterfaceT):
             eth_url = f"{self.BASE_URL}symbol=ETHUSDT"
             eth_resp = requests.get(eth_url)
             eth_result = eth_resp.json()
-            return self._construct(asset, result, ((float(eth_result["result"]["list"][0]["bid1Price"]) + float(eth_result["result"]["list"][0]["ask1Price"])))/2)
-        else: 
+            return self._construct(
+                asset,
+                result,
+                (
+                    (
+                        float(eth_result["result"]["list"][0]["bid1Price"])
+                        + float(eth_result["result"]["list"][0]["ask1Price"])
+                    )
+                )
+                / 2,
+            )
+        else:
             url = f"{self.BASE_URL}symbol={pair[0]}{pair[1]}"
 
             resp = requests.get(url)
@@ -124,23 +143,23 @@ class BybitFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}?symbol={quote_asset}/{base_asset}"
         return url
 
-    def _construct(self, asset, result, eth_price = None) -> SpotEntry:
+    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
         data = result["result"]["list"]
         timestamp = int(time.time())
         if pair == ("ETH", "STRK"):
-            ask = float(data[0]['ask1Price'])
+            ask = float(data[0]["ask1Price"])
             bid = float(data[0]["bid1Price"])
             price = (ask + bid) / 2.0
-            price_int = int((eth_price/price) * (10 ** asset["decimals"]))
-        else: 
-            ask = float(data[0]['ask1Price'])
+            price_int = int((eth_price / price) * (10 ** asset["decimals"]))
+        else:
+            ask = float(data[0]["ask1Price"])
             bid = float(data[0]["bid1Price"])
             price = (ask + bid) / 2.0
             price_int = int(price * (10 ** asset["decimals"]))
-        
+
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = float(data[0]["volume24h"])
+        volume = float(data[0]["volume24h"]) / 10 ** asset["decimals"]
         logger.info("Fetched price %d for %s from Bybit", price, "/".join(pair))
         return SpotEntry(
             pair_id=pair_id,
@@ -150,4 +169,3 @@ class BybitFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-
