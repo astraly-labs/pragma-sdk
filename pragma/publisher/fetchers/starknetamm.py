@@ -28,7 +28,7 @@ logger.setLevel(logging.INFO)
 
 
 ETH_PAIR = str_to_felt("ETH/USD")
-SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USDT")]
+SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USD"), ("STRK", "USDT")]
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
@@ -68,6 +68,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     SOURCE = "STARKNET"
 
     ETH_USD = [PRAGMA_ALL_ASSETS[4]]
+    ETH_STRK = PRAGMA_ALL_ASSETS[21]
 
     publisher: str
 
@@ -216,13 +217,14 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         elif asset["pair"] == ("STRK", "USD"):
             eth_usd_entry = await self.client.get_spot(ETH_PAIR)
             # ekubo_price = await self.on_fetch_ekubo_price()
-            ekubo_price = (
-                await self.off_fetch_ekubo_price(asset, session)
-                if isinstance(await self.off_fetch_ekubo_price(asset, session), float)
-                else None
+            ekubo_price = float(
+                await self.off_fetch_ekubo_price(self.ETH_STRK, session)
             )
-            eth_usd_price = eth_usd_entry.price / (10**eth_usd_entry.decimals)
-            jedi_swap_price = await self.on_fetch_jedi_price(session)
+            eth_usd_price = int(eth_usd_entry.price) / (
+                10 ** int(eth_usd_entry.decimals)
+            )
+            # jedi_swap_price = await self.on_fetch_jedi_price(session)
+            jedi_swap_price = None
             if ekubo_price is not None and jedi_swap_price is not None:
                 price = eth_usd_price / ((ekubo_price + jedi_swap_price) / 2)
                 return self._construct(asset, price)
@@ -326,3 +328,4 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+
