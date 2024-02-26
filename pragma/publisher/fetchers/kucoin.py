@@ -143,7 +143,7 @@ class KucoinFetcher(PublisherInterfaceT):
         timestamp = int(result["data"]["time"] / 1000)
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        logger.info("Fetched price %d for %s from Bybit", price, "/".join(pair))
+        logger.info("Fetched price %d for %s from Kucoin", price, "/".join(pair))
 
         return SpotEntry(
             pair_id=pair_id,
