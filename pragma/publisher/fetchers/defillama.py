@@ -1,15 +1,18 @@
 import asyncio
 import logging
+import os
 from typing import Dict, List
 
 import requests
 from aiohttp import ClientSession
+from dotenv import load_dotenv
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 ASSET_MAPPING: Dict[str, str] = {
@@ -46,9 +49,7 @@ class DefillamaFetcher(PublisherInterfaceT):
     )
 
     SOURCE: str = "DEFILLAMA"
-    headers = {
-        "Accepts": "application/json",
-    }
+    headers = {"Accepts": "application/json", "Api-Key": os.getenv("DEFILLAMA_API_KEY")}
 
     publisher: str
 
