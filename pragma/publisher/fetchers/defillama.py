@@ -65,14 +65,10 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
-        if pair[1] != "USD" and pair[1] != "STRK":
-            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
-
-        if pair[1] == "STRK" and pair[0] == "ETH":
-            pair_id = "starknet"
+        if pair[1] != "USD": 
+            return await self.operate_usd_hop(asset, session)
 
         url = self.BASE_URL.format(pair_id=pair_id)
-
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -84,14 +80,9 @@ class DefillamaFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Defillama"
                 )
 
-            async with session.get(
-                self.BASE_URL.format(pair_id="ethereum"), headers=self.headers
-            ) as resp2:
-                eth_result = await resp2.json()
-
-                return self._construct(
-                    asset=asset, result=result, eth_result=eth_result
-                )
+        return self._construct(
+            asset=asset, result=result
+        )
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
@@ -101,9 +92,8 @@ class DefillamaFetcher(PublisherInterfaceT):
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
         if pair[1] != "USD":
-            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
+             return self.operate_usd_hop_sync(asset)
         url = self.BASE_URL.format(pair_id=pair_id)
-
         resp = requests.get(url, headers=self.headers)
         if resp.status_code == 404:
             return PublisherFetchError(
@@ -138,26 +128,85 @@ class DefillamaFetcher(PublisherInterfaceT):
         pair_id = ASSET_MAPPING.get(quote_asset)
         url = self.BASE_URL.format(pair_id=pair_id)
         return url
-
-    def _construct(self, asset, result, eth_result) -> SpotEntry:
+    
+    async def operate_usd_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
-        cg_id = ASSET_MAPPING.get(pair[0])
+        pair_id_1 = ASSET_MAPPING.get(pair[0])
+        pair_id_2 = ASSET_MAPPING.get(pair[1])
+        if pair_id_2 is None:
+            return PublisherFetchError(
+                f"Unknown price pair, do not know how to query Coingecko for {pair[1]} - hop failed"
+            )
+        url_pair_1 = self.BASE_URL.format(pair_id=pair_id_1)
+        async with session.get(url_pair_1, headers=self.headers) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+                )
+            result_base = await resp.json()
+            if not result_base["coins"]:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+                )
+        url_pair_2 = self.BASE_URL.format(pair_id=pair_id_2)
+        async with session.get(url_pair_2, headers=self.headers) as resp:
+            if resp.status == 404:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama - usd hop failed for {pair[1]}"
+                )
+            result_quote= await resp.json()
+            print(result_quote)
+            if not result_quote["coins"]:
+                return PublisherFetchError(
+                    f"No data found for {'/'.join(pair)} from Defillama -  usd hop failed for {pair[1]}"
+                )
+        return self._construct(asset, result_base,result_quote)
+    
+    def operate_usd_hop_sync(self, asset) -> SpotEntry:
+        pair = asset["pair"]
+        pair_id_1 = ASSET_MAPPING.get(pair[0])
+        pair_id_2 = ASSET_MAPPING.get(pair[1])
+        if pair_id_2 is None:
+            return PublisherFetchError(
+                f"Unknown price pair, do not know how to query Coingecko for {pair[1]} - hop failed"
+            )
+        url_pair_1 = self.BASE_URL.format(pair_id=pair_id_1)
+        resp = requests.get(url_pair_1, headers=self.headers)
+        if resp.status_code == 404:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+            )
+        result_base = resp.json()
+        if not result_base["coins"]:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+            )
+        url_pair_2 = self.BASE_URL.format(pair_id=pair_id_2)
+        resp = requests.get(url_pair_2, headers=self.headers)
+        if resp.status_code == 404:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama - usd hop failed for {pair[1]}"
+            )
+        result_quote = resp.json()
+        if not result_quote["coins"]:
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from Defillama -  usd hop failed for {pair[1]}"
+            )
+        return self._construct(asset, result_base,result_quote)
 
-        if pair[1] == "STRK" and pair[0] == "ETH":
-            cg_id = "starknet"
-            pair_id = currency_pair_to_pair_id(*pair)
-            price = result["coins"][f"coingecko:{cg_id}"]["price"]
-            strk_usd_int = int(price * (10 ** asset["decimals"]))
-            timestamp = int(result["coins"][f"coingecko:{cg_id}"]["timestamp"])
-            # rebase price
-            eth_price = eth_result["coins"]["coingecko:ethereum"]["price"]
-            eth_usd_int = int(eth_price * (10 ** asset["decimals"]))
-            price_int = int(eth_usd_int / strk_usd_int * 10 ** asset["decimals"])
-        else:
-            pair_id = currency_pair_to_pair_id(*pair)
-            price = result["coins"][f"coingecko:{cg_id}"]["price"]
+    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+        pair = asset["pair"]
+        base_id= ASSET_MAPPING.get(pair[0])
+        quote_id = ASSET_MAPPING.get(pair[1])
+        pair_id = currency_pair_to_pair_id(*pair)
+        timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
+        if hop_result is not None: 
+            price = result["coins"][f"coingecko:{base_id}"]["price"]
+            hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
+            price_int = int((price / hop_price) * (10 ** asset["decimals"]))
+        else: 
+            price = result["coins"][f"coingecko:{base_id}"]["price"]
             price_int = int(price * (10 ** asset["decimals"]))
-            timestamp = int(result["coins"][f"coingecko:{cg_id}"]["timestamp"])
 
         logger.info("Fetched price %d for %s from Coingecko", price, pair_id)
 
