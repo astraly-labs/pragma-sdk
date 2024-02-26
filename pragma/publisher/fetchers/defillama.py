@@ -49,13 +49,18 @@ class DefillamaFetcher(PublisherInterfaceT):
     )
 
     SOURCE: str = "DEFILLAMA"
-    headers = {"Accepts": "application/json", "Api-Key": os.getenv("DEFILLAMA_API_KEY")}
+    api_key: str
+
+    headers: dict
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher):
+    def __init__(self, assets: List[PragmaAsset], publisher, api_key=None):
         self.assets = assets
         self.publisher = publisher
+        self.headers = {"Accepts": "application/json"}
+        if api_key:
+            self.headers["X-Api-Key"] = api_key
 
     async def _fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
