@@ -36,6 +36,10 @@ DECIMALS_MAPPING: Dict[str, int] = {
     "WBTC": 8,
     "BTC": 8,
     "WSTETH": 18,
+    "STRK": 18,
+    "LUSD": 18,
+    "UNI": 18,
+    "LORDS": 18,
 }
 
 
@@ -60,7 +64,7 @@ class PropellerFetcher(PublisherInterfaceT):
         address_1 = ASSET_MAPPING.get(buy_token)
         sell_amount = 10 ** DECIMALS_MAPPING.get(sell_token) * SELL_AMOUNTS[0]
         if address_0 is None or address_1 is None:
-            return PublisherFetchError(
+            raise PublisherFetchError(
                 f"Unknown price pair, do not know how to query Propeller for {sell_token}/{buy_token}"
             )
         return {
@@ -78,9 +82,15 @@ class PropellerFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}"
-        payload = self.build_payload(pair[0], pair[1])
+        try:
+            payload = self.build_payload(pair[0], pair[1])
+        except PublisherFetchError as e:
+            return e
+
+        print(payload)
 
         async with session.post(url, headers=self.headers, json=payload) as resp:
+            print(resp)
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Propeller"

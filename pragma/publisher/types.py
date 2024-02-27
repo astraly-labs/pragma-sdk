@@ -8,16 +8,13 @@ from aiohttp import ClientSession
 # Abstract base class for all publishers
 class PublisherInterfaceT(abc.ABC):
     @abc.abstractmethod
-    async def fetch(self, session: ClientSession) -> List[Any]:
-        ...
+    async def fetch(self, session: ClientSession) -> List[Any]: ...
 
     @abc.abstractmethod
-    def fetch_sync(self) -> List[Any]:
-        ...
+    def fetch_sync(self) -> List[Any]: ...
 
     @abc.abstractmethod
-    def format_url(self, quote_asset, base_asset) -> str:
-        ...
+    def format_url(self, quote_asset, base_asset) -> str: ...
 
     async def _fetch(self):
         async with aiohttp.ClientSession() as session:
@@ -25,7 +22,7 @@ class PublisherInterfaceT(abc.ABC):
             return data
 
 
-class PublisherFetchError:
+class PublisherFetchError(Exception):
     message: str
 
     def __init__(self, message: str):
