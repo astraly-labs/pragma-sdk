@@ -5,14 +5,12 @@ from typing import Dict, List
 
 import requests
 from aiohttp import ClientSession
-from dotenv import load_dotenv
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 ASSET_MAPPING: Dict[str, str] = {
