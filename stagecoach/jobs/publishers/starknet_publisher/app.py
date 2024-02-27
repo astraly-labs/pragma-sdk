@@ -19,8 +19,8 @@ from pragma.publisher.fetchers import (
     GeckoTerminalFetcher,
     KaikoFetcher,
     OkxFetcher,
-    StarknetAMMFetcher,
     PropellerFetcher,
+    StarknetAMMFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
