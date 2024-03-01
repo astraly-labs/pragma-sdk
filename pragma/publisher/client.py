@@ -1,18 +1,22 @@
 import asyncio
-from typing import List
+import http.client
+import json
+import os
+import time
+from typing import Dict, List
 
 import aiohttp
-import http.client
 import requests
-import os
-import json
-from pragma.core.client import PragmaClient
-from pragma.publisher.types import PublisherInterfaceT
 from dotenv import load_dotenv
+
+from pragma.core.client import PragmaClient
+from pragma.core.entry import SpotEntry
+from pragma.publisher.types import PublisherInterfaceT
 
 load_dotenv()
 
-ALLOWED_INTERVALS = ["1m", "15m", "1h"]
+
+ALLOWED_INTERVALS = ["1m", "15m", "1h", "2h"]
 
 
 class PragmaPublisherClient(PragmaClient):
@@ -90,171 +94,173 @@ class PragmaPublisherClient(PragmaClient):
 
 
 class PragmaAPIClient(PragmaClient):
+    api_base_ur: str
+    api_key: str
 
-    api_base_url=os.getenv("PRAGMA_API_BASE_URL"),
-    api_key=os.getenv("PRAGMA_API_KEY"),
-    
-    
+    def __init__(
+        self,
+        api_base_url,
+        api_key,
+    ):
+        self.api_base_url = api_base_url
+        self.api_key = api_key
+
     @staticmethod
     def convert_to_publisher(client: PragmaClient):
         client.__class__ = PragmaAPIClient
         return client
 
-
-    def api_get_ohlc(
+    async def api_get_ohlc(
         self,
         pair: str,
-        timestamp: int,
-        interval: str,
-        routing: bool,
-        aggregation,
+        timestamp: int = None,
+        interval: str = None,
+        routing: str = None,
+        aggregation: str = None,
         limit: int = 1000,
     ):
         base_asset, quote_asset = pair.split("/")
 
         # Define the endpoint
-        endpoint = f"/aggregation/candlestick/{base_asset}/{quote_asset}"
+        endpoint = f"/node/v1/aggregation/candlestick/{base_asset}/{quote_asset}"
 
         # Prepare path parameters
         path_params = {
-            "base": base_asset,
-            "quote": quote_asset,
-            "timestamp": timestamp,
-            "interval": interval,
+            key: value
+            for key, value in {
+                "timestamp": timestamp,
+                "interval": interval,
+                "routing": routing,
+                "aggregation": aggregation,
+            }.items()
+            if value is not None
         }
 
         # Construct the complete URL
         url = f"{self.api_base_url}{endpoint}"
-
-        # Prepare query parameters
-        query_params = {"routing": routing, "aggregation": aggregation}
-
-        # Add limit parameter
-        query_params["limit"] = limit
-
         # Prepare headers
         headers = {
-            "x-api-key": self.api_key[0],
-            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
         }
-
         # Create connection
-        conn = http.client.HTTPSConnection("api.dev.pragma.build")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url, headers=headers, params=path_params
+            ) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Get Ohlc successful")
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    print("Unable to GET /v1/ohlc")
 
-        # Add path parameters to endpoint
-        endpoint += "?" + "&".join([f"{key}={path_params[key]}" for key in path_params])
+        return response
 
-        # Send GET request with headers
-        conn.request("GET", endpoint, headers=headers)
+    async def create_entries(self, entries):
+        endpoint = "/node/v1/data/publish"
+        now = int(time.time())
+        expiry = now + 24 * 60 * 60
 
-        # Get response
-        response = conn.getresponse()
-
-        if response.status == 200:
-            # Read and parse JSON response
-            data = response.read().decode("utf-8")
-            return json.loads(data)
-        else:
-            # Print an error message if the request was unsuccessful
-            print(f"Error: {response.status}")
-            return None
-
-    def create_entries(self, entries):
-        endpoint = "/data/publish"
-
-        headers = {
-            "x-api-key": self.api_key[0],
-            "Content-Type": "application/json",
+        headers: Dict = {
+            "PRAGMA-TIMESTAMP": str(now),
+            "PRAGMA-SIGNATURE-EXPIRATION": str(expiry),
+            "x-api-key": self.api_key,
         }
+
+        sig, _ = self.sign_publish_message(entries, now, expiry)
 
         # Convert entries to JSON string
-        data = json.dumps({"entries": entries})
-
-        # Create connection
-        conn = http.client.HTTPSConnection("api.dev.pragma.build")
-
-        # Send POST request with headers
-        conn.request("POST", endpoint, body=data, headers=headers)
-
-        # Get response
-        response = conn.getresponse()
-
-        if response.status == 200:
-            # Read and parse JSON response
-            data = response.read().decode("utf-8")
-            return json.loads(data)
-        else:
-            raise Exception(f"Error {response.status}: {response.reason}")
-
-
-    def get_entry(self, pair: str, timestamp=None, interval=None, routing=None, aggregation=None):
-        base_asset, quote_asset = pair.split("/")
-
-        endpoint = f"/node/v1/data/{base_asset}/{quote_asset}"
-        
-        # Construct query parameters based on provided arguments
-        params = {}
-        if timestamp is not None:
-            params["timestamp"] = timestamp
-        if interval is not None:
-            params["interval"] = interval
-        if routing is not None:
-            params["routing"] = routing
-        if aggregation is not None:
-            params["aggregation"] = aggregation
-
-        headers = {
-            "x-api-key": self.api_key[0],
-            "Content-Type": "application/json",
+        data = {
+            "signature": [str(s) for s in sig],
+            "entries": SpotEntry.offchain_serialize_entries(entries),
         }
 
-        # Create connection
-        conn = http.client.HTTPSConnection("api.dev.pragma.build")
+        url = f"{self.api_base_url}{endpoint}"
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)
+        ) as session:
+            async with session.post(url, headers=headers, json=data) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Publish successful")
+                    return response
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    print("Unable to POST /v1/data")
 
-        # Construct URL with parameters
-        url = f"{endpoint}?{'&'.join([f'{key}={value}' for key, value in params.items()])}"
+    async def get_entry(
+        self,
+        pair: str,
+        timestamp: int = None,
+        interval: str = None,
+        routing: str = None,
+        aggregation: str = None,
+    ):
+        base_asset, quote_asset = pair.split("/")
+        endpoint = f"/node/v1/data/{base_asset}/{quote_asset}"
+        url = f"{self.api_base_url}{endpoint}"
+        # Construct query parameters based on provided arguments
+        params = {
+            key: value
+            for key, value in {
+                "timestamp": timestamp,
+                "interval": interval,
+                "routing": routing,
+                "aggregation": aggregation,
+            }.items()
+            if value is not None
+        }
+        headers = {
+            "x-api-key": self.api_key,
+        }
 
-        # Send GET request with headers
-        conn.request("GET", url, headers=headers)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Get Data successful")
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    print("Unable to GET /v1/data")
+        return response
 
-        # Get response
-        response = conn.getresponse()
-
-        if response.status == 200:
-            # Read and parse JSON response
-            data = response.read().decode("utf-8")
-            return json.loads(data)
-        else:
-            raise Exception(f"Error {response.status}: {response.reason}")
-
-    def get_volatility(self, pair: str, start: int, end: int):
+    async def get_volatility(self, pair: str, start: int, end: int):
         base_asset, quote_asset = pair.split("/")
 
         endpoint = f"/node/v1/volatility/{base_asset}/{quote_asset}"
 
         # Construct query parameters
-        params = f"start={start}&end={end}"
-
         headers = {
-            "x-api-key": self.api_key[0],
-            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
         }
 
-        # Create connection
-        conn = http.client.HTTPSConnection(self.api_base_url[0])
+        params = {
+            "start": start,
+            "end": end,
+        }
 
         # Construct URL with parameters
-        url = f"{endpoint}?{params}"
-
+        url = f"{self.api_base_url}{endpoint}"
         # Send GET request with headers
-        conn.request("GET", url, headers=headers)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Get Volatility successful")
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    print("Unable to GET /v1/volatility")
 
-        # Get response
-        response = conn.getresponse()
-
-        if response.status == 200:
-            # Read and parse JSON response
-            data = response.read().decode("utf-8")
-            return json.loads(data)
-        else:
-            raise Exception(f"Error {response.status}: {response.reason}")
+        return response
