@@ -147,7 +147,9 @@ class BybitFetcher(PublisherInterfaceT):
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = (
-            float(result["result"]["list"][0]["volume24h"]) if hop_result is None else 0
+            float(result["result"]["list"][0]["volume24h"]) / 10 ** asset["decimals"]
+            if hop_result is None
+            else 0
         )
         logger.info("Fetched price %d for %s from Bybit", price, "/".join(pair))
 

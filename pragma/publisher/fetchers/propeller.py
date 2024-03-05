@@ -87,10 +87,7 @@ class PropellerFetcher(PublisherInterfaceT):
         except PublisherFetchError as e:
             return e
 
-        print(payload)
-
         async with session.post(url, headers=self.headers, json=payload) as resp:
-            print(resp)
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Propeller"

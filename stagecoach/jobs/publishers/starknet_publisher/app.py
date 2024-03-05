@@ -11,13 +11,13 @@ from pragma.core.assets import (
 from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
-    AscendexFetcher,
+    BinanceFetcher,
     BitstampFetcher,
-    CexFetcher,
-    CoinbaseFetcher,
+    BybitFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
-    KaikoFetcher,
+    HuobiFetcher,
+    KucoinFetcher,
     OkxFetcher,
     PropellerFetcher,
     StarknetAMMFetcher,
@@ -36,11 +36,14 @@ SPOT_ASSETS = os.environ["SPOT_ASSETS"]
 FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
-KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
 MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
+
+DEVIATION_THRESHOLD = float(os.getenv("DEVIATION_THRESHOLD", 0.01))
+FREQUENCY_SECONDS = int(os.getenv("FREQUENCY_SECONDS", 60))
+
 if PAGINATION is not None:
     PAGINATION = int(PAGINATION)
 
@@ -92,18 +95,30 @@ async def _handler(assets):
             chain_name=os.getenv("NETWORK"),
         )
 
+    last_publish = await publisher_client.get_time_since_last_published(
+        "ETH/USD", PUBLISHER
+    )
+    deviation = await publisher_client.get_current_price_deviation("ETH/USD")
+    print(f"Last publish was {last_publish} seconds ago and deviation is {deviation}")
+    if last_publish < FREQUENCY_SECONDS and deviation < DEVIATION_THRESHOLD:
+        print(
+            f"Last publish was {last_publish} seconds ago and deviation is {deviation}, skipping publish"
+        )
+        return []
+
     publisher_client.add_fetchers(
         [
             fetcher(assets, PUBLISHER)
             for fetcher in (
                 BitstampFetcher,
-                CexFetcher,
-                CoinbaseFetcher,
-                AscendexFetcher,
                 DefillamaFetcher,
                 OkxFetcher,
                 GeckoTerminalFetcher,
                 StarknetAMMFetcher,
+                HuobiFetcher,
+                KucoinFetcher,
+                BybitFetcher,
+                BinanceFetcher,
                 BinanceFutureFetcher,
                 OkxFutureFetcher,
                 ByBitFutureFetcher,
@@ -112,7 +127,6 @@ async def _handler(assets):
     )
 
     publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
-    publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
 
     _entries = await publisher_client.fetch()
     print(_entries)
