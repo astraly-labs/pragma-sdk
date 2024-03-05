@@ -53,7 +53,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
-        if pair[1] != "USD" :
+        if pair[1] != "USD":
             return await self.operate_usd_hop(asset, session)
         pool = ASSET_MAPPING.get(pair[0])
         if pool is None:
@@ -81,8 +81,8 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
-        if pair[1] != "USD" :
-            return  self.operate_usd_hop_sync(asset)
+        if pair[1] != "USD":
+            return self.operate_usd_hop_sync(asset)
         pool = ASSET_MAPPING.get(pair[0])
         if pool is None:
             return PublisherFetchError(
@@ -106,7 +106,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             )
 
         return self._construct(asset, result)
-        
+
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
@@ -129,7 +129,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         pool = ASSET_MAPPING[quote_asset]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
-    
+
     async def operate_usd_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         pool_1 = ASSET_MAPPING.get(pair[0])
@@ -154,9 +154,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from GeckoTerminal"
                 )
 
-        pair2_url = self.BASE_URL.format(
-            network=pool_2[0], token_address=pool_2[1]
-        )
+        pair2_url = self.BASE_URL.format(network=pool_2[0], token_address=pool_2[1])
         async with session.get(pair2_url, headers=self.headers) as resp2:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -196,15 +194,13 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
                 f"No data found for {'/'.join(pair)} from GeckoTerminal"
             )
 
-        pair2_url = self.BASE_URL.format(
-            network=pool_2[0], token_address=pool_2[1]
-        )
+        pair2_url = self.BASE_URL.format(network=pool_2[0], token_address=pool_2[1])
         resp2 = requests.get(pair2_url, headers=self.headers)
         if resp.status_code == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
-                )
-        hop_result =  resp2.json()
+            return PublisherFetchError(
+                f"No data found for {'/'.join(pair)} from GeckoTerminal"
+            )
+        hop_result = resp2.json()
         if (
             result.get("errors") is not None
             and result["errors"][0]["title"] == "Not Found"
@@ -214,16 +210,15 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             )
 
         return self._construct(asset, hop_result, result)
-    
-    
-    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+
+    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"]["attributes"]
         price = float(data["price_usd"])
-        if hop_result is not None: 
+        if hop_result is not None:
             hop_price = float(hop_result["data"]["attributes"]["price_usd"])
             price_int = int(hop_price / price * 10 ** asset["decimals"])
-        else: 
+        else:
             price_int = int(price * (10 ** asset["decimals"]))
 
         volume = float(data["volume_usd"]["h24"]) / 10 ** asset["decimals"]
@@ -241,5 +236,3 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             publisher=self.publisher,
             volume=volume,
         )
-
-

@@ -69,7 +69,7 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
-        if pair[1] != "USD": 
+        if pair[1] != "USD":
             return await self.operate_usd_hop(asset, session)
 
         url = self.BASE_URL.format(pair_id=pair_id)
@@ -84,9 +84,7 @@ class DefillamaFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Defillama"
                 )
 
-        return self._construct(
-            asset=asset, result=result
-        )
+        return self._construct(asset=asset, result=result)
 
     def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
         pair = asset["pair"]
@@ -96,7 +94,7 @@ class DefillamaFetcher(PublisherInterfaceT):
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
         if pair[1] != "USD":
-             return self.operate_usd_hop_sync(asset)
+            return self.operate_usd_hop_sync(asset)
         url = self.BASE_URL.format(pair_id=pair_id)
         resp = requests.get(url, headers=self.headers)
         if resp.status_code == 404:
@@ -132,7 +130,7 @@ class DefillamaFetcher(PublisherInterfaceT):
         pair_id = ASSET_MAPPING.get(quote_asset)
         url = self.BASE_URL.format(pair_id=pair_id)
         return url
-    
+
     async def operate_usd_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         pair_id_1 = ASSET_MAPPING.get(pair[0])
@@ -158,14 +156,13 @@ class DefillamaFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Defillama - usd hop failed for {pair[1]}"
                 )
-            result_quote= await resp.json()
-            print(result_quote)
+            result_quote = await resp.json()
             if not result_quote["coins"]:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Defillama -  usd hop failed for {pair[1]}"
                 )
-        return self._construct(asset, result_base,result_quote)
-    
+        return self._construct(asset, result_base, result_quote)
+
     def operate_usd_hop_sync(self, asset) -> SpotEntry:
         pair = asset["pair"]
         pair_id_1 = ASSET_MAPPING.get(pair[0])
@@ -196,19 +193,19 @@ class DefillamaFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"No data found for {'/'.join(pair)} from Defillama -  usd hop failed for {pair[1]}"
             )
-        return self._construct(asset, result_base,result_quote)
+        return self._construct(asset, result_base, result_quote)
 
-    def _construct(self, asset, result, hop_result = None) -> SpotEntry:
+    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]
-        base_id= ASSET_MAPPING.get(pair[0])
+        base_id = ASSET_MAPPING.get(pair[0])
         quote_id = ASSET_MAPPING.get(pair[1])
         pair_id = currency_pair_to_pair_id(*pair)
         timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
-        if hop_result is not None: 
+        if hop_result is not None:
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
             price_int = int((price / hop_price) * (10 ** asset["decimals"]))
-        else: 
+        else:
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             price_int = int(price * (10 ** asset["decimals"]))
 

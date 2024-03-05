@@ -1,7 +1,11 @@
+import asyncio
 import collections
 import logging
+import time
 from typing import List, Optional
 
+import aiohttp
+import requests
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
@@ -402,3 +406,35 @@ class OracleMixin:
             max_fee=max_fee,
         )
         return invocation
+
+    async def get_time_since_last_published(self, pair_id, publisher) -> int:
+        all_entries = await self.get_spot_entries(pair_id)
+        if len(all_entries) == 0:
+            return 1000000000  # arbitrary large number
+
+        entries = [
+            entry
+            for entry in all_entries
+            if entry.base.publisher == str_to_felt(publisher)
+        ]
+        max_timestamp = max([entry.base.timestamp for entry in entries])
+
+        diff = int(time.time()) - max_timestamp
+
+        return diff
+
+    async def get_current_price_deviation(self, pair_id) -> float:
+        current_data = await self.get_spot(pair_id)
+        current_price = current_data.price / 10**current_data.decimals
+
+        # query defillama API for the current price
+        url = "https://coins.llama.fi/prices/current/coingecko:ethereum"
+        resp = requests.get(
+            url,
+            headers={"Accepts": "application/json"},
+        )
+        json = resp.json()
+        price = json["coins"][f"coingecko:ethereum"]["price"]
+
+        deviation = abs(price - current_price) / price
+        return deviation
