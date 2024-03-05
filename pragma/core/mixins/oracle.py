@@ -13,7 +13,7 @@ from starknet_py.net.client import Client
 
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode, DataType, DataTypes
+from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
 
 logger = logging.getLogger(__name__)
@@ -428,13 +428,14 @@ class OracleMixin:
         current_price = current_data.price / 10**current_data.decimals
 
         # query defillama API for the current price
-        url = "https://coins.llama.fi/prices/current/coingecko:ethereum"
+        asset = ASSET_MAPPING.get(pair_id.split("/")[0])
+        url = f"https://coins.llama.fi/prices/current/coingecko:{asset}"
         resp = requests.get(
             url,
             headers={"Accepts": "application/json"},
         )
         json = resp.json()
-        price = json["coins"][f"coingecko:ethereum"]["price"]
+        price = json["coins"][f"coingecko:{asset}"]["price"]
 
         deviation = abs(price - current_price) / price
         return deviation

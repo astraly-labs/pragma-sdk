@@ -2,7 +2,7 @@ import logging
 import random
 from dataclasses import dataclass
 from enum import Enum, unique
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
 
@@ -43,6 +43,33 @@ CHAIN_IDS = {
     PRAGMA_TESTNET: 8908953246943201047421899664489,
     FORK_DEVNET: 1536727068981429685321,
     SEPOLIA: 393402133025997798000961,
+}
+
+ASSET_MAPPING: Dict[str, str] = {
+    "ETH": "ethereum",
+    "BTC": "bitcoin",
+    "WBTC": "wrapped-bitcoin",
+    "SOL": "solana",
+    "AVAX": "avalanche-2",
+    "DOGE": "dogecoin",
+    "SHIB": "shiba-inu",
+    "TEMP": "tempus",
+    "DAI": "dai",
+    "USDT": "tether",
+    "USDC": "usd-coin",
+    "TUSD": "true-usd",
+    "BUSD": "binance-usd",
+    "BNB": "binancecoin",
+    "ADA": "cardano",
+    "XRP": "ripple",
+    "MATIC": "matic-network",
+    "AAVE": "aave",
+    "R": "r",
+    "LORDS": "lords",
+    "WSTETH": "wrapped-steth",
+    "UNI": "uniswap",
+    "LUSD": "liquity-usd",
+    "STRK": "starknet",
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}

@@ -1,44 +1,17 @@
 import asyncio
 import logging
-import os
-from typing import Dict, List
+from typing import List
 
 import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
+from pragma.core.types import ASSET_MAPPING
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
-
-ASSET_MAPPING: Dict[str, str] = {
-    "ETH": "ethereum",
-    "BTC": "bitcoin",
-    "WBTC": "wrapped-bitcoin",
-    "SOL": "solana",
-    "AVAX": "avalanche-2",
-    "DOGE": "dogecoin",
-    "SHIB": "shiba-inu",
-    "TEMP": "tempus",
-    "DAI": "dai",
-    "USDT": "tether",
-    "USDC": "usd-coin",
-    "TUSD": "true-usd",
-    "BUSD": "binance-usd",
-    "BNB": "binancecoin",
-    "ADA": "cardano",
-    "XRP": "ripple",
-    "MATIC": "matic-network",
-    "AAVE": "aave",
-    "R": "r",
-    "LORDS": "lords",
-    "WSTETH": "wrapped-steth",
-    "UNI": "uniswap",
-    "LUSD": "liquity-usd",
-    "STRK": "starknet",
-}
 
 
 class DefillamaFetcher(PublisherInterfaceT):
