@@ -16,7 +16,7 @@ from starknet_py.net.client import Client
 
 from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS, get_client_from_network
-from pragma.publisher.client import PragmaAPIClient
+from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
 from pragma.tests.constants import (
     MOCK_DIR,
     SAMPLE_ASSETS,
@@ -225,13 +225,12 @@ async def test_async_api_client_spot(forked_client):
             result = await api_client.get_entry(
                 f'{asset["pair"][0]}/{asset["pair"][1]}'
             )
-
             expected_result = [
                 config["expected_result"]
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "get_entry"
             ]
-            assert result == expected_result[0][quote_asset]
+            assert result.assert_attributes_equal(expected_result[0][quote_asset])
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -255,7 +254,10 @@ async def test_async_api_client_spot_404_error(forked_client):
             result = await api_client.get_entry(
                 f'{asset["pair"][0]}/{asset["pair"][1]}'
             )
-            assert result == None
+            error = PragmaAPIError(
+                f"Unable to GET /v1/data for pair {quote_asset}/{base_asset}"
+            )
+            assert result == error
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -298,7 +300,7 @@ async def test_async_api_client_ohlc(forked_client):
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "api_get_ohlc"
             ]
-            assert result["data"] == expected_result[0][quote_asset]
+            assert result.data == expected_result[0][quote_asset]
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -322,7 +324,10 @@ async def test_async_api_client_ohlc_404_error(forked_client):
             result = await api_client.api_get_ohlc(
                 f'{asset["pair"][0]}/{asset["pair"][1]}'
             )
-            assert result == None
+            error = PragmaAPIError(
+                f"Failed to get OHLC data for pair {quote_asset}/{base_asset}"
+            )
+            assert result == error
 
 
 # @mock.patch("time.time", mock.MagicMock(return_value=12345))
