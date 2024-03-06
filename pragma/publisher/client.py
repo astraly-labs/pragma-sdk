@@ -20,7 +20,7 @@ load_dotenv()
 ALLOWED_INTERVALS = ["1m", "15m", "1h", "2h"]
 
 
-class GetEntryResult:
+class EntryResult:
     def __init__(
         self, pair_id, data, num_sources_aggregated=0, timestamp=None, decimals=None
     ):
@@ -199,7 +199,7 @@ class PragmaAPIClient(PragmaClient):
                     print(f"Status Code: {status_code}")
                     return PragmaAPIError(f"Failed to get OHLC data for pair {pair}")
 
-        return GetEntryResult(pair_id=response["pair_id"], data=response["data"])
+        return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def create_entries(self, entries):
         endpoint = "/node/v1/data/publish"
@@ -274,7 +274,7 @@ class PragmaAPIClient(PragmaClient):
                     print(f"Response Text: {response}")
                     return PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
 
-        return GetEntryResult(
+        return EntryResult(
             pair_id=response["pair_id"],
             data=response["price"],
             num_sources_aggregated=response["num_sources_aggregated"],
@@ -312,4 +312,4 @@ class PragmaAPIClient(PragmaClient):
                     print(f"Response Text: {response}")
                     raise Exception(f"Unable to GET /v1/volatility for pair {pair} ")
 
-        return GetEntryResult(pair_id=response["pair_id"], data=response["volatility"])
+        return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
