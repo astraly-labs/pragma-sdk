@@ -33,14 +33,15 @@ async def invoke_(
     Allows for a callback in the invocation of a contract method.
     This is useful for tracking the nonce changes
     """
-    prepared_call = self.prepare(*args, **kwargs)
+
+    prepared_call = self.prepare_invoke_v1(*args, **kwargs)
 
     # transfer ownership to the prepared call
     self = prepared_call
     if max_fee is not None:
         self.max_fee = max_fee
 
-    transaction = await self._account.sign_invoke_v1_transaction(
+    transaction = await self.get_account.sign_invoke_v1(
         calls=self,
         max_fee=self.max_fee,
         auto_estimate=auto_estimate,
@@ -64,4 +65,4 @@ async def invoke_(
 
 
 # patch contract function to use new invoke function
-ContractFunction.invoke = invoke_
+ContractFunction.invoke_v1 = invoke_
