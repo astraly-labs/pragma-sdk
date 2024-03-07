@@ -144,7 +144,7 @@ async def vrf_pragma_client(
     )
 
     # Approve randomness contract to transfer fee tokens
-    await erc20_contract.functions["approve"].invoke(
+    await erc20_contract.functions["approve"].invoke_v1(
         randomness.address, 0xFFFFFFFFFFFFFFFFFFFFFFFF, auto_estimate=True
     )
 
@@ -520,10 +520,10 @@ async def test_delayed_randomness_request(
     )
     assert pending_reqs == [request_id]
     block_number_3 = await vrf_pragma_client.full_node_client.get_block_number()
-    await erc20_contract.functions["approve"].invoke(
+    await erc20_contract.functions["approve"].invoke_v1(
         example_randomness.address, 0xF, auto_estimate=True
     )
-    await erc20_contract.functions["approve"].invoke(
+    await erc20_contract.functions["approve"].invoke_v1(
         example_randomness.address, 0xF, auto_estimate=True
     )
     block_number_3 = await vrf_pragma_client.full_node_client.get_block_number()

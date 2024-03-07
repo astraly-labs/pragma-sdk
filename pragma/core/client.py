@@ -142,7 +142,7 @@ class PragmaClient(
             signer=self.signer,
         )
         self.client = self.account.client
-        self.client._get_nonce = self._get_nonce  # pylint: disable=protected-access
+        self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
         self.account_contract_address = account_contract_address
 

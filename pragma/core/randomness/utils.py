@@ -2,9 +2,6 @@ import secrets
 import sys
 from typing import List
 
-import requests
-from starknet_py.net.networks import TESTNET
-
 from .randomness_utils import (
     ecvrf_proof_to_hash,
     ecvrf_prove,

@@ -108,7 +108,9 @@ class ExampleRandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.example_randomness.functions["request_random"].invoke(
+        invocation = await self.example_randomness.functions[
+            "request_random"
+        ].invoke_v1(
             seed, callback_address, callback_fee_limit, publish_delay, num_words
         )
         return invocation
