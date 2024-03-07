@@ -25,7 +25,13 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USD"), ("STRK", "USDT")]
+SUPPORTED_ASSETS = [
+    ("ETH", "STRK"),
+    ("STRK", "USD"),
+    ("STRK", "USDT"),
+    ("LORDS", "USD"),
+    ("ETH", "LORDS"),
+]
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
