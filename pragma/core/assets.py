@@ -65,6 +65,7 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     {"type": "SPOT", "pair": ("BTC", "USDT"), "decimals": 6},
     {"type": "SPOT", "pair": ("STRK", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("BTC", "ETH"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "LORDS"), "decimals": 8},
 ]
 
 

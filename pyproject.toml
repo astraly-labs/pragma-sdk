@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.2.5"
+version = "1.2.7"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
@@ -18,7 +18,7 @@ packages = [{ include = "pragma" }]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-"starknet.py" = "0.19.0a0"
+"starknet.py" = "0.20.0"
 cairo-lang = "^0.12"
 typer = "0.6.1"
 deprecated = "^1.2.14"

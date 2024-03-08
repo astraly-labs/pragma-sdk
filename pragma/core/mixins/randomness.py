@@ -48,7 +48,7 @@ class RandomnessMixin:
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        invocation = await self.randomness.functions["request_random"].invoke(
+        invocation = await self.randomness.functions["request_random"].invoke_v1(
             seed,
             callback_address,
             callback_fee_limit,
@@ -133,7 +133,7 @@ class RandomnessMixin:
             logger.error(
                 f"OUT OF GAS {estimate_fee.overall_fee} > {callback_fee_limit}"
             )
-            invocation = await self.randomness.functions["update_status"].invoke(
+            invocation = await self.randomness.functions["update_status"].invoke_v1(
                 requestor_address,
                 request_id,
                 RequestStatus.OUT_OF_GAS.serialize(),
@@ -144,7 +144,7 @@ class RandomnessMixin:
 
             return invocation
 
-        invocation = await self.randomness.functions["submit_random"].invoke(
+        invocation = await self.randomness.functions["submit_random"].invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -274,7 +274,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.randomness.functions["cancel_random_request"].invoke(
+        invocation = await self.randomness.functions["cancel_random_request"].invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -324,7 +324,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.randomness.functions["refund_operation"].invoke(
+        invocation = await self.randomness.functions["refund_operation"].invoke_v1(
             requestor_address, request_id, max_fee=max_fee
         )
         return invocation

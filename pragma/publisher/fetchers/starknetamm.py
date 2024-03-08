@@ -15,9 +15,8 @@ from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset
 # from starknet_py.net.full_node_client import FullNodeClient
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
-from pragma.core.types import PoolKey, get_client_from_network, get_rpc_url
+from pragma.core.types import PoolKey
 from pragma.core.utils import currency_pair_to_pair_id, str_to_felt
-from pragma.publisher.fetchers.defillama import DefillamaFetcher
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 load_dotenv()
@@ -26,7 +25,13 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-SUPPORTED_ASSETS = [("ETH", "STRK"), ("STRK", "USD"), ("STRK", "USDT")]
+SUPPORTED_ASSETS = [
+    ("ETH", "STRK"),
+    ("STRK", "USD"),
+    ("STRK", "USDT"),
+    ("LORDS", "USD"),
+    ("ETH", "LORDS"),
+]
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
@@ -163,4 +168,5 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             timestamp=int(time.time()),
             source=self.SOURCE,
             publisher=self.publisher,
+            volume=0,
         )

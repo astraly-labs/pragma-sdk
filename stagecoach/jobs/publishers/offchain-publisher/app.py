@@ -11,19 +11,16 @@ from pragma.core.assets import (
 from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
-    AscendexFetcher,
     BitstampFetcher,
     CexFetcher,
-    CoinbaseFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
-    KaikoFetcher,
+    PropellerFetcher,
     OkxFetcher,
-)
-from pragma.publisher.future_fetchers import (
-    BinanceFutureFetcher,
-    ByBitFutureFetcher,
-    OkxFutureFetcher,
+    BinanceFetcher,
+    HuobiFetcher,
+    KucoinFetcher,
+    BybitFetcher,
 )
 
 logger = get_stream_logger()
@@ -32,7 +29,7 @@ SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"))
-KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
+PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 API_KEY = os.environ.get("API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 API_URL = os.environ.get("API_URL", "https://api.dev.pragma.build/node")
@@ -79,16 +76,18 @@ async def _handler(assets):
             for fetcher in (
                 BitstampFetcher,
                 CexFetcher,
-                CoinbaseFetcher,
-                AscendexFetcher,
                 DefillamaFetcher,
                 OkxFetcher,
                 GeckoTerminalFetcher,
+                HuobiFetcher,
+                KucoinFetcher,
+                BybitFetcher,
+                BinanceFetcher,
             )
         ]
     )
 
-    publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
+    publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
 
     _entries = await publisher_client.fetch()
     print(f"Got {_entries} entries")

@@ -105,7 +105,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
         price = float(data["last"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = float(data["volCcy24h"])
+        volume = float(data["volCcy24h"]) / 10 ** asset["decimals"]
         logger.info("Fetched future for %s from OKX", "/".join(pair))
 
         return FutureEntry(

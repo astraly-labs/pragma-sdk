@@ -142,6 +142,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             hop_price = float(hop_result["data"]["attributes"]["price_usd"])
             price_int = int(hop_price / price * 10 ** asset["decimals"])
         else:
+        else:
             price_int = int(price * (10 ** asset["decimals"]))
 
         volume = float(data["volume_usd"]["h24"] * 10 ** asset["decimals"])
