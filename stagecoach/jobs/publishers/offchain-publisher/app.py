@@ -9,7 +9,7 @@ from pragma.core.assets import (
     get_spot_asset_spec_for_pair_id,
 )
 from pragma.core.logger import get_stream_logger
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient
 from pragma.publisher.fetchers import (
     BitstampFetcher,
     CexFetcher,
@@ -63,7 +63,7 @@ async def _handler(assets):
     publisher_private_key = _get_pvt_key()
     # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 16)
 
-    publisher_client = PragmaPublisherClient(
+    publisher_client = PragmaAPIClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
         api_url=API_URL,
