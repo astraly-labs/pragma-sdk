@@ -1,7 +1,10 @@
+import asyncio
 from typing import Dict, Literal, Optional, Union
 
+from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client import Client
-from starknet_py.net.client_models import TransactionReceipt, TransactionStatus
+from starknet_py.net.client_models import TransactionStatus
+from starknet_py.transaction_errors import TransactionNotReceivedError
 
 
 class NonceMixin:
@@ -16,11 +19,14 @@ class NonceMixin:
         self.cleanup_nonce_dict()
 
         if self.pending_nonce:
+            print(f"Using pending nonce {self.pending_nonce}")
             return self.pending_nonce
         if self.nonce_status:
+            print(f"Using max nonce {max(self.nonce_status) + 1}")
             return max(self.nonce_status) + 1
 
         latest_nonce = await self.get_nonce()
+        print(f"Using latest nonce {latest_nonce}")
         return latest_nonce
 
     def cleanup_nonce_dict(self):
@@ -89,6 +95,27 @@ class NonceMixin:
     async def get_status(
         self,
         transaction_hash: int,
-    ) -> TransactionReceipt:
-        receipt = await self.client.get_transaction_receipt(transaction_hash)
-        return receipt
+        check_interval: int = 2,
+        retries: int = 500,
+    ) -> TransactionStatus:
+        if check_interval <= 0:
+            raise ValueError("Argument check_interval has to be greater than 0.")
+        if retries <= 0:
+            raise ValueError("Argument retries has to be greater than 0.")
+
+        while True:
+            retries -= 1
+            try:
+                tx_status = await self.client.get_transaction_status(
+                    tx_hash=transaction_hash
+                )
+
+                return tx_status.finality_status
+
+            except asyncio.CancelledError as exc:
+                raise TransactionNotReceivedError from exc
+            except ClientError as exc:
+                if "Transaction hash not found" not in exc.message:
+                    raise exc
+
+                await asyncio.sleep(check_interval)

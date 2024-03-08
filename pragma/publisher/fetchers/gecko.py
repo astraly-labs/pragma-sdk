@@ -143,7 +143,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         else:
             price_int = int(price * (10 ** asset["decimals"]))
 
-        volume = float(data["volume_usd"]["h24"] * 10 ** asset["decimals"])
+        volume = float(data["volume_usd"]["h24"]) / 10 ** asset["decimals"]
 
         timestamp = int(time.time())
 
@@ -157,5 +157,5 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
             volume=int(volume),
-            autoscale_volume=False,
+            autoscale_volume=True,
         )

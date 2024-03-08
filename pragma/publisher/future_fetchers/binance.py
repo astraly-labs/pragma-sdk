@@ -97,7 +97,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             price = float(data["markPrice"])
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
-            volume = float(self.retrieve_volume(data["symbol"], volume_arr)) * (
+            volume = float(self.retrieve_volume(data["symbol"], volume_arr)) / (
                 10 ** asset["decimals"]
             )
             if data["symbol"] == f"{pair[0]}{pair[1]}":
@@ -122,7 +122,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     source=self.SOURCE,
                     publisher=self.publisher,
                     expiry_timestamp=expiry_timestamp * 1000,
-                    autoscale_volume=False,
+                    autoscale_volume=True,
                 )
             )
         return result_arr

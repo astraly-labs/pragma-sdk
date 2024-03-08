@@ -104,6 +104,7 @@ class OracleMixin:
             invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
                 new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
                 max_fee=max_fee,
+                callback=self.track_nonce,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
@@ -123,6 +124,7 @@ class OracleMixin:
                 ].invoke_v1(
                     new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
+                    callback=self.track_nonce,
                 )
                 index += pagination
                 invocations.append(invocation)
@@ -136,6 +138,7 @@ class OracleMixin:
             invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
                 new_entries=[{"Future": entry} for entry in serialized_future_entries],
                 max_fee=max_fee,
+                callback=self.track_nonce,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
