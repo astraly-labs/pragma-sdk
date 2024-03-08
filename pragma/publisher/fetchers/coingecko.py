@@ -70,7 +70,6 @@ class CoingeckoFetcher(PublisherInterfaceT):
             result = await resp.json()
             return self._construct(asset, result)
 
-
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
@@ -79,7 +78,6 @@ class CoingeckoFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]

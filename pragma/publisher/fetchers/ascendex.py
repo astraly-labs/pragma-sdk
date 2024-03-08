@@ -42,7 +42,6 @@ class AscendexFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:

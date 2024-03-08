@@ -55,7 +55,6 @@ class ByBitFutureFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[FutureEntry, PublisherFetchError]]:
@@ -66,7 +65,6 @@ class ByBitFutureFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}{quote_asset}{base_asset}"
@@ -92,4 +90,3 @@ class ByBitFutureFetcher(PublisherInterfaceT):
             publisher=self.publisher,
             expiry_timestamp=expiry_timestamp,
         )
-

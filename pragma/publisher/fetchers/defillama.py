@@ -128,4 +128,3 @@ class DefillamaFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-    

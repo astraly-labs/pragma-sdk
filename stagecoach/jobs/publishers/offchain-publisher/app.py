@@ -11,16 +11,16 @@ from pragma.core.assets import (
 from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
+    BinanceFetcher,
     BitstampFetcher,
+    BybitFetcher,
     CexFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
-    PropellerFetcher,
-    OkxFetcher,
-    BinanceFetcher,
     HuobiFetcher,
     KucoinFetcher,
-    BybitFetcher,
+    OkxFetcher,
+    PropellerFetcher,
 )
 
 logger = get_stream_logger()

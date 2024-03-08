@@ -79,14 +79,13 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         return self._construct(asset, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
-            entries = []
-            for asset in self.assets:
-                if asset["type"] != "SPOT":
-                    logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
-                    continue
-                entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
-            return await asyncio.gather(*entries, return_exceptions=True)
-        
+        entries = []
+        for asset in self.assets:
+            if asset["type"] != "SPOT":
+                logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
+                continue
+            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+        return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
         pool = ASSET_MAPPING[quote_asset]
@@ -141,7 +140,6 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         if hop_result is not None:
             hop_price = float(hop_result["data"]["attributes"]["price_usd"])
             price_int = int(hop_price / price * 10 ** asset["decimals"])
-        else:
         else:
             price_int = int(price * (10 ** asset["decimals"]))
 

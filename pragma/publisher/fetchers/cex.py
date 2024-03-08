@@ -49,7 +49,6 @@ class CexFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -60,7 +59,6 @@ class CexFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}/{quote_asset}/{base_asset}"
@@ -85,4 +83,3 @@ class CexFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

@@ -53,7 +53,6 @@ class OkxFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -64,7 +63,6 @@ class OkxFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?instId={quote_asset}-{base_asset}-SWAP"

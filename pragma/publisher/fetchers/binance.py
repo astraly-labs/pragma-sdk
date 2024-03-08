@@ -43,7 +43,6 @@ class BinanceFetcher(PublisherInterfaceT):
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -55,7 +54,6 @@ class BinanceFetcher(PublisherInterfaceT):
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset}{base_asset}"
@@ -110,4 +108,3 @@ class BinanceFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

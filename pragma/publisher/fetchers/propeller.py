@@ -112,7 +112,6 @@ class PropellerFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -163,4 +162,3 @@ class PropellerFetcher(PublisherInterfaceT):
             volume=0,
             publisher=self.publisher,
         )
-

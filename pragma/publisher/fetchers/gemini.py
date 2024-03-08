@@ -50,7 +50,6 @@ class GeminiFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result[0])
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -61,7 +60,6 @@ class GeminiFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = self.BASE_URL + "/pricefeed"
@@ -84,4 +82,3 @@ class GeminiFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

@@ -34,7 +34,6 @@ class BitstampFetcher(PublisherInterfaceT):
                 )
             return self._construct(asset, await resp.json())
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -45,7 +44,6 @@ class BitstampFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}/{quote_asset.lower()}{base_asset.lower()}"

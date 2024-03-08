@@ -41,7 +41,6 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     volume_arr.append((element["symbol"], element["quoteVolume"]))
             return volume_arr
 
-
     async def _fetch_pair(
         self, asset: PragmaFutureAsset, session: ClientSession
     ) -> Union[FutureEntry, PublisherFetchError]:
@@ -98,7 +97,9 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             price = float(data["markPrice"])
             price_int = int(price * (10 ** asset["decimals"]))
             pair_id = currency_pair_to_pair_id(*pair)
-            volume = float(self.retrieve_volume(data["symbol"], volume_arr)) * (10 ** asset["decimals"])
+            volume = float(self.retrieve_volume(data["symbol"], volume_arr)) * (
+                10 ** asset["decimals"]
+            )
             if data["symbol"] == f"{pair[0]}{pair[1]}":
                 expiry_timestamp = 0
             else:
@@ -121,7 +122,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     source=self.SOURCE,
                     publisher=self.publisher,
                     expiry_timestamp=expiry_timestamp * 1000,
-                    autoscale_volume=False
+                    autoscale_volume=False,
                 )
             )
         return result_arr

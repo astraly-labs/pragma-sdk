@@ -44,7 +44,6 @@ class OkxFutureFetcher(PublisherInterfaceT):
     def format_expiry_timestamp_url(self, instrument_id):
         return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-
     async def _fetch_pair(self, asset: PragmaFutureAsset, session: ClientSession):
         pair = asset["pair"]
         url = f"{self.BASE_URL}?instType=FUTURES&uly={pair[0]}-{pair[1]}"

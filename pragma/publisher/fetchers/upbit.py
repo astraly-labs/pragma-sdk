@@ -39,7 +39,6 @@ class UpbitFetcher(PublisherInterfaceT):
             result = await resp.json()
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -51,8 +50,6 @@ class UpbitFetcher(PublisherInterfaceT):
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
-
-
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?markets={quote_asset}-{base_asset}"

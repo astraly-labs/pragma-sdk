@@ -92,7 +92,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
         return call
 
-
     async def off_fetch_ekubo_price(
         self, asset, session: ClientSession, time=None
     ) -> Union[SpotEntry, PublisherFetchError]:
@@ -116,8 +115,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         if sqrt_ratio == 0:
             logger.error("Ekubo: Pool is empty")
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
-
-        
 
     def format_url(self, base_asset, quote_asset, time=None):
         if time:
@@ -158,7 +155,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 )
 
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def _construct(self, asset, result) -> SpotEntry:
         price_int = int(result * (10 ** asset["decimals"]))

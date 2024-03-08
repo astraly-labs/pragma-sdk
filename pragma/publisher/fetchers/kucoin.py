@@ -52,7 +52,6 @@ class KucoinFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset}-{base_asset}"
         return url
@@ -82,7 +81,6 @@ class KucoinFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
                 )
         return self._construct(asset, pair2_usdt, pair1_usdt)
-
 
     def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]

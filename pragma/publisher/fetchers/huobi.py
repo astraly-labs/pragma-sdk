@@ -53,7 +53,6 @@ class HuobiFetcher(PublisherInterfaceT):
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
 
-
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset.lower()}{base_asset.lower()}"
         return url
@@ -83,7 +82,6 @@ class HuobiFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Huobi - hop failed for {pair[1]}"
                 )
         return self._construct(asset, pair2_usdt, pair1_usdt)
-
 
     def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]

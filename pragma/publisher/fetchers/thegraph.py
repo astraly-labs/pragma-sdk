@@ -63,32 +63,6 @@ class TheGraphFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(self, asset: PragmaSpotAsset) -> SpotEntry:
-        pair = asset["pair"]
-        pool = ASSET_MAPPING.get(pair[0])
-        if pool is None:
-            return PublisherFetchError(
-                f"Unknown price pair, do not know how to query TheGraph for {pair[0]}"
-            )
-        if pair[1] != "USD":
-            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
-
-        url_slug = "uniswap/uniswap-v3"
-        query = (
-            f"query "
-            f'{{pool(where: {{id: "{pool}"}}) '
-            f"{{volumeUSD token0Price token1Price liquidity sqrtPrice feeTier tick token0 {{symbol}} token1 {{symbol}}}}}}"
-        )
-
-        resp = requests.post(self.BASE_URL + url_slug, json={"query": query})
-        if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from TheGraph"
-            )
-        result_json = resp.json()
-        result = result_json["data"]["pool"]
-        return self._construct(asset, result)
-
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
@@ -97,15 +71,6 @@ class TheGraphFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
-    def fetch_sync(self) -> List[SpotEntry]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping The Graph for non-spot asset %s", asset)
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         pool = ASSET_MAPPING[quote_asset]

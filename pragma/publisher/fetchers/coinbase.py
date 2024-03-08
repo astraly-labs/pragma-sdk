@@ -38,7 +38,6 @@ class CoinbaseFetcher(PublisherInterfaceT):
             result = await resp.json()
             return self._construct(asset, result)
 
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -50,7 +49,6 @@ class CoinbaseFetcher(PublisherInterfaceT):
 
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
 
     def format_url(self, quote_asset, base_asset):
         url = self.BASE_URL + base_asset
