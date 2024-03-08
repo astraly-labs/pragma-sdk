@@ -50,7 +50,6 @@ class NonceMixin:
         transaction_hash,
     ):
         self.nonce_dict[nonce] = transaction_hash
-        self.nonce_status[nonce] = await self.get_status(transaction_hash)
 
         nonce_min = min(self.nonce_dict)
         nonce_max = max(self.nonce_dict)
@@ -64,7 +63,7 @@ class NonceMixin:
     ):
         for nonce in list(self.nonce_dict):
             self.nonce_status[nonce] = await self.get_status(self.nonce_dict[nonce])
-            if self.nonce_dict[nonce] in [
+            if self.nonce_status[nonce] in [
                 TransactionStatus.REJECTED,
             ]:
                 # assume all later transaction will fail because this nonce was skipped

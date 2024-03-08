@@ -49,7 +49,6 @@ async def invoke_(
     response = await self._client.send_transaction(transaction)
 
     if callback:
-        await asyncio.sleep(1)  # sleep 1s to make sure tx is received
         await callback(transaction.nonce, response.transaction_hash)
 
     invoke_result = InvokeResult(
