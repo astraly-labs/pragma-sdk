@@ -39,19 +39,6 @@ class UpbitFetcher(PublisherInterfaceT):
             result = await resp.json()
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = self.format_url(pair[0], pair[1])
-
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Upbit")
-        result = resp.json()
-
-        return self._construct(asset, result)
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -63,16 +50,6 @@ class UpbitFetcher(PublisherInterfaceT):
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
-
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
-                entries.append(self._fetch_pair_sync(asset))
-            else:
-                logger.debug("Skipping Upbit for non-spot asset %s", asset)
-                continue
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?markets={quote_asset}-{base_asset}"

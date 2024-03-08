@@ -4,17 +4,19 @@ from typing import Any, List
 import aiohttp
 from aiohttp import ClientSession
 
+from pragma.core.utils import add_sync_methods
+
 
 # Abstract base class for all publishers
+@add_sync_methods
 class PublisherInterfaceT(abc.ABC):
     @abc.abstractmethod
-    async def fetch(self, session: ClientSession) -> List[Any]: ...
+    async def fetch(self, session: ClientSession) -> List[Any]:
+        ...
 
     @abc.abstractmethod
-    def fetch_sync(self) -> List[Any]: ...
-
-    @abc.abstractmethod
-    def format_url(self, quote_asset, base_asset) -> str: ...
+    def format_url(self, quote_asset, base_asset) -> str:
+        ...
 
     async def _fetch(self):
         async with aiohttp.ClientSession() as session:

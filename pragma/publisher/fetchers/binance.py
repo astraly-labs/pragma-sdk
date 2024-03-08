@@ -43,23 +43,6 @@ class BinanceFetcher(PublisherInterfaceT):
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        if pair == ("STRK", "USD"):
-            pair = ("STRK", "USDT")
-        url = self.format_url(pair[0], pair[1])
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance"
-            )
-        result = resp.json()
-        if "code" in result:
-            return self.operate_usdt_hop_sync(asset)
-        return self._construct(asset, result)
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -71,16 +54,6 @@ class BinanceFetcher(PublisherInterfaceT):
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
         return await asyncio.gather(*entries, return_exceptions=True)
-
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] == "SPOT":
-                entries.append(self._fetch_pair_sync(asset))
-            else:
-                logger.debug("Skipping Binance for non-spot asset %s", asset)
-                continue
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?symbol={quote_asset}{base_asset}"
@@ -110,32 +83,6 @@ class BinanceFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
                 )
-        return self._construct(asset, pair2_usdt, pair1_usdt)
-
-    def operate_usdt_hop_sync(self, asset) -> float:
-        pair = asset["pair"]
-        url_pair1 = self.format_url(asset["pair"][0], "USDT")
-        resp = requests.get(url_pair1)
-        if resp.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
-            )
-        pair1_usdt = resp.json()
-        if "code" in pair1_usdt:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
-            )
-        url2 = self.format_url(asset["pair"][1], "USDT")
-        resp2 = requests.get(url2)
-        if resp2.status_code == 404:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
-            )
-        pair2_usdt = resp2.json()
-        if "code" in pair2_usdt:
-            return PublisherFetchError(
-                f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
-            )
         return self._construct(asset, pair2_usdt, pair1_usdt)
 
     def _construct(self, asset, result, hop_result=None) -> SpotEntry:

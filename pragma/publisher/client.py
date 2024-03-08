@@ -131,7 +131,7 @@ class PragmaPublisherClient(PragmaClient):
     def fetch_sync(self) -> List[any]:
         results = []
         for fetcher in self.fetchers:
-            data = fetcher.fetch_sync()
+            data = fetcher._fetch_sync()
             results.extend(data)
         return results
 
