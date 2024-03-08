@@ -160,6 +160,7 @@ jobs:
           poetry run poe test_ci_fetchers
           poetry run poe test_ci_publisher
           poetry run poe test_ci_vrf
+          poetry run poe test_ci_api_client
 
       - name: Generate coverage in XML
         run: |

@@ -10,7 +10,7 @@ from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.client import PragmaClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.utils import str_to_felt
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient, PragmaPublisherClient
 from pragma.publisher.fetchers import *
 from pragma.publisher.future_fetchers import *
 from pragma.publisher.types import PublisherFetchError
@@ -36,7 +36,6 @@ load_dotenv()
 
 PUBLISHER_NAME = "PRAGMA"
 PAGINATION = 40
-
 SOURCES = [
     "ASCENDEX",
     "BITSTAMP",

@@ -41,6 +41,10 @@ def pair_id_for_asset(asset):
     return pair_id
 
 
+def get_cur_from_pair(asset):
+    return asset.split("/")
+
+
 T = TypeVar("T")
 
 
