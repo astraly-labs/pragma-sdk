@@ -35,7 +35,6 @@ from pragma.tests.fetcher_configs import (
 from pragma.tests.fixtures.devnet import get_available_port
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
-JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
 
 
 # %% SPOT
@@ -244,7 +243,7 @@ def test_fetcher_sync_success(fetcher_config, mock_data):
                     fetcher.off_fetch_ekubo_price_sync(asset, "2024-01-01T00%3A00%3A00")
                 )
         if fetcher_config["name"] != "Starknet":
-            result = fetcher.fetch_sync()
+            result = fetcher._fetch_sync()
             assert result == fetcher_config["expected_result"]
         else:
             result = array_starknet
@@ -295,7 +294,7 @@ def test_fetcher_sync_404(fetcher_config):
         if fetcher_config["name"] == "Starknet":
             pass
         else:
-            result = fetcher.fetch_sync()
+            result = fetcher._fetch_sync()
             # Adjust the expected result to reflect the 404 error
             expected_result = [
                 PublisherFetchError(
@@ -419,7 +418,7 @@ def test_future_fetcher_sync_success(
             for endpoint in other_mock_endpoints:
                 mock.get(endpoint["url"], json=endpoint["json"])
 
-        result = fetcher.fetch_sync()
+        result = fetcher._fetch_sync()
 
         assert result == future_fetcher_config["expected_result"]
 
@@ -436,7 +435,7 @@ def test_future_fetcher_sync_404(future_fetcher_config):
             url = fetcher.format_url(quote_asset, base_asset)
             mocker.get(url, status_code=404)
 
-        result = fetcher.fetch_sync()
+        result = fetcher._fetch_sync()
 
         # Adjust the expected result to reflect the 404 error
         expected_result = [
@@ -524,7 +523,7 @@ def test_onchain_fetcher_sync_success(onchain_fetcher_config, onchain_mock_data)
             url = fetcher.format_url(quote_asset, base_asset)
             mocker.get(url, json=onchain_mock_data[quote_asset])
 
-        result = fetcher.fetch_sync()
+        result = fetcher._fetch_sync()
 
         assert result == onchain_fetcher_config["expected_result"]
 
@@ -541,7 +540,7 @@ def test_onchain_fetcher_sync_404(onchain_fetcher_config):
             url = fetcher.format_url(quote_asset, base_asset)
             mocker.get(url, status_code=404)
 
-        result = fetcher.fetch_sync()
+        result = fetcher._fetch_sync()
 
         # Adjust the expected result to reflect the 404 error
         expected_result = [
@@ -565,61 +564,6 @@ def starknet_mock_data(starknet_onchain_fetcher_config):
         starknet_onchain_fetcher_config["mock_file"], "r", encoding="utf-8"
     ) as filepath:
         return json.load(filepath)
-
-
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": 939346, "network": "testnet"}], indirect=True
-)
-@pytest.mark.asyncio
-async def test_onchain_starknet_async_fetcher(
-    starknet_onchain_fetcher_config, forked_client
-):
-    with requests_mock.Mocker() as mocker:
-        fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS,
-            PUBLISHER_NAME,
-            client=forked_client,
-        )
-
-        for asset in STARKNET_ONCHAIN_ASSETS:
-            if asset["pair"] == ("STRK", "USD"):
-                continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
-            mocker.get(url, status_code=404)
-
-        async with aiohttp.ClientSession() as session:
-            result = await fetcher.on_fetch_jedi_price(session)
-
-        expected_result = starknet_onchain_fetcher_config["expected_result"]
-        assert result == expected_result[1].price
-
-
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": 939346, "network": "testnet"}], indirect=True
-)
-def test_onchain_starknet_sync_fetcher(starknet_onchain_fetcher_config, forked_client):
-    with requests_mock.Mocker() as mocker:
-        fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-            STARKNET_ONCHAIN_ASSETS,
-            PUBLISHER_NAME,
-            client=forked_client,
-        )
-
-        # Mocking the expected call for assets
-        for asset in STARKNET_ONCHAIN_ASSETS:
-            if asset["pair"] == ("STRK", "USD"):
-                continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
-            url = fetcher.format_url(quote_asset, base_asset)
-            mocker.get(url, status_code=404)
-
-        result = fetcher.on_fetch_jedi_price_sync()
-
-        expected_result = starknet_onchain_fetcher_config["expected_result"]
-        assert result == expected_result[1].price
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -661,33 +605,33 @@ async def test_onchain_starknet_async_fetcher_full(
 
 
 # TODO(#65):Write sync version of the oracle mixin before uncommenting this
-# @mock.patch("time.time", mock.MagicMock(return_value=12345))
-# @pytest.mark.parametrize(
-#     "forked_client", [{"block_number": 939346, "network": "testnet"}], indirect=True
-# )
-# def test_onchain_starknet_sync_fetcher_full(
-#     starknet_onchain_fetcher_config, forked_client, starknet_mock_data
-# ):
-#     with requests_mock.Mocker() as mocker:
-#         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
-#             STARKNET_ONCHAIN_ASSETS,
-#             PUBLISHER_NAME,
-#             client=forked_client.full_node_client,
-#         )
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.parametrize(
+    "forked_client", [{"block_number": 939346, "network": "testnet"}], indirect=True
+)
+def test_onchain_starknet_sync_fetcher_full(
+    starknet_onchain_fetcher_config, forked_client, starknet_mock_data
+):
+    with requests_mock.Mocker() as mocker:
+        fetcher = starknet_onchain_fetcher_config["fetcher_class"](
+            STARKNET_ONCHAIN_ASSETS,
+            PUBLISHER_NAME,
+            client=forked_client.full_node_client,
+        )
 
-#         for asset in STARKNET_ONCHAIN_ASSETS:
-#             quote_asset = asset["pair"][0]
-#             base_asset = asset["pair"][1]
-#             url = fetcher.format_url(quote_asset, base_asset)
-#             mocker.get(url, status_code=404)
-#             if asset["pair"] == ("STRK", "USD"):
-#                 mocker.get(
-#                     "https://coins.llama.fi/prices/current/coingecko:ethereum?searchWidth=5m",
-#                     status_code=200,
-#                     json=starknet_mock_data["ETH"],
-#                 )
+        for asset in STARKNET_ONCHAIN_ASSETS:
+            quote_asset = asset["pair"][0]
+            base_asset = asset["pair"][1]
+            url = fetcher.format_url(quote_asset, base_asset)
+            mocker.get(url, status_code=404)
+            if asset["pair"] == ("STRK", "USD"):
+                mocker.get(
+                    "https://coins.llama.fi/prices/current/coingecko:ethereum?searchWidth=5m",
+                    status_code=200,
+                    json=starknet_mock_data["ETH"],
+                )
 
-#         result = fetcher.fetch_sync()
+        result = fetcher._fetch_sync()
 
-#         expected_result = starknet_onchain_fetcher_config["expected_result"]
-#         assert result == expected_result
+        expected_result = starknet_onchain_fetcher_config["expected_result"]
+        assert result == expected_result

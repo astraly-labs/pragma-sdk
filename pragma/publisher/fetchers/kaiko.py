@@ -37,7 +37,6 @@ class KaikoFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
-
         async with session.get(url, headers=self.headers, params=self.payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -63,29 +62,6 @@ class KaikoFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = f"{self.BASE_URL}/{pair[0].lower()}/{pair[1].lower()}"
-
-        resp = requests.get(url, headers=self.headers, params=self.payload)
-
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
-
-        if resp.status_code == 403:
-            return PublisherFetchError(
-                "Unauthorized: Please provide an API Key to use KaikoFetcher"
-            )
-
-        text = resp.text
-        result = json.loads(text)
-
-        if "error" in result and result["error"] == "Invalid Symbols Pair":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from Kaiko")
-
-        return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -98,14 +74,6 @@ class KaikoFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping Kaiko for non-spot asset %s", asset)
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = (

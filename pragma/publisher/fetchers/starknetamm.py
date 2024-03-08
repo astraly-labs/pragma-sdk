@@ -87,25 +87,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         )
         return call
 
-    # Version1: fetching the price using the Ekubo API
-    def off_fetch_ekubo_price_sync(
-        self, asset, time=None
-    ) -> Union[float, PublisherFetchError]:
-        url = self.format_url(asset["pair"][0], asset["pair"][1], time)
-        pair = asset["pair"]
-        try:
-            response = requests.get(url)
-            if response.status_code == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Starknet"
-                )
-            if response.status_code == 200:
-                result_json = response.json()
-                return self._construct(asset, float(result_json["price"]))
-            else:
-                return self.operate_eth_hop_sync(asset)
-        except Exception as e:
-            return f"Error: {e}"
 
     async def off_fetch_ekubo_price(
         self, asset, session: ClientSession, time=None
@@ -131,15 +112,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Ekubo: Pool is empty")
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
 
-    def on_fetch_ekubo_price_sync(self) -> float:
-        call = self.prepare_call()
-        pool_info = self.client.full_node_client.call_contract_sync(call)
-        sqrt_ratio = pool_info[0]
-        if sqrt_ratio == 0:
-            logger.error("Ekubo: Pool is empty")
-        return (
-            (sqrt_ratio / 2**128) ** 2 * 10 * (self.ETH_DECIMALS - self.STRK_DECIMALS)
-        )
+        
 
     def format_url(self, base_asset, quote_asset, time=None):
         if time:
@@ -167,24 +140,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         price = pair1_price / (pair2_entry.price / (10 ** int(hop_asset["decimals"])))
         return self._construct(asset, price)
 
-    def operate_eth_hop_sync(self, asset) -> SpotEntry:
-        pair_1_str = str_to_felt("ETH/" + asset["pair"][1])
-        pair_1_entry = asyncio.run(self.client.get_spot(pair_1_str))
-        hop_asset = next(
-            (
-                cur_asset
-                for cur_asset in PRAGMA_ALL_ASSETS
-                if cur_asset["pair"] == ("ETH", asset["pair"][0])
-            ),
-            None,
-        )
-        if hop_asset["pair"] not in SUPPORTED_ASSETS:
-            return PublisherFetchError("StarknetAMM: Hop asset not supported")
-        pair2_entry = self.off_fetch_ekubo_price_sync(hop_asset)
-        pair1_price = int(pair_1_entry.price) / (10 ** int(pair_1_entry.decimals))
-        price = pair1_price / (pair2_entry.price / (10 ** int(hop_asset["decimals"])))
-        return self._construct(asset, price)
-
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for asset in self.assets:
@@ -199,16 +154,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
 
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def fetch_sync(self) -> List[SpotEntry]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
-                entries.append(self.off_fetch_ekubo_price_sync(asset))
-            else:
-                logger.debug(
-                    f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
-                )
-        return entries
 
     def _construct(self, asset, result) -> SpotEntry:
         price_int = int(result * (10 ** asset["decimals"]))

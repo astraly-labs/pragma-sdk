@@ -53,24 +53,6 @@ class OkxFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = f"{self.BASE_URL}?instId={pair[0]}-{pair[1]}-SWAP"
-
-        resp = requests.get(url)
-
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-
-        text = resp.text
-        result = json.loads(text)
-
-        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-
-        return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -83,14 +65,6 @@ class OkxFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping OKX for non-spot asset %s", asset)
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?instId={quote_asset}-{base_asset}-SWAP"

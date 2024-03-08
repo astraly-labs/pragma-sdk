@@ -1,5 +1,5 @@
-import logging
 import inspect
+import logging
 from functools import wraps
 from typing import TypeVar
 
@@ -39,6 +39,7 @@ def pair_id_for_asset(asset):
         asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
     )
     return pair_id
+
 
 T = TypeVar("T")
 

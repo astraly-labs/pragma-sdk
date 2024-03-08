@@ -29,7 +29,6 @@ class CexFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}/{pair[0]}/{pair[1]}"
-
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -50,23 +49,6 @@ class CexFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = f"{self.BASE_URL}/{pair[0]}/{pair[1]}"
-
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-
-        text = resp.text
-        result = json.loads(text)
-
-        if "error" in result and result["error"] == "Invalid Symbols Pair":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-
-        return self._construct(asset, result)
 
     async def fetch(
         self, session: ClientSession
@@ -79,14 +61,6 @@ class CexFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping CEX for non-spot asset %s", asset)
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}/{quote_asset}/{base_asset}"
@@ -111,3 +85,4 @@ class CexFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+

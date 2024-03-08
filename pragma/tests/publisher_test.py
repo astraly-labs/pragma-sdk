@@ -87,7 +87,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
     asset_valid_data_type(data, SpotEntry)
 
-    data = publisher.fetch_sync()
+    data = publisher._fetch_sync()
 
     asset_valid_data_type(data, SpotEntry)
 
@@ -115,7 +115,7 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
 
     asset_valid_data_type(data_async, FutureEntry)
 
-    data_sync: Sequence[Entry] = publisher.fetch_sync()
+    data_sync: Sequence[Entry] = publisher._fetch_sync()
 
     asset_valid_data_type(data_sync, FutureEntry)
 
