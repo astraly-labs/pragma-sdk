@@ -1,0 +1,16 @@
+FROM public.ecr.aws/docker/library/python:3.9
+
+RUN apt-get update && apt-get -y install cron
+
+RUN python -m pip install --upgrade pip
+
+RUN pip install pragma-sdk boto3
+
+COPY app.py .
+# Set up the cron job
+RUN echo "* * * * * root /usr/local/bin/python /app.py > /proc/1/fd/1 2>/proc/1/fd/2" > /etc/cron.d/cronjob
+RUN echo "* * * * * root (sleep 30 ; /usr/local/bin/python /app.py  > /proc/1/fd/1 2>/proc/1/fd/2)" >> /etc/cron.d/cronjob
+RUN chmod 0644 /etc/cron.d/cronjob
+
+# Run the command on container startup
+CMD cron -f
