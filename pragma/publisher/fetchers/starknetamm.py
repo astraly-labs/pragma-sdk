@@ -31,6 +31,9 @@ SUPPORTED_ASSETS = [
     ("STRK", "USDT"),
     ("LORDS", "USD"),
     ("ETH", "LORDS"),
+    ("ZEND", "USD"),
+    ("ETH", "ZEND"),
+
 ]
 
 
