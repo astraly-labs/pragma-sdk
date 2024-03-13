@@ -417,14 +417,16 @@ class OracleMixin:
 
     async def get_time_since_last_published(self, pair_id, publisher) -> int:
         all_entries = await self.get_spot_entries(pair_id)
-        if len(all_entries) == 0:
-            return 1000000000  # arbitrary large number
 
         entries = [
             entry
             for entry in all_entries
             if entry.base.publisher == str_to_felt(publisher)
         ]
+
+        if len(entries) == 0:
+            return 1000000000  # arbitrary large number
+
         max_timestamp = max([entry.base.timestamp for entry in entries])
 
         diff = int(time.time()) - max_timestamp
