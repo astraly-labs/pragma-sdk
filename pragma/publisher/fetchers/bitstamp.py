@@ -67,4 +67,3 @@ class BitstampFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

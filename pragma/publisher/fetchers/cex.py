@@ -84,4 +84,3 @@ class CexFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-    

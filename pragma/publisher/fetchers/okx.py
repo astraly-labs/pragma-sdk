@@ -7,10 +7,11 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,13 +21,13 @@ class OkxFetcher(PublisherInterfaceT):
     client: PragmaClient
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, client= None):
+    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
     async def _fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price = 1
+        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         if pair[1] == "USD":
@@ -66,19 +67,21 @@ class OkxFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping OKX for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price)))
+            entries.append(
+                asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+            )
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}?instId={quote_asset}-{base_asset}-SWAP"
         return url
 
-    def _construct(self, asset, result, usdt_price =1) -> SpotEntry:
+    def _construct(self, asset, result, usdt_price=1) -> SpotEntry:
         pair = asset["pair"]
         data = result["data"][0]
 
         timestamp = int(int(data["ts"]) / 1000)
-        price = float(data["last"])/usdt_price
+        price = float(data["last"]) / usdt_price
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volCcy24h"])

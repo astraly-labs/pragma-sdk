@@ -7,10 +7,10 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id, str_to_felt
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class TheGraphFetcher(PublisherInterfaceT):
     SOURCE: str = "THEGRAPH"
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, client = None):
+    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
@@ -45,16 +45,20 @@ class TheGraphFetcher(PublisherInterfaceT):
             )
         quote_result = await self.pool_query(session, self.query_body(pair[0]), pair)
         if pair[1] != "USDC":
-            if pair[1] == "USD": 
+            if pair[1] == "USD":
                 usdc_str = str_to_felt("USDC/USD")
                 usdc_entry = await self.client.get_spot(usdc_str)
                 usdc_price = int(usdc_entry.price) / (10 ** int(usdc_entry.decimals))
                 print(usdc_price)
-                return self._construct(asset, quote_result, usd_price = usdc_price)
+                return self._construct(asset, quote_result, usd_price=usdc_price)
             elif pair[1] in ASSET_MAPPING.keys():
-                base_result = await self.pool_query(session, self.query_body(pair[1]), pair)
-                return self._construct(asset=asset, quote_result = quote_result, base_result =base_result)
-            else: 
+                base_result = await self.pool_query(
+                    session, self.query_body(pair[1]), pair
+                )
+                return self._construct(
+                    asset=asset, quote_result=quote_result, base_result=base_result
+                )
+            else:
                 return PublisherFetchError(f"Base asset not supported : {pair[1]}")
         return self._construct(asset, quote_result)
 
@@ -76,15 +80,13 @@ class TheGraphFetcher(PublisherInterfaceT):
         pool = ASSET_MAPPING[quote_asset]
         query = (
             f'{{pool(id: "{pool}")'
-            f'{{ tick token0 {{ symbol }} token1 {{ symbol }} '
-            f'feeTier sqrtPrice liquidity token0Price token1Price volumeUSD}}}}'
+            f"{{ tick token0 {{ symbol }} token1 {{ symbol }} "
+            f"feeTier sqrtPrice liquidity token0Price token1Price volumeUSD}}}}"
         )
         return query
-    
-    async def pool_query(self,session: ClientSession, query: str, pair: List[str]):
-        async with session.post(
-            self.format_url(), json={"query": query}
-        ) as resp:
+
+    async def pool_query(self, session: ClientSession, query: str, pair: List[str]):
+        async with session.post(self.format_url(), json={"query": query}) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from TheGraph"
@@ -93,19 +95,21 @@ class TheGraphFetcher(PublisherInterfaceT):
             result = result_json["data"]["pool"]
             return result
 
-    def _construct(self, asset, quote_result, base_result = None, usd_price = 1 ) -> SpotEntry:
+    def _construct(
+        self, asset, quote_result, base_result=None, usd_price=1
+    ) -> SpotEntry:
         pair = asset["pair"]
 
         if pair[0] in quote_result["token0"]["symbol"]:
-            price = float(quote_result["token1Price"])/usd_price
+            price = float(quote_result["token1Price"]) / usd_price
         else:
-            price = float(quote_result["token0Price"])/usd_price
+            price = float(quote_result["token0Price"]) / usd_price
 
         if base_result is not None:
             if pair[1] in base_result["token0"]["symbol"]:
                 base_price = float(base_result["token1Price"])
             else:
-                base_price = float(base_result["token0Price"])  
+                base_price = float(base_result["token0Price"])
             price = price / base_price
         price_int = int(price * (10 ** asset["decimals"]))
         volume = float(quote_result["volumeUSD"]) * (10 ** asset["decimals"])
@@ -122,6 +126,5 @@ class TheGraphFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
             volume=int(volume),
-            autoscale_volume=False
+            autoscale_volume=False,
         )
-

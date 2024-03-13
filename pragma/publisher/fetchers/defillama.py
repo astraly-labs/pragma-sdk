@@ -131,15 +131,16 @@ class DefillamaFetcher(PublisherInterfaceT):
         )
 
 
-import asyncio 
-
+import asyncio
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS
 
-async def main(): 
+
+async def main():
     fetcher = DefillamaFetcher(PRAGMA_ALL_ASSETS, "test")
     async with ClientSession() as session:
         result = await fetcher.fetch(session)
         print(result)
+
 
 asyncio.run(main())

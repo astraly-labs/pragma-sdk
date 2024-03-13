@@ -7,10 +7,11 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,20 +21,20 @@ class BinanceFetcher(PublisherInterfaceT):
     client: PragmaClient
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, client = None):
+    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
     async def _fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price = 1
+        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
 
         # For now still leaving this line,
         if pair[1] == "USD":
             pair = (pair[0], "USDT")
-        else: 
+        else:
             usdt_price = 1
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
@@ -44,16 +45,18 @@ class BinanceFetcher(PublisherInterfaceT):
             result = await resp.json()
             if "code" in result:
                 return await self.operate_usdt_hop(asset, session)
-            return self._construct(asset=asset, result=result, usdt_price = usdt_price)
+            return self._construct(asset=asset, result=result, usdt_price=usdt_price)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        usdt_price = await self.get_stable_price(self.client,"USDT")
+        usdt_price = await self.get_stable_price(self.client, "USDT")
         for asset in self.assets:
             if asset["type"] == "SPOT":
-                entries.append(asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price)))
+                entries.append(
+                    asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+                )
             else:
                 logger.debug("Skipping Binance for non-spot asset %s", asset)
                 continue
@@ -89,7 +92,7 @@ class BinanceFetcher(PublisherInterfaceT):
                 )
         return self._construct(asset=asset, result=pair2_usdt, hop_result=pair1_usdt)
 
-    def _construct(self, asset, result, hop_result=None, usdt_price = 1) -> SpotEntry:
+    def _construct(self, asset, result, hop_result=None, usdt_price=1) -> SpotEntry:
         pair = asset["pair"]
         bid = float(result["bidPrice"])
         ask = float(result["askPrice"])

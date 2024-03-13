@@ -32,7 +32,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "XRP": "ripple",
     "MATIC": "matic-network",
     "AAVE": "aave",
-    "MKR": "maker", 
+    "MKR": "maker",
     "BAL": "balancer",
 }
 
@@ -83,7 +83,7 @@ class CoingeckoFetcher(PublisherInterfaceT):
     def format_url(self, pair_id):
         url = self.BASE_URL.format(pair_id=pair_id)
         return url
-    
+
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
         pair_id = currency_pair_to_pair_id(*pair)

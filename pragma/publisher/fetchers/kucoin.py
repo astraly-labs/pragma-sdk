@@ -7,10 +7,11 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,12 +27,12 @@ class KucoinFetcher(PublisherInterfaceT):
         self.client = client or PragmaClient(network="mainnet")
 
     async def _fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price = 1
+        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         if pair[1] == "USD":
             pair = (pair[0], "USDT")
-        else: 
+        else:
             usdt_price = 1
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
@@ -85,9 +86,9 @@ class KucoinFetcher(PublisherInterfaceT):
                 )
         return self._construct(asset=asset, result=pair2_usdt, hop_result=pair1_usdt)
 
-    def _construct(self, asset, result, hop_result=None, usdt_price= 1) -> SpotEntry:
+    def _construct(self, asset, result, hop_result=None, usdt_price=1) -> SpotEntry:
         pair = asset["pair"]
-        price = float(result["data"]["price"])/usdt_price
+        price = float(result["data"]["price"]) / usdt_price
         if hop_result is not None:
             hop_price = float(hop_result["data"]["price"])
             price = hop_price / price

@@ -7,11 +7,10 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id, str_to_felt
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
-
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +21,18 @@ class AscendexFetcher(PublisherInterfaceT):
     client: PragmaClient
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, client = None):
+    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-
     async def _fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price = 1
+        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         if pair[1] == "USD":
             pair = (pair[0], "USDT")
-        else : 
+        else:
             usdt_price = 1
         url = f"{self.BASE_URL}?symbol={pair[0]}/{pair[1]}"
         async with session.get(url) as resp:
@@ -61,7 +59,9 @@ class AscendexFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Ascendex for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price)))
+            entries.append(
+                asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+            )
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
@@ -74,7 +74,7 @@ class AscendexFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
         ask = float(data["ask"][0])
         bid = float(data["bid"][0])
-        price = (ask + bid) / (2.0 *usdt_price)
+        price = (ask + bid) / (2.0 * usdt_price)
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
         volume = float(data["volume"])
