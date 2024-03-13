@@ -5,6 +5,8 @@ import aiohttp
 from aiohttp import ClientSession
 
 from pragma.core.utils import add_sync_methods
+from pragma.core.utils import str_to_felt
+
 
 
 # Abstract base class for all publishers
@@ -22,6 +24,14 @@ class PublisherInterfaceT(abc.ABC):
         async with aiohttp.ClientSession() as session:
             data = await self.fetch(session)
             return data
+    
+    async def get_stable_price(self, client, stable_asset):
+        usdt_str = str_to_felt(stable_asset + "/USD")
+        usdt_entry = await client.get_spot(usdt_str)
+        return int(usdt_entry.price) / (10 ** int(usdt_entry.decimals))
+    
+   
+
 
 
 class PublisherFetchError(Exception):

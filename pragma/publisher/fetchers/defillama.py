@@ -46,6 +46,7 @@ class DefillamaFetcher(PublisherInterfaceT):
             return await self.operate_usd_hop(asset, session)
 
         url = self.BASE_URL.format(pair_id=pair_id)
+        print(url)
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -128,3 +129,17 @@ class DefillamaFetcher(PublisherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+
+
+import asyncio 
+
+
+from pragma.core.assets import PRAGMA_ALL_ASSETS
+
+async def main(): 
+    fetcher = DefillamaFetcher(PRAGMA_ALL_ASSETS, "test")
+    async with ClientSession() as session:
+        result = await fetcher.fetch(session)
+        print(result)
+
+asyncio.run(main())
