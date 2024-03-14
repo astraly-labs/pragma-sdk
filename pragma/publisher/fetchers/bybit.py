@@ -86,7 +86,7 @@ class BybitFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Bybit - hop failed for {pair[1]}"
                 )
-        return self._construct(asset=asset, resutlt=pair2_usdt, hop_result=pair1_usdt)
+        return self._construct(asset=asset, result=pair2_usdt, hop_result=pair1_usdt)
 
     def _construct(self, asset, result, hop_result=None, usdt_price=1) -> SpotEntry:
         pair = asset["pair"]
