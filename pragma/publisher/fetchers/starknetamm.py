@@ -169,18 +169,3 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             publisher=self.publisher,
             volume=0,
         )
-
-
-import asyncio
-
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-
-
-async def main():
-    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "Propeller")
-    async with ClientSession() as session:
-        result = await fetcher.fetch(session)
-        print(result)
-
-
-asyncio.run(main())
