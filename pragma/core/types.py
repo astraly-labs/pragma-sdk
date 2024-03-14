@@ -73,6 +73,11 @@ ASSET_MAPPING: Dict[str, str] = {
     "MKR": "maker",
     "BAL": "balancer",
     "ZEND": "zklend-2",
+    "LDO": "lido-dao",
+    "SNX": "havven",
+    "RPL": "rocket-pool",
+    "YFI": "yearn-finance",
+    "COMP": "compound-governance-token",
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
