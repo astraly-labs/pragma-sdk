@@ -32,6 +32,8 @@ ASSET_MAPPING: Dict[str, str] = {
     "XRP": "ripple",
     "MATIC": "matic-network",
     "AAVE": "aave",
+    "MKR": "maker",
+    "BAL": "balancer",
 }
 
 
@@ -62,8 +64,7 @@ class CoingeckoFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
-        url = self.BASE_URL.format(pair_id=pair_id)
-
+        url = self.format_url(pair_id=pair_id)
         async with session.get(
             url, headers=self.headers, raise_for_status=True
         ) as resp:
@@ -78,6 +79,10 @@ class CoingeckoFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
+
+    def format_url(self, pair_id):
+        url = self.BASE_URL.format(pair_id=pair_id)
+        return url
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
