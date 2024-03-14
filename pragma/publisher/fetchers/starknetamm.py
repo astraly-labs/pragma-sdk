@@ -100,7 +100,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         url = self.format_url(asset["pair"][0], asset["pair"][1], time)
         pair = asset["pair"]
-        print(url)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
