@@ -31,6 +31,10 @@ SUPPORTED_ASSETS = [
     ("STRK", "USDT"),
     ("LORDS", "USD"),
     ("ETH", "LORDS"),
+    ("ZEND", "USD"),
+    ("ZEND", "USDC"),
+    ("ZEND", "USDT"),
+    ("ETH", "ZEND"),
 ]
 
 
@@ -97,6 +101,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         url = self.format_url(asset["pair"][0], asset["pair"][1], time)
         pair = asset["pair"]
+        print(url)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -166,3 +171,18 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             publisher=self.publisher,
             volume=0,
         )
+
+
+import asyncio
+
+from pragma.core.assets import PRAGMA_ALL_ASSETS
+
+
+async def main():
+    fetcher = StarknetAMMFetcher(PRAGMA_ALL_ASSETS, "Propeller")
+    async with ClientSession() as session:
+        result = await fetcher.fetch(session)
+        print(result)
+
+
+asyncio.run(main())
