@@ -24,7 +24,6 @@ ASSET_MAPPING: Dict[str, str] = {
 
 
 class TheGraphFetcher(PublisherInterfaceT):
-    client: PragmaClient
     BASE_URL: str = "https://api.thegraph.com/subgraphs/name/"
     SOURCE: str = "THEGRAPH"
     publisher: str

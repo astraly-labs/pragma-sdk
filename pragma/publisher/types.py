@@ -4,12 +4,15 @@ from typing import Any, List
 import aiohttp
 from aiohttp import ClientSession
 
+from pragma.core.client import PragmaClient
 from pragma.core.utils import add_sync_methods, str_to_felt
 
 
 # Abstract base class for all publishers
 @add_sync_methods
 class PublisherInterfaceT(abc.ABC):
+    client: PragmaClient
+
     @abc.abstractmethod
     async def fetch(self, session: ClientSession) -> List[Any]:
         ...

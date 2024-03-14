@@ -33,12 +33,10 @@ SUPPORTED_ASSETS = [
     ("ETH", "LORDS"),
     ("ZEND", "USD"),
     ("ETH", "ZEND"),
-
 ]
 
 
 class StarknetAMMFetcher(PublisherInterfaceT):
-    client: PragmaClient
     EKUBO_PUBLIC_API: str = "https://mainnet-api.ekubo.org"
     EKUBO_MAINNET_CORE_CONTRACT: str = (
         "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b"

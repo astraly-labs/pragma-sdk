@@ -70,6 +70,8 @@ ASSET_MAPPING: Dict[str, str] = {
     "UNI": "uniswap",
     "LUSD": "liquity-usd",
     "STRK": "starknet",
+    "MKR": "maker",
+    "BAL": "balancer",
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}

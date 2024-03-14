@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class OkxFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://okx.com/api/v5/market/ticker"
     SOURCE: str = "OKX"
-    client: PragmaClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):

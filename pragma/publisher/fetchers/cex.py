@@ -29,7 +29,6 @@ class CexFetcher(PublisherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = f"{self.BASE_URL}/{pair[0]}/{pair[1]}"
-        print(url)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(

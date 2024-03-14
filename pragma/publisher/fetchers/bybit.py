@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class BybitFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.bybit.com/v5/market/tickers?category=spot&"
     SOURCE: str = "BYBIT"
-    client: PragmaClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):

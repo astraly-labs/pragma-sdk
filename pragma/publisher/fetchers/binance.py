@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class BinanceFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.binance.com/api/v3/ticker/24hr"
     SOURCE: str = "BINANCE"
-    client: PragmaClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):

@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class HuobiFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.huobi.pro/market/detail/merged"
     SOURCE: str = "HUOBI"
-    client: PragmaClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):

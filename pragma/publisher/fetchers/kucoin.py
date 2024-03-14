@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class KucoinFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.kucoin.com/api/v1/market/orderbook/level1"
     SOURCE: str = "KUCOIN"
-    client: PragmaClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):
