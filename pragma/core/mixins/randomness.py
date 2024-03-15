@@ -73,7 +73,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["request_random"].prepare(
+        prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
             seed,
             callback_address,
             callback_fee_limit,
@@ -90,7 +90,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions[method].prepare(caller_address)
+        prepared_call = self.randomness.functions[method].prepare_invoke_v1(caller_address)
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
@@ -111,7 +111,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["submit_random"].prepare(
+        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -179,7 +179,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["submit_random"].prepare(
+        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -204,7 +204,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["update_status"].prepare(
+        prepared_call = self.randomness.functions["update_status"].prepare_invoke_v1(
             requestor_address,
             request_id,
             RequestStatus.RECEIVED.serialize(),
@@ -301,7 +301,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["cancel_random_request"].prepare(
+        prepared_call = self.randomness.functions["cancel_random_request"].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
