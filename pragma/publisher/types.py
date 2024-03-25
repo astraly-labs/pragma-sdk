@@ -14,12 +14,10 @@ class PublisherInterfaceT(abc.ABC):
     client: PragmaClient
 
     @abc.abstractmethod
-    async def fetch(self, session: ClientSession) -> List[Any]:
-        ...
+    async def fetch(self, session: ClientSession) -> List[Any]: ...
 
     @abc.abstractmethod
-    def format_url(self, quote_asset, base_asset) -> str:
-        ...
+    def format_url(self, quote_asset, base_asset) -> str: ...
 
     async def _fetch(self):
         async with aiohttp.ClientSession() as session:

@@ -9,12 +9,10 @@ from pragma.core.utils import felt_to_str, str_to_felt
 
 class Entry(abc.ABC):
     @abc.abstractmethod
-    def serialize(self) -> Dict[str, str]:
-        ...
+    def serialize(self) -> Dict[str, str]: ...
 
     @abc.abstractmethod
-    def to_tuple(self) -> Tuple:
-        ...
+    def to_tuple(self) -> Tuple: ...
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
