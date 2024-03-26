@@ -28,6 +28,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "ZEND": "0xb2606492712d311be8f41d940afe8ce742a52d442",
 }
 
+
 DECIMALS_MAPPING: Dict[str, int] = {
     "ETH": 18,
     "USDC": 6,
@@ -46,7 +47,9 @@ DECIMALS_MAPPING: Dict[str, int] = {
 
 
 class PropellerFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://api.propellerheads.xyz/v2/solver/quote?blockchain=ethereum"
+    BASE_URL: str = (
+        "https://api.propellerheads.xyz/partner/v2/solver/quote?blockchain=ethereum"
+    )
     SOURCE: str = "PROPELLER"
 
     publisher: str
@@ -131,7 +134,6 @@ class PropellerFetcher(PublisherInterfaceT):
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
-
         mid_prices = []
         for quotes, buy_tokens, sell_tokens in zip(
             result["quotes"], result["buy_tokens"], result["sell_tokens"]
