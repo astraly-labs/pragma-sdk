@@ -16,6 +16,7 @@ from starknet_py.net.client_models import Call
 
 from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS, get_client_from_network
+from pragma.publisher.fetchers.index import AssetWeight, IndexFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
@@ -27,6 +28,7 @@ from pragma.tests.constants import (
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,
+    INDEX_FETCHER_CONFIGS,
     ONCHAIN_FETCHER_CONFIGS,
     ONCHAIN_STARKNET_FETCHER_CONFIGS,
     PUBLISHER_NAME,
@@ -202,6 +204,70 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
                     for asset in SAMPLE_ASSETS
                 ]
                 assert result == expected_result
+
+
+@pytest.fixture(params=FETCHER_CONFIGS.values())
+def fetcher_config(request):
+    return request.param
+
+
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.parametrize(
+    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
+)
+@pytest.mark.asyncio
+async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
+    # we only want to mock the external fetcher APIs and not the RPC
+    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+        fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        array_starknet = []
+        # Mocking the expected call for assets
+        for asset in SAMPLE_ASSETS:
+            quote_asset = asset["pair"][0]
+            base_asset = asset["pair"][1]
+
+            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
+
+            url = fetcher.format_url(quote_asset, base_asset)
+            if fetcher_config["name"] == "TheGraph":
+                query = fetcher.query_body(quote_asset)
+                mock.post(
+                    url,
+                    status=200,
+                    body={"query": query},
+                    payload=mock_data[quote_asset],
+                )
+            elif fetcher_config["name"] == "Starknet":
+                continue
+            else:
+                mock.get(url, status=200, payload=mock_data[quote_asset])
+
+        if fetcher_config["name"] == "Starknet":
+            async with aiohttp.ClientSession() as session:
+                for asset in STARKNET_SAMPLE_ASSETS:
+                    quote_asset = asset["pair"][0]
+                    base_asset = asset["pair"][1]
+                    url = fetcher.format_url(
+                        quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
+                    )
+                    mock.get(url, status=200, payload=mock_data[quote_asset])
+                    price = await fetcher.off_fetch_ekubo_price(
+                        asset, session, "2024-01-01T00%3A00%3A00"
+                    )
+                    array_starknet.append(price)
+        weights = [0.5, 0.5]
+        assets = [
+            AssetWeight(SAMPLE_ASSETS[i], weights[i]) for i in range(len(SAMPLE_ASSETS))
+        ]
+        index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
+        async with aiohttp.ClientSession() as session:
+            result = await index_fetcher.fetch(session)
+            assert (
+                result
+                == INDEX_FETCHER_CONFIGS[fetcher_config["fetcher_class"].__name__][
+                    "expected_result"
+                ]
+            )
 
 
 # %% FUTURE
