@@ -1,5 +1,5 @@
 #!/bin/bash
-aws s3 cp {{S3_SECRET_PATH}} /root/{{SERVICE_NAME}}
+aws s3 cp s3://{{S3_SECRET_PATH}} /root/{{SERVICE_NAME}}/
 # Authenticate Docker to your Amazon ECR
 aws ecr get-login-password --region {{region}} | docker login --username AWS --password-stdin {{aws_account_id}}.dkr.ecr.{{region}}.amazonaws.com
 
@@ -13,4 +13,4 @@ docker stop {{SERVICE_NAME}}|| true
 docker rm {{SERVICE_NAME}}|| true
 
 # Run the new container
-docker run --rm --name my-cron-job-container -d --log-driver=awslogs --log-opt awslogs-region={{region}} --log-opt awslogs-group={{aws_logs_group}} --env-file /root/env.list {{docker_image_tag}}
+docker run --rm --name {{SERVICE_NAME}} -d --log-driver=awslogs --log-opt awslogs-region={{region}} --log-opt awslogs-group={{aws_logs_group}} --env-file /root/{{SERVICE_NAME}}/env.list {{docker_image_tag}}
