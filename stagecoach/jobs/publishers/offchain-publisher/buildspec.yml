@@ -22,7 +22,8 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - aws ssm put-parameter --name /conf/$SERVICE_NAME-image --type "String" --value $REPOSITORY_URI:$IMAGE_TAG --overwrite
-      - aws s3 cp stagecoach/jobs/publishers/offchain-publisher/deploy.sh s3://$S3_BUCKET/$SERVICE_NAME/
+      - ls -ltr
+      - aws s3 cp --debug stagecoach/jobs/publishers/offchain-publisher/deploy.sh s3://$S3_BUCKET/$SERVICE_NAME/
       - echo Writing image definitions file...
       - printf '[{"name":"%s","imageUri":"%s"}]' $ECS_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
