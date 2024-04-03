@@ -38,6 +38,7 @@ class BitstampFetcher(PublisherInterfaceT):
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
+
         for asset in self.assets:
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Bitstamp for non-spot asset %s", asset)

@@ -25,7 +25,9 @@ ASSET_MAPPING: Dict[str, str] = {
     "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
     "BTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # FIXME: Unsafe
     "WSTETH": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+    "ZEND": "0xb2606492712d311be8f41d940afe8ce742a52d442",
 }
+
 
 DECIMALS_MAPPING: Dict[str, int] = {
     "ETH": 18,
@@ -40,11 +42,14 @@ DECIMALS_MAPPING: Dict[str, int] = {
     "LUSD": 18,
     "UNI": 18,
     "LORDS": 18,
+    "ZEND": 18,
 }
 
 
 class PropellerFetcher(PublisherInterfaceT):
-    BASE_URL: str = "https://api.propellerheads.xyz/v2/solver/quote?blockchain=ethereum"
+    BASE_URL: str = (
+        "https://api.propellerheads.xyz/partner/v2/solver/quote?blockchain=ethereum"
+    )
     SOURCE: str = "PROPELLER"
 
     publisher: str
@@ -129,7 +134,6 @@ class PropellerFetcher(PublisherInterfaceT):
 
     def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
-
         mid_prices = []
         for quotes, buy_tokens, sell_tokens in zip(
             result["quotes"], result["buy_tokens"], result["sell_tokens"]
@@ -138,13 +142,11 @@ class PropellerFetcher(PublisherInterfaceT):
             buy_amount = float(quotes["buy_amount"])
             sell_decimals = int(sell_tokens["decimals"])
             buy_decimals = int(buy_tokens["decimals"])
-
             # Take the mid price
             mid_price = (buy_amount / sell_amount) * 10 ** (
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-
         price = sum(mid_prices) / len(mid_prices)
         price_int = int(price * (10 ** asset["decimals"]))
 
