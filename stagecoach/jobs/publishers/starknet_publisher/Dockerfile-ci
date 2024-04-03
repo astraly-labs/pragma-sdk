@@ -7,10 +7,10 @@ RUN python -m pip install --upgrade pip
 RUN pip install pragma-sdk boto3
 
 COPY app.py .
-# Set up the cron job
-RUN echo "* * * * * root /usr/local/bin/python /app.py > /proc/1/fd/1 2>/proc/1/fd/2" > /etc/cron.d/cronjob
-RUN echo "* * * * * root (sleep 30 ; /usr/local/bin/python /app.py  > /proc/1/fd/1 2>/proc/1/fd/2)" >> /etc/cron.d/cronjob
-RUN chmod 0644 /etc/cron.d/cronjob
 
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /entrypoint.sh
+# Make sure the script is executable
+RUN chmod +x /entrypoint.sh
 # Run the command on container startup
-CMD cron -f
+ENTRYPOINT ["/entrypoint.sh"]
