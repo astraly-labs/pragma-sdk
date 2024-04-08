@@ -228,8 +228,6 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
 
-            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
-
             url = fetcher.format_url(quote_asset, base_asset)
             if fetcher_config["name"] == "TheGraph":
                 query = fetcher.query_body(quote_asset)
