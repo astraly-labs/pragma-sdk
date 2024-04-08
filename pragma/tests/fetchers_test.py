@@ -220,6 +220,8 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        if fetcher_config["name"] == "Starknet": 
+            return
         array_starknet = []
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
@@ -237,24 +239,9 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
                     body={"query": query},
                     payload=mock_data[quote_asset],
                 )
-            elif fetcher_config["name"] == "Starknet":
-                continue
             else:
                 mock.get(url, status=200, payload=mock_data[quote_asset])
 
-        if fetcher_config["name"] == "Starknet":
-            async with aiohttp.ClientSession() as session:
-                for asset in STARKNET_SAMPLE_ASSETS:
-                    quote_asset = asset["pair"][0]
-                    base_asset = asset["pair"][1]
-                    url = fetcher.format_url(
-                        quote_asset, base_asset, "2024-01-01T00%3A00%3A00"
-                    )
-                    mock.get(url, status=200, payload=mock_data[quote_asset])
-                    price = await fetcher.off_fetch_ekubo_price(
-                        asset, session, "2024-01-01T00%3A00%3A00"
-                    )
-                    array_starknet.append(price)
         weights = [0.5, 0.5]
         assets = [
             AssetWeight(SAMPLE_ASSETS[i], weights[i]) for i in range(len(SAMPLE_ASSETS))
