@@ -54,6 +54,7 @@ class IndexFetcher(PublisherInterfaceT):
         index_value = int(
             IndexAggregation(spot_entries, self.asset_weights).get_index_value()
         )
+
         return SpotEntry(
             pair_id=self.index_name,
             price=index_value,
@@ -65,7 +66,7 @@ class IndexFetcher(PublisherInterfaceT):
         )
 
     def format_url(self, quote_asset, base_asset):
-        return None
+        return self.fetcher.format_url(quote_asset, base_asset)
 
 
 class IndexAggregation:
@@ -78,21 +79,26 @@ class IndexAggregation:
 
     def get_index_value(self):
         self.standardize_decimals()
+
         total = sum(
             entry.price * weight.weight
             for entry, weight in zip(self.spot_entries, self.asset_weights)
         )
         total_weight = sum(weight.weight for weight in self.asset_weights)
+
         return total / total_weight
 
     def standardize_decimals(self):
         decimals = self.asset_weights[0].asset["decimals"]
+
         for asset_weight in self.asset_weights:
             asset = asset_weight.asset
+
             if asset["decimals"] > decimals:
                 exponent = asset["decimals"] - decimals
+
                 for entry in self.spot_entries:
                     entry.price *= 10**exponent
                     entry.volume *= 10**exponent
-                decimals = asset["decimals"]
 
+                decimals = asset["decimals"]
