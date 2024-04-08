@@ -46,7 +46,9 @@ class IndexFetcher(PublisherInterfaceT):
         for asset_weight in self.asset_weights:
             spot_entry = await self.fetcher._fetch_pair(asset_weight.asset, session)
             if isinstance(spot_entry, PublisherFetchError):
-                return spot_entry
+                return PublisherFetchError(
+                    f"Index Computation failed: asset {asset_weight.asset['pair']} not found"
+                )
             spot_entries.append(spot_entry)
 
         index_value = int(

@@ -255,6 +255,38 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
             )
 
 
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.parametrize(
+    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
+)
+@pytest.mark.asyncio
+async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client):
+    # we only want to mock the external fetcher APIs and not the RPC
+    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+        fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        if fetcher_config["name"] == "Starknet":
+            return
+        array_starknet = []
+        # Mocking the expected call for assets
+        for asset in SAMPLE_ASSETS:
+            quote_asset = asset["pair"][0]
+            base_asset = asset["pair"][1]
+
+            url = fetcher.format_url(quote_asset, base_asset)
+            mock.get(url, status=404)
+            mock.post(url, status=404)
+        weights = [0.5, 0.5]
+        assets = [
+            AssetWeight(SAMPLE_ASSETS[i], weights[i]) for i in range(len(SAMPLE_ASSETS))
+        ]
+        index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
+        async with aiohttp.ClientSession() as session:
+            result = await index_fetcher.fetch(session)
+            assert result == PublisherFetchError(
+                f"Index Computation failed: asset {SAMPLE_ASSETS[0]['pair']} not found"
+            )
+
+
 # %% FUTURE
 
 
