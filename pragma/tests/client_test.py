@@ -41,7 +41,7 @@ async def declare_deploy_oracle(
     compiled_contract_casm = read_contract("pragma_Oracle.casm.json", directory=None)
 
     # Declare Publisher Registry
-    declare_result_registry = await Contract.declare(
+    declare_result_registry = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract_registry,
         compiled_contract_casm=compiled_contract_registry_casm,
@@ -56,7 +56,7 @@ async def declare_deploy_oracle(
     await deploy_result_registry.wait_for_acceptance()
 
     # Declare Oracle
-    declare_result = await Contract.declare(
+    declare_result = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract,
         compiled_contract_casm=compiled_contract_casm,
@@ -68,7 +68,7 @@ async def declare_deploy_oracle(
     currencies = [currency.to_dict() for currency in CURRENCIES]
     pairs = [pair.to_dict() for pair in PAIRS]
 
-    deploy_result = await declare_result.deploy(
+    deploy_result = await declare_result.deploy_contract_v1(
         constructor_args=[
             account.address,
             deploy_result_registry.deployed_contract.address,
