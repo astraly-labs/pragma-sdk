@@ -206,6 +206,113 @@ FETCHER_CONFIGS = {
     },
 }
 
+
+INDEX_FETCHER_CONFIGS = {
+    "CexFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "cex.json",
+        "fetcher_class": CexFetcher,
+        "name": "CEX",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(2601210000000 * 0.5 + 163921000000 * 0.5),
+            12345,
+            "CEX",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "DefillamaFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "defillama.json",
+        "fetcher_class": DefillamaFetcher,
+        "name": "Defillama",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(2604800000000 * 0.5 + 164507000000 * 0.5),
+            12345,
+            "DEFILLAMA",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "BitstampFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "bitstamp.json",
+        "fetcher_class": BitstampFetcher,
+        "name": "Bitstamp",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(2602100000000 * 0.5 + 164250000000 * 0.5),
+            12345,
+            "BITSTAMP",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "CoinbaseFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "coinbase.json",
+        "fetcher_class": CoinbaseFetcher,
+        "name": "Coinbase",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(2602820500003 * 0.5 + 164399499999 * 0.5),
+            12345,
+            "COINBASE",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "OkxFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "okx.json",
+        "fetcher_class": OkxFetcher,
+        "name": "OKX",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(2640240000000 * 0.5 + 167372000000 * 0.5),
+            12345,
+            "OKX",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "KaikoFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "kaiko.json",
+        "fetcher_class": KaikoFetcher,
+        "name": "Kaiko",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int((2601601000000 * 0.5) + 164315580431 * 0.5),
+            12345,
+            "KAIKO",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "TheGraphFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "thegraph.json",
+        "fetcher_class": TheGraphFetcher,
+        "name": "TheGraph",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(3459885191309 * 0.5 + 0.5 * 180043642780),
+            12345,
+            "THEGRAPH",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+    "PropellerFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "propeller.json",
+        "fetcher_class": PropellerFetcher,
+        "name": "PROPELLER",
+        "expected_result": SpotEntry(
+            "INDEXNAME1",
+            int(4891252302700 * 0.5 + 0.5 * 262209039700),
+            12345,
+            "PROPELLER",
+            PUBLISHER_NAME,
+            autoscale_volume=False,
+        ),
+    },
+}
 FUTURE_FETCHER_CONFIGS = {
     "ByBitFutureFetcher": {
         "mock_file": MOCK_DIR / "responses" / "bybit_future.json",
@@ -355,6 +462,33 @@ ONCHAIN_STARKNET_FETCHER_CONFIGS = {
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
+            ),
+        ],
+    },
+}
+
+
+INDEX_CONFIGS = {
+    "IndexConfig": {
+        "name": "IndexConfig",
+        "expected_result": [
+            SpotEntry(
+                "INDEXNAME1",
+                200000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
+            ),
+            SpotEntry(
+                "INDEXNAME2",
+                1500050000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
             ),
         ],
     },

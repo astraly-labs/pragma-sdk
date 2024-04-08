@@ -1,7 +1,10 @@
 import os
+import time
 from pathlib import Path
 
+from pragma.core.entry import SpotEntry
 from pragma.core.types import Currency, Pair
+from pragma.publisher.fetchers.index import AssetWeight
 
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1
@@ -163,3 +166,43 @@ ORACLE_DECIMALS = 8
 ORACLE_FEE_PRICE = 100000000000
 MAX_PREMIUM_FEE = 100000000
 ESTIMATED_FEE_MULTIPLIER = 1.5
+SAMPLE_SPOT_ENTRIES = [
+    SpotEntry(
+        pair_id="ETH/USD",
+        price=100000000000,
+        volume=10000000000,
+        timestamp=int(time.time()),
+        source="BINANCE",
+        publisher="PRAGMA_TEST",
+    ),
+    SpotEntry(
+        pair_id="BTC/USD",
+        price=300000000000,
+        volume=30000000000,
+        timestamp=int(time.time()),
+        source="BINANCE",
+        publisher="PRAGMA_TEST",
+    ),
+]
+SAMPLE_ASSET_WEIGHTS = [
+    [
+        AssetWeight(
+            asset={"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+            weight=0.5,
+        ),
+        AssetWeight(
+            asset={"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
+            weight=0.5,
+        ),
+    ],
+    [
+        AssetWeight(
+            asset={"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 10},
+            weight=0.5,
+        ),
+        AssetWeight(
+            asset={"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 6},
+            weight=0.5,
+        ),
+    ],
+]

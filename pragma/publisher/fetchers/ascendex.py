@@ -34,7 +34,7 @@ class AscendexFetcher(PublisherInterfaceT):
             pair = (pair[0], "USDT")
         else:
             usdt_price = 1
-        url = f"{self.BASE_URL}?symbol={pair[0]}/{pair[1]}"
+        url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -54,7 +54,6 @@ class AscendexFetcher(PublisherInterfaceT):
         entries = []
         # Fetching usdt price (done one time)
         usdt_price = await self.get_stable_price(self.client, "USDT")
-        print(usdt_price)
         for asset in self.assets:
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Ascendex for non-spot asset %s", asset)
