@@ -96,26 +96,3 @@ class IndexAggregation:
                     entry.volume *= 10**exponent
                 decimals = asset["decimals"]
 
-
-# import asyncio
-
-# from pragma.publisher.fetchers import AscendexFetcher
-
-
-# async def main():
-#     assets = [
-#         {"pair": ("ETH", "USD"), "type": "SPOT", "decimals": 18},
-#         {"pair": ("BTC", "USD"), "type": "SPOT", "decimals": 18},
-#     ]
-#     weights = [0.5, 0.5]
-#     list_asset = [AssetWeight(assets[i], weights[i]) for i in range(len(assets))]
-#     fetcher = AscendexFetcher(PRAGMA_ALL_ASSETS, "ascendex")
-#     index_fetcher = IndexFetcher(
-#         fetcher=fetcher, index_name="ETHBTC", asset_weights=list_asset
-#     )
-#     async with ClientSession() as session:
-#         result = await index_fetcher.fetch(session)
-#         print(result)
-
-
-# asyncio.run(main())
