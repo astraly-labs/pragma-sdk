@@ -466,3 +466,30 @@ ONCHAIN_STARKNET_FETCHER_CONFIGS = {
         ],
     },
 }
+
+
+INDEX_CONFIGS = {
+    "IndexConfig": {
+        "name": "IndexConfig",
+        "expected_result": [
+            SpotEntry(
+                "INDEXNAME1",
+                200000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
+            ),
+            SpotEntry(
+                "INDEXNAME2",
+                1500050000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
+            ),
+        ],
+    },
+}

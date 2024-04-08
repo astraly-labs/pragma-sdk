@@ -220,7 +220,7 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
         fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
-        if fetcher_config["name"] == "Starknet": 
+        if fetcher_config["name"] == "Starknet":
             return
         array_starknet = []
         # Mocking the expected call for assets
