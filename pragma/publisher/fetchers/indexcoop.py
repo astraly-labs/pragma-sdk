@@ -1,8 +1,9 @@
 import asyncio
+import json
 import logging
 import time
 from typing import List, Union
-import json
+
 import requests
 from aiohttp import ClientSession
 
@@ -27,25 +28,22 @@ class IndexCoopFetcher(PublisherInterfaceT):
         self.client = client or PragmaClient(network="mainnet")
 
     async def _fetch_pair(
-    self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
-) -> Union[SpotEntry, PublisherFetchError]:
+        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
+    ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        url = self.format_url(pair[0])
+        url = self.format_url(pair[0].lower())
         async with session.get(url) as resp:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Ascendex"
-                )
             content_type = resp.headers.get("Content-Type", "")
             if "application/json" not in content_type:
                 response_text = await resp.text()
+                if not response_text:
+                    return PublisherFetchError(
+                        f"No index found for {pair[0]} from IndexCoop"
+                    )
                 parsed_data = json.loads(response_text)
-                print(parsed_data)
                 logger.warning(f"Unexpected content type received: {content_type}")
 
             return self._construct(asset, parsed_data, usdt_price)
-
-        
 
     async def fetch(
         self, session: ClientSession
@@ -53,14 +51,12 @@ class IndexCoopFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] != "INDEX":
-                logger.debug("Skipping Ascendex for non-index asset %s", asset)
+                logger.debug("Skipping IndexCoop for non-index asset %s", asset)
                 continue
-            entries.append(
-                asyncio.ensure_future(self._fetch_pair(asset, session))
-            )
+            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset= None):
+    def format_url(self, quote_asset, base_asset=None):
         url = f"{self.BASE_URL}/{quote_asset}/analytics"
         return url
 
@@ -70,7 +66,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
         price = result["navPrice"]
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = result["symbol"]
-        volume = int(float(result["volume24h"])* (10 ** asset["decimals"]))
+        volume = int(float(result["volume24h"]) * (10 ** asset["decimals"]))
 
         logger.info("Fetched price %d for %s from IndexCoop", price, "/".join(pair))
 
@@ -85,14 +81,16 @@ class IndexCoopFetcher(PublisherInterfaceT):
         )
 
 
-import asyncio 
+import asyncio
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS
 
-async def main(): 
+
+async def main():
     fetcher = IndexCoopFetcher(PRAGMA_ALL_ASSETS, "IndexCoop")
     async with ClientSession() as session:
         result = await fetcher.fetch(session)
         print(result)
+
 
 asyncio.run(main())

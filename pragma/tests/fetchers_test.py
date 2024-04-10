@@ -104,22 +104,28 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
 
-            # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
-
             url = fetcher.format_url(quote_asset, base_asset)
 
             if fetcher_config["name"] == "TheGraph":
-                query = fetcher.query_body(quote_asset)
-                mock.post(
-                    url,
-                    status=200,
-                    body={"query": query},
-                    payload=mock_data[quote_asset],
-                )
+                if asset["type"] == "INDEX":
+                    continue
+                else:
+                    query = fetcher.query_body(quote_asset)
+                    mock.post(
+                        url,
+                        status=200,
+                        body={"query": query},
+                        payload=mock_data[quote_asset],
+                    )
             elif fetcher_config["name"] == "Starknet":
                 continue
             else:
-                mock.get(url, status=200, payload=mock_data[quote_asset])
+                if fetcher_config["name"] == "IndexCoop" and asset["type"] == "SPOT":
+                    continue
+                elif fetcher_config["name"] != "IndexCoop" and asset["type"] == "INDEX":
+                    continue
+                else:
+                    mock.get(url, status=200, payload=mock_data[quote_asset])
 
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
@@ -153,6 +159,11 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
 async def test_async_fetcher_404_error(fetcher_config, forked_client):
     array_starknet = []
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
+        sample_assets = [
+            SAMPLE_ASSETS[i]
+            for i in range(len(SAMPLE_ASSETS))
+            if SAMPLE_ASSETS[i]["type"] == "SPOT"
+        ]
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
                 fetcher = fetcher_config["fetcher_class"](
@@ -179,9 +190,9 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
 
             assert array_starknet == expected_result
 
-        fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
 
-        for asset in SAMPLE_ASSETS:
+        for asset in sample_assets:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             # FIXME: Adapt all fetchers and use `sync` decorator on fetchers
@@ -201,7 +212,7 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
                     PublisherFetchError(
                         f"No data found for {asset['pair'][0]}/{asset['pair'][1]} from {fetcher_config['name']}"
                     )
-                    for asset in SAMPLE_ASSETS
+                    for asset in sample_assets
                 ]
                 assert result == expected_result
 
@@ -219,12 +230,17 @@ def fetcher_config(request):
 async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        sample_assets = [
+            SAMPLE_ASSETS[i]
+            for i in range(len(SAMPLE_ASSETS))
+            if SAMPLE_ASSETS[i]["type"] == "SPOT"
+        ]
+        fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return
         array_starknet = []
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
+        for asset in sample_assets:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
 
@@ -242,7 +258,7 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
 
         weights = [0.5, 0.5]
         assets = [
-            AssetWeight(SAMPLE_ASSETS[i], weights[i]) for i in range(len(SAMPLE_ASSETS))
+            AssetWeight(sample_assets[i], weights[i]) for i in range(len(sample_assets))
         ]
         index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
         async with aiohttp.ClientSession() as session:
@@ -263,12 +279,17 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
 async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        fetcher = fetcher_config["fetcher_class"](SAMPLE_ASSETS, PUBLISHER_NAME)
+        sample_assets = [
+            SAMPLE_ASSETS[i]
+            for i in range(len(SAMPLE_ASSETS))
+            if SAMPLE_ASSETS[i]["type"] == "SPOT"
+        ]
+        fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return
         array_starknet = []
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
+        for asset in sample_assets:
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
 
@@ -277,13 +298,13 @@ async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client)
             mock.post(url, status=404)
         weights = [0.5, 0.5]
         assets = [
-            AssetWeight(SAMPLE_ASSETS[i], weights[i]) for i in range(len(SAMPLE_ASSETS))
+            AssetWeight(sample_assets[i], weights[i]) for i in range(len(sample_assets))
         ]
         index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
         async with aiohttp.ClientSession() as session:
             result = await index_fetcher.fetch(session)
             assert result == PublisherFetchError(
-                f"Index Computation failed: asset {SAMPLE_ASSETS[0]['pair']} not found"
+                f"Index Computation failed: asset {sample_assets[0]['pair']} not found"
             )
 
 
