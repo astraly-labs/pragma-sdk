@@ -124,6 +124,7 @@ class PragmaPublisherClient(PragmaClient):
                 data = fetcher.fetch(session)
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
+            print(result)
             if filter_exceptions:
                 result = [subl for subl in result if not isinstance(subl, Exception)]
             return [val for subl in result for val in subl]

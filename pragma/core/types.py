@@ -7,7 +7,6 @@ from typing import Dict, List, Literal, Optional
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import felt_to_str, str_to_felt
-from pragma.publisher.fetchers.index import AssetWeight
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -45,6 +44,7 @@ CHAIN_IDS = {
 
 ASSET_MAPPING: Dict[str, str] = {
     "ETH": "ethereum",
+    "WETH": "weth",
     "BTC": "bitcoin",
     "WBTC": "wrapped-bitcoin",
     "SOL": "solana",

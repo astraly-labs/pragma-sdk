@@ -91,8 +91,8 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     {"type": "SPOT", "pair": ("MANA", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ENS", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("BLUR", "USD"), "decimals": 8},
-    {"type": "INDEX", "pair": ("DPI", "USD"), "decimals": 8},
-    {"type": "INDEX", "pair": ("MVI", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("DPI", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("MVI", "USD"), "decimals": 8},
 ]
 
 

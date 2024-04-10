@@ -20,6 +20,9 @@ class AssetWeight:
         self.asset = asset
         self.weight = weight
 
+    def __repr__(self):
+        return f"Asset: {self.asset}, Weight: {self.weight}"
+
 
 class IndexFetcher(PublisherInterfaceT):
     fetcher: any

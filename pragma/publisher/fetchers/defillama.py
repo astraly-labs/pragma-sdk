@@ -46,7 +46,6 @@ class DefillamaFetcher(PublisherInterfaceT):
             return await self.operate_usd_hop(asset, session)
 
         url = self.BASE_URL.format(pair_id=pair_id)
-        print(url)
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -57,8 +56,7 @@ class DefillamaFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Defillama"
                 )
-
-        return self._construct(asset=asset, result=result)
+        return self._construct(asset, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
@@ -122,10 +120,11 @@ class DefillamaFetcher(PublisherInterfaceT):
 
         logger.info("Fetched price %d for %s from Coingecko", price, pair_id)
 
-        return SpotEntry(
+        entry = SpotEntry(
             pair_id=pair_id,
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
         )
+        return entry
