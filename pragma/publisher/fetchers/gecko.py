@@ -34,6 +34,47 @@ ASSET_MAPPING: Dict[str, any] = {
         "starknet-alpha",
         "0x00585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34",
     ),
+    "YFI": (
+        "eth",
+        "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+    ),
+    "COMP":(
+        "eth",
+        "0xc00e94Cb662C3520282E6f5717214004A7f26888"
+    ), 
+    "SNX" : (
+        "eth",
+        "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
+    ),
+    "MKR": (
+        "eth",
+        "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
+    ),
+    "BAL": (
+        "eth",
+        "0xba100000625a3754423978a60c9317c58a424e3D"
+    ), 
+    "UNI": (
+        "eth",
+        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+    ), 
+    "AAVE": (
+        "eth",
+        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
+    ),
+    "LDO": (
+        "eth",
+        "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32"
+    ),
+    "RPL": (
+        "eth",
+        "0xD33526068D116cE69F19A9ee46F0bd304F21A51f"
+    ),
+    "WETH": (
+        "eth",
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ),
+
 }
 
 
@@ -64,7 +105,6 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query GeckoTerminal for {pair[0]}"
             )
-
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:

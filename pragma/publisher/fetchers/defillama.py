@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DefillamaFetcher(PublisherInterfaceT):
     BASE_URL: str = (
-        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=5m"
+        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=15m"
     )
 
     SOURCE: str = "DEFILLAMA"
@@ -46,6 +46,7 @@ class DefillamaFetcher(PublisherInterfaceT):
             return await self.operate_usd_hop(asset, session)
 
         url = self.BASE_URL.format(pair_id=pair_id)
+        print(url)
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
