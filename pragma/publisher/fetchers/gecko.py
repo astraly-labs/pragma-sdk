@@ -38,43 +38,26 @@ ASSET_MAPPING: Dict[str, any] = {
         "eth",
         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
     ),
-    "COMP":(
-        "eth",
-        "0xc00e94Cb662C3520282E6f5717214004A7f26888"
-    ), 
-    "SNX" : (
-        "eth",
-        "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
-    ),
-    "MKR": (
-        "eth",
-        "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
-    ),
-    "BAL": (
-        "eth",
-        "0xba100000625a3754423978a60c9317c58a424e3D"
-    ), 
-    "UNI": (
-        "eth",
-        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-    ), 
-    "AAVE": (
-        "eth",
-        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
-    ),
-    "LDO": (
-        "eth",
-        "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32"
-    ),
-    "RPL": (
-        "eth",
-        "0xD33526068D116cE69F19A9ee46F0bd304F21A51f"
-    ),
-    "WETH": (
-        "eth",
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    ),
-
+    "COMP": ("eth", "0xc00e94Cb662C3520282E6f5717214004A7f26888"),
+    "SNX": ("eth", "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"),
+    "MKR": ("eth", "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"),
+    "BAL": ("eth", "0xba100000625a3754423978a60c9317c58a424e3D"),
+    "UNI": ("eth", "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"),
+    "AAVE": ("eth", "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"),
+    "LDO": ("eth", "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32"),
+    "RPL": ("eth", "0xD33526068D116cE69F19A9ee46F0bd304F21A51f"),
+    "WETH": ("eth", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+    "MC": ("eth", "0x949d48eca67b17269629c7194f4b727d4ef9e5d6"),
+    "RNDR": ("eth", "0x6de037ef9ad2725eb40118bb1702ebb27e4aeb24"),
+    "FET": ("eth", "0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85"),
+    "IMX": ("eth", "0xf57e7e7c23978c3caec3c3548e3d615c346e79ff"),
+    "GALA": ("eth", "0xd1d2Eb1B1e90B638588728b4130137D262C87cae"),
+    "ILV": ("eth", "0x767fe9edc9e0df98e07454847909b5e959d7ca0e"),
+    "SAND": ("eth", "0x3845badAde8e6dFF049820680d1F14bD3903a5d0"),
+    "AXS": ("eth", "0xbb0e17ef65f82ab018d8edd776e8dd940327b28b"),
+    "MANA": ("eth", "0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
+    "ENS": ("eth", "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"),
+    "BLUR": ("eth", "0x5283d291dbcf85356a21ba090e6db59121208b44"),
 }
 
 

@@ -79,6 +79,18 @@ PRAGMA_ALL_ASSETS: List[PragmaAsset] = [
     {"type": "SPOT", "pair": ("YFI", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("BAL", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "ZEND"), "decimals": 8},
+    {"type": "SPOT", "pair": ("MC", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("RNDR", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("FET", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("IMX", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("GALA", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ILV", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("APE", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("SAND", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("AXS", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("MANA", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ENS", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("BLUR", "USD"), "decimals": 8},
     {"type": "INDEX", "pair": ("DPI", "USD"), "decimals": 8},
 ]
 
