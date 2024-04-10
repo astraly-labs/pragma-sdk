@@ -79,18 +79,3 @@ class IndexCoopFetcher(PublisherInterfaceT):
             publisher=self.publisher,
             autoscale_volume=False,
         )
-
-
-import asyncio
-
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-
-
-async def main():
-    fetcher = IndexCoopFetcher(PRAGMA_ALL_ASSETS, "IndexCoop")
-    async with ClientSession() as session:
-        result = await fetcher.fetch(session)
-        print(result)
-
-
-asyncio.run(main())
