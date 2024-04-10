@@ -15,6 +15,11 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_INDEXES = {
+    "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
+    "MVI": "0x72e364F2ABdC788b7E918bc238B21f109Cd634D7",
+}
+
 
 class IndexCoopFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.indexcoop.com"
