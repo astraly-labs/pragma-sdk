@@ -141,3 +141,13 @@ class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
         # Any additional initialization for ExampleRandomnessMixin can be done here
 
     # You can override or add new methods here if needed
+
+
+def filter_assets_by_type(assets, type_):
+    """
+    Filter the given assets list by the given type.
+
+    e.g
+    filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
+    """
+    return [assets[i] for i in range(len(assets)) if assets[i]["type"] == type_]

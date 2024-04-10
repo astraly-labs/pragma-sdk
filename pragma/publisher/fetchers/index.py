@@ -1,9 +1,7 @@
-import asyncio
 import logging
 import time
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset
@@ -14,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 import time
-from datetime import datetime
-from typing import List, Tuple, Union
+from typing import List, Union
 
 
 class AssetWeight:
@@ -104,36 +101,3 @@ class IndexAggregation:
                 continue
 
             decimals = asset["decimals"]
-
-
-
-import asyncio 
-
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.publisher.fetchers.gecko  import GeckoTerminalFetcher
-async def main(): 
-    fetcher1 = GeckoTerminalFetcher(PRAGMA_ALL_ASSETS, 'Binance');
-    async with ClientSession() as session:
-        result = await fetcher1.fetch(session)
-        # print(result)
-    
-    fetcher1 = IndexFetcher(
-        fetcher=GeckoTerminalFetcher(PRAGMA_ALL_ASSETS, 'Binance'),
-        index_name="Index",
-        asset_weights=[
-            AssetWeight({"type": "SPOT", "pair": ("YFI", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("COMP", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("SNX", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("MKR", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("BAL", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("UNI", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("AAVE", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("LDO", "USD"), "decimals": 8}, 0.2),
-            AssetWeight({"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8}, 0.2),
-        ],
-    )
-    async with ClientSession() as session:
-        result = await fetcher1.fetch(session)
-        print(result)
-
-asyncio.run(main())

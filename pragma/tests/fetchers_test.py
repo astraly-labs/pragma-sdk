@@ -34,6 +34,7 @@ from pragma.tests.fetcher_configs import (
     PUBLISHER_NAME,
 )
 from pragma.tests.fixtures.devnet import get_available_port
+from pragma.tests.utils import filter_assets_by_type
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
@@ -159,11 +160,7 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
 async def test_async_fetcher_404_error(fetcher_config, forked_client):
     array_starknet = []
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        sample_assets = [
-            SAMPLE_ASSETS[i]
-            for i in range(len(SAMPLE_ASSETS))
-            if SAMPLE_ASSETS[i]["type"] == "SPOT"
-        ]
+        sample_assets = filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
                 fetcher = fetcher_config["fetcher_class"](
@@ -230,11 +227,7 @@ def fetcher_config(request):
 async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        sample_assets = [
-            SAMPLE_ASSETS[i]
-            for i in range(len(SAMPLE_ASSETS))
-            if SAMPLE_ASSETS[i]["type"] == "SPOT"
-        ]
+        sample_assets = filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
         fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return
@@ -279,11 +272,7 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
 async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        sample_assets = [
-            SAMPLE_ASSETS[i]
-            for i in range(len(SAMPLE_ASSETS))
-            if SAMPLE_ASSETS[i]["type"] == "SPOT"
-        ]
+        sample_assets = filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
         fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return

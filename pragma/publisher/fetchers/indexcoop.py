@@ -60,6 +60,20 @@ class IndexCoopFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}/{quote_asset}/analytics"
         return url
 
+    def fetch_weights(self, index_address):
+        url = f"{self.BASE_URL}/components?chainId=1&isPerpToken=false&address={index_address}"
+        response = requests.get(url)
+        response.raise_for_status()
+        json = response.json()
+
+        components = json["components"]
+        weights = {
+            component["symbol"]: component["percentOfSetNumber"]
+            for component in components
+        }
+
+        return weights
+
     def _construct(self, asset, result, usdt_price) -> SpotEntry:
         pair = asset["pair"]
         timestamp = int(time.time())
