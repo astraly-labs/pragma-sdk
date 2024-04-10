@@ -210,7 +210,7 @@ FETCHER_CONFIGS = {
         "name": "IndexCoop",
         "expected_result": [
             SpotEntry(
-                "DPI",
+                "DPI/USD",
                 13628454601,
                 12345,
                 "INDEXCOOP",
