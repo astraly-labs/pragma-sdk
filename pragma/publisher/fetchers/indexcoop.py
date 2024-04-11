@@ -80,7 +80,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
 
         return [
             AssetWeight(
-                PragmaSpotAsset(pair=(symbol, "USD"), decimals=18, type="SPOT"),
+                PragmaSpotAsset(pair=(symbol, "USD"), decimals=8, type="SPOT"),
                 weight,
             )
             for symbol, weight in weights.items()
