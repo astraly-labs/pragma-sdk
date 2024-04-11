@@ -12,7 +12,7 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
-from pragma.publisher.fetchers.index import AssetWeight
+from pragma.publisher.fetchers.index import AssetQuantities
 
 logger = logging.getLogger(__name__)
 
@@ -66,24 +66,24 @@ class IndexCoopFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}/{quote_asset}/analytics"
         return url
 
-    def fetch_weights(self, index_address) -> List[AssetWeight]:
+    def fetch_quantities(self, index_address) -> List[AssetQuantities]:
         url = f"{self.BASE_URL}/components?chainId=1&isPerpToken=false&address={index_address}"
         response = requests.get(url)
         response.raise_for_status()
         json = response.json()
 
         components = json["components"]
-        weights = {
+        quantities = {
             component["symbol"]: float(component["quantity"])
             for component in components
         }
 
         return [
-            AssetWeight(
+            AssetQuantities(
                 PragmaSpotAsset(pair=(symbol, "USD"), decimals=8, type="SPOT"),
-                weight,
+                quantities,
             )
-            for symbol, weight in weights.items()
+            for symbol, quantities in quantities.items()
         ]
 
     def _construct(self, asset, result, usdt_price) -> SpotEntry:

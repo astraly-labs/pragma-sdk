@@ -12,35 +12,32 @@ logger = logging.getLogger(__name__)
 
 
 
-class AssetWeight:
-    def __init__(self, asset: PragmaAsset, weight: float):
+class AssetQuantities:
+    def __init__(self, asset: PragmaAsset, quantities: float):
         self.asset = asset
-        self.weight = weight
-
-    def __repr__(self):
-        return f"Asset: {self.asset}, Weight: {self.weight}"
+        self.quantities = quantities
 
 
 class IndexFetcher(PublisherInterfaceT):
     fetcher: any
     index_name: str
-    asset_weights: List[AssetWeight]
+    asset_quantities: List[AssetQuantities]
 
     def __init__(
         self,
         fetcher: any,
         index_name: str,
-        asset_weights: List[AssetWeight],
+        asset_quantities: List[AssetQuantities],
     ):
         self.fetcher = fetcher
         self.index_name = index_name
-        self.asset_weights = asset_weights
+        self.asset_quantities = asset_quantities
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         spot_entries = []
-        for asset_weight in self.asset_weights:
+        for asset_weight in self.asset_quantities:
             spot_entry = await self.fetcher._fetch_pair(asset_weight.asset, session)
             if isinstance(spot_entry, PublisherFetchError):
                 return PublisherFetchError(
@@ -49,7 +46,7 @@ class IndexFetcher(PublisherInterfaceT):
             spot_entries.append(spot_entry)
 
         index_value = int(
-            IndexAggregation(spot_entries, self.asset_weights).get_index_value()
+            IndexAggregation(spot_entries, self.asset_quantities).get_index_value()
         )
 
         return [SpotEntry(
@@ -68,27 +65,26 @@ class IndexFetcher(PublisherInterfaceT):
 
 class IndexAggregation:
     spot_entries: List[SpotEntry]
-    asset_weights: List[AssetWeight]
+    asset_quantities: List[AssetQuantities]
 
-    def __init__(self, spot_entries: List[SpotEntry], asset_weights: List[AssetWeight]):
+    def __init__(self, spot_entries: List[SpotEntry], asset_quantities: List[AssetQuantities]):
         self.spot_entries = spot_entries
-        self.asset_weights = asset_weights
+        self.asset_quantities = asset_quantities
 
     def get_index_value(self):
         self.standardize_decimals()
 
         total = sum(
-            entry.price * weight.weight
-            for entry, weight in zip(self.spot_entries, self.asset_weights)
+            entry.price * quantities.quantities
+            for entry, quantities in zip(self.spot_entries, self.asset_quantities)
         )
-
-        total_weight = sum(weight.weight for weight in self.asset_weights)
-        return total / total_weight
+        return total
 
     def standardize_decimals(self):
-        decimals = self.asset_weights[0].asset["decimals"]
-        for i in range(0, len(self.asset_weights)):
-            asset = self.asset_weights[i].asset
+
+        decimals = self.asset_quantities[0].asset["decimals"]
+        for i in range(0, len(self.asset_quantities)):
+            asset = self.asset_quantities[i].asset
             exponent = abs(asset["decimals"] - decimals)
             if asset["decimals"] > decimals:
                 for j in range(0, i):
@@ -101,3 +97,4 @@ class IndexAggregation:
                 continue
 
             decimals = asset["decimals"]
+
