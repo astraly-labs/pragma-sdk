@@ -58,6 +58,8 @@ ASSET_MAPPING: Dict[str, any] = {
     "MANA": ("eth", "0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
     "ENS": ("eth", "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"),
     "BLUR": ("eth", "0x5283d291dbcf85356a21ba090e6db59121208b44"),
+    "DPI": ("eth", "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"), 
+    "MVI": ("eth", "0x72e364f2abdc788b7e918bc238b21f109cd634d7")
 }
 
 
@@ -186,3 +188,4 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             volume=int(volume),
             autoscale_volume=True,
         )
+    
