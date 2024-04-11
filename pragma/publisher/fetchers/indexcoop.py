@@ -56,8 +56,8 @@ class IndexCoopFetcher(PublisherInterfaceT):
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         for asset in self.assets:
-            if asset["type"] != "INDEX":
-                logger.debug("Skipping IndexCoop for non-index asset %s", asset)
+            if asset["type"] != "SPOT":
+                logger.debug("Skipping IndexCoop for non-spot asset %s", asset)
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)

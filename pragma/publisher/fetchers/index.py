@@ -11,9 +11,6 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 logger = logging.getLogger(__name__)
 
 
-import time
-from typing import List, Union
-
 
 class AssetWeight:
     def __init__(self, asset: PragmaAsset, weight: float):
@@ -55,7 +52,7 @@ class IndexFetcher(PublisherInterfaceT):
             IndexAggregation(spot_entries, self.asset_weights).get_index_value()
         )
 
-        return SpotEntry(
+        return [SpotEntry(
             pair_id=self.index_name,
             price=index_value,
             volume=0,
@@ -63,7 +60,7 @@ class IndexFetcher(PublisherInterfaceT):
             source=self.fetcher.SOURCE,
             publisher=self.fetcher.publisher,
             autoscale_volume=False,
-        )
+        )]
 
     def format_url(self, quote_asset, base_asset):
         return self.fetcher.format_url(quote_asset, base_asset)

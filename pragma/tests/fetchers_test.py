@@ -108,7 +108,7 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             url = fetcher.format_url(quote_asset, base_asset)
 
             if fetcher_config["name"] == "TheGraph":
-                if asset["type"] == "INDEX":
+                if asset["pair"] == ("DPI", "USD"):
                     continue
                 else:
                     query = fetcher.query_body(quote_asset)
@@ -123,7 +123,7 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             else:
                 if fetcher_config["name"] == "IndexCoop" and asset["type"] == "SPOT":
                     continue
-                elif fetcher_config["name"] != "IndexCoop" and asset["type"] == "INDEX":
+                elif fetcher_config["name"] != "IndexCoop" and asset["name"] == ("DPI", "USD"):
                     continue
                 else:
                     mock.get(url, status=200, payload=mock_data[quote_asset])
