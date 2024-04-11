@@ -74,7 +74,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
 
         components = json["components"]
         weights = {
-            component["symbol"]: component["percentOfSetNumber"]
+            component["symbol"]: float(component["quantity"])
             for component in components
         }
 

@@ -1,12 +1,8 @@
 import asyncio
-import http.client
-import json
-import os
 import time
 from typing import Dict, List
 
 import aiohttp
-import requests
 from dotenv import load_dotenv
 
 from pragma.core.client import PragmaClient
@@ -124,7 +120,6 @@ class PragmaPublisherClient(PragmaClient):
                 data = fetcher.fetch(session)
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
-            print(result)
             if filter_exceptions:
                 result = [subl for subl in result if not isinstance(subl, Exception)]
             return [val for subl in result for val in subl]
