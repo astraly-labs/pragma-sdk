@@ -11,6 +11,7 @@ from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.core.client import PragmaClient
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "ZEND": "0xb2606492712d311be8f41d940afe8ce742a52d442",
     "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b", 
     "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "MVI": "0x72e364f2abdc788b7e918bc238b21f109cd634d7",
 }
 
 
@@ -46,6 +48,7 @@ DECIMALS_MAPPING: Dict[str, int] = {
     "LORDS": 18,
     "ZEND": 18,
     "DPI": 8, 
+    "MVI": 8,
     "WETH": 8,
 }
 
@@ -91,8 +94,8 @@ class PropellerFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if pair == ("DPI", "USD"):
-            substitute_pair = ("DPI", "WETH")
+        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
+            substitute_pair = (pair[0], "WETH")
             eth_price = await self.get_stable_price(self.client, "ETH")
         else: 
             substitute_pair = pair
@@ -147,6 +150,8 @@ class PropellerFetcher(PublisherInterfaceT):
     def _construct(self, asset, result, eth_price = None) -> SpotEntry:
         pair = asset["pair"]
         mid_prices = []
+
+        print(result)
         for quotes, buy_tokens, sell_tokens in zip(
             result["quotes"], result["buy_tokens"], result["sell_tokens"]
         ):
@@ -159,7 +164,7 @@ class PropellerFetcher(PublisherInterfaceT):
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-        if pair == ("DPI", "USD"):
+        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
             price = sum(mid_prices)*eth_price / len(mid_prices)
         else: 
             price = sum(mid_prices) / len(mid_prices)
