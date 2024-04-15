@@ -33,6 +33,8 @@ class BinanceFetcher(PublisherInterfaceT):
         # For now still leaving this line,
         if pair[1] == "USD":
             pair = (pair[0], "USDT")
+        if pair[0] == "WETH":
+            pair = ("ETH", pair[1])
         else:
             usdt_price = 1
         url = self.format_url(pair[0], pair[1])

@@ -204,6 +204,22 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
+    "IndexCoopFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "indexcoop.json",
+        "fetcher_class": IndexCoopFetcher,
+        "name": "IndexCoop",
+        "expected_result": [
+            SpotEntry(
+                "DPI/USD",
+                13628454601,
+                12345,
+                "INDEXCOOP",
+                PUBLISHER_NAME,
+                volume=6454312441521,
+                autoscale_volume=False,
+            ),
+        ],
+    },
 }
 
 

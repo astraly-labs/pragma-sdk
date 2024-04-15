@@ -1,0 +1,13 @@
+{
+    "DPI":{
+    "symbol": "DPI",
+    "address": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
+    "name": "DefiPulse Index",
+    "decimals": 18,
+    "totalSupply": "203145.038456295262674512",
+    "marketPrice": 135.44,
+    "navPrice": 136.28454601566773,
+    "marketCap": 27685529.34135156,
+    "change24h": -6.964445684388249,
+    "volume24h": 64543.12441521364
+    }}

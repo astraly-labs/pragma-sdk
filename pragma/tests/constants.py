@@ -140,6 +140,7 @@ PAIRS = [
 SAMPLE_ASSETS = [
     {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+    {"type": "INDEX", "pair": ("DPI", "USD"), "decimals": 8},
 ]
 
 STARKNET_SAMPLE_ASSETS = [

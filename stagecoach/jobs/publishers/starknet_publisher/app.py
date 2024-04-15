@@ -17,6 +17,8 @@ from pragma.publisher.fetchers import (
     DefillamaFetcher,
     GeckoTerminalFetcher,
     HuobiFetcher,
+    IndexCoopFetcher,
+    IndexFetcher,
     KucoinFetcher,
     OkxFetcher,
     PropellerFetcher,
@@ -32,8 +34,8 @@ logger = get_stream_logger()
 
 NETWORK = os.environ["NETWORK"]
 SECRET_NAME = os.environ["SECRET_NAME"]
-SPOT_ASSETS = os.environ["SPOT_ASSETS"]
-FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
+SPOT_ASSETS = os.getenv("SPOT_ASSETS", "")
+FUTURE_ASSETS = os.getenv("FUTURE_ASSETS", "")
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
@@ -52,10 +54,13 @@ def handler(event, context):
     spot_assets = [
         get_spot_asset_spec_for_pair_id(asset) for asset in SPOT_ASSETS.split(",")
     ]
-    future_assets = [
-        get_future_asset_spec_for_pair_id(asset) for asset in FUTURE_ASSETS.split(",")
-    ]
-    spot_assets.extend(future_assets)
+    if len(FUTURE_ASSETS) > 0:
+        future_assets = [
+            get_future_asset_spec_for_pair_id(asset)
+            for asset in FUTURE_ASSETS.split(",")
+        ]
+        spot_assets.extend(future_assets)
+
     entries_ = asyncio.run(_handler(spot_assets))
     return {
         "success": len(entries_),
@@ -106,30 +111,42 @@ async def _handler(assets):
         )
         return []
 
-    publisher_client.add_fetchers(
-        [
-            fetcher(assets, PUBLISHER)
-            for fetcher in (
-                BitstampFetcher,
-                DefillamaFetcher,
-                OkxFetcher,
-                GeckoTerminalFetcher,
-                StarknetAMMFetcher,
-                HuobiFetcher,
-                KucoinFetcher,
-                BybitFetcher,
-                BinanceFetcher,
-                BinanceFutureFetcher,
-                OkxFutureFetcher,
-                ByBitFutureFetcher,
-            )
-        ]
-    )
+    fetchers = [
+        fetcher(assets, PUBLISHER)
+        for fetcher in (
+            BinanceFetcher,
+            DefillamaFetcher,
+            GeckoTerminalFetcher,
+            KucoinFetcher,
+            HuobiFetcher,
+            OkxFetcher,
+            BitstampFetcher,
+            StarknetAMMFetcher,
+            BybitFetcher,
+            BinanceFutureFetcher,
+            OkxFutureFetcher,
+            ByBitFutureFetcher,
+        )
+    ]
+
+    publisher_client.add_fetchers(fetchers)
 
     publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
+    index_coop_fetcher = IndexCoopFetcher(assets, PUBLISHER)
+    publisher_client.add_fetcher(IndexCoopFetcher(assets, PUBLISHER))
+
+    # Indexes Fetchers
+    dpi_weights = index_coop_fetcher.fetch_quantities(
+        "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b"
+    )
+
+    index_fetchers = [
+        IndexFetcher(fetchers[i], "DPI/USD", dpi_weights) for i in range(len(fetchers))
+    ]
+    publisher_client.add_fetchers(index_fetchers)
 
     _entries = await publisher_client.fetch()
-    print(_entries)
+    print("entries", _entries)
     response = await publisher_client.publish_many(
         _entries,
         pagination=PAGINATION,

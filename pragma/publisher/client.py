@@ -1,12 +1,8 @@
 import asyncio
-import http.client
-import json
-import os
 import time
 from typing import Dict, List
 
 import aiohttp
-import requests
 from dotenv import load_dotenv
 
 from pragma.core.client import PragmaClient

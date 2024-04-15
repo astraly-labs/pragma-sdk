@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DefillamaFetcher(PublisherInterfaceT):
     BASE_URL: str = (
-        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=5m"
+        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=15m"
     )
 
     SOURCE: str = "DEFILLAMA"
@@ -56,8 +56,7 @@ class DefillamaFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Defillama"
                 )
-
-        return self._construct(asset=asset, result=result)
+        return self._construct(asset, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
@@ -121,10 +120,11 @@ class DefillamaFetcher(PublisherInterfaceT):
 
         logger.info("Fetched price %d for %s from Coingecko", price, pair_id)
 
-        return SpotEntry(
+        entry = SpotEntry(
             pair_id=pair_id,
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
         )
+        return entry
