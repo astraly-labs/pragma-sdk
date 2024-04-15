@@ -123,7 +123,10 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             else:
                 if fetcher_config["name"] == "IndexCoop" and asset["type"] == "SPOT":
                     continue
-                elif fetcher_config["name"] != "IndexCoop" and asset["name"] == ("DPI", "USD"):
+                elif fetcher_config["name"] != "IndexCoop" and asset["name"] == (
+                    "DPI",
+                    "USD",
+                ):
                     continue
                 else:
                     mock.get(url, status=200, payload=mock_data[quote_asset])

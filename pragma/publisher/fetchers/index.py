@@ -11,7 +11,6 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 logger = logging.getLogger(__name__)
 
 
-
 class AssetQuantities:
     def __init__(self, asset: PragmaAsset, quantities: float):
         self.asset = asset
@@ -49,15 +48,17 @@ class IndexFetcher(PublisherInterfaceT):
             IndexAggregation(spot_entries, self.asset_quantities).get_index_value()
         )
 
-        return [SpotEntry(
-            pair_id=self.index_name,
-            price=index_value,
-            volume=0,
-            timestamp=int(time.time()),
-            source=self.fetcher.SOURCE,
-            publisher=self.fetcher.publisher,
-            autoscale_volume=False,
-        )]
+        return [
+            SpotEntry(
+                pair_id=self.index_name,
+                price=index_value,
+                volume=0,
+                timestamp=int(time.time()),
+                source=self.fetcher.SOURCE,
+                publisher=self.fetcher.publisher,
+                autoscale_volume=False,
+            )
+        ]
 
     def format_url(self, quote_asset, base_asset):
         return self.fetcher.format_url(quote_asset, base_asset)
@@ -67,7 +68,9 @@ class IndexAggregation:
     spot_entries: List[SpotEntry]
     asset_quantities: List[AssetQuantities]
 
-    def __init__(self, spot_entries: List[SpotEntry], asset_quantities: List[AssetQuantities]):
+    def __init__(
+        self, spot_entries: List[SpotEntry], asset_quantities: List[AssetQuantities]
+    ):
         self.spot_entries = spot_entries
         self.asset_quantities = asset_quantities
 
@@ -97,4 +100,3 @@ class IndexAggregation:
                 continue
 
             decimals = asset["decimals"]
-

@@ -8,10 +8,10 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-from pragma.core.client import PragmaClient
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "BTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # FIXME: Unsafe
     "WSTETH": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
     "ZEND": "0xb2606492712d311be8f41d940afe8ce742a52d442",
-    "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b", 
+    "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
     "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     "MVI": "0x72e364f2abdc788b7e918bc238b21f109cd634d7",
 }
@@ -47,7 +47,7 @@ DECIMALS_MAPPING: Dict[str, int] = {
     "UNI": 18,
     "LORDS": 18,
     "ZEND": 18,
-    "DPI": 8, 
+    "DPI": 8,
     "MVI": 8,
     "WETH": 8,
 }
@@ -61,7 +61,9 @@ class PropellerFetcher(PublisherInterfaceT):
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, api_key: str = "", client= None):
+    def __init__(
+        self, assets: List[PragmaAsset], publisher, api_key: str = "", client=None
+    ):
         self.assets = assets
         self.publisher = publisher
         self.headers = {"X-Api-Key": api_key}
@@ -97,7 +99,7 @@ class PropellerFetcher(PublisherInterfaceT):
         if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
             substitute_pair = (pair[0], "WETH")
             eth_price = await self.get_stable_price(self.client, "ETH")
-        else: 
+        else:
             substitute_pair = pair
             eth_price = 1
 
@@ -147,7 +149,7 @@ class PropellerFetcher(PublisherInterfaceT):
         url = self.BASE_URL
         return url
 
-    def _construct(self, asset, result, eth_price = None) -> SpotEntry:
+    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
         mid_prices = []
 
@@ -165,8 +167,8 @@ class PropellerFetcher(PublisherInterfaceT):
             )
             mid_prices.append(mid_price)
         if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
-            price = sum(mid_prices)*eth_price / len(mid_prices)
-        else: 
+            price = sum(mid_prices) * eth_price / len(mid_prices)
+        else:
             price = sum(mid_prices) / len(mid_prices)
         price_int = int(price * (10 ** asset["decimals"]))
 

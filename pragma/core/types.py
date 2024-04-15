@@ -76,7 +76,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "RPL": "rocket-pool",
     "YFI": "yearn-finance",
     "COMP": "compound-governance-token",
-    "DPI": "defipulse-index", 
+    "DPI": "defipulse-index",
     "MVI": "metaverse-index",
 }
 

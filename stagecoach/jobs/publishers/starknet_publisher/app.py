@@ -17,12 +17,12 @@ from pragma.publisher.fetchers import (
     DefillamaFetcher,
     GeckoTerminalFetcher,
     HuobiFetcher,
+    IndexCoopFetcher,
+    IndexFetcher,
     KucoinFetcher,
     OkxFetcher,
     PropellerFetcher,
     StarknetAMMFetcher,
-    IndexCoopFetcher,
-    IndexFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
