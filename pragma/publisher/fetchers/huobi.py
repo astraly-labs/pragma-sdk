@@ -108,7 +108,7 @@ class HuobiFetcher(PublisherInterfaceT):
         return SpotEntry(
             pair_id=pair_id,
             price=price_int,
-            volume=volume,
+            volume=int(volume),
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
