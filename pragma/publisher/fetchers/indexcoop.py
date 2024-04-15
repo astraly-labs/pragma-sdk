@@ -14,6 +14,8 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 from pragma.publisher.fetchers.index import AssetQuantities
 
+from pragma.core.utils import currency_pair_to_pair_id
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_INDEXES = {
@@ -91,7 +93,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
         price = result["navPrice"]
         price_int = int(price * (10 ** asset["decimals"]))
-        pair_id = result["symbol"]
+        pair_id = currency_pair_to_pair_id(*pair)
         volume = int(float(result["volume24h"]) * (10 ** asset["decimals"]))
 
         logger.info("Fetched price %d for %s from IndexCoop", price, "/".join(pair))
