@@ -27,7 +27,7 @@ logger = get_stream_logger()
 
 SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
-PUBLISHER = os.environ.get("PUBLISHER")
+PUBLISHER = os.environ["PUBLISHER"]
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 API_KEY = os.environ.get("API_KEY")

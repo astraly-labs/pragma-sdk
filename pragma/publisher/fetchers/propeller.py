@@ -153,7 +153,6 @@ class PropellerFetcher(PublisherInterfaceT):
         pair = asset["pair"]
         mid_prices = []
 
-        print(result)
         for quotes, buy_tokens, sell_tokens in zip(
             result["quotes"], result["buy_tokens"], result["sell_tokens"]
         ):
