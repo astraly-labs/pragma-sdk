@@ -18,7 +18,6 @@ HEX_STR = str  # pylint: disable=invalid-name
 
 # Network Types
 DEVNET = "devnet"
-TESTNET = "testnet"
 SEPOLIA = "sepolia"
 MAINNET = "mainnet"
 SHARINGAN = "sharingan"
@@ -27,7 +26,6 @@ PRAGMA_TESTNET = "pragma_testnet"
 
 Network = Literal[
     "devnet",
-    "testnet",
     "mainnet",
     "sharingan",
     "pragma_testnet",
@@ -38,7 +36,6 @@ Network = Literal[
 CHAIN_IDS = {
     DEVNET: 1536727068981429685321,
     SHARINGAN: 1536727068981429685321,
-    TESTNET: 1536727068981429685321,
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
     FORK_DEVNET: 1536727068981429685321,
@@ -47,6 +44,7 @@ CHAIN_IDS = {
 
 ASSET_MAPPING: Dict[str, str] = {
     "ETH": "ethereum",
+    "WETH": "weth",
     "BTC": "bitcoin",
     "WBTC": "wrapped-bitcoin",
     "SOL": "solana",
@@ -78,13 +76,41 @@ ASSET_MAPPING: Dict[str, str] = {
     "RPL": "rocket-pool",
     "YFI": "yearn-finance",
     "COMP": "compound-governance-token",
+    "DPI": "defipulse-index",
+    "MVI": "metaverse-index",
 }
+
+DPI_ASSETS = [
+    {"type": "SPOT", "pair": ("YFI", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("COMP", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("SNX", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("MKR", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("BAL", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("UNI", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("AAVE", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("LDO", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
+]
+
+MVI_ASSETS = [
+    {"type": "SPOT", "pair": ("MC", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("RNDR", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("FET", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("IMX", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("GALA", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ILV", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("APE", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("SAND", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("AXS", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("MANA", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("ENS", "USD"), "decimals": 8},
+    {"type": "SPOT", "pair": ("BLUR", "USD"), "decimals": 8},
+]
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
 
 STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
-    TESTNET: "https://testnet.starkscan.co",
     SEPOLIA: "https://sepolia.starkscan.co",
     DEVNET: "https://devnet.starkscan.co",
     SHARINGAN: "https://sharingan-explorer.madara.zone",
@@ -98,21 +124,15 @@ RPC_URLS = {
     MAINNET: [
         "https://starknet-mainnet.public.blastapi.io/rpc/v0_6",
     ],
-    TESTNET: [
-        "https://starknet-testnet.public.blastapi.io/rpc/v0_6",
-    ],
     SEPOLIA: [
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
     ],
 }
 
 
-def get_rpc_url(network=TESTNET, port=5050):
+def get_rpc_url(network=SEPOLIA, port=5050):
     if network.startswith("http"):
         return network
-    if network == TESTNET:
-        random_index = random.randint(0, len(RPC_URLS[TESTNET]) - 1)
-        return RPC_URLS[TESTNET][random_index]
     if network == SEPOLIA:
         random_index = random.randint(0, len(RPC_URLS[SEPOLIA]) - 1)
         return RPC_URLS[SEPOLIA][random_index]
@@ -143,10 +163,6 @@ class ContractAddresses:
 
 CONTRACT_ADDRESSES = {
     DEVNET: ContractAddresses(0, 0),
-    TESTNET: ContractAddresses(
-        2408056700008799988274832007944460979526684291270693941276336026156441738630,
-        3108238389225984732543655444430831893780207443780498125530192910262931411303,
-    ),
     MAINNET: ContractAddresses(
         1035964020232444284030697086969999610062982650901949616270651804992179237909,
         1202089834814778579992154020333959781277480478747022471664051891421849487195,

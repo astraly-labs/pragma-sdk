@@ -1,12 +1,8 @@
 import asyncio
-import http.client
-import json
-import os
 import time
 from typing import Dict, List
 
 import aiohttp
-import requests
 from dotenv import load_dotenv
 
 from pragma.core.client import PragmaClient
@@ -137,16 +133,22 @@ class PragmaPublisherClient(PragmaClient):
 
 
 class PragmaAPIClient(PragmaClient):
-    api_base_ur: str
+    api_base_url: str
     api_key: str
 
     def __init__(
         self,
+        account_private_key,
+        account_contract_address,
         api_base_url,
         api_key,
     ):
         self.api_base_url = api_base_url
         self.api_key = api_key
+        super().__init__(
+            account_private_key=account_private_key,
+            account_contract_address=account_contract_address,
+        )
 
     @staticmethod
     def convert_to_publisher(client: PragmaClient):

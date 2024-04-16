@@ -204,6 +204,22 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
+    "IndexCoopFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "indexcoop.json",
+        "fetcher_class": IndexCoopFetcher,
+        "name": "IndexCoop",
+        "expected_result": [
+            SpotEntry(
+                "DPI/USD",
+                13628454601,
+                12345,
+                "INDEXCOOP",
+                PUBLISHER_NAME,
+                volume=6454312441521,
+                autoscale_volume=False,
+            ),
+        ],
+    },
 }
 
 
@@ -462,6 +478,33 @@ ONCHAIN_STARKNET_FETCHER_CONFIGS = {
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
+            ),
+        ],
+    },
+}
+
+
+INDEX_CONFIGS = {
+    "IndexConfig": {
+        "name": "IndexConfig",
+        "expected_result": [
+            SpotEntry(
+                "INDEXNAME1",
+                200000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
+            ),
+            SpotEntry(
+                "INDEXNAME2",
+                1500050000000000,
+                12345,
+                "GECKOTERMINAL",
+                PUBLISHER_NAME,
+                volume=0,
+                autoscale_volume=False,
             ),
         ],
     },

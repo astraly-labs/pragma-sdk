@@ -84,7 +84,7 @@ class SpotEntry(Entry):
         self.pair_id = pair_id
         self.price = price
 
-        if autoscale_volume:
+        if volume > 0 and autoscale_volume:
             asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
             decimals = asset["decimals"] or 0
             volume = volume or 0

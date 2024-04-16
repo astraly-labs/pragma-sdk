@@ -8,6 +8,7 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset, PragmaSpotAsset
+from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
@@ -26,6 +27,9 @@ ASSET_MAPPING: Dict[str, str] = {
     "BTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # FIXME: Unsafe
     "WSTETH": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
     "ZEND": "0xb2606492712d311be8f41d940afe8ce742a52d442",
+    "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
+    "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "MVI": "0x72e364f2abdc788b7e918bc238b21f109cd634d7",
 }
 
 
@@ -43,6 +47,9 @@ DECIMALS_MAPPING: Dict[str, int] = {
     "UNI": 18,
     "LORDS": 18,
     "ZEND": 18,
+    "DPI": 8,
+    "MVI": 8,
+    "WETH": 8,
 }
 
 
@@ -54,10 +61,13 @@ class PropellerFetcher(PublisherInterfaceT):
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, api_key: str = ""):
+    def __init__(
+        self, assets: List[PragmaAsset], publisher, api_key: str = "", client=None
+    ):
         self.assets = assets
         self.publisher = publisher
         self.headers = {"X-Api-Key": api_key}
+        self.client = client or PragmaClient(network="mainnet")
 
     # Propeller requires a payload to be sent with the request
     # The payload is a list of orders, each with a sell_token, buy_token, and sell_amount
@@ -86,16 +96,23 @@ class PropellerFetcher(PublisherInterfaceT):
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
+        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
+            substitute_pair = (pair[0], "WETH")
+            eth_price = await self.get_stable_price(self.client, "ETH")
+        else:
+            substitute_pair = pair
+            eth_price = 1
+
         url = f"{self.BASE_URL}"
         try:
-            payload = self.build_payload(pair[0], pair[1])
+            payload = self.build_payload(substitute_pair[0], substitute_pair[1])
         except PublisherFetchError as e:
             return e
 
         async with session.post(url, headers=self.headers, json=payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Propeller"
+                    f"No data found for {'/'.join(substitute_pair)} from Propeller"
                 )
 
             if resp.status == 403:
@@ -115,7 +132,7 @@ class PropellerFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Propeller"
                 )
 
-            return self._construct(asset, result)
+            return self._construct(asset, result, eth_price)
 
     async def fetch(
         self, session: ClientSession
@@ -132,9 +149,10 @@ class PropellerFetcher(PublisherInterfaceT):
         url = self.BASE_URL
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
+    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
         mid_prices = []
+
         for quotes, buy_tokens, sell_tokens in zip(
             result["quotes"], result["buy_tokens"], result["sell_tokens"]
         ):
@@ -147,7 +165,10 @@ class PropellerFetcher(PublisherInterfaceT):
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-        price = sum(mid_prices) / len(mid_prices)
+        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
+            price = sum(mid_prices) * eth_price / len(mid_prices)
+        else:
+            price = sum(mid_prices) / len(mid_prices)
         price_int = int(price * (10 ** asset["decimals"]))
 
         timestamp = int(time.time())

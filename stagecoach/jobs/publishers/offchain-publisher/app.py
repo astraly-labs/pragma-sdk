@@ -9,7 +9,7 @@ from pragma.core.assets import (
     get_spot_asset_spec_for_pair_id,
 )
 from pragma.core.logger import get_stream_logger
-from pragma.publisher.client import PragmaAPIClient
+from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
     BinanceFetcher,
     BitstampFetcher,
@@ -27,8 +27,8 @@ logger = get_stream_logger()
 
 SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
-PUBLISHER = os.environ.get("PUBLISHER")
-PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"))
+PUBLISHER = os.environ["PUBLISHER"]
+PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 API_KEY = os.environ.get("API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
@@ -55,7 +55,8 @@ def _get_pvt_key():
     client = session.client(service_name="secretsmanager", region_name=region_name)
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
-        json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"]
+        json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
+        16,
     )
 
 
@@ -63,7 +64,7 @@ async def _handler(assets):
     publisher_private_key = _get_pvt_key()
     # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 16)
 
-    publisher_client = PragmaAPIClient(
+    publisher_client = PragmaPublisherClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
         api_url=API_URL,
