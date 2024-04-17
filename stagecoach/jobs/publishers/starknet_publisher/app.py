@@ -141,7 +141,7 @@ async def _handler(assets):
     )
 
     index_fetchers = [
-        IndexFetcher(fetchers[i], "DPI/USD", dpi_weights) for i in range(len(fetchers))
+        IndexFetcher(fetchers[i], "DPI/USD", dpi_weights) for i in range(6)
     ]
     publisher_client.add_fetchers(index_fetchers)
 
