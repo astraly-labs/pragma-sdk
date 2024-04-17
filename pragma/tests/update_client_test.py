@@ -40,7 +40,6 @@ async def pragma_fork_client(
     # TODO(#000): refactor this
     fork_network = os.getenv("FORK_NETWORK")
     deployments = get_deployments(fork_network)
-
     oracle = deployments["pragma_Oracle"]
     registry = deployments["pragma_PublisherRegistry"]
     address, private_key = address_and_private_key
@@ -68,7 +67,7 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
             "pragma_Oracle.casm.json", directory=None
         )
         # Declare Oracle
-        declare_result = await Contract.declare(
+        declare_result = await Contract.declare_v3(
             account=pragma_fork_client.account,
             compiled_contract=compiled_contract,
             compiled_contract_casm=compiled_contract_casm,

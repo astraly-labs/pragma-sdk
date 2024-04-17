@@ -48,7 +48,7 @@ async def get_deploy_account_transaction(
         address=address,
         client=client,
         key_pair=key_pair,
-        chain=StarknetChainId.TESTNET,
+        chain=StarknetChainId.SEPOLIA_TESTNET,
     )
     return await account.sign_deploy_account_v1_transaction(
         class_hash=class_hash,
@@ -119,7 +119,7 @@ class ExampleRandomnessMixin:
 class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
     def __init__(
         self,
-        network: str = "testnet",
+        network: str = "devnet",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,

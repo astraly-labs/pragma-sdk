@@ -56,7 +56,7 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
         "katana",
         "--chain-id",
-        "SN_GOERLI",
+        "SN_SEPOLIA",
         "--host",
         "127.0.0.1",
         "--port",
@@ -74,6 +74,8 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
         "katana",
+        "--chain-id",
+        "SN_SEPOLIA",
         "--rpc-url",
         "127.0.0.1",
         "--port",
@@ -92,6 +94,8 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
         "katana",
         "--host",
+        "--chain-id",
+        "SN_SEPOLIA",
         "127.0.0.1",
         "--port",
         str(devnet_port),
@@ -113,6 +117,8 @@ def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
         "katana",
+        "--chain-id",
+        "SN_SEPOLIA",
         "--rpc-url",
         str(rpc_url),
         "--port",

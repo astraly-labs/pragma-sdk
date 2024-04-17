@@ -107,7 +107,6 @@ def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Acc
             os.getenv("TESTNET_PRIVATE_KEY"),
         ),
     }
-
     net = pytestconfig.getoption("--net")
     address, private_key = address_and_priv_key[net]
     return Account(

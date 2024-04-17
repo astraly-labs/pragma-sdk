@@ -39,6 +39,7 @@ class PublisherRegistryMixin:
             publisher_address,
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def add_source_for_publisher(
@@ -51,6 +52,7 @@ class PublisherRegistryMixin:
             str_to_felt(source),
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def add_sources_for_publisher(
@@ -63,6 +65,7 @@ class PublisherRegistryMixin:
             [str_to_felt(source) for source in sources],
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def update_publisher_address(
@@ -75,4 +78,5 @@ class PublisherRegistryMixin:
             publisher_address,
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation

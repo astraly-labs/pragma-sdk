@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pragma.core.entry import SpotEntry
 from pragma.core.types import Currency, Pair
-from pragma.publisher.fetchers.index import AssetWeight
+from pragma.publisher.fetchers.index import AssetQuantities
 
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1
@@ -40,11 +40,12 @@ print("CONTRACTS_COMPILED_DIR:", CONTRACTS_COMPILED_DIR)
 # -------------------------------- TESTNET -------------------------------------
 
 TESTNET_ACCOUNT_PRIVATE_KEY = (
-    "0x61910356c5adf66efb65ec3df5d07a6e5e6e7c8b59f15a13eda7a34c8d1ecc4"
+    "0x100801800000000310080180000000010030000000000005106801800206800"
 )
 TESTNET_ACCOUNT_ADDRESS = (
-    "0x59083382aadec25d7616a7f48942d72d469b0ac581f2e935ec26b68f66bd600"
+    "0x4d75495e10ee26cae76478b6e491646ff0a10e0a062db1555131e47b07b7d24"
 )
+
 # 0x61910356c5adf66efb65ec3df5d07a6e5e6e7c8b59f15a13eda7a34c8d1ecc4
 FEE_TOKEN_ADDRESS = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 
@@ -185,25 +186,25 @@ SAMPLE_SPOT_ENTRIES = [
         publisher="PRAGMA_TEST",
     ),
 ]
-SAMPLE_ASSET_WEIGHTS = [
+SAMPLE_ASSET_QUANTITIES = [
     [
-        AssetWeight(
+        AssetQuantities(
             asset={"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
-            weight=0.5,
+            quantities=0.5,
         ),
-        AssetWeight(
+        AssetQuantities(
             asset={"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
-            weight=0.5,
+            quantities=0.5,
         ),
     ],
     [
-        AssetWeight(
+        AssetQuantities(
             asset={"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 10},
-            weight=0.5,
+            quantities=0.5,
         ),
-        AssetWeight(
+        AssetQuantities(
             asset={"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 6},
-            weight=0.5,
+            quantities=0.5,
         ),
     ],
 ]

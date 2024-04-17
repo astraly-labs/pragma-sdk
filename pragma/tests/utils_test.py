@@ -1,7 +1,7 @@
 import pytest
 
 from pragma.publisher.fetchers.index import IndexAggregation
-from pragma.tests.constants import SAMPLE_ASSET_WEIGHTS, SAMPLE_SPOT_ENTRIES
+from pragma.tests.constants import SAMPLE_ASSET_QUANTITIES, SAMPLE_SPOT_ENTRIES
 from pragma.tests.fetcher_configs import INDEX_CONFIGS
 
 
@@ -11,8 +11,8 @@ def sample_spot_entries():
 
 
 @pytest.fixture
-def sample_asset_weights():
-    return SAMPLE_ASSET_WEIGHTS
+def SAMPLE_ASSET_QUANTITIES():
+    return SAMPLE_ASSET_QUANTITIES
 
 
 @pytest.fixture(params=INDEX_CONFIGS.values())
@@ -21,12 +21,12 @@ def index_fetcher_config(request):
 
 
 def test_get_index_value(
-    index_fetcher_config, sample_spot_entries, sample_asset_weights
+    index_fetcher_config, sample_spot_entries, SAMPLE_ASSET_QUANTITIES
 ):
     # Create an instance of IndexAggregation
-    for i in range(len(sample_asset_weights)):
+    for i in range(len(SAMPLE_ASSET_QUANTITIES)):
         index_aggregation = IndexAggregation(
-            sample_spot_entries, sample_asset_weights[i]
+            sample_spot_entries, SAMPLE_ASSET_QUANTITIES[i]
         )
         expected_index_value = index_fetcher_config["expected_result"][i]
         # Calculate the index value

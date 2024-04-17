@@ -44,7 +44,7 @@ class PragmaClient(
 
     def __init__(
         self,
-        network: str = "sepolia",
+        network: str = "devnet",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
