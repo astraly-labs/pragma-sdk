@@ -39,17 +39,19 @@ async def pragma_fork_client(
 ) -> PragmaClient:
     # TODO(#000): refactor this
     fork_network = os.getenv("FORK_NETWORK")
-    deployments = get_deployments(fork_network)
+    deployments = get_deployments(
+        fork_network if fork_network != "devnet" else "mainnet"
+    )
     oracle = deployments["pragma_Oracle"]
     registry = deployments["pragma_PublisherRegistry"]
     address, private_key = address_and_private_key
-
     # Parse port from network url
+    print("here is the network")
+    print(network)
     port = urlparse(network).port
-
     return PragmaClient(
         network="fork_devnet",
-        chain_name=fork_network,
+        chain_name="mainnet",
         account_contract_address=address,
         account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
@@ -60,14 +62,14 @@ async def pragma_fork_client(
 
 
 @pytest_asyncio.fixture(scope="package")
-async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
+async def declare_oracle(pragma_fork_client) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
         compiled_contract_casm = read_contract(
             "pragma_Oracle.casm.json", directory=None
         )
         # Declare Oracle
-        declare_result = await Contract.declare_v3(
+        declare_result = await Contract.declare_v2(
             account=pragma_fork_client.account,
             compiled_contract=compiled_contract,
             compiled_contract_casm=compiled_contract_casm,
@@ -91,7 +93,9 @@ async def test_update_oracle(
 ):
     # TODO(#000): refactor this
     fork_network = os.getenv("FORK_NETWORK")
-    deployments = get_deployments(fork_network)
+    deployments = get_deployments(
+        fork_network if fork_network != "devnet" else "sepolia"
+    )
 
     if declare_oracle is None:
         pytest.skip("oracle_declare failed. Skipping this test...")

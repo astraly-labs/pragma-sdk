@@ -606,11 +606,11 @@ async def test_compute_premium_fee(
     premium_fee_1st = await vrf_pragma_client.compute_premium_fee(caller_address)
     assert premium_fee_1st == MAX_PREMIUM_FEE
 
-    # Commented the following lines in order to avoid a long test execution
+    await multiple_randomness_request(vrf_pragma_client, randomness_contracts, 10)
+    premium_fee_2nd = await vrf_pragma_client.compute_premium_fee(caller_address)
+    assert premium_fee_2nd == MAX_PREMIUM_FEE / 2
 
-    # await multiple_randomness_request(vrf_pragma_client, randomness_contracts, 10)
-    # premium_fee_2nd = await vrf_pragma_client.compute_premium_fee(caller_address)
-    # assert premium_fee_2nd == MAX_PREMIUM_FEE / 2
+    # Commented the following lines in order to avoid a long test execution
 
     # await multiple_randomness_request(vrf_pragma_client, randomness_contracts, 21)
     # premium_fee_3rd = await vrf_pragma_client.compute_premium_fee(caller_address)
