@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
-from pragma.core.utils import get_cur_from_pair
+from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.types import PublisherInterfaceT
 
 load_dotenv()
@@ -58,6 +58,7 @@ class PragmaAPIError:
         return self.message
 
 
+@add_sync_methods
 class PragmaPublisherClient(PragmaClient):
     """
     This client extends the pragma client with functionality for fetching from our third party sources.

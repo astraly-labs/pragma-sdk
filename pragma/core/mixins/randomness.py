@@ -57,6 +57,7 @@ class RandomnessMixin:
             calldata,
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def estimate_gas_request_random_op(
@@ -141,9 +142,9 @@ class RandomnessMixin:
                 RequestStatus.OUT_OF_GAS.serialize(),
                 auto_estimate=True,
             )
+            await invocation.wait_for_acceptance()
             # Refund gas
             await self.refund_operation(request_id, requestor_address)
-
             return invocation
 
         invocation = await self.randomness.functions["submit_random"].invoke_v1(
@@ -159,9 +160,8 @@ class RandomnessMixin:
             calldata,
             max_fee=max_fee,
         )
-        print(invocation)
         logger.info(f"Sumbitted random {invocation.hash}")
-
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -286,6 +286,7 @@ class RandomnessMixin:
             num_words,
             max_fee=max_fee,
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def estimate_gas_cancel_random_op(
@@ -331,6 +332,7 @@ class RandomnessMixin:
         invocation = await self.randomness.functions["refund_operation"].invoke_v1(
             requestor_address, request_id, max_fee=max_fee
         )
+        await invocation.wait_for_acceptance()
         return invocation
 
     async def handle_random(
@@ -408,6 +410,7 @@ class RandomnessMixin:
                     proof,
                     event.calldata,
                 )
+                await invocation.wait_for_acceptance()
 
                 if invocation is None:
                     print("Failed to submit random")

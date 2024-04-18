@@ -86,10 +86,6 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
     asset_valid_data_type(data, SpotEntry)
 
-    data = publisher._fetch_sync()
-
-    asset_valid_data_type(data, SpotEntry)
-
     # Publish SPOT data
     print(data)
     await publisher.publish_many(data, pagination=PAGINATION)
@@ -114,13 +110,9 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
 
     asset_valid_data_type(data_async, FutureEntry)
 
-    data_sync: Sequence[Entry] = publisher._fetch_sync()
-
-    asset_valid_data_type(data_sync, FutureEntry)
-
     # Publish FUTURE data
     data_list: Sequence[FutureEntry] = [
-        d for d in data_sync if isinstance(d, FutureEntry)
+        d for d in data_async if isinstance(d, FutureEntry)
     ]
     print(data_list)
     await publisher.publish_many(data_list, pagination=PAGINATION)

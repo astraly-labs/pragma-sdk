@@ -10,18 +10,14 @@ def sample_spot_entries():
     return SAMPLE_SPOT_ENTRIES
 
 
-@pytest.fixture
-def SAMPLE_ASSET_QUANTITIES():
-    return SAMPLE_ASSET_QUANTITIES
-
-
 @pytest.fixture(params=INDEX_CONFIGS.values())
 def index_fetcher_config(request):
     return request.param
 
 
 def test_get_index_value(
-    index_fetcher_config, sample_spot_entries, SAMPLE_ASSET_QUANTITIES
+    index_fetcher_config,
+    sample_spot_entries,
 ):
     # Create an instance of IndexAggregation
     for i in range(len(SAMPLE_ASSET_QUANTITIES)):
