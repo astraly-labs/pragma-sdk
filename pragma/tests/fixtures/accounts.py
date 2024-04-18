@@ -68,7 +68,7 @@ def full_node_account(
         address=address,
         client=full_node_client,
         key_pair=KeyPair.from_private_key(int(private_key, 0)),
-        chain=StarknetChainId.SEPOLIA_TESTNET,
+        chain=StarknetChainId.MAINNET,
     )
 
 
@@ -113,5 +113,5 @@ def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Acc
         address=address,
         client=FullNodeClient(node_url=network),
         key_pair=KeyPair.from_private_key(int(private_key, 16)),
-        chain=StarknetChainId.SEPOLIA_TESTNET,
+        chain=StarknetChainId.MAINNET,
     )

@@ -62,7 +62,7 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
         "--rpc-url",
         str(rpc_url),
         "--chain-id",
-        "SN_SEPOLIA",
+        "SN_MAIN",
         "--host",
         "127.0.0.1",
         "--port",
