@@ -15,6 +15,7 @@ from pragma.publisher.fetchers import *
 from pragma.publisher.future_fetchers import *
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import SAMPLE_ASSETS, SAMPLE_FUTURE_ASSETS
+from pragma.tests.utils import wait_for_acceptance
 
 ALL_SPOT_FETCHERS = [
     AscendexFetcher,
@@ -56,12 +57,16 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
     publisher_address = pragma_client.account_address()
 
     # Add PRAGMA as Publisher
-    await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
+    await wait_for_acceptance(
+        await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
+    )
 
     publishers = await pragma_client.get_all_publishers()
     assert publishers == [str_to_felt(PUBLISHER_NAME)]
 
-    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
+    await wait_for_acceptance(
+        await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
+    )
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(s) for s in SOURCES]
 

@@ -151,3 +151,7 @@ def filter_assets_by_type(assets, type_):
     filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
     """
     return [assets[i] for i in range(len(assets)) if assets[i]["type"] == type_]
+
+
+async def wait_for_acceptance(invocation):
+    await invocation.wait_for_acceptance()

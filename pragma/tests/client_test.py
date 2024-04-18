@@ -14,7 +14,7 @@ from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 from pragma.tests.constants import CURRENCIES, PAIRS
-from pragma.tests.utils import read_contract
+from pragma.tests.utils import read_contract, wait_for_acceptance
 
 PUBLISHER_NAME = "PRAGMA"
 
@@ -139,7 +139,9 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient):
 
     expected_publisher_address = 123
 
-    await pragma_client.add_publisher(publisher_name, expected_publisher_address)
+    await wait_for_acceptance(
+        await pragma_client.add_publisher(publisher_name, expected_publisher_address)
+    )
 
     publishers = await pragma_client.get_all_publishers()
     print(f" here is the publisher {publishers}")
@@ -148,13 +150,17 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient):
     publisher_address = await pragma_client.get_publisher_address(publisher_name)
     assert expected_publisher_address == publisher_address
 
-    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
-
+    await wait_for_acceptance(
+        await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
+    )
     sources = await pragma_client.get_publisher_sources(publisher_name)
     assert sources == [str_to_felt(SOURCE_1)]
 
-    await pragma_client.add_sources_for_publisher(publisher_name, [SOURCE_2, SOURCE_3])
-
+    await wait_for_acceptance(
+        await pragma_client.add_sources_for_publisher(
+            publisher_name, [SOURCE_2, SOURCE_3]
+        )
+    )
     sources = await pragma_client.get_publisher_sources(publisher_name)
     assert sources == [str_to_felt(source) for source in (SOURCE_1, SOURCE_2, SOURCE_3)]
 
@@ -166,20 +172,28 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     publisher_name = "PRAGMA"
     publisher_address = pragma_client.account_address()
 
-    await pragma_client.add_publisher(publisher_name, publisher_address)
-
+    await wait_for_acceptance(
+        await pragma_client.add_publisher(publisher_name, publisher_address)
+    )
     publishers = await pragma_client.get_all_publishers()
     assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
 
     # Add PRAGMA as Source for PRAGMA Publisher
-    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
-
+    await wait_for_acceptance(
+        await pragma_client.add_source_for_publisher(publisher_name, SOURCE_1)
+    )
     # Publish SPOT Entry
     timestamp = int(time.time())
-    invocation = await pragma_client.publish_spot_entry(
-        BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=int(200 * 100 * 1e8)
+    await wait_for_acceptance(
+        await pragma_client.publish_spot_entry(
+            BTC_PAIR,
+            100,
+            timestamp,
+            SOURCE_1,
+            publisher_name,
+            volume=int(200 * 100 * 1e8),
+        )
     )
-    await invocation.wait_for_acceptance()
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
     assert entries == [
         SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
@@ -244,7 +258,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
             raise err
 
     # Add new source and check aggregation
-    await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
+    await wait_for_acceptance(
+        await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
+    )
     spot_entry_1 = SpotEntry(
         ETH_PAIR, 100, timestamp + 20, SOURCE_1, publisher_name, volume=10
     )

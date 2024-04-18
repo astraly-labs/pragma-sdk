@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -15,7 +16,12 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry
 from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
-from pragma.tests.utils import get_declarations, get_deployments, read_contract
+from pragma.tests.utils import (
+    get_declarations,
+    get_deployments,
+    read_contract,
+    wait_for_acceptance,
+)
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -113,6 +119,7 @@ async def test_update_oracle(
     update_invoke = await pragma_fork_client.update_oracle(
         declare_result.class_hash, MAX_FEE
     )
+    update_invoke.wait_for_acceptance()
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
 
     # Check that the class hash was updated
