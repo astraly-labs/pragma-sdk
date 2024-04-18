@@ -76,7 +76,7 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
         return declare_result
 
     except ClientError as e:
-        if e.code == -32603:
+        if "is already declared" in e.message:
             logger.info(f"Contract already declared with this class hash")
         else:
             logger.info(f"An error occured during the declaration: {e}")

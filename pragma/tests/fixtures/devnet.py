@@ -89,7 +89,6 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
     fork_network = os.getenv("FORK_NETWORK")
-    print(fork_network)
     rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
     command = [
         "katana",
