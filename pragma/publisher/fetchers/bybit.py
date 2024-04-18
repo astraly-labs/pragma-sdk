@@ -90,8 +90,6 @@ class BybitFetcher(PublisherInterfaceT):
 
     def _construct(self, asset, result, hop_result=None, usdt_price=1) -> SpotEntry:
         pair = asset["pair"]
-        if pair[0] == "BAL":
-            print(result)
         bid = float(result["result"]["list"][0]["bid1Price"])
         ask = float(result["result"]["list"][0]["ask1Price"])
         price = (bid + ask) / (2 * usdt_price)

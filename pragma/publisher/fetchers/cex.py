@@ -79,7 +79,7 @@ class CexFetcher(PublisherInterfaceT):
             pair_id=pair_id,
             price=price_int,
             timestamp=timestamp,
-            volume=volume,
+            volume=int(volume),
             source=self.SOURCE,
             publisher=self.publisher,
         )

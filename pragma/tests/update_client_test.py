@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -15,7 +16,12 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import FutureEntry
 from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
-from pragma.tests.utils import get_declarations, get_deployments, read_contract
+from pragma.tests.utils import (
+    get_declarations,
+    get_deployments,
+    read_contract,
+    wait_for_acceptance,
+)
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -39,18 +45,16 @@ async def pragma_fork_client(
 ) -> PragmaClient:
     # TODO(#000): refactor this
     fork_network = os.getenv("FORK_NETWORK")
-    deployments = get_deployments(fork_network)
-
+    deployments = get_deployments(
+        fork_network if fork_network != "devnet" else "mainnet"
+    )
     oracle = deployments["pragma_Oracle"]
     registry = deployments["pragma_PublisherRegistry"]
     address, private_key = address_and_private_key
-
-    # Parse port from network url
     port = urlparse(network).port
-
     return PragmaClient(
         network="fork_devnet",
-        chain_name=fork_network,
+        chain_name="mainnet",
         account_contract_address=address,
         account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
@@ -68,7 +72,7 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
             "pragma_Oracle.casm.json", directory=None
         )
         # Declare Oracle
-        declare_result = await Contract.declare(
+        declare_result = await Contract.declare_v2(
             account=pragma_fork_client.account,
             compiled_contract=compiled_contract,
             compiled_contract_casm=compiled_contract_casm,
@@ -78,10 +82,11 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
         return declare_result
 
     except ClientError as e:
-        if e.code == -32603:
+        if "is already declared" in e.message:
             logger.info(f"Contract already declared with this class hash")
         else:
             logger.info(f"An error occured during the declaration: {e}")
+            raise e
         return None
 
 
@@ -92,7 +97,9 @@ async def test_update_oracle(
 ):
     # TODO(#000): refactor this
     fork_network = os.getenv("FORK_NETWORK")
-    deployments = get_deployments(fork_network)
+    deployments = get_deployments(
+        fork_network if fork_network != "devnet" else "sepolia"
+    )
 
     if declare_oracle is None:
         pytest.skip("oracle_declare failed. Skipping this test...")
@@ -112,6 +119,7 @@ async def test_update_oracle(
     update_invoke = await pragma_fork_client.update_oracle(
         declare_result.class_hash, MAX_FEE
     )
+    update_invoke.wait_for_acceptance()
     logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
 
     # Check that the class hash was updated

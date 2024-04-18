@@ -19,14 +19,11 @@ class NonceMixin:
         self.cleanup_nonce_dict()
 
         if self.pending_nonce:
-            print(f"Using pending nonce {self.pending_nonce}")
             return self.pending_nonce
         if self.nonce_status:
-            print(f"Using max nonce {max(self.nonce_status) + 1}")
             return max(self.nonce_status) + 1
 
         latest_nonce = await self.get_nonce()
-        print(f"Using latest nonce {latest_nonce}")
         return latest_nonce
 
     def cleanup_nonce_dict(self):

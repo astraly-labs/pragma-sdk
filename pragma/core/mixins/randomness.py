@@ -141,9 +141,9 @@ class RandomnessMixin:
                 RequestStatus.OUT_OF_GAS.serialize(),
                 auto_estimate=True,
             )
+
             # Refund gas
             await self.refund_operation(request_id, requestor_address)
-
             return invocation
 
         invocation = await self.randomness.functions["submit_random"].invoke_v1(
@@ -159,9 +159,7 @@ class RandomnessMixin:
             calldata,
             max_fee=max_fee,
         )
-        print(invocation)
         logger.info(f"Sumbitted random {invocation.hash}")
-
         return invocation
 
     async def estimate_gas_submit_random_op(

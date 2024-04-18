@@ -2,6 +2,7 @@
 
 import json
 import math
+import os
 import random
 import subprocess
 import time
@@ -37,7 +38,8 @@ from pragma.tests.fixtures.devnet import get_available_port
 PUBLISHER_NAME = "TEST_PUBLISHER"
 JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
 
-
+ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
+ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 # %% SPOT
 
 
@@ -59,6 +61,8 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
         "katana",
         "--rpc-url",
         str(rpc_url),
+        "--chain-id",
+        "SN_MAIN",
         "--host",
         "127.0.0.1",
         "--port",
@@ -199,9 +203,16 @@ API_CLIENT_CONFIGS = {
 async def test_async_api_client_spot(forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        api_client = PragmaAPIClient("https://api.dev.pragma.build", "dummy_key")
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
+            if asset["type"] == "INDEX":
+                continue
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = (
@@ -241,9 +252,16 @@ async def test_async_api_client_spot(forked_client):
 async def test_async_api_client_spot_404_error(forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        api_client = PragmaAPIClient("https://api.dev.pragma.build", "dummy_key")
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
+            if asset["type"] == "INDEX":
+                continue
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = (
@@ -268,9 +286,16 @@ async def test_async_api_client_spot_404_error(forked_client):
 async def test_async_api_client_ohlc(forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        api_client = PragmaAPIClient("https://api.dev.pragma.build", "dummy_key")
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
+            if asset["type"] == "INDEX":
+                continue
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = (
@@ -287,6 +312,7 @@ async def test_async_api_client_ohlc(forked_client):
                 encoding="utf-8",
             ) as filepath:
                 mock_data = json.load(filepath)
+            print(mock_data[quote_asset])
             mock.get(
                 url,
                 payload=mock_data[quote_asset],
@@ -311,9 +337,16 @@ async def test_async_api_client_ohlc(forked_client):
 async def test_async_api_client_ohlc_404_error(forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-        api_client = PragmaAPIClient("https://api.dev.pragma.build", "dummy_key")
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
         # Mocking the expected call for assets
         for asset in SAMPLE_ASSETS:
+            if asset["type"] == "INDEX":
+                continue
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = (
@@ -338,9 +371,11 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 # async def test_async_api_client_volatility(forked_client):
 #     # we only want to mock the external fetcher APIs and not the RPC
 #     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-#         api_client = PragmaAPIClient('https://api.dev.pragma.build', 'dummy_key')
+#         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
 #         # Mocking the expected call for assets
 #         for asset in SAMPLE_ASSETS:
+#   if asset["type"] == "INDEX":
+#     continue
 #             quote_asset = asset["pair"][0]
 #             base_asset = asset["pair"][1]
 #             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
@@ -364,9 +399,11 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 # async def test_async_api_client_volatility(forked_client):
 #     # we only want to mock the external fetcher APIs and not the RPC
 #     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-#         api_client = PragmaAPIClient('https://api.dev.pragma.build', 'dummy_key')
+#         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
 #         # Mocking the expected call for assets
 #         for asset in SAMPLE_ASSETS:
+# if asset["type"] == "INDEX":
+# continue
 #             quote_asset = asset["pair"][0]
 #             base_asset = asset["pair"][1]
 #             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"

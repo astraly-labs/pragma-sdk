@@ -64,12 +64,11 @@ def full_node_account(
     Returns a new Account created with FullNodeClient.
     """
     address, private_key = address_and_private_key
-
     return Account(
         address=address,
         client=full_node_client,
         key_pair=KeyPair.from_private_key(int(private_key, 0)),
-        chain=StarknetChainId.TESTNET,
+        chain=StarknetChainId.MAINNET,
     )
 
 
@@ -108,13 +107,11 @@ def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Acc
             os.getenv("TESTNET_PRIVATE_KEY"),
         ),
     }
-
     net = pytestconfig.getoption("--net")
     address, private_key = address_and_priv_key[net]
-
     return Account(
         address=address,
         client=FullNodeClient(node_url=network),
         key_pair=KeyPair.from_private_key(int(private_key, 16)),
-        chain=StarknetChainId.TESTNET,
+        chain=StarknetChainId.MAINNET,
     )

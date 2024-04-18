@@ -48,7 +48,6 @@ class TheGraphFetcher(PublisherInterfaceT):
                 usdc_str = str_to_felt("USDC/USD")
                 usdc_entry = await self.client.get_spot(usdc_str)
                 usdc_price = int(usdc_entry.price) / (10 ** int(usdc_entry.decimals))
-                print(usdc_price)
                 return self._construct(asset, quote_result, usd_price=usdc_price)
             elif pair[1] in ASSET_MAPPING.keys():
                 base_result = await self.pool_query(
