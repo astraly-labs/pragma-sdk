@@ -127,7 +127,6 @@ RPC_URLS = {
     SEPOLIA: [
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
     ],
-    DEVNET: ["http://127.0.0.1:{port}/rpc"],
 }
 
 

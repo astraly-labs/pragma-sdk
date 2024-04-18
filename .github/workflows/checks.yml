@@ -151,7 +151,7 @@ jobs:
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
-          FORK_NETWORK: devnet
+          FORK_NETWORK: mainnet
           TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
           TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
         run: |
