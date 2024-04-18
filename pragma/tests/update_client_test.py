@@ -45,9 +45,6 @@ async def pragma_fork_client(
     oracle = deployments["pragma_Oracle"]
     registry = deployments["pragma_PublisherRegistry"]
     address, private_key = address_and_private_key
-    # Parse port from network url
-    print("here is the network")
-    print(network)
     port = urlparse(network).port
     return PragmaClient(
         network="fork_devnet",
