@@ -231,9 +231,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     assert res.last_updated_timestamp == timestamp + 10
     assert res.decimals == 8
 
-    # Fails if timestamp too far in the future (>2min)
+    # Fails if timestamp too far in the future (>7min)
     spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp + 130, SOURCE_1, publisher_name, volume=10
+        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=10
     )
     try:
         invocations = await pragma_client.publish_many([spot_entry_future])
