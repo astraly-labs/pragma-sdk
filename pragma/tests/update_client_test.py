@@ -59,7 +59,7 @@ async def pragma_fork_client(
 
 
 @pytest_asyncio.fixture(scope="package")
-async def declare_oracle(pragma_fork_client) -> DeclareResult:
+async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
         compiled_contract_casm = read_contract(
@@ -80,6 +80,7 @@ async def declare_oracle(pragma_fork_client) -> DeclareResult:
             logger.info(f"Contract already declared with this class hash")
         else:
             logger.info(f"An error occured during the declaration: {e}")
+            raise e
         return None
 
 
