@@ -80,13 +80,6 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
     print(f"🧩 Fetchers : {publisher.get_fetchers()}")
 
-    # Add KaikoFetcher if API KEY is provided
-    api_key = os.getenv("KAIKO_API_KEY")
-    if api_key:
-        publisher.add_fetcher(
-            KaikoFetcher(SAMPLE_ASSETS, PUBLISHER_NAME, api_key=api_key)
-        )
-
     data = await publisher.fetch(return_exceptions=False)
 
     asset_valid_data_type(data, SpotEntry)
@@ -132,13 +125,6 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient):
     publisher.update_fetchers(
         [fetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME) for fetcher in ALL_FETCHERS]
     )
-
-    # Add KaikoFetcher if API KEY is provided
-    api_key = os.getenv("KAIKO_API_KEY")
-    if api_key:
-        publisher.add_fetcher(
-            KaikoFetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME, api_key=api_key)
-        )
 
     # Raise exceptions
     data = await publisher.fetch(return_exceptions=False)
