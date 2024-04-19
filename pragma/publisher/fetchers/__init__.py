@@ -11,7 +11,6 @@ from .gemini import GeminiFetcher
 from .huobi import HuobiFetcher
 from .index import IndexFetcher
 from .indexcoop import IndexCoopFetcher
-from .kaiko import KaikoFetcher
 from .kucoin import KucoinFetcher
 from .okx import OkxFetcher
 from .propeller import PropellerFetcher
