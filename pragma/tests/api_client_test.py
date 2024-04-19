@@ -1,36 +1,24 @@
 # pylint: disable=redefined-outer-name
 
 import json
-import math
 import os
 import random
 import subprocess
 import time
 from unittest import mock
 
-import aiohttp
 import pytest
-import requests_mock
 from aioresponses import aioresponses
-from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client import Client
 
 from pragma.core.client import PragmaClient
-from pragma.core.types import RPC_URLS, get_client_from_network
+from pragma.core.types import RPC_URLS
 from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
 from pragma.tests.constants import (
     MOCK_DIR,
     SAMPLE_ASSETS,
-    SAMPLE_FUTURE_ASSETS,
-    SAMPLE_ONCHAIN_ASSETS,
-    STARKNET_ONCHAIN_ASSETS,
-    STARKNET_SAMPLE_ASSETS,
 )
 from pragma.tests.fetcher_configs import (
-    FETCHER_CONFIGS,
-    FUTURE_FETCHER_CONFIGS,
-    ONCHAIN_FETCHER_CONFIGS,
-    ONCHAIN_STARKNET_FETCHER_CONFIGS,
     PUBLISHER_NAME,
 )
 from pragma.tests.fixtures.devnet import get_available_port

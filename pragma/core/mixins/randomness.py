@@ -1,12 +1,11 @@
 import asyncio
 import logging
 import sys
-from typing import Any, Callable, List, Optional
+from typing import List, Optional
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
-from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.abis import ABIS
 from pragma.core.contract import Contract

@@ -272,7 +272,7 @@ async def test_randomness_mixin(
             block_number + publish_delay,
             num_words,
         )
-    except TransactionRevertedError as err:
+    except TransactionRevertedError:
         # err_msg = "Execution was reverted; failure reason: [0x7265717565737420616c72656164792066756c66696c6c6564]"
         # err_msg = "Contract Error"
         # if not err_msg in err.message:

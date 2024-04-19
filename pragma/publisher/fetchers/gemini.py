@@ -3,10 +3,9 @@ import logging
 import time
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import PragmaAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT

@@ -4,7 +4,6 @@ import math
 import time
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 from dotenv import load_dotenv
 from starknet_py.hash.selector import get_selector_from_name

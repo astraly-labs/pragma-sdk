@@ -1,6 +1,4 @@
 import json
-import os
-import random
 from pathlib import Path
 from typing import Optional
 
@@ -18,7 +16,6 @@ from pragma.core.types import PRAGMA_API_URL, ContractAddresses
 from pragma.tests.constants import (
     CONTRACTS_COMPILED_DIR,
     DEPLOYMENTS_DIR,
-    MAX_FEE,
     ORACLE_DECIMALS,
     ORACLE_FEE_PRICE,
 )

@@ -1,10 +1,8 @@
-import asyncio
 import collections
 import logging
 import time
 from typing import List, Optional
 
-import aiohttp
 import requests
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult

@@ -5,13 +5,11 @@ https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee38
 """
 
 import os
-import sys
 from typing import List, Tuple
 
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
-from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId

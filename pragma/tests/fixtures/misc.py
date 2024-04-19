@@ -3,7 +3,6 @@
 
 import pytest
 
-from pragma.core.types import get_rpc_url
 
 
 def pytest_addoption(parser):
