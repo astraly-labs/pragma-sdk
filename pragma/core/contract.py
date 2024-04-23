@@ -1,13 +1,10 @@
 # pylint: disable=protected-access
 
-import asyncio
-from typing import Callable, Optional, Tuple
-from warnings import warn
+from typing import Callable, Optional
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
-from starknet_py.net.client_errors import ClientError
-from starknet_py.net.client_models import Hash, SentTransactionResponse
+from starknet_py.net.client_models import SentTransactionResponse
 
 
 class Contract(StarknetContract):

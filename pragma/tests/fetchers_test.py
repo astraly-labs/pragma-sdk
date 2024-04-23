@@ -10,12 +10,10 @@ from unittest import mock
 import aiohttp
 import pytest
 from aioresponses import aioresponses
-from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client import Client
-from starknet_py.net.client_models import Call
 
 from pragma.core.client import PragmaClient
-from pragma.core.types import RPC_URLS, get_client_from_network
+from pragma.core.types import RPC_URLS
 from pragma.publisher.fetchers.index import AssetWeight, IndexFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
@@ -234,7 +232,6 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
         fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return
-        array_starknet = []
         # Mocking the expected call for assets
         for asset in sample_assets:
             quote_asset = asset["pair"][0]
@@ -279,7 +276,6 @@ async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client)
         fetcher = fetcher_config["fetcher_class"](sample_assets, PUBLISHER_NAME)
         if fetcher_config["name"] == "Starknet":
             return
-        array_starknet = []
         # Mocking the expected call for assets
         for asset in sample_assets:
             quote_asset = asset["pair"][0]

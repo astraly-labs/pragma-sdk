@@ -2,7 +2,6 @@ import asyncio
 import logging
 from typing import List
 
-import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset

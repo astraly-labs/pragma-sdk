@@ -3,7 +3,6 @@ import logging
 import time
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset

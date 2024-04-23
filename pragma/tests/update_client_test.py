@@ -1,7 +1,5 @@
-import asyncio
 import logging
 import os
-import time
 from typing import Tuple
 from urllib.parse import urlparse
 
@@ -9,18 +7,14 @@ import pytest
 import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
-from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.client import PragmaClient
-from pragma.core.entry import FutureEntry
 from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
 from pragma.tests.utils import (
-    get_declarations,
     get_deployments,
     read_contract,
-    wait_for_acceptance,
 )
 
 logging.basicConfig()
