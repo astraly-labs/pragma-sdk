@@ -14,6 +14,9 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 logger = logging.getLogger(__name__)
 
 
+EXCEPTION_LIST = [("DAI", "USD"), ("DAI", "USDC"), ("DAI", "USDT")]
+
+
 class BinanceFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.binance.com/api/v3/ticker/24hr"
     SOURCE: str = "BINANCE"
@@ -53,7 +56,7 @@ class BinanceFetcher(PublisherInterfaceT):
         entries = []
         usdt_price = await self.get_stable_price(self.client, "USDT")
         for asset in self.assets:
-            if asset["type"] == "SPOT":
+            if asset["type"] == "SPOT" and asset["pair"] not in EXCEPTION_LIST:
                 entries.append(
                     asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
                 )

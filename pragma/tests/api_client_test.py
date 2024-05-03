@@ -14,13 +14,8 @@ from starknet_py.net.client import Client
 from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS
 from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
-from pragma.tests.constants import (
-    MOCK_DIR,
-    SAMPLE_ASSETS,
-)
-from pragma.tests.fetcher_configs import (
-    PUBLISHER_NAME,
-)
+from pragma.tests.constants import MOCK_DIR, SAMPLE_ASSETS
+from pragma.tests.fetcher_configs import PUBLISHER_NAME
 from pragma.tests.fixtures.devnet import get_available_port
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
