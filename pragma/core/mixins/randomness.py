@@ -365,6 +365,8 @@ class RandomnessMixin:
 
             for event in events:
                 minimum_block_number = event.minimum_block_number
+                # Skip if block_number is less than minimum_block_number
+                # Take into account pending block
                 if minimum_block_number > block_number + 1:
                     continue
                 request_id = event.request_id
@@ -374,8 +376,12 @@ class RandomnessMixin:
 
                 print(f"event {event}")
 
-                block = await self.full_node_client.get_block(
-                    block_number=minimum_block_number
+                block = (
+                    await self.full_node_client.get_block(
+                        block_number=minimum_block_number
+                    )
+                    if minimum_block_number < block_number
+                    else await self.full_node_client.get_block(block_number="pending")
                 )
                 block_hash = block.block_hash
 
