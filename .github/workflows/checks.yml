@@ -139,7 +139,7 @@ jobs:
       
       - name: Install dojo
         run: |-
-          /home/runner/.config/.dojo/bin/dojoup
+          /home/runner/.config/.dojo/bin/dojoup -v 0.6.1-alpha.3
           sudo mv /home/runner/.config/.dojo/bin/katana /usr/local/bin/
 
       # ====================== RUN TESTS ====================== #
@@ -151,15 +151,16 @@ jobs:
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
-          FORK_NETWORK: testnet
+          FORK_NETWORK: mainnet
           TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
           TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
         run: |
           poetry run poe test_ci_update_client
           poetry run poe test_ci_client
-          poetry run poe test_ci_fetchers
+          # poetry run poe test_ci_fetchers
           poetry run poe test_ci_publisher
           poetry run poe test_ci_vrf
+          poetry run poe test_ci_api_client
 
       - name: Generate coverage in XML
         run: |

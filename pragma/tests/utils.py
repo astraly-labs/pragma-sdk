@@ -1,6 +1,4 @@
 import json
-import os
-import random
 from pathlib import Path
 from typing import Optional
 
@@ -18,7 +16,6 @@ from pragma.core.types import PRAGMA_API_URL, ContractAddresses
 from pragma.tests.constants import (
     CONTRACTS_COMPILED_DIR,
     DEPLOYMENTS_DIR,
-    MAX_FEE,
     ORACLE_DECIMALS,
     ORACLE_FEE_PRICE,
 )
@@ -48,7 +45,7 @@ async def get_deploy_account_transaction(
         address=address,
         client=client,
         key_pair=key_pair,
-        chain=StarknetChainId.TESTNET,
+        chain=StarknetChainId.SEPOLIA_TESTNET,
     )
     return await account.sign_deploy_account_v1_transaction(
         class_hash=class_hash,
@@ -108,7 +105,9 @@ class ExampleRandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.example_randomness.functions["request_random"].invoke(
+        invocation = await self.example_randomness.functions[
+            "request_random"
+        ].invoke_v1(
             seed, callback_address, callback_fee_limit, publish_delay, num_words
         )
         return invocation
@@ -117,7 +116,7 @@ class ExampleRandomnessMixin:
 class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
     def __init__(
         self,
-        network: str = "testnet",
+        network: str = "devnet",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
@@ -139,3 +138,17 @@ class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
         # Any additional initialization for ExampleRandomnessMixin can be done here
 
     # You can override or add new methods here if needed
+
+
+def filter_assets_by_type(assets, type_):
+    """
+    Filter the given assets list by the given type.
+
+    e.g
+    filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
+    """
+    return [assets[i] for i in range(len(assets)) if assets[i]["type"] == type_]
+
+
+async def wait_for_acceptance(invocation):
+    await invocation.wait_for_acceptance()

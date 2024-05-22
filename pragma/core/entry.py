@@ -9,12 +9,10 @@ from pragma.core.utils import felt_to_str, str_to_felt
 
 class Entry(abc.ABC):
     @abc.abstractmethod
-    def serialize(self) -> Dict[str, str]:
-        ...
+    def serialize(self) -> Dict[str, str]: ...
 
     @abc.abstractmethod
-    def to_tuple(self) -> Tuple:
-        ...
+    def to_tuple(self) -> Tuple: ...
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
@@ -51,7 +49,6 @@ class BaseEntry:
 
 
 class SpotEntry(Entry):
-
     """
     Represents a Spot Entry.
 
@@ -87,7 +84,7 @@ class SpotEntry(Entry):
         self.pair_id = pair_id
         self.price = price
 
-        if autoscale_volume:
+        if volume > 0 and autoscale_volume:
             asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
             decimals = asset["decimals"] or 0
             volume = volume or 0
@@ -204,7 +201,6 @@ class SpotEntry(Entry):
 
 
 class FutureEntry(Entry):
-
     """
     Represents a Future Entry.
 

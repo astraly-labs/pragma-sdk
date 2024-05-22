@@ -56,7 +56,7 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
         "katana",
         "--chain-id",
-        "SN_GOERLI",
+        "SN_MAIN",
         "--host",
         "127.0.0.1",
         "--port",
@@ -74,7 +74,9 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
         "katana",
-        "--rpc-url",
+        "--chain-id",
+        "SN_MAIN",
+        "--host",
         "127.0.0.1",
         "--port",
         str(devnet_port),
@@ -88,9 +90,10 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
     fork_network = os.getenv("FORK_NETWORK")
     rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
-
     command = [
         "katana",
+        "--chain-id",
+        "SN_MAIN",
         "--host",
         "127.0.0.1",
         "--port",
@@ -103,6 +106,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
         str(rpc_url),
         "--disable-fee",
     ]
+
     return command
 
 
@@ -113,6 +117,8 @@ def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
         "katana",
+        "--chain-id",
+        "SN_MAIN",
         "--rpc-url",
         str(rpc_url),
         "--port",

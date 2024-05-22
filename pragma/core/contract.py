@@ -1,13 +1,10 @@
 # pylint: disable=protected-access
 
-import asyncio
-from typing import Callable, Optional, Tuple
-from warnings import warn
+from typing import Callable, Optional
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
-from starknet_py.net.client_errors import ClientError
-from starknet_py.net.client_models import Hash, SentTransactionResponse
+from starknet_py.net.client_models import SentTransactionResponse
 
 
 class Contract(StarknetContract):
@@ -33,20 +30,20 @@ async def invoke_(
     Allows for a callback in the invocation of a contract method.
     This is useful for tracking the nonce changes
     """
-    prepared_call = self.prepare(*args, **kwargs)
+
+    prepared_call = self.prepare_invoke_v1(*args, **kwargs)
 
     # transfer ownership to the prepared call
     self = prepared_call
     if max_fee is not None:
         self.max_fee = max_fee
 
-    transaction = await self._account.sign_invoke_v1_transaction(
+    transaction = await self.get_account.sign_invoke_v1(
         calls=self,
         max_fee=self.max_fee,
         auto_estimate=auto_estimate,
     )
     response = await self._client.send_transaction(transaction)
-
     if callback:
         await callback(transaction.nonce, response.transaction_hash)
 
@@ -58,10 +55,10 @@ async def invoke_(
     )
 
     # don't return invoke result until it is received or errors
-    await invoke_result.wait_for_acceptance()
+    # await invoke_result.wait_for_acceptance()
 
     return invoke_result
 
 
 # patch contract function to use new invoke function
-ContractFunction.invoke = invoke_
+ContractFunction.invoke_v1 = invoke_

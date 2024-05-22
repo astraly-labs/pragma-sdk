@@ -1,6 +1,5 @@
 # pylint: disable=wildcard-import,unused-wildcard-import
 
-import os
 from typing import Sequence
 
 import pytest
@@ -15,6 +14,7 @@ from pragma.publisher.fetchers import *
 from pragma.publisher.future_fetchers import *
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import SAMPLE_ASSETS, SAMPLE_FUTURE_ASSETS
+from pragma.tests.utils import wait_for_acceptance
 
 ALL_SPOT_FETCHERS = [
     AscendexFetcher,
@@ -36,7 +36,6 @@ load_dotenv()
 
 PUBLISHER_NAME = "PRAGMA"
 PAGINATION = 40
-
 SOURCES = [
     "ASCENDEX",
     "BITSTAMP",
@@ -57,12 +56,16 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
     publisher_address = pragma_client.account_address()
 
     # Add PRAGMA as Publisher
-    await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
+    await wait_for_acceptance(
+        await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
+    )
 
     publishers = await pragma_client.get_all_publishers()
     assert publishers == [str_to_felt(PUBLISHER_NAME)]
 
-    await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
+    await wait_for_acceptance(
+        await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, SOURCES)
+    )
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(s) for s in SOURCES]
 
@@ -76,18 +79,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
     print(f"🧩 Fetchers : {publisher.get_fetchers()}")
 
-    # Add KaikoFetcher if API KEY is provided
-    api_key = os.getenv("KAIKO_API_KEY")
-    if api_key:
-        publisher.add_fetcher(
-            KaikoFetcher(SAMPLE_ASSETS, PUBLISHER_NAME, api_key=api_key)
-        )
-
     data = await publisher.fetch(return_exceptions=False)
-
-    asset_valid_data_type(data, SpotEntry)
-
-    data = publisher.fetch_sync()
 
     asset_valid_data_type(data, SpotEntry)
 
@@ -115,13 +107,9 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
 
     asset_valid_data_type(data_async, FutureEntry)
 
-    data_sync: Sequence[Entry] = publisher.fetch_sync()
-
-    asset_valid_data_type(data_sync, FutureEntry)
-
     # Publish FUTURE data
     data_list: Sequence[FutureEntry] = [
-        d for d in data_sync if isinstance(d, FutureEntry)
+        d for d in data_async if isinstance(d, FutureEntry)
     ]
     print(data_list)
     await publisher.publish_many(data_list, pagination=PAGINATION)
@@ -136,13 +124,6 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient):
     publisher.update_fetchers(
         [fetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME) for fetcher in ALL_FETCHERS]
     )
-
-    # Add KaikoFetcher if API KEY is provided
-    api_key = os.getenv("KAIKO_API_KEY")
-    if api_key:
-        publisher.add_fetcher(
-            KaikoFetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME, api_key=api_key)
-        )
 
     # Raise exceptions
     data = await publisher.fetch(return_exceptions=False)

@@ -1,12 +1,11 @@
 import asyncio
 import logging
 import sys
-from typing import Any, Callable, List, Optional
+from typing import List, Optional
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
-from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
@@ -48,7 +47,7 @@ class RandomnessMixin:
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        invocation = await self.randomness.functions["request_random"].invoke(
+        invocation = await self.randomness.functions["request_random"].invoke_v1(
             seed,
             callback_address,
             callback_fee_limit,
@@ -73,7 +72,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["request_random"].prepare(
+        prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
             seed,
             callback_address,
             callback_fee_limit,
@@ -90,7 +89,9 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions[method].prepare(caller_address)
+        prepared_call = self.randomness.functions[method].prepare_invoke_v1(
+            caller_address
+        )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
@@ -111,7 +112,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["submit_random"].prepare(
+        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -133,18 +134,18 @@ class RandomnessMixin:
             logger.error(
                 f"OUT OF GAS {estimate_fee.overall_fee} > {callback_fee_limit}"
             )
-            invocation = await self.randomness.functions["update_status"].invoke(
+            invocation = await self.randomness.functions["update_status"].invoke_v1(
                 requestor_address,
                 request_id,
                 RequestStatus.OUT_OF_GAS.serialize(),
                 auto_estimate=True,
             )
+
             # Refund gas
             await self.refund_operation(request_id, requestor_address)
-
             return invocation
 
-        invocation = await self.randomness.functions["submit_random"].invoke(
+        invocation = await self.randomness.functions["submit_random"].invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -157,9 +158,7 @@ class RandomnessMixin:
             calldata,
             max_fee=max_fee,
         )
-        print(invocation)
         logger.info(f"Sumbitted random {invocation.hash}")
-
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -179,7 +178,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["submit_random"].prepare(
+        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -204,7 +203,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["update_status"].prepare(
+        prepared_call = self.randomness.functions["update_status"].prepare_invoke_v1(
             requestor_address,
             request_id,
             RequestStatus.RECEIVED.serialize(),
@@ -274,7 +273,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.randomness.functions["cancel_random_request"].invoke(
+        invocation = await self.randomness.functions["cancel_random_request"].invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -301,7 +300,9 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["cancel_random_request"].prepare(
+        prepared_call = self.randomness.functions[
+            "cancel_random_request"
+        ].prepare_invoke_v1(
             request_id,
             requestor_address,
             seed,
@@ -324,7 +325,7 @@ class RandomnessMixin:
             raise AttributeError(
                 "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.randomness.functions["refund_operation"].invoke(
+        invocation = await self.randomness.functions["refund_operation"].invoke_v1(
             requestor_address, request_id, max_fee=max_fee
         )
         return invocation
@@ -348,7 +349,7 @@ class RandomnessMixin:
                     ["0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"]
                 ],
                 from_block_number=min_block,
-                to_block_number=block_number,
+                to_block_number="pending",
                 continuation_token=continuation_token,
                 chunk_size=50,
             )
@@ -364,7 +365,9 @@ class RandomnessMixin:
 
             for event in events:
                 minimum_block_number = event.minimum_block_number
-                if minimum_block_number > block_number:
+                # Skip if block_number is less than minimum_block_number
+                # Take into account pending block
+                if minimum_block_number > block_number + 1:
                     continue
                 request_id = event.request_id
                 status = await self.get_request_status(event.caller_address, request_id)
@@ -373,8 +376,14 @@ class RandomnessMixin:
 
                 print(f"event {event}")
 
-                block = await self.full_node_client.get_block(
-                    block_number=minimum_block_number
+                is_pending = minimum_block_number == block_number + 1
+
+                block = (
+                    await self.full_node_client.get_block(
+                        block_number=minimum_block_number
+                    )
+                    if is_pending
+                    else await self.full_node_client.get_block(block_number="pending")
                 )
                 block_hash = block.block_hash
 

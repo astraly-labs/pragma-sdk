@@ -1,7 +1,9 @@
 import collections
 import logging
+import time
 from typing import List, Optional
 
+import requests
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
@@ -9,7 +11,7 @@ from starknet_py.net.client import Client
 
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode, DataType, DataTypes
+from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
 
 logger = logging.getLogger(__name__)
@@ -48,7 +50,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["publish_data"].invoke(
+        invocation = await self.oracle.functions["publish_data"].invoke_v1(
             new_entry={
                 "Spot": {
                     "base": {
@@ -81,9 +83,12 @@ class OracleMixin:
             index = 0
             while index < len(serialized_spot_entries):
                 entries_subset = serialized_spot_entries[index : index + pagination]
-                invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                invocation = await self.oracle.functions[
+                    "publish_data_entries"
+                ].invoke_v1(
                     new_entries=[{"Spot": entry} for entry in entries_subset],
                     max_fee=max_fee,
+                    callback=self.track_nonce,
                 )
                 index += pagination
                 invocations.append(invocation)
@@ -94,9 +99,10 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         elif len(serialized_spot_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke(
+            invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
                 new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
                 max_fee=max_fee,
+                callback=self.track_nonce,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
@@ -111,9 +117,12 @@ class OracleMixin:
             index = 0
             while index < len(serialized_future_entries):
                 entries_subset = serialized_future_entries[index : index + pagination]
-                invocation = await self.oracle.functions["publish_data_entries"].invoke(
+                invocation = await self.oracle.functions[
+                    "publish_data_entries"
+                ].invoke_v1(
                     new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
+                    callback=self.track_nonce,
                 )
                 index += pagination
                 invocations.append(invocation)
@@ -124,9 +133,10 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         elif len(serialized_future_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke(
+            invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
                 new_entries=[{"Future": entry} for entry in serialized_future_entries],
                 max_fee=max_fee,
+                callback=self.track_nonce,
             )
             invocations.append(invocation)
             logger.debug(str(invocation))
@@ -270,7 +280,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke(
+        invocation = await self.oracle.functions["set_checkpoint"].invoke_v1(
             DataType(DataTypes.SPOT, pair_id, None).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
@@ -291,7 +301,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke(
+        invocation = await self.oracle.functions["set_checkpoint"].invoke_v1(
             DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
@@ -319,7 +329,7 @@ class OracleMixin:
             index = 0
             while index < len(pair_ids):
                 pair_ids_subset = pair_ids[index : index + pagination]
-                invocation = await self.oracle.functions["set_checkpoints"].invoke(
+                invocation = await self.oracle.functions["set_checkpoints"].invoke_v1(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
@@ -333,7 +343,7 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         else:
-            invocation = await self.oracle.functions["set_checkpoints"].invoke(
+            invocation = await self.oracle.functions["set_checkpoints"].invoke_v1(
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
@@ -361,7 +371,7 @@ class OracleMixin:
             index = 0
             while index < len(pair_ids):
                 pair_ids_subset = pair_ids[index : index + pagination]
-                invocation = await self.oracle.set_checkpoints.invoke(
+                invocation = await self.oracle.set_checkpoints.invoke_v1(
                     [
                         DataType(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
@@ -377,7 +387,7 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         else:
-            invocation = await self.oracle.set_checkpoints.invoke(
+            invocation = await self.oracle.set_checkpoints.invoke_v1(
                 [
                     DataType(DataTypes.SPOT, pair_id, None).serialize()
                     for pair_id in pair_ids
@@ -397,8 +407,43 @@ class OracleMixin:
         implementation_hash: int,
         max_fee=int(1e18),
     ) -> InvokeResult:
-        invocation = await self.oracle.functions["upgrade"].invoke(
+        invocation = await self.oracle.functions["upgrade"].invoke_v1(
             implementation_hash,
             max_fee=max_fee,
         )
         return invocation
+
+    async def get_time_since_last_published(self, pair_id, publisher) -> int:
+        all_entries = await self.get_spot_entries(pair_id)
+
+        entries = [
+            entry
+            for entry in all_entries
+            if entry.base.publisher == str_to_felt(publisher)
+        ]
+
+        if len(entries) == 0:
+            return 1000000000  # arbitrary large number
+
+        max_timestamp = max([entry.base.timestamp for entry in entries])
+
+        diff = int(time.time()) - max_timestamp
+
+        return diff
+
+    async def get_current_price_deviation(self, pair_id) -> float:
+        current_data = await self.get_spot(pair_id)
+        current_price = current_data.price / 10**current_data.decimals
+
+        # query defillama API for the current price
+        asset = ASSET_MAPPING.get(pair_id.split("/")[0])
+        url = f"https://coins.llama.fi/prices/current/coingecko:{asset}"
+        resp = requests.get(
+            url,
+            headers={"Accepts": "application/json"},
+        )
+        json = resp.json()
+        price = json["coins"][f"coingecko:{asset}"]["price"]
+
+        deviation = abs(price - current_price) / price
+        return deviation

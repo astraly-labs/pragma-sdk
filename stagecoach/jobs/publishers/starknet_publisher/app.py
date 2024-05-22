@@ -11,16 +11,18 @@ from pragma.core.assets import (
 from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
-    AscendexFetcher,
+    BinanceFetcher,
     BitstampFetcher,
-    CexFetcher,
-    CoinbaseFetcher,
+    BybitFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
-    KaikoFetcher,
+    HuobiFetcher,
+    IndexCoopFetcher,
+    IndexFetcher,
+    KucoinFetcher,
     OkxFetcher,
-    StarknetAMMFetcher,
     PropellerFetcher,
+    StarknetAMMFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
@@ -32,15 +34,18 @@ logger = get_stream_logger()
 
 NETWORK = os.environ["NETWORK"]
 SECRET_NAME = os.environ["SECRET_NAME"]
-SPOT_ASSETS = os.environ["SPOT_ASSETS"]
-FUTURE_ASSETS = os.environ["FUTURE_ASSETS"]
+SPOT_ASSETS = os.getenv("SPOT_ASSETS", "")
+FUTURE_ASSETS = os.getenv("FUTURE_ASSETS", "")
 PUBLISHER = os.environ.get("PUBLISHER")
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
-KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
 MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
+
+DEVIATION_THRESHOLD = float(os.getenv("DEVIATION_THRESHOLD", 0.01))
+FREQUENCY_SECONDS = int(os.getenv("FREQUENCY_SECONDS", 60))
+
 if PAGINATION is not None:
     PAGINATION = int(PAGINATION)
 
@@ -49,10 +54,13 @@ def handler(event, context):
     spot_assets = [
         get_spot_asset_spec_for_pair_id(asset) for asset in SPOT_ASSETS.split(",")
     ]
-    future_assets = [
-        get_future_asset_spec_for_pair_id(asset) for asset in FUTURE_ASSETS.split(",")
-    ]
-    spot_assets.extend(future_assets)
+    if len(FUTURE_ASSETS) > 0:
+        future_assets = [
+            get_future_asset_spec_for_pair_id(asset)
+            for asset in FUTURE_ASSETS.split(",")
+        ]
+        spot_assets.extend(future_assets)
+
     entries_ = asyncio.run(_handler(spot_assets))
     return {
         "success": len(entries_),
@@ -92,30 +100,53 @@ async def _handler(assets):
             chain_name=os.getenv("NETWORK"),
         )
 
-    publisher_client.add_fetchers(
-        [
-            fetcher(assets, PUBLISHER)
-            for fetcher in (
-                BitstampFetcher,
-                CexFetcher,
-                CoinbaseFetcher,
-                AscendexFetcher,
-                DefillamaFetcher,
-                OkxFetcher,
-                GeckoTerminalFetcher,
-                StarknetAMMFetcher,
-                BinanceFutureFetcher,
-                OkxFutureFetcher,
-                ByBitFutureFetcher,
-            )
-        ]
+    last_publish = await publisher_client.get_time_since_last_published(
+        "ETH/USD", PUBLISHER
     )
+    deviation = await publisher_client.get_current_price_deviation("ETH/USD")
+    print(f"Last publish was {last_publish} seconds ago and deviation is {deviation}")
+    if last_publish < FREQUENCY_SECONDS and deviation < DEVIATION_THRESHOLD:
+        print(
+            f"Last publish was {last_publish} seconds ago and deviation is {deviation}, skipping publish"
+        )
+        return []
+
+    fetchers = [
+        fetcher(assets, PUBLISHER)
+        for fetcher in (
+            BinanceFetcher,
+            DefillamaFetcher,
+            GeckoTerminalFetcher,
+            KucoinFetcher,
+            HuobiFetcher,
+            OkxFetcher,
+            BitstampFetcher,
+            StarknetAMMFetcher,
+            BybitFetcher,
+            BinanceFutureFetcher,
+            OkxFutureFetcher,
+            ByBitFutureFetcher,
+        )
+    ]
+
+    publisher_client.add_fetchers(fetchers)
 
     publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
-    publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
+    index_coop_fetcher = IndexCoopFetcher(assets, PUBLISHER)
+    publisher_client.add_fetcher(IndexCoopFetcher(assets, PUBLISHER))
+
+    # Indexes Fetchers
+    dpi_weights = index_coop_fetcher.fetch_quantities(
+        "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b"
+    )
+
+    index_fetchers = [
+        IndexFetcher(fetchers[i], "DPI/USD", dpi_weights) for i in range(6)
+    ]
+    publisher_client.add_fetchers(index_fetchers)
 
     _entries = await publisher_client.fetch()
-    print(_entries)
+    print("entries", _entries)
     response = await publisher_client.publish_many(
         _entries,
         pagination=PAGINATION,

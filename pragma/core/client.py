@@ -44,7 +44,7 @@ class PragmaClient(
 
     def __init__(
         self,
-        network: str = "testnet",
+        network: str = "devnet",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[int] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
@@ -57,14 +57,14 @@ class PragmaClient(
         Client for interacting with Pragma on Starknet.
         :param network: Target network for the client.
             Can be a URL string, or one of
-            ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``
+            ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``
         :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
         :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
         :param contract_addresses_config: Optional Contract Addresses for Pragma.
             Will default to the provided network but must be set if using non standard contracts.
         :param port: Optional port to interact with local node. Will default to 5050.
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
-            Must be one of ``"mainnet"``, ``"testnet"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
+            Must be one of ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         :param api_url: Optional URL for the Pragma API.  Defaults to http://localhost:8080
         :param api_key: Optional API key for the Pragma API.
         """
@@ -142,7 +142,7 @@ class PragmaClient(
             signer=self.signer,
         )
         self.client = self.account.client
-        self.client._get_nonce = self._get_nonce  # pylint: disable=protected-access
+        self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
         self.account_contract_address = account_contract_address
 

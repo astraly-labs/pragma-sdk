@@ -3,10 +3,9 @@ import logging
 import time
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import PragmaAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
@@ -50,31 +49,6 @@ class GeminiFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result[0])
 
-    def _fetch_pair_sync(
-        self, asset: PragmaSpotAsset
-    ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = self.BASE_URL + "/pricefeed"
-
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from CEX")
-
-        result_json = resp.json()
-        result = [e for e in result_json if e["pair"] == "".join(pair)]
-
-        if len(result) == 0:
-            return PublisherFetchError(
-                f"No entry found for {'/'.join(pair)} from Gemini"
-            )
-
-        if len(result) > 1:
-            return PublisherFetchError(
-                f"Found more than one matching entries for Gemini response and price pair {pair}"
-            )
-
-        return self._construct(asset, result[0])
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
@@ -85,15 +59,6 @@ class GeminiFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
-    def fetch_sync(self) -> List[Union[SpotEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping Gemini for non-spot asset %s", asset)
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = self.BASE_URL + "/pricefeed"

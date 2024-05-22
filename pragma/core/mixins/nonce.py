@@ -1,7 +1,10 @@
+import asyncio
 from typing import Dict, Literal, Optional, Union
 
 from starknet_py.net.client import Client
-from starknet_py.net.client_models import TransactionReceipt, TransactionStatus
+from starknet_py.net.client_errors import ClientError
+from starknet_py.net.client_models import TransactionStatus
+from starknet_py.transaction_errors import TransactionNotReceivedError
 
 
 class NonceMixin:
@@ -50,7 +53,6 @@ class NonceMixin:
         transaction_hash,
     ):
         self.nonce_dict[nonce] = transaction_hash
-        self.nonce_status[nonce] = await self.get_status(transaction_hash)
 
         nonce_min = min(self.nonce_dict)
         nonce_max = max(self.nonce_dict)
@@ -64,7 +66,7 @@ class NonceMixin:
     ):
         for nonce in list(self.nonce_dict):
             self.nonce_status[nonce] = await self.get_status(self.nonce_dict[nonce])
-            if self.nonce_dict[nonce] in [
+            if self.nonce_status[nonce] in [
                 TransactionStatus.REJECTED,
             ]:
                 # assume all later transaction will fail because this nonce was skipped
@@ -90,6 +92,27 @@ class NonceMixin:
     async def get_status(
         self,
         transaction_hash: int,
-    ) -> TransactionReceipt:
-        receipt = await self.client.get_transaction_receipt(transaction_hash)
-        return receipt
+        check_interval: int = 2,
+        retries: int = 500,
+    ) -> TransactionStatus:
+        if check_interval <= 0:
+            raise ValueError("Argument check_interval has to be greater than 0.")
+        if retries <= 0:
+            raise ValueError("Argument retries has to be greater than 0.")
+
+        while True:
+            retries -= 1
+            try:
+                tx_status = await self.client.get_transaction_status(
+                    tx_hash=transaction_hash
+                )
+
+                return tx_status.finality_status
+
+            except asyncio.CancelledError as exc:
+                raise TransactionNotReceivedError from exc
+            except ClientError as exc:
+                if "Transaction hash not found" not in exc.message:
+                    raise exc
+
+                await asyncio.sleep(check_interval)

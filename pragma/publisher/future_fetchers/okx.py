@@ -2,7 +2,6 @@ import json
 import logging
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaFutureAsset
@@ -44,17 +43,6 @@ class OkxFutureFetcher(PublisherInterfaceT):
     def format_expiry_timestamp_url(self, instrument_id):
         return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-    def fetch_sync_expiry_timestamp(self, asset, instrument_id):
-        pair = asset["pair"]
-        url = self.format_expiry_timestamp_url(instrument_id)
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-        result = resp.json()
-        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-        return result["data"][0]["expTime"]
-
     async def _fetch_pair(self, asset: PragmaFutureAsset, session: ClientSession):
         pair = asset["pair"]
         url = f"{self.BASE_URL}?instType=FUTURES&uly={pair[0]}-{pair[1]}"
@@ -90,47 +78,6 @@ class OkxFutureFetcher(PublisherInterfaceT):
                     )
             return future_entries
 
-    def _fetch_pair_sync(
-        self, asset: PragmaFutureAsset
-    ) -> Union[FutureEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        future_entries = []
-        url = f"{self.BASE_URL}?instType=FUTURES&uly={pair[0]}-{pair[1]}"
-
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-
-        text = resp.text
-        result = json.loads(text)
-
-        if result["code"] == "51001" or result["msg"] == "Instrument ID does not exist":
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from OKX")
-        result_len = len(result["data"])
-
-        if result_len > 1:
-            for i in range(0, result_len):
-                expiry_timestamp = self.fetch_sync_expiry_timestamp(
-                    asset, result["data"][i]["instId"]
-                )
-                future_entries.append(
-                    self._construct(asset, result["data"][i], expiry_timestamp)
-                )
-        return future_entries
-
-    def fetch_sync(self) -> List[Union[FutureEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "FUTURE":
-                logger.debug("Skipping OKX for non-future asset %s", asset)
-                continue
-            future_entries = self._fetch_pair_sync(asset)
-            if isinstance(future_entries, list):
-                entries.extend(future_entries)
-            else:
-                entries.append(future_entries)
-        return entries
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[FutureEntry, PublisherFetchError]]:
@@ -156,7 +103,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
         price = float(data["last"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = float(data["volCcy24h"])
+        volume = float(data["volCcy24h"]) / 10 ** asset["decimals"]
         logger.info("Fetched future for %s from OKX", "/".join(pair))
 
         return FutureEntry(

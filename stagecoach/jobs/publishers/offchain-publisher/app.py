@@ -11,28 +11,25 @@ from pragma.core.assets import (
 from pragma.core.logger import get_stream_logger
 from pragma.publisher.client import PragmaPublisherClient
 from pragma.publisher.fetchers import (
-    AscendexFetcher,
+    BinanceFetcher,
     BitstampFetcher,
+    BybitFetcher,
     CexFetcher,
-    CoinbaseFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
-    KaikoFetcher,
+    HuobiFetcher,
+    KucoinFetcher,
     OkxFetcher,
-)
-from pragma.publisher.future_fetchers import (
-    BinanceFutureFetcher,
-    ByBitFutureFetcher,
-    OkxFutureFetcher,
+    PropellerFetcher,
 )
 
 logger = get_stream_logger()
 
 SECRET_NAME = os.environ["SECRET_NAME"]
 SPOT_ASSETS = os.environ["SPOT_ASSETS"]
-PUBLISHER = os.environ.get("PUBLISHER")
-PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"))
-KAIKO_API_KEY = os.environ.get("KAIKO_API_KEY")
+PUBLISHER = os.environ["PUBLISHER"]
+PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
+PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 API_KEY = os.environ.get("API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 API_URL = os.environ.get("API_URL", "https://api.dev.pragma.build/node")
@@ -58,7 +55,8 @@ def _get_pvt_key():
     client = session.client(service_name="secretsmanager", region_name=region_name)
     get_secret_value_response = client.get_secret_value(SecretId=SECRET_NAME)
     return int(
-        json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"]
+        json.loads(get_secret_value_response["SecretString"])["PUBLISHER_PRIVATE_KEY"],
+        16,
     )
 
 
@@ -79,16 +77,18 @@ async def _handler(assets):
             for fetcher in (
                 BitstampFetcher,
                 CexFetcher,
-                CoinbaseFetcher,
-                AscendexFetcher,
                 DefillamaFetcher,
                 OkxFetcher,
                 GeckoTerminalFetcher,
+                HuobiFetcher,
+                KucoinFetcher,
+                BybitFetcher,
+                BinanceFetcher,
             )
         ]
     )
 
-    publisher_client.add_fetcher(KaikoFetcher(assets, PUBLISHER, KAIKO_API_KEY))
+    publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
 
     _entries = await publisher_client.fetch()
     print(f"Got {_entries} entries")

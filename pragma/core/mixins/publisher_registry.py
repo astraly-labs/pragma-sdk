@@ -34,7 +34,7 @@ class PublisherRegistryMixin:
     async def add_publisher(
         self, publisher: str, publisher_address: int, max_fee=int(1e16)
     ) -> InvokeResult:
-        invocation = await self.publisher_registry.functions["add_publisher"].invoke(
+        invocation = await self.publisher_registry.functions["add_publisher"].invoke_v1(
             str_to_felt(publisher),
             publisher_address,
             max_fee=max_fee,
@@ -46,7 +46,7 @@ class PublisherRegistryMixin:
     ) -> InvokeResult:
         invocation = await self.publisher_registry.functions[
             "add_source_for_publisher"
-        ].invoke(
+        ].invoke_v1(
             str_to_felt(publisher),
             str_to_felt(source),
             max_fee=max_fee,
@@ -58,7 +58,7 @@ class PublisherRegistryMixin:
     ) -> InvokeResult:
         invocation = await self.publisher_registry.functions[
             "add_sources_for_publisher"
-        ].invoke(
+        ].invoke_v1(
             str_to_felt(publisher),
             [str_to_felt(source) for source in sources],
             max_fee=max_fee,
@@ -70,7 +70,7 @@ class PublisherRegistryMixin:
     ) -> InvokeResult:
         invocation = await self.publisher_registry.functions[
             "update_publisher_address"
-        ].invoke(
+        ].invoke_v1(
             str_to_felt(publisher),
             publisher_address,
             max_fee=max_fee,

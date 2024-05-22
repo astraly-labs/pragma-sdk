@@ -3,7 +3,6 @@ import json
 import logging
 from typing import List, Union
 
-import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaFutureAsset
@@ -55,27 +54,6 @@ class ByBitFutureFetcher(PublisherInterfaceT):
 
             return self._construct(asset, result)
 
-    def _fetch_pair_sync(
-        self, asset: PragmaFutureAsset
-    ) -> Union[FutureEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = self.format_url(pair[0], pair[1])
-
-        resp = requests.get(url)
-        if resp.status_code == 404:
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from BYBIT")
-
-        text = resp.text
-        result = json.loads(text)
-
-        if (
-            result["retCode"] == "51001"
-            or result["retMsg"] == "Instrument ID does not exist"
-        ):
-            return PublisherFetchError(f"No data found for {'/'.join(pair)} from BYBIT")
-
-        return self._construct(asset, result)
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[FutureEntry, PublisherFetchError]]:
@@ -86,15 +64,6 @@ class ByBitFutureFetcher(PublisherInterfaceT):
                 continue
             entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
-
-    def fetch_sync(self) -> List[Union[FutureEntry, PublisherFetchError]]:
-        entries = []
-        for asset in self.assets:
-            if asset["type"] != "FUTURE":
-                logger.debug("Skipping BYBIT for non-spot asset %s", (asset))
-                continue
-            entries.append(self._fetch_pair_sync(asset))
-        return entries
 
     def format_url(self, quote_asset, base_asset):
         url = f"{self.BASE_URL}{quote_asset}{base_asset}"
@@ -107,7 +76,7 @@ class ByBitFutureFetcher(PublisherInterfaceT):
         price = float(data["lastPrice"])
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = float(data["volume24h"])
+        volume = float(data["volume24h"]) / 10 ** asset["decimals"]
         expiry_timestamp = int(data["deliveryTime"])
         logger.info("Fetched future for %s from BYBIT", ("/".join(pair)))
 
