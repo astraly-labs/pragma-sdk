@@ -376,11 +376,13 @@ class RandomnessMixin:
 
                 print(f"event {event}")
 
+                is_pending = minimum_block_number == block_number + 1
+
                 block = (
                     await self.full_node_client.get_block(
                         block_number=minimum_block_number
                     )
-                    if minimum_block_number < block_number
+                    if is_pending
                     else await self.full_node_client.get_block(block_number="pending")
                 )
                 block_hash = block.block_hash
