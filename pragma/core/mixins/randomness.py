@@ -335,7 +335,6 @@ class RandomnessMixin:
         private_key: int,
         min_block: int = 0,
     ):
-        block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
