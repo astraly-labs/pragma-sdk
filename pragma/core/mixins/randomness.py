@@ -335,6 +335,7 @@ class RandomnessMixin:
         private_key: int,
         min_block: int = 0,
     ):
+        block_number = await self.full_node_client.get_block_number()
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
@@ -364,7 +365,7 @@ class RandomnessMixin:
 
             for event in events:
                 minimum_block_number = event.minimum_block_number
-                if minimum_block_number > block_number:
+                if minimum_block_number > block_number + 1:
                     continue
                 request_id = event.request_id
                 status = await self.get_request_status(event.caller_address, request_id)
