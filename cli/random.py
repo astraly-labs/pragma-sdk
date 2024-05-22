@@ -20,8 +20,8 @@ def main():
     verify_random_parser.add_argument(
         "--network",
         type=str,
-        default="sepolia",
-        help="Network name (default: sepolia))",
+        default="mainnet",
+        help="Network name (default:  mainnet))",
     )
 
     args = parser.parse_args()

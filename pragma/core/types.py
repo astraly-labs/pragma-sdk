@@ -38,7 +38,6 @@ Network = Literal[
 CHAIN_IDS = {
     DEVNET: 23448594291968334,
     SHARINGAN: 1536727068981429685321,
-    TESTNET: 1536727068981429685321,
     SEPOLIA: 393402133025997798000961,
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
@@ -130,17 +129,14 @@ RPC_URLS = {
         "https://starknet-mainnet.public.blastapi.io/rpc/v0_6",
     ],
     SEPOLIA: [
+        # "https://starknet-sepolia.public.blastapi.io", 
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
-    ],
-    SEPOLIA: [
-        # "https://starknet-sepolia.public.blastapi.io"
         f"https://rpc.nethermind.io/sepolia-juno/?apikey={os.getenv('RPC_SEPOLIA_KEY')}"
     ],
 }
 
 
 def get_rpc_url(network=TESTNET, port=5050):
-    print(os.getenv("RPC_SEPOLIA_KEY"))
     if network.startswith("http"):
         return network
     if network == SEPOLIA:
@@ -179,6 +175,10 @@ CONTRACT_ADDRESSES = {
     MAINNET: ContractAddresses(
         1035964020232444284030697086969999610062982650901949616270651804992179237909,
         1202089834814778579992154020333959781277480478747022471664051891421849487195,
+    ),
+    SEPOLIA: ContractAddresses(
+        764259049439565269590387705502051444787910047543242149334355727309682685773,
+        1526899943909931281366530977873767661043021921869578496106478460498705257242,
     ),
     SHARINGAN: ContractAddresses(0, 0),
     PRAGMA_TESTNET: ContractAddresses(0, 0),
