@@ -394,7 +394,7 @@ class RandomnessMixin:
                     if is_pending
                     else await self.full_node_client.get_block(block_number="pending")
                 )
-                block_hash = block.parent_hash
+                block_hash = block.parent_block_hash
 
                 seed = (
                     event.request_id.to_bytes(8, sys.byteorder)
