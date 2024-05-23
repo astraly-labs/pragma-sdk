@@ -18,6 +18,8 @@ from pragma.core.types import RequestStatus
 
 logger = logging.getLogger(__name__)
 
+IGNORE_REQUEST_THRESHOLD = 30
+
 
 class RandomnessMixin:
     client: Client
@@ -367,7 +369,11 @@ class RandomnessMixin:
                 minimum_block_number = event.minimum_block_number
                 # Skip if block_number is less than minimum_block_number
                 # Take into account pending block
-                if minimum_block_number > block_number + 1:
+                # Ignore requests that are too old
+                if (
+                    minimum_block_number > block_number + 1
+                    or minimum_block_number < block_number - IGNORE_REQUEST_THRESHOLD
+                ):
                     continue
                 request_id = event.request_id
                 status = await self.get_request_status(event.caller_address, request_id)
