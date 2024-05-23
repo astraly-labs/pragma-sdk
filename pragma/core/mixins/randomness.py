@@ -338,6 +338,9 @@ class RandomnessMixin:
         min_block: int = 0,
     ):
         block_number = await self.full_node_client.get_block_number()
+
+        min_block = max(min_block, block_number - IGNORE_REQUEST_THRESHOLD)
+
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
@@ -353,7 +356,7 @@ class RandomnessMixin:
                 from_block_number=min_block,
                 to_block_number="pending",
                 continuation_token=continuation_token,
-                chunk_size=50,
+                chunk_size=500,
             )
             for event in event_list.events:
                 index_to_split = 7
