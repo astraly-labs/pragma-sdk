@@ -388,11 +388,9 @@ class RandomnessMixin:
                 is_pending = minimum_block_number == block_number + 1
 
                 block = (
-                    await self.full_node_client.get_block(
-                        block_number=minimum_block_number
-                    )
+                    await self.full_node_client.get_block(block_number="pending")
                     if is_pending
-                    else await self.full_node_client.get_block(block_number="pending")
+                    else await self.full_node_client.get_block(block_number="latest")
                 )
                 block_hash = block.parent_block_hash
 
