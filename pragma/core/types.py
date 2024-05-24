@@ -136,7 +136,7 @@ RPC_URLS = {
 }
 
 
-def get_rpc_url(network=TESTNET, port=5050):
+def get_rpc_url(network=SEPOLIA, port=5050):
     if network.startswith("http"):
         return network
     if network == SEPOLIA:
