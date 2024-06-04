@@ -102,13 +102,17 @@ async def _handler(assets):
 
     # Check for both ETH/USD and STRK/USD
     last_publish_eth = await publisher_client.get_time_since_last_published(
-        "ETH/USD", PUBLISHER
+        "ETH/USD", PUBLISHER, block_number="pending"
     )
     last_publish_strk = await publisher_client.get_time_since_last_published(
-        "STRK/USD", PUBLISHER
+        "STRK/USD", PUBLISHER, block_number="pending"
     )
-    deviation_eth = await publisher_client.get_current_price_deviation("ETH/USD")
-    deviation_strk = await publisher_client.get_current_price_deviation("STRK/USD")
+    deviation_eth = await publisher_client.get_current_price_deviation(
+        "ETH/USD", block_number="pending"
+    )
+    deviation_strk = await publisher_client.get_current_price_deviation(
+        "STRK/USD", block_number="pending"
+    )
 
     last_publish = min(last_publish_eth, last_publish_strk)
     deviation = max(deviation_eth, deviation_strk)

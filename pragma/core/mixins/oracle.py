@@ -149,7 +149,9 @@ class OracleMixin:
         return invocations
 
     @deprecated
-    async def get_spot_entries(self, pair_id, sources=None) -> List[SpotEntry]:
+    async def get_spot_entries(
+        self, pair_id, sources=None, block_number="latest"
+    ) -> List[SpotEntry]:
         if sources is None:
             sources = []
         if isinstance(pair_id, str):
@@ -159,21 +161,25 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            DataType(DataTypes.SPOT, pair_id, None).serialize(), sources
+            DataType(DataTypes.SPOT, pair_id, None).serialize(),
+            sources,
+            block_number=block_number,
         )
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
-    async def get_all_sources(self, data_type: DataType) -> List[str]:
+    async def get_all_sources(
+        self, data_type: DataType, block_number="latest"
+    ) -> List[str]:
         (response,) = await self.oracle.functions["get_all_sources"].call(
-            data_type.serialize()
+            data_type.serialize(), block_number=block_number
         )
 
         return [felt_to_str(source) for source in response]
 
     @deprecated
     async def get_future_entries(
-        self, pair_id, expiration_timestamp, sources=None
+        self, pair_id, expiration_timestamp, sources=None, block_number="latest"
     ) -> List[FutureEntry]:
         if sources is None:
             sources = []
@@ -186,6 +192,7 @@ class OracleMixin:
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
             DataType(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
             sources,
+            block_number=block_number,
         )
         entries = response[0]
         return [FutureEntry.from_dict(dict(entry.value)) for entry in entries]
@@ -195,6 +202,7 @@ class OracleMixin:
         pair_id,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources=None,
+        block_number="latest",
     ) -> OracleResponse:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -206,12 +214,14 @@ class OracleMixin:
             (response,) = await self.oracle.functions["get_data"].call(
                 DataType(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
+                block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
                 DataType(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 sources,
+                block_number=block_number,
             )
 
         response = dict(response)
@@ -230,6 +240,7 @@ class OracleMixin:
         expiry_timestamp,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources=None,
+        block_number="latest",
     ) -> OracleResponse:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -242,12 +253,14 @@ class OracleMixin:
             (response,) = await self.oracle.functions["get_data"].call(
                 DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
+                block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
                 DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 sources,
+                block_number=block_number,
             )
 
         response = dict(response)
@@ -260,9 +273,10 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, data_type: DataType) -> int:
+    async def get_decimals(self, data_type: DataType, block_number="latest") -> int:
         (response,) = await self.oracle.functions["get_decimals"].call(
-            data_type.serialize()
+            data_type.serialize(),
+            block_number=block_number,
         )
 
         return response
@@ -413,8 +427,10 @@ class OracleMixin:
         )
         return invocation
 
-    async def get_time_since_last_published(self, pair_id, publisher) -> int:
-        all_entries = await self.get_spot_entries(pair_id)
+    async def get_time_since_last_published(
+        self, pair_id, publisher, block_number="latest"
+    ) -> int:
+        all_entries = await self.get_spot_entries(pair_id, block_number=block_number)
 
         entries = [
             entry
@@ -431,8 +447,10 @@ class OracleMixin:
 
         return diff
 
-    async def get_current_price_deviation(self, pair_id) -> float:
-        current_data = await self.get_spot(pair_id)
+    async def get_current_price_deviation(
+        self, pair_id, block_number="latest"
+    ) -> float:
+        current_data = await self.get_spot(pair_id, block_number=block_number)
         current_price = current_data.price / 10**current_data.decimals
 
         # query defillama API for the current price
