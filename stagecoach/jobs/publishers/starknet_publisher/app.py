@@ -100,10 +100,19 @@ async def _handler(assets):
             chain_name=os.getenv("NETWORK"),
         )
 
-    last_publish = await publisher_client.get_time_since_last_published(
+    # Check for both ETH/USD and STRK/USD
+    last_publish_eth = await publisher_client.get_time_since_last_published(
         "ETH/USD", PUBLISHER
     )
-    deviation = await publisher_client.get_current_price_deviation("ETH/USD")
+    last_publish_strk = await publisher_client.get_time_since_last_published(
+        "STRK/USD", PUBLISHER
+    )
+    deviation_eth = await publisher_client.get_current_price_deviation("ETH/USD")
+    deviation_strk = await publisher_client.get_current_price_deviation("STRK/USD")
+
+    last_publish = min(last_publish_eth, last_publish_strk)
+    deviation = max(deviation_eth, deviation_strk)
+
     print(f"Last publish was {last_publish} seconds ago and deviation is {deviation}")
     if last_publish < FREQUENCY_SECONDS and deviation < DEVIATION_THRESHOLD:
         print(
