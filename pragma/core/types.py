@@ -1,9 +1,11 @@
 import logging
+import os
 import random
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import Dict, List, Literal, Optional
 
+from dotenv import load_dotenv
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.utils import felt_to_str, str_to_felt
@@ -36,6 +38,7 @@ Network = Literal[
 CHAIN_IDS = {
     DEVNET: 23448594291968334,
     SHARINGAN: 1536727068981429685321,
+    SEPOLIA: 393402133025997798000961,
     MAINNET: 23448594291968334,
     PRAGMA_TESTNET: 8908953246943201047421899664489,
     FORK_DEVNET: 23448594291968334,
@@ -113,6 +116,7 @@ STARKSCAN_URLS = {
     MAINNET: "https://starkscan.co",
     SEPOLIA: "https://sepolia.starkscan.co",
     DEVNET: "https://devnet.starkscan.co",
+    SEPOLIA: "https://sepolia.starkscan.co",
     SHARINGAN: "https://sharingan-explorer.madara.zone",
     PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
     FORK_DEVNET: "https://devnet.starkscan.co",
@@ -125,12 +129,14 @@ RPC_URLS = {
         "https://starknet-mainnet.public.blastapi.io/rpc/v0_6",
     ],
     SEPOLIA: [
+        # "https://starknet-sepolia.public.blastapi.io", 
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
+        f"https://rpc.nethermind.io/sepolia-juno/?apikey={os.getenv('RPC_SEPOLIA_KEY')}"
     ],
 }
 
 
-def get_rpc_url(network=DEVNET, port=5050):
+def get_rpc_url(network=SEPOLIA, port=5050):
     if network.startswith("http"):
         return network
     if network == SEPOLIA:
@@ -139,6 +145,9 @@ def get_rpc_url(network=DEVNET, port=5050):
     if network == MAINNET:
         random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
         return RPC_URLS[MAINNET][random_index]
+    if network == SEPOLIA:
+        random_index = random.randint(0, len(RPC_URLS[SEPOLIA]) - 1)
+        return RPC_URLS[SEPOLIA][random_index]
     if network == SHARINGAN:
         return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
