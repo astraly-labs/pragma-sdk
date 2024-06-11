@@ -8,11 +8,11 @@ from asgiref.sync import async_to_sync
 logger = logging.getLogger(__name__)
 
 
-def exclude_none_and_exceptions(entries):
+def exclude_none_and_exceptions(polluted_list):
     return [
-        entry
-        for entry in entries
-        if (type(entry) is not None) and (not isinstance(entry, Exception))
+        element
+        for element in polluted_list
+        if (type(element) is not None) and (not isinstance(element, Exception))
     ]
 
 

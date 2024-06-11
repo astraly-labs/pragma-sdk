@@ -58,13 +58,10 @@ def build_publish_message(entries: List[Entry]) -> TypedData:
             ],
         },
     }
-
-    entries_type = type(entries[0])
-    if isinstance(entries_type, FutureEntry):
+    if isinstance(entries[0], FutureEntry):
         message["types"]["Entry"] = message["types"]["Entry"] + [
             {"name": "expiration_timestamp", "type": "felt"},
         ]
-
     return message
 
 
@@ -106,8 +103,9 @@ class OffchainMixin:
         Args:
             entries (List[Entry]): List of Entry to publish
         """
-        # TODO: We sometimes have some Error types in entries, we need to remove them
-        # Currently, we only exclude them from here
+        # TODO: We sometimes have some Error types in entries, we need to
+        # investigate why and don't push them in our entries.
+        # Currently, we only exclude them from here.
         entries = exclude_none_and_exceptions(entries)
 
         # Check if all entries are of the same type
@@ -133,6 +131,8 @@ class OffchainMixin:
         }
 
         url = self.api_url + "/v1/data/publish"
+        if isinstance(entries[0], FutureEntry):
+            url += "_future"
 
         logger.info(f"POST {url}")
         logger.info(f"Headers: {headers}")

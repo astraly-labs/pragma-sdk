@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import aiohttp
 from dotenv import load_dotenv
@@ -111,7 +111,7 @@ class PragmaPublisherClient(PragmaClient):
 
     async def fetch(
         self, filter_exceptions=True, return_exceptions=True, timeout_duration=20
-    ) -> List[any]:
+    ) -> List[Union[Entry, Exception]]:
         tasks = []
         timeout = aiohttp.ClientTimeout(
             total=timeout_duration

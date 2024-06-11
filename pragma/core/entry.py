@@ -287,7 +287,7 @@ class FutureEntry(Entry):
         }
 
     def offchain_serialize(self) -> Dict[str, str]:
-        return {
+        serialized = {
             "base": {
                 "timestamp": self.base.timestamp,
                 "source": felt_to_str(self.base.source),
@@ -298,6 +298,7 @@ class FutureEntry(Entry):
             "volume": self.volume,
             "expiration_timestamp": self.expiry_timestamp,
         }
+        return serialized
 
     def __repr__(self):
         return (
