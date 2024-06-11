@@ -93,6 +93,18 @@ class OffchainMixin:
         )
         self.ssl_context = ssl_context
 
+    def get_api_url(self, is_future: bool = False) -> str:
+        """
+        Get API URL
+        """
+        api_url = self.api_url
+        publish_uri = "v1/data/publish"
+        if is_future:
+            publish_uri += "_future"
+        if api_url[-1] != "/":
+            api_url += "/"
+        return api_url + publish_uri
+
     async def publish_data(
         self,
         entries: List[Entry],
@@ -139,9 +151,7 @@ class OffchainMixin:
             "entries": EntryClass.offchain_serialize_entries(entries),
         }
 
-        url = self.api_url + "/v1/data/publish"
-        if isinstance(entries[0], FutureEntry):
-            url += "_future"
+        url = self.get_api_url(is_future)
 
         logger.info(f"POST {url}")
         logger.info(f"Headers: {headers}")

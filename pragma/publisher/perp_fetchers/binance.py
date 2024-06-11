@@ -96,19 +96,17 @@ class BinancePerpFetcher(PublisherInterfaceT):
             volume = float(self.retrieve_volume(data["pair"], volume_arr)) / (
                 10 ** asset["decimals"]
             )
-            if data["pair"] == f"{pair[0]}{pair[1]}":
-                expiry_timestamp = 0
-            else:
+            expiry_timestamp = 0
+            if data["pair"] != f"{pair[0]}{pair[1]}":
                 date_arr = data["symbol"].split("_")
-                if len(date_arr) > 1:
-                    date_part = date_arr[1]
-                    expiry_date = datetime.strptime(date_part, "%y%m%d")
-                    expiry_date = expiry_date.replace(
-                        hour=8, minute=0, second=0, tzinfo=timezone.utc
+                expiry_timestamp = int(date_arr)
+                if expiry_timestamp > 0:
+                    # log error
+                    logger.error(
+                        "Expiry timestamp should always be zero for perps. %s is ignored.",
+                        data["symbol"],
                     )
-                    expiry_timestamp = int(expiry_date.timestamp())
-                else:
-                    expiry_timestamp = int(0)
+                    continue
             result_arr.append(
                 FutureEntry(
                     pair_id=pair_id,
@@ -117,7 +115,7 @@ class BinancePerpFetcher(PublisherInterfaceT):
                     timestamp=int(timestamp / 1000),
                     source=self.SOURCE,
                     publisher=self.publisher,
-                    expiry_timestamp=expiry_timestamp * 1000,
+                    expiry_timestamp=expiry_timestamp,
                     autoscale_volume=True,
                 )
             )
