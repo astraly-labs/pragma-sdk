@@ -10,7 +10,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
 
-from pragma.core.entry import SpotEntry, Entry
+from pragma.core.entry import Entry, FutureEntry
 from pragma.core.types import AggregationMode
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,11 @@ GetDataResponse = collections.namedtuple(
 
 
 def build_publish_message(entries: List[Entry]) -> TypedData:
+    entries_type = type(entries[0])
+    assert all(
+        isinstance(entry, entries_type) for entry in entries
+    ), "All entries must be of the same type"
+
     message = {
         "domain": {"name": "Pragma", "version": "1"},
         "primaryType": "Request",
@@ -57,6 +62,11 @@ def build_publish_message(entries: List[Entry]) -> TypedData:
             ],
         },
     }
+
+    if isinstance(entries_type, FutureEntry):
+        message["types"]["Entry"] = message["types"]["Entry"] + [
+            {"name": "expiration_timestamp", "type": "felt"},
+        ]
 
     return message
 
