@@ -10,7 +10,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
 
-from pragma.core.entry import SpotEntry
+from pragma.core.entry import SpotEntry, Entry
 from pragma.core.types import AggregationMode
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class OffchainMixin:
     api_key: str
 
     def sign_publish_message(
-        self, entries: List[SpotEntry], now: int, expiry: int
+        self, entries: List[Entry], now: int, expiry: int
     ) -> (List[int], int):
         """
         Sign a publish message
@@ -104,13 +104,13 @@ class OffchainMixin:
 
     async def publish_data(
         self,
-        entries: List[SpotEntry],
+        entries: List[Entry],
     ):
         """
         Publish data to PragmAPI
 
         Args:
-            entries (List[SpotEntry]): List of SpotEntry to publish
+            entries (List[Entry]): List of Entry to publish
         """
 
         now = int(time.time())
@@ -126,9 +126,12 @@ class OffchainMixin:
             "x-api-key": self.api_key,
         }
 
+        EntryClass = type(entries[0])
+        assert all(isinstance(entry, EntryClass) for entry in entries)
+
         body = {
             "signature": [str(s) for s in sig],
-            "entries": SpotEntry.offchain_serialize_entries(entries),
+            "entries": EntryClass.offchain_serialize_entries(entries),
         }
 
         url = self.api_url + "/v1/data/publish"

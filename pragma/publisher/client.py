@@ -6,7 +6,7 @@ import aiohttp
 from dotenv import load_dotenv
 
 from pragma.core.client import PragmaClient
-from pragma.core.entry import SpotEntry
+from pragma.core.entry import Entry
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.types import PublisherInterfaceT
 
@@ -204,7 +204,7 @@ class PragmaAPIClient(PragmaClient):
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
-    async def create_entries(self, entries):
+    async def create_entries(self, entries: List[Entry]):
         endpoint = "/node/v1/data/publish"
         now = int(time.time())
         expiry = now + 24 * 60 * 60
@@ -217,10 +217,14 @@ class PragmaAPIClient(PragmaClient):
 
         sig, _ = self.sign_publish_message(entries, now, expiry)
 
+        # check that all entries share the same type
+        EntryClass = type(entries[0])
+        assert all(isinstance(entry, EntryClass) for entry in entries)
+
         # Convert entries to JSON string
         data = {
             "signature": [str(s) for s in sig],
-            "entries": SpotEntry.offchain_serialize_entries(entries),
+            "entries": Entry.offchain_serialize_entries(entries),
         }
 
         url = f"{self.api_base_url}{endpoint}"
@@ -237,7 +241,7 @@ class PragmaAPIClient(PragmaClient):
                 else:
                     print(f"Status Code: {status_code}")
                     print(f"Response Text: {response}")
-                    return PragmaAPIError(f"Unable to POST /v1/data")
+                    return PragmaAPIError("Unable to POST /v1/data")
 
     async def get_entry(
         self,

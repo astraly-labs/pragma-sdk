@@ -63,3 +63,6 @@ devnet.pkl
 
 .idea/
 .vscode/
+
+# Vscode workspaces
+*.code-workspace

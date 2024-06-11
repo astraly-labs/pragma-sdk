@@ -9,10 +9,13 @@ from pragma.core.utils import felt_to_str, str_to_felt
 
 class Entry(abc.ABC):
     @abc.abstractmethod
-    def serialize(self) -> Dict[str, str]: ...
+    def to_tuple(self) -> Tuple: ...
 
     @abc.abstractmethod
-    def to_tuple(self) -> Tuple: ...
+    def serialize(self) -> Dict[str, str]: ...
+
+    @abc.abstractclassmethod
+    def offchain_serialize(self) -> Dict[str, str]: ...
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
@@ -22,7 +25,14 @@ class Entry(abc.ABC):
         return list(filter(lambda item: item is not None, serialized_entries))
 
     @staticmethod
-    def flatten_entries(entries: List[SpotEntry]) -> List[int]:
+    def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
+        serialized_entries = [
+            entry.offchain_serialize() for entry in entries if issubclass(entry, Entry)
+        ]
+        return list(filter(lambda item: item is not None, serialized_entries))
+
+    @staticmethod
+    def flatten_entries(entries: List[Entry]) -> List[int]:
         """This flattens entriees to tuples.  Useful when you need the raw felt array"""
         expanded = [entry.to_tuple() for entry in entries]
         flattened = [x for entry in expanded for x in entry]
@@ -167,30 +177,6 @@ class SpotEntry(Entry):
             autoscale_volume=False,
         )
 
-    @staticmethod
-    def serialize_entries(entries: List[SpotEntry]) -> List[Dict[str, int]]:
-        """serialize entries to a List of dictionaries"""
-        # TODO (#000): log errors
-        serialized_entries = [
-            entry.serialize()
-            for entry in entries
-            # TODO (#000): This needs to be much more resilient to publish errors
-            if isinstance(entry, SpotEntry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
-
-    @staticmethod
-    def offchain_serialize_entries(entries: List[SpotEntry]) -> List[Dict[str, int]]:
-        """serialize entries to a List of dictionaries for off-chain consumption"""
-        # TODO (#000): log errors
-        serialized_entries = [
-            entry.offchain_serialize()
-            for entry in entries
-            # TODO (#000): This needs to be much more resilient to publish errors
-            if isinstance(entry, SpotEntry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
-
     def __repr__(self):
         return (
             f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
@@ -204,6 +190,9 @@ class FutureEntry(Entry):
     """
     Represents a Future Entry.
 
+    Also used to represent a Perp Entry - the only difference is that a perpetual future has no
+    expiry timestamp.
+
     ⚠️ By default, the constructor will autoscale the provided volume to be quoted in the base asset.
     This behavior can be overwritten witht the `autoscale_volume` parameter.
     """
@@ -211,7 +200,7 @@ class FutureEntry(Entry):
     base: BaseEntry
     pair_id: int
     price: int
-    expiry_timestamp: int
+    expiry_timestamp: Optional[int]
     volume: int
 
     def __init__(
@@ -221,7 +210,7 @@ class FutureEntry(Entry):
         timestamp: int,
         source: Union[str, int],
         publisher: Union[str, int],
-        expiry_timestamp: int,
+        expiry_timestamp: Optional[int] = None,
         volume: Optional[float] = 0,
         autoscale_volume: bool = True,
     ):
@@ -297,31 +286,18 @@ class FutureEntry(Entry):
             "volume": self.volume,
         }
 
-    @staticmethod
-    def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
-        base = dict(entry_dict["base"])
-        return FutureEntry(
-            entry_dict["pair_id"],
-            entry_dict["price"],
-            base["timestamp"],
-            base["source"],
-            base["publisher"],
-            entry_dict["expiration_timestamp"],
-            volume=entry_dict["volume"],
-            autoscale_volume=False,
-        )
-
-    @staticmethod
-    def serialize_entries(entries: List[FutureEntry]) -> List[Dict[str, int]]:
-        """serialize entries to a List of dictionaries"""
-        # TODO (#000): log errors
-        serialized_entries = [
-            entry.serialize()
-            for entry in entries
-            # TODO (#000): This needs to be much more resilient to publish errors
-            if isinstance(entry, FutureEntry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
+    def offchain_serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": felt_to_str(self.base.source),
+                "publisher": felt_to_str(self.base.publisher),
+            },
+            "pair_id": felt_to_str(self.pair_id),
+            "price": self.price,
+            "volume": self.volume,
+            "expiration_timestamp": self.expiry_timestamp,
+        }
 
     def __repr__(self):
         return (
@@ -334,58 +310,16 @@ class FutureEntry(Entry):
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
 
-
-class GenericEntry(Entry):
-    base: BaseEntry
-    key: int
-    value: int
-
-    def __init__(
-        self,
-        timestamp: int,
-        source: Union[str, int],
-        publisher: Union[str, int],
-        key: Union[str, int],
-        value: int,
-    ):
-        if isinstance(publisher, str):
-            publisher = str_to_felt(publisher)
-
-        if isinstance(source, str):
-            source = str_to_felt(source)
-
-        if isinstance(key, str):
-            key = str_to_felt(key)
-
-        self.base = BaseEntry(timestamp, source, publisher)
-        self.key = key
-        self.value = value
-
-    def serialize(self) -> Dict[str, str]:
-        return {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": self.base.source,
-                "publisher": self.base.publisher,
-            },
-            "key": self.key,
-            "value": self.value,
-        }
-
-    def to_tuple(self) -> Tuple:
-        return (
-            self.base.timestamp,
-            self.base.source,
-            self.base.publisher,
-            self.key,
-            self.value,
-        )
-
-    def __repr__(self):
-        return (
-            f'GenericEntry(key="{felt_to_str(self.key)}", '
-            f"value={self.value}, "
-            f"timestamp={self.base.timestamp}, "
-            f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}")'
+    @staticmethod
+    def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
+        base = dict(entry_dict["base"])
+        return FutureEntry(
+            entry_dict["pair_id"],
+            entry_dict["price"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+            entry_dict["expiration_timestamp"],
+            volume=entry_dict["volume"],
+            autoscale_volume=False,
         )
