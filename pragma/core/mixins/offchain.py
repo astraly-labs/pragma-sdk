@@ -10,7 +10,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 from starknet_py.utils.typed_data import TypedData
 
-from pragma.core.entry import Entry, FutureEntry
+from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode
 from pragma.core.utils import exclude_none_and_exceptions
 
@@ -108,6 +108,15 @@ class OffchainMixin:
         # Currently, we only exclude them from here.
         entries = exclude_none_and_exceptions(entries)
 
+        spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
+        future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
+
+        spot_response = self._publish_entries(spot_entries)
+        future_response = self._publish_entries(future_entries)
+
+        return spot_response, future_response
+
+    async def _publish_entries(self, entries: List[Entry]):
         # Check if all entries are of the same type
         EntryClass = type(entries[0])
         assert all(isinstance(entry, EntryClass) for entry in entries)
