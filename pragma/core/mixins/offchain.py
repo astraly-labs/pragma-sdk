@@ -26,25 +26,14 @@ GetDataResponse = collections.namedtuple(
     ],
 )
 
-"""
-{'base': 
-{'publisher': 88314212732225, 
-'source': 5787760245619121969, 'timestamp': 1697147959}, 
-'pair_id': 19514442401534788, '
-price': 1000, 
-'volume': 0}
-"""
 
-
-def build_publish_message(entries: List[SpotEntry], now: int, expiry: int) -> TypedData:
+def build_publish_message(entries: List[Entry]) -> TypedData:
     message = {
         "domain": {"name": "Pragma", "version": "1"},
         "primaryType": "Request",
         "message": {
             "action": "Publish",
-            "entries": SpotEntry.serialize_entries(entries),
-            # "timestamp": now,
-            # "expiration": expiry,
+            "entries": Entry.serialize_entries(entries),
         },
         "types": {
             "StarkNetDomain": [
@@ -79,13 +68,11 @@ class OffchainMixin:
     ssl_context: ssl.SSLContext
     api_key: str
 
-    def sign_publish_message(
-        self, entries: List[Entry], now: int, expiry: int
-    ) -> (List[int], int):
+    def sign_publish_message(self, entries: List[Entry]) -> (List[int], int):
         """
         Sign a publish message
         """
-        message = build_publish_message(entries, now, expiry)
+        message = build_publish_message(entries)
         hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
@@ -117,7 +104,7 @@ class OffchainMixin:
         expiry = now + 24 * 60 * 60
 
         # Sign message
-        sig, _ = self.sign_publish_message(entries, now, expiry)
+        sig, _ = self.sign_publish_message(entries)
 
         # Add headers
         headers: Dict = {
@@ -126,6 +113,7 @@ class OffchainMixin:
             "x-api-key": self.api_key,
         }
 
+        # Check if all entries are of the same type
         EntryClass = type(entries[0])
         assert all(isinstance(entry, EntryClass) for entry in entries)
 
