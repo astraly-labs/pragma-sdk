@@ -28,7 +28,7 @@ GetDataResponse = collections.namedtuple(
 )
 
 
-def build_publish_message(entries: List[Entry]) -> TypedData:
+def build_publish_message(entries: List[Entry], for_future_entries: bool) -> TypedData:
     message = {
         "domain": {"name": "Pragma", "version": "1"},
         "primaryType": "Request",
@@ -58,7 +58,7 @@ def build_publish_message(entries: List[Entry]) -> TypedData:
             ],
         },
     }
-    if isinstance(entries[0], FutureEntry):
+    if for_future_entries:
         message["types"]["Entry"] = message["types"]["Entry"] + [
             {"name": "expiration_timestamp", "type": "felt"},
         ]
@@ -112,11 +112,11 @@ class OffchainMixin:
         future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
 
         spot_response = self._publish_entries(spot_entries)
-        future_response = self._publish_entries(future_entries)
+        future_response = self._publish_entries(future_entries, is_future=True)
 
         return spot_response, future_response
 
-    async def _publish_entries(self, entries: List[Entry]):
+    async def _publish_entries(self, entries: List[Entry], is_future: bool = False):
         # Check if all entries are of the same type
         EntryClass = type(entries[0])
         assert all(isinstance(entry, EntryClass) for entry in entries)
@@ -125,7 +125,7 @@ class OffchainMixin:
         expiry = now + 24 * 60 * 60
 
         # Sign message
-        sig, _ = self.sign_publish_message(entries)
+        sig, _ = self.sign_publish_message(entries, is_future)
 
         # Add headers
         headers: Dict = {
