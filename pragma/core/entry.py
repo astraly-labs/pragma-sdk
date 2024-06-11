@@ -20,14 +20,14 @@ class Entry(abc.ABC):
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [
-            entry.serialize() for entry in entries if issubclass(entry, Entry)
+            entry.serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     @staticmethod
     def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [
-            entry.offchain_serialize() for entry in entries if issubclass(entry, Entry)
+            entry.offchain_serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
