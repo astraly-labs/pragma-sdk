@@ -72,11 +72,13 @@ class OffchainMixin:
     ssl_context: ssl.SSLContext
     api_key: str
 
-    def sign_publish_message(self, entries: List[Entry]) -> (List[int], int):
+    def sign_publish_message(
+        self, entries: List[Entry], is_future: bool = False
+    ) -> (List[int], int):
         """
         Sign a publish message
         """
-        message = build_publish_message(entries)
+        message = build_publish_message(entries, is_future)
         hash_ = TypedData.from_dict(message).message_hash(self.account.address)
         sig = self.account.sign_message(message)
 
@@ -123,8 +125,14 @@ class OffchainMixin:
         spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
         future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
 
-        spot_response = self._publish_entries(spot_entries)
-        future_response = self._publish_entries(future_entries, is_future=True)
+        spot_response, future_response = None, None
+
+        if len(spot_entries) > 0:
+            spot_response = await self._publish_entries(spot_entries)
+        if len(future_entries) > 0:
+            future_response = await self._publish_entries(
+                future_entries, is_future=True
+            )
 
         return spot_response, future_response
 
@@ -146,9 +154,10 @@ class OffchainMixin:
             "x-api-key": self.api_key,
         }
 
+        serialized_entries = EntryClass.offchain_serialize_entries(entries)
         body = {
             "signature": [str(s) for s in sig],
-            "entries": EntryClass.offchain_serialize_entries(entries),
+            "entries": serialized_entries,
         }
 
         url = self.get_api_url(is_future)
