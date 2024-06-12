@@ -8,9 +8,7 @@ RUN pip install pragma-sdk
 
 COPY app.py .
 
-# Copy the entrypoint script into the container
-COPY entrypoint.sh /entrypoint.sh
-# Make sure the script is executable
-RUN chmod +x /entrypoint.sh
+COPY task_runner.sh /task_runner.sh
+RUN chmod +x /task_runner.sh
 # Run the command on container startup
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/task_runner.sh"]
