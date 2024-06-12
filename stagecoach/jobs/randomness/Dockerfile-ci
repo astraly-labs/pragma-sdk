@@ -1,0 +1,16 @@
+FROM public.ecr.aws/docker/library/python:3.9
+
+RUN apt-get update && apt-get -y install cron
+
+RUN python -m pip install --upgrade pip
+
+RUN pip install pragma-sdk
+
+COPY app.py .
+
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /entrypoint.sh
+# Make sure the script is executable
+RUN chmod +x /entrypoint.sh
+# Run the command on container startup
+ENTRYPOINT ["/entrypoint.sh"]
