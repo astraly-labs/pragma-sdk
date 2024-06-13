@@ -4,15 +4,14 @@ from typing import Dict, List
 
 import aiohttp
 from dotenv import load_dotenv
+from starknet_py.net.models import StarknetChainId
+from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
-from pragma.publisher.types import PublisherInterfaceT
 from pragma.publisher import OffchainSigner
-
-from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
-from starknet_py.net.models import StarknetChainId
+from pragma.publisher.types import PublisherInterfaceT
 
 load_dotenv()
 

@@ -1,11 +1,10 @@
 import collections
 from typing import List
 
-from pragma.core.entry import SpotEntry
-
-from starknet_py.utils.typed_data import TypedData
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
+from starknet_py.utils.typed_data import TypedData
 
+from pragma.core.entry import SpotEntry
 
 GetDataResponse = collections.namedtuple(
     "GetDataResponse",
