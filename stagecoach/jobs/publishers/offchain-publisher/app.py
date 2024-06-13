@@ -9,7 +9,7 @@ from pragma.core.assets import (
     get_spot_asset_spec_for_pair_id,
 )
 from pragma.core.logger import get_stream_logger
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient, PragmaPublisherClient
 from pragma.publisher.fetchers import (
     BinanceFetcher,
     BitstampFetcher,
@@ -64,14 +64,16 @@ async def _handler(assets):
     publisher_private_key = _get_pvt_key()
     # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 16)
 
-    publisher_client = PragmaPublisherClient(
+    publisher_client = PragmaAPIClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
         api_url=API_URL,
         api_key=API_KEY,
     )
 
-    publisher_client.add_fetchers(
+    fetcher_client = PragmaPublisherClient()
+
+    fetcher_client.add_fetchers(
         [
             fetcher(assets, PUBLISHER)
             for fetcher in (
@@ -88,11 +90,11 @@ async def _handler(assets):
         ]
     )
 
-    publisher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
+    fetcher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
 
-    _entries = await publisher_client.fetch()
+    _entries = await fetcher_client.fetch()
     print(f"Got {_entries} entries")
-    response = await publisher_client.publish_data(_entries)
+    response = await publisher_client.create_entries(_entries)
 
     print(f"Successfuly published data with response {response}")
 
