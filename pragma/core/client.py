@@ -9,7 +9,6 @@ from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
 from pragma.core.mixins import (
     NonceMixin,
-    OffchainMixin,
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
@@ -18,7 +17,6 @@ from pragma.core.mixins import (
 from pragma.core.types import (
     CHAIN_IDS,
     CONTRACT_ADDRESSES,
-    PRAGMA_API_URL,
     ClientException,
     ContractAddresses,
     get_client_from_network,
@@ -34,7 +32,6 @@ class PragmaClient(
     OracleMixin,
     PublisherRegistryMixin,
     TransactionMixin,
-    OffchainMixin,
     RandomnessMixin,
 ):
     is_user_client: bool = False
@@ -50,8 +47,6 @@ class PragmaClient(
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
-        api_url: Optional[str] = PRAGMA_API_URL,
-        api_key: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -65,14 +60,7 @@ class PragmaClient(
         :param port: Optional port to interact with local node. Will default to 5050.
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
-        :param api_url: Optional URL for the Pragma API.  Defaults to http://localhost:8080
-        :param api_key: Optional API key for the Pragma API.
         """
-        self.ssl_context = None
-        self.api_url = api_url
-
-        if api_key is not None:
-            self.api_key = api_key
 
         full_node_client: FullNodeClient = get_client_from_network(network, port=port)
         self.full_node_client = full_node_client

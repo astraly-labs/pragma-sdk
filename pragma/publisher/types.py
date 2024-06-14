@@ -1,4 +1,5 @@
 import abc
+from enum import Enum, unique
 from typing import Any, List
 
 import aiohttp
@@ -44,3 +45,14 @@ class PublisherFetchError(Exception):
 
     def serialize(self):
         return self.message
+
+
+@unique
+class Interval(Enum):
+    ONE_MINUTE = "1min"
+    FIFTEEN_MINUTES = "15min"
+    ONE_HOUR = "1h"
+    TWO_HOURS = "2h"
+
+    def serialize(self):
+        return {self.value: None}
