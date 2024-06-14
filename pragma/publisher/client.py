@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from typing import Dict, List, Union
 
@@ -8,14 +9,15 @@ from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
-from pragma.core.entry import Entry
-from pragma.core.entry import SpotEntry
+from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
 from pragma.publisher.types import Interval, PublisherInterfaceT
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 class EntryResult:
@@ -214,9 +216,36 @@ class PragmaAPIClient:
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def create_entries(self, entries: List[Entry]):
+        # from entries, build two list, spotentry and futureentry
+        spot_entries = []
+        future_entries = []
+
+        for entry in entries:
+            if isinstance(entry, SpotEntry):
+                spot_entries.append(entry)
+            elif isinstance(entry, FutureEntry):
+                future_entries.append(entry)
+
+        await asyncio.gather(
+            self._create_entries(spot_entries, is_future=False),
+            self._create_entries(future_entries, is_future=True),
+        )
+
+    def _get_endpoint(self, is_future: bool = False):
         endpoint = "/node/v1/data/publish"
+        if is_future:
+            endpoint += "_future"
+        return endpoint
+
+    async def _create_entries(self, entries: List[Entry], is_future: bool = False):
+        if len(entries) == 0:
+            return
+
+        assert all(isinstance(entry, type(entries[0])) for entry in entries)
+
         now = int(time.time())
         expiry = now + 24 * 60 * 60
+        endpoint = self._get_endpoint(is_future)
 
         headers: Dict = {
             "PRAGMA-TIMESTAMP": str(now),
@@ -224,11 +253,7 @@ class PragmaAPIClient:
             "x-api-key": self.api_key,
         }
 
-        sig, _ = self.offchain_signer.sign_publish_message(entries)
-
-        # check that all entries share the same type
-        EntryClass = type(entries[0])
-        assert all(isinstance(entry, EntryClass) for entry in entries)
+        sig, _ = self.offchain_signer.sign_publish_message(entries, is_future)
 
         # Convert entries to JSON string
         data = {

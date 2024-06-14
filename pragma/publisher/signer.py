@@ -48,7 +48,7 @@ def build_publish_message(entries: List[Entry], for_future_entries: bool) -> Typ
             {"name": "expiration_timestamp", "type": "felt"},
         ]
 
-    return message
+    return TypedData.from_dict(message)
 
 
 class OffchainSigner:
@@ -65,7 +65,6 @@ class OffchainSigner:
         :return: Tuple containing the signature and the message hash
         """
         message = build_publish_message(entries, is_future)
-        hash_ = TypedData.from_dict(message).message_hash(self.account.address)
-        sig = self.signer.sign_message(message)
-
+        hash_ = message.message_hash(self.signer.address)
+        sig = self.signer.sign_message(message, self.signer.address)
         return sig, hash_
