@@ -200,7 +200,7 @@ class FutureEntry(Entry):
     base: BaseEntry
     pair_id: int
     price: int
-    expiry_timestamp: Optional[int]
+    expiry_timestamp: int
     volume: int
 
     def __init__(
