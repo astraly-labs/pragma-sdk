@@ -210,9 +210,9 @@ class FutureEntry(Entry):
         timestamp: int,
         source: Union[str, int],
         publisher: Union[str, int],
-        expiry_timestamp: Optional[int] = None,
+        expiry_timestamp: Optional[int] = 0,
         volume: Optional[float] = 0,
-        autoscale_volume: bool = True,
+        autoscale_volume: Optional[bool] = True,
     ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
