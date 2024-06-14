@@ -1,7 +1,6 @@
 import asyncio
-import logging
 import time
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import aiohttp
 from dotenv import load_dotenv
@@ -10,14 +9,12 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode
+from pragma.core.types import AggregationMode, DataTypes
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
 from pragma.publisher.types import Interval, PublisherInterfaceT
 
 load_dotenv()
-
-logger = logging.getLogger(__name__)
 
 
 class EntryResult:
@@ -216,7 +213,8 @@ class PragmaAPIClient:
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def create_entries(self, entries: List[Entry]):
-        # from entries, build two list, spotentry and futureentry
+        # We accept both types of entries - but they need to be sent through
+        # different endpoints & signed differently, so we split them here.
         spot_entries = []
         future_entries = []
 
@@ -227,17 +225,19 @@ class PragmaAPIClient:
                 future_entries.append(entry)
 
         await asyncio.gather(
-            self._create_entries(spot_entries, is_future=False),
-            self._create_entries(future_entries, is_future=True),
+            self._create_entries(spot_entries, DataTypes.SPOT),
+            self._create_entries(future_entries, DataTypes.FUTURE),
         )
 
-    def _get_endpoint(self, is_future: bool = False):
+    def _get_endpoint(self, data_type: DataTypes):
         endpoint = "/node/v1/data/publish"
-        if is_future:
+        if data_type == DataTypes.FUTURE:
             endpoint += "_future"
         return endpoint
 
-    async def _create_entries(self, entries: List[Entry], is_future: bool = False):
+    async def _create_entries(
+        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+    ):
         if len(entries) == 0:
             return
 
@@ -245,7 +245,7 @@ class PragmaAPIClient:
 
         now = int(time.time())
         expiry = now + 24 * 60 * 60
-        endpoint = self._get_endpoint(is_future)
+        endpoint = self._get_endpoint(data_type)
 
         headers: Dict = {
             "PRAGMA-TIMESTAMP": str(now),
@@ -253,7 +253,7 @@ class PragmaAPIClient:
             "x-api-key": self.api_key,
         }
 
-        sig, _ = self.offchain_signer.sign_publish_message(entries, is_future)
+        sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
 
         # Convert entries to JSON string
         data = {

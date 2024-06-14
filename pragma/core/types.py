@@ -53,7 +53,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "SHIB": "shiba-inu",
     "TEMP": "tempus",
     "DAI": "dai",
-    "USDT": "tether-usd",
+    "USDT": "tether",
     "USDC": "usd-coin",
     "TUSD": "true-usd",
     "BUSD": "binance-usd",

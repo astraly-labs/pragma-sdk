@@ -8,14 +8,6 @@ from asgiref.sync import async_to_sync
 logger = logging.getLogger(__name__)
 
 
-def exclude_none_and_exceptions(polluted_list):
-    return [
-        element
-        for element in polluted_list
-        if (type(element) is not None) and (not isinstance(element, Exception))
-    ]
-
-
 def str_to_felt(text):
     if text.upper() != text:
         logger.warning("Converting lower to uppercase for str_to_felt: %s", text)
