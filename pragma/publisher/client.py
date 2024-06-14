@@ -9,14 +9,12 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
+from pragma.core.types import AggregationMode
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
-from pragma.publisher import OffchainSigner
-from pragma.publisher.types import PublisherInterfaceT
+from pragma.publisher.signer import OffchainSigner
+from pragma.publisher.types import Interval, PublisherInterfaceT
 
 load_dotenv()
-
-
-ALLOWED_INTERVALS = ["1m", "15m", "1h", "2h"]
 
 
 class EntryResult:
@@ -165,8 +163,8 @@ class PragmaAPIClient:
         self,
         pair: str,
         timestamp: int = None,
-        interval: str = None,
-        aggregation: str = None,
+        interval: Interval = None,
+        aggregation: AggregationMode = None,
     ) -> EntryResult:
         """
         Retrieve OHLC data from the Pragma API.
@@ -187,7 +185,7 @@ class PragmaAPIClient:
             for key, value in {
                 "timestamp": timestamp,
                 "interval": interval,
-                "aggregation": aggregation,
+                "aggregation": aggregation.value.lower(),
             }.items()
             if value is not None
         }
@@ -255,9 +253,9 @@ class PragmaAPIClient:
         self,
         pair: str,
         timestamp: int = None,
-        interval: str = None,
+        interval: Interval = None,
+        aggregation: AggregationMode = None,
         routing: bool = None,
-        aggregation: str = None,
     ) -> EntryResult:
         """
         Get data aggregated on the Pragma API.
