@@ -137,6 +137,7 @@ class PragmaPublisherClient(PragmaClient):
 class PragmaAPIClient:
     api_base_url: str
     api_key: str
+    account_private_key: Optional[int]
     offchain_signer: OffchainSigner
 
     def __init__(
@@ -156,7 +157,6 @@ class PragmaAPIClient:
             KeyPair.from_private_key(account_private_key),
             StarknetChainId.MAINNET,  # not used anyway
         )
-
         self.offchain_signer = OffchainSigner(signer=signer)
 
     async def api_get_ohlc(
@@ -213,10 +213,18 @@ class PragmaAPIClient:
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def create_entries(self, entries: List[Entry]):
+        """
+        Publishes spot and future entries to the Pragma API.
+        This function accepts both type of entries - but they need to be sent through
+        different endpoints & signed differently, so we split them in two separate
+        lists.
+
+        :param entries: List of SpotEntry objects
+        """
         # We accept both types of entries - but they need to be sent through
         # different endpoints & signed differently, so we split them here.
-        spot_entries = []
-        future_entries = []
+        spot_entries: list[SpotEntry] = []
+        future_entries: list[FutureEntry] = []
 
         for entry in entries:
             if isinstance(entry, SpotEntry):
@@ -230,6 +238,9 @@ class PragmaAPIClient:
         )
 
     def _get_endpoint(self, data_type: DataTypes):
+        """
+        Returns the correct publish endpoint for the given data type.
+        """
         endpoint = "/node/v1/data/publish"
         if data_type == DataTypes.FUTURE:
             endpoint += "_future"
@@ -237,7 +248,13 @@ class PragmaAPIClient:
 
     async def _create_entries(
         self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
-    ):
+    ) -> Optional[Dict]:
+        """
+        Publishes entries to the Pragma API & returns the http response.
+
+        We can only publish entries of the same type at once - if we have a mix of
+        types, the function will raise an error.
+        """
         if len(entries) == 0:
             return
 
@@ -246,6 +263,7 @@ class PragmaAPIClient:
         now = int(time.time())
         expiry = now + 24 * 60 * 60
         endpoint = self._get_endpoint(data_type)
+        url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {
             "PRAGMA-TIMESTAMP": str(now),
@@ -254,14 +272,12 @@ class PragmaAPIClient:
         }
 
         sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
-
         # Convert entries to JSON string
         data = {
             "signature": [str(s) for s in sig],
             "entries": Entry.offchain_serialize_entries(entries),
         }
 
-        url = f"{self.api_base_url}{endpoint}"
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=data) as response:
                 status_code: int = response.status
