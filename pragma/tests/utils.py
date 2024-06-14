@@ -122,8 +122,6 @@ class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
-        api_url: Optional[str] = PRAGMA_API_URL,
-        api_key: Optional[str] = None,
     ):
         super().__init__(
             network=network,
@@ -132,8 +130,6 @@ class ExtendedPragmaClient(PragmaClient, ExampleRandomnessMixin):
             contract_addresses_config=contract_addresses_config,
             port=port,
             chain_name=chain_name,
-            api_url=api_url,
-            api_key=api_key,
         )
         # Any additional initialization for ExampleRandomnessMixin can be done here
 

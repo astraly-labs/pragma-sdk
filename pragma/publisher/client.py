@@ -4,16 +4,18 @@ from typing import Dict, List, Union
 
 import aiohttp
 from dotenv import load_dotenv
+from starknet_py.net.models import StarknetChainId
+from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import Entry
+from pragma.core.entry import SpotEntry
+from pragma.core.types import AggregationMode
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
-from pragma.publisher.types import PublisherInterfaceT
+from pragma.publisher.signer import OffchainSigner
+from pragma.publisher.types import Interval, PublisherInterfaceT
 
 load_dotenv()
-
-
-ALLOWED_INTERVALS = ["1m", "15m", "1h", "2h"]
 
 
 class EntryResult:
@@ -133,9 +135,10 @@ class PragmaPublisherClient(PragmaClient):
         return results
 
 
-class PragmaAPIClient(PragmaClient):
+class PragmaAPIClient:
     api_base_url: str
     api_key: str
+    offchain_signer: OffchainSigner
 
     def __init__(
         self,
@@ -146,48 +149,54 @@ class PragmaAPIClient(PragmaClient):
     ):
         self.api_base_url = api_base_url
         self.api_key = api_key
-        super().__init__(
-            account_private_key=account_private_key,
-            account_contract_address=account_contract_address,
+        if isinstance(account_private_key, str):
+            account_private_key = int(account_private_key, 16)
+
+        signer = StarkCurveSigner(
+            account_contract_address,
+            KeyPair.from_private_key(account_private_key),
+            StarknetChainId.MAINNET,  # not used anyway
         )
 
-    @staticmethod
-    def convert_to_publisher(client: PragmaClient):
-        client.__class__ = PragmaAPIClient
-        return client
+        self.offchain_signer = OffchainSigner(signer=signer)
 
     async def api_get_ohlc(
         self,
         pair: str,
         timestamp: int = None,
-        interval: str = None,
-        routing: str = None,
-        aggregation: str = None,
-        limit: int = 1000,
-    ):
+        interval: Interval = None,
+        aggregation: AggregationMode = None,
+    ) -> EntryResult:
+        """
+        Retrieve OHLC data from the Pragma API.
+
+        :param pair: Pair to get data for
+        :param timestamp: Timestamp to get data for, defaults to now
+        :param interval: Interval on which data is aggregated, defaults to 1m
+        :param aggregation: Aggregation method, defaults to Median
+
+        :return: [EntryResult] result data
+        """
         base_asset, quote_asset = get_cur_from_pair(pair)
 
-        # Define the endpoint
         endpoint = f"/node/v1/aggregation/candlestick/{base_asset}/{quote_asset}"
 
-        # Prepare path parameters
         path_params = {
             key: value
             for key, value in {
                 "timestamp": timestamp,
                 "interval": interval,
-                "routing": routing,
-                "aggregation": aggregation,
+                "aggregation": aggregation.value.lower(),
             }.items()
             if value is not None
         }
 
-        # Construct the complete URL
         url = f"{self.api_base_url}{endpoint}"
-        # Prepare headers
+
         headers = {
             "x-api-key": self.api_key,
         }
+
         # Create connection
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -215,7 +224,7 @@ class PragmaAPIClient(PragmaClient):
             "x-api-key": self.api_key,
         }
 
-        sig, _ = self.sign_publish_message(entries, now, expiry)
+        sig, _ = self.offchain_signer.sign_publish_message(entries)
 
         # check that all entries share the same type
         EntryClass = type(entries[0])
@@ -228,9 +237,7 @@ class PragmaAPIClient(PragmaClient):
         }
 
         url = f"{self.api_base_url}{endpoint}"
-        async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl_context=self.ssl_context)
-        ) as session:
+        async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=data) as response:
                 status_code: int = response.status
                 response: Dict = await response.json()
@@ -247,10 +254,21 @@ class PragmaAPIClient(PragmaClient):
         self,
         pair: str,
         timestamp: int = None,
-        interval: str = None,
-        routing: str = None,
-        aggregation: str = None,
-    ):
+        interval: Interval = None,
+        aggregation: AggregationMode = None,
+        routing: bool = None,
+    ) -> EntryResult:
+        """
+        Get data aggregated on the Pragma API.
+
+        :param pair: Pair to get data for
+        :param timestamp: Timestamp to get data for, defaults to now
+        :param interval: Interval on which data is aggregated, defaults to 2h
+        :param routing: If we want to route data for unexisting pair, defaults to False
+        :param aggregation: Aggregation method, defaults to TWAP
+
+        :return: [EntryResult] result data
+        """
         base_asset, quote_asset = get_cur_from_pair(pair)
         endpoint = f"/node/v1/data/{base_asset}/{quote_asset}"
         url = f"{self.api_base_url}{endpoint}"
@@ -265,6 +283,7 @@ class PragmaAPIClient(PragmaClient):
             }.items()
             if value is not None
         }
+
         headers = {
             "x-api-key": self.api_key,
         }
@@ -290,11 +309,18 @@ class PragmaAPIClient(PragmaClient):
         )
 
     async def get_volatility(self, pair: str, start: int, end: int):
+        """
+        Get volatility data for a pair in a given time range on the Pragma API.
+
+        :param pair: Pair to get data for
+        :param start: Start timestamp
+        :param end: End timestamp
+        """
+
         base_asset, quote_asset = get_cur_from_pair(pair)
 
         endpoint = f"/node/v1/volatility/{base_asset}/{quote_asset}"
 
-        # Construct query parameters
         headers = {
             "x-api-key": self.api_key,
         }
