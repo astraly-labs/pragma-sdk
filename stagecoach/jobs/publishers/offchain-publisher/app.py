@@ -22,11 +22,13 @@ from pragma.publisher.fetchers import (
     OkxFetcher,
     PropellerFetcher,
 )
+from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
 
 logger = get_stream_logger()
 
-SECRET_NAME = os.environ["SECRET_NAME"]
-SPOT_ASSETS = os.environ["SPOT_ASSETS"]
+SECRET_NAME = os.environ.get("SECRET_NAME", None)
+SPOT_ASSETS = os.environ.get("SPOT_ASSETS", [])
+FUTURE_ASSETS = os.environ.get("FUTURE_ASSETS", [])
 PUBLISHER = os.environ["PUBLISHER"]
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
@@ -39,9 +41,21 @@ if PAGINATION is not None:
 
 def handler(event, context):
     spot_assets = [
-        get_spot_asset_spec_for_pair_id(asset) for asset in SPOT_ASSETS.split(",")
+        get_spot_asset_spec_for_pair_id(asset)
+        for asset in SPOT_ASSETS.split(",")
+        if len(asset) > 0
     ]
-    response = asyncio.run(_handler(spot_assets))
+    future_assets = [
+        get_future_asset_spec_for_pair_id(asset)
+        for asset in FUTURE_ASSETS.split(",")
+        if len(asset) > 0
+    ]
+    if len(spot_assets) == 0 and len(future_assets) == 0:
+        return {
+            "success": False,
+            "message": "No assets to publish. Check SPOT_ASSETS and FUTURE_ASSETS env variables.",
+        }
+    response = asyncio.run(_handler(spot_assets, future_assets))
     return {
         "success": response,
     }
@@ -60,7 +74,7 @@ def _get_pvt_key():
     )
 
 
-async def _handler(assets):
+async def _handler(spot_assets, future_assets):
     publisher_private_key = _get_pvt_key()
     # publisher_private_key = int(os.environ["PUBLISHER_PRIVATE_KEY"], 16)
 
@@ -75,7 +89,7 @@ async def _handler(assets):
 
     fetcher_client.add_fetchers(
         [
-            fetcher(assets, PUBLISHER)
+            fetcher(spot_assets, PUBLISHER)
             for fetcher in (
                 BitstampFetcher,
                 CexFetcher,
@@ -89,13 +103,22 @@ async def _handler(assets):
             )
         ]
     )
+    fetcher_client.add_fetcher(
+        PropellerFetcher(spot_assets, PUBLISHER, PROPELLER_API_KEY)
+    )
+    fetcher_client.add_fetchers(
+        [
+            fetcher(future_assets, PUBLISHER)
+            for fetcher in (
+                BinanceFutureFetcher,
+                ByBitFutureFetcher,
+            )
+        ]
+    )
 
-    fetcher_client.add_fetcher(PropellerFetcher(assets, PUBLISHER, PROPELLER_API_KEY))
-
-    _entries = await fetcher_client.fetch()
-    print(f"Got {_entries} entries")
-    response = await publisher_client.create_entries(_entries)
-
+    entries = await fetcher_client.fetch()
+    print(f"Got {entries} entries")
+    response = await publisher_client.create_entries(entries)
     print(f"Successfuly published data with response {response}")
 
     return response
