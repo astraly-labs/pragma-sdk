@@ -204,7 +204,9 @@ class PragmaAPIClient:
             for key, value in {
                 "timestamp": timestamp,
                 "interval": interval,
-                "aggregation": aggregation.value.lower(),
+                "aggregation": (
+                    aggregation.value.lower() if aggregation is not None else None
+                ),
             }.items()
             if value is not None
         }
