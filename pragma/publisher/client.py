@@ -232,7 +232,9 @@ class PragmaAPIClient:
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
-    async def create_entries(self, entries: List[Entry]):
+    async def create_entries(
+        self, entries: List[Entry]
+    ) -> (Optional[Dict], Optional[Dict]):
         """
         Publishes spot and future entries to the Pragma API.
         This function accepts both type of entries - but they need to be sent through
@@ -252,10 +254,12 @@ class PragmaAPIClient:
             elif isinstance(entry, FutureEntry):
                 future_entries.append(entry)
 
-        await asyncio.gather(
+        # execute both in parralel
+        spot_response, future_response = await asyncio.gather(
             self._create_entries(spot_entries, DataTypes.SPOT),
             self._create_entries(future_entries, DataTypes.FUTURE),
         )
+        return spot_response, future_response
 
     async def _create_entries(
         self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
@@ -274,6 +278,9 @@ class PragmaAPIClient:
         now = int(time.time())
         expiry = now + 24 * 60 * 60
         endpoint = get_endpoint_publish_offchain(data_type)
+        print("===========")
+        print(endpoint)
+        print("===========")
         url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {

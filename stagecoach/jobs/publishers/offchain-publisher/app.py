@@ -81,7 +81,7 @@ async def _handler(spot_assets, future_assets):
     publisher_client = PragmaAPIClient(
         account_private_key=publisher_private_key,
         account_contract_address=PUBLISHER_ADDRESS,
-        api_url=API_URL,
+        api_base_url=API_URL,
         api_key=API_KEY,
     )
 

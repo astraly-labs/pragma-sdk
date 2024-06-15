@@ -125,14 +125,14 @@ explicit_package_bases = true
 show_error_codes = true
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-# TODO: Stop ignoring the folders one by one & fix the mypy errors
 exclude = [
-  "pragma/tests/.*",
+  "pragma/tests",
   "pragma-oracle",
   "stagecoach",
+  # TODO: Stop ignoring those two folders one by one & fix the mypy 
+  # https://github.com/astraly-labs/pragma-sdk/issues/116
   "pragma/core",
   "pragma/publisher",
-  "pragma/tests",
 ]
 
 [tool.poetry.build]
