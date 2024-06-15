@@ -14,7 +14,7 @@ class Entry(abc.ABC):
     @abc.abstractmethod
     def serialize(self) -> Dict[str, str]: ...
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def offchain_serialize(self) -> Dict[str, str]: ...
 
     @staticmethod

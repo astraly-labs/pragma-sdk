@@ -32,7 +32,7 @@ class DefillamaFetcher(PublisherInterfaceT):
         if api_key:
             self.headers["X-Api-Key"] = api_key
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
@@ -63,7 +63,7 @@ class DefillamaFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):

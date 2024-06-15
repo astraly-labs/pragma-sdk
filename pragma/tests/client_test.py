@@ -167,6 +167,7 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient):
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-statements
 async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     # Add PRAGMA as Publisher
     publisher_name = "PRAGMA"
@@ -254,7 +255,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Unknown Starknet error"
-        if not err_msg in err.message:
+        if err_msg not in err.message:
             raise err
 
     # Add new source and check aggregation
@@ -360,7 +361,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Unknown Starknet error"
-        if not err_msg in err.message:
+        if err_msg not in err.message:
             raise err
 
 

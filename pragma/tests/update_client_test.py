@@ -56,6 +56,7 @@ async def pragma_fork_client(
 
 
 @pytest_asyncio.fixture(scope="package")
+# pylint: disable=redefined-outer-name
 async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
@@ -72,12 +73,12 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
         await declare_result.wait_for_acceptance()
         return declare_result
 
-    except ClientError as e:
-        if "is already declared" in e.message:
-            logger.info(f"Contract already declared with this class hash")
+    except ClientError as err:
+        if "is already declared" in err.message:
+            logger.info("Contract already declared with this class hash")
         else:
-            logger.info(f"An error occured during the declaration: {e}")
-            raise e
+            logger.info("An error occured during the declaration: %s", err)
+            raise err
         return None
 
 
@@ -104,14 +105,14 @@ async def test_update_oracle(
 
     # Determine new implementation hash
     declare_result = declare_oracle
-    logger.info(f"Contract declared with hash: {declare_result.class_hash}")
+    logger.info("Contract declared with hash: %s", declare_result.class_hash)
 
     # Update oracle
     update_invoke = await pragma_fork_client.update_oracle(
         declare_result.class_hash, MAX_FEE
     )
     update_invoke.wait_for_acceptance()
-    logger.info(f"Contract upgraded with tx  {hex(update_invoke.hash)}")
+    logger.info("Contract upgraded with tx %s", hex(update_invoke.hash))
 
     # Check that the class hash was updated
     class_hash = await pragma_fork_client.full_node_client.get_class_hash_at(

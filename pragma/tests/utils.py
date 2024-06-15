@@ -12,7 +12,7 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair
 from pragma.core.abis import ABIS
 from pragma.core.client import PragmaClient
 from pragma.core.contract import Contract
-from pragma.core.types import PRAGMA_API_URL, ContractAddresses
+from pragma.core.types import ContractAddresses
 from pragma.tests.constants import (
     CONTRACTS_COMPILED_DIR,
     DEPLOYMENTS_DIR,
@@ -47,7 +47,7 @@ async def get_deploy_account_transaction(
         key_pair=key_pair,
         chain=StarknetChainId.SEPOLIA_TESTNET,
     )
-    return await account.sign_deploy_account_v1_transaction(
+    return await account.sign_deploy_account_v1(
         class_hash=class_hash,
         contract_address_salt=salt,
         constructor_calldata=[key_pair.public_key],
@@ -59,13 +59,15 @@ def get_declarations(network: Network):
     return {
         name: int(class_hash, 16)
         for name, class_hash in json.load(
-            open(DEPLOYMENTS_DIR / f"{network}" / "declarations.json")
+            open(DEPLOYMENTS_DIR / f"{network}" / "declarations.json", encoding="utf-8")
         ).items()
     }
 
 
 def get_deployments(network: Network):
-    return json.load(open(DEPLOYMENTS_DIR / f"{network}" / "deployments.json", "r"))
+    return json.load(
+        open(DEPLOYMENTS_DIR / f"{network}" / "deployments.json", "r", encoding="utf-8")
+    )
 
 
 def convert_to_wei(usd):
@@ -103,7 +105,8 @@ class ExampleRandomnessMixin:
     ):
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.example_randomness.functions[
             "request_random"

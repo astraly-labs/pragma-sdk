@@ -78,7 +78,8 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         fee = math.floor(self.POOL_FEE * 2**128)
         # An TICK_SPACING increaese of a price means the new price is price*(1+TICK_SPACING)
         # We want to know the number of tick for a price increase of TICK_SPACING
-        # Since the tick spacing is represented as an exponent of TICK_BASE, we can use the logarithm to find the number of tick
+        # Since the tick spacing is represented as an exponent of TICK_BASE, we can use
+        # the logarithm to find the number of tick
         tick = round(math.log(1 + self.TICK_SPACING) / math.log(self.TICK_BASE))
         pool_key = PoolKey(
             int(token_0, 16),
@@ -95,9 +96,9 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         return call
 
     async def off_fetch_ekubo_price(
-        self, asset, session: ClientSession, time=None
+        self, asset, session: ClientSession, timestamp=None
     ) -> Union[SpotEntry, PublisherFetchError]:
-        url = self.format_url(asset["pair"][0], asset["pair"][1], time)
+        url = self.format_url(asset["pair"][0], asset["pair"][1], timestamp)
         pair = asset["pair"]
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -107,8 +108,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             if resp.status == 200:
                 result_json = await resp.json()
                 return self._construct(asset, float(result_json["price"]))
-            else:
-                return await self.operate_eth_hop(asset, session)
+            return await self.operate_eth_hop(asset, session)
 
     async def on_fetch_ekubo_price(self) -> float:
         call = self.prepare_call()
@@ -118,13 +118,11 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Ekubo: Pool is empty")
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
 
-    def format_url(self, base_asset, quote_asset, time=None):
-        if time:
-            return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={time}&period=3600"
-        else:
-            return (
-                f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
-            )
+    # pylint: disable=arguments-renamed
+    def format_url(self, base_asset, quote_asset, timestamp=None):
+        if timestamp:
+            return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={timestamp}&period=3600"
+        return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"
 
     async def operate_eth_hop(self, asset, session: ClientSession) -> SpotEntry:
         pair_1_str = str_to_felt("ETH/" + asset["pair"][1])
@@ -153,7 +151,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
                 )
             else:
                 logger.debug(
-                    f"Skipping StarknetAMM for non ETH or non STRK pair: {asset}"
+                    "Skipping StarknetAMM for non ETH or non STRK pair: %s", asset
                 )
 
         return await asyncio.gather(*entries, return_exceptions=True)

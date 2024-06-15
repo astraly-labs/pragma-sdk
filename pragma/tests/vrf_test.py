@@ -20,9 +20,10 @@ from pragma.tests.utils import ExtendedPragmaClient as PragmaClient
 from pragma.tests.utils import convert_to_wei, read_contract, wait_for_acceptance
 
 
+# pylint: disable=redefined-outer-name
 @pytest_asyncio.fixture(scope="package")
 async def declare_deploy_randomness(
-    account: Account, network
+    account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract = read_contract("pragma_Randomness.sierra.json", directory=None)
     compiled_contract_casm = read_contract(
@@ -318,13 +319,14 @@ async def test_fails_gas_limit(
     assert balance_before >= balance_after
 
 
+# pylint: disable=too-many-locals
 @pytest.mark.asyncio
 async def test_balance_evolution(
     vrf_pragma_client: PragmaClient,
     randomness_contracts: (Contract, Contract, Contract),
     address_and_private_key,
 ):
-    (randomness, example_randomness, _) = randomness_contracts
+    (_, example_randomness, _) = randomness_contracts
 
     _, private_key = address_and_private_key
     (_, example_randomness, _) = randomness_contracts
@@ -423,14 +425,13 @@ async def test_balance_evolution(
     assert status.variant == "FULFILLED"
 
 
+# pylint: disable=too-many-locals
 @pytest.mark.asyncio
 async def test_balance_evolution_cancel(
     vrf_pragma_client: PragmaClient,
     randomness_contracts: (Contract, Contract, Contract),
-    address_and_private_key,
 ):
-    (randomness, example_randomness, _) = randomness_contracts
-    _, private_key = address_and_private_key
+    (_, example_randomness, _) = randomness_contracts
     request_id = 5
     seed = 1
     callback_fee_limit = 2855600000000000000

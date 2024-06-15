@@ -41,7 +41,6 @@ ASSET_MAPPING: Dict[str, any] = {
     "SNX": ("eth", "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"),
     "MKR": ("eth", "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"),
     "BAL": ("eth", "0xba100000625a3754423978a60c9317c58a424e3D"),
-    "UNI": ("eth", "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"),
     "AAVE": ("eth", "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"),
     "LDO": ("eth", "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32"),
     "RPL": ("eth", "0xD33526068D116cE69F19A9ee46F0bd304F21A51f"),
@@ -78,7 +77,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
@@ -112,7 +111,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
@@ -159,7 +158,7 @@ class GeckoTerminalFetcher(PublisherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from GeckoTerminal"
                 )
-        return self._construct(asset, hop_result, result)
+        return self._construct(asset, result, hop_result)
 
     def _construct(self, asset, result, hop_result=None) -> SpotEntry:
         pair = asset["pair"]

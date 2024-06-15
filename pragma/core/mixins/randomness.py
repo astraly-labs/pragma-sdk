@@ -41,12 +41,15 @@ class RandomnessMixin:
         callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
-        calldata: List[int] = [],
+        calldata: List[int] = None,
         max_fee=int(1e16),
     ) -> InvokeResult:
+        if calldata is None:
+            calldata = []
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
             )
 
         invocation = await self.randomness.functions["request_random"].invoke_v1(
@@ -67,12 +70,15 @@ class RandomnessMixin:
         callback_fee_limit: int = 1000000,
         publish_delay: int = 1,
         num_words: int = 1,
-        calldata: List[int] = [],
+        calldata: List[int] = None,
         max_fee=int(1e16),
     ):
+        if calldata is None:
+            calldata = []
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
             seed,
@@ -89,7 +95,8 @@ class RandomnessMixin:
     async def estimate_gas_call(self, caller_address: int, method: str):
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions[method].prepare_invoke_v1(
             caller_address
@@ -97,6 +104,8 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
+    # pylint: disable=too-many-arguments
+    # pylint: disable=invalid-name
     async def submit_random(
         self,
         request_id: int,
@@ -112,7 +121,8 @@ class RandomnessMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
@@ -134,7 +144,7 @@ class RandomnessMixin:
             return None
         if estimate_fee.overall_fee > callback_fee_limit:
             logger.error(
-                f"OUT OF GAS {estimate_fee.overall_fee} > {callback_fee_limit}"
+                "OUT OF GAS %s > %s", estimate_fee.overall_fee, callback_fee_limit
             )
             invocation = await self.randomness.functions["update_status"].invoke_v1(
                 requestor_address,
@@ -160,7 +170,7 @@ class RandomnessMixin:
             calldata,
             max_fee=max_fee,
         )
-        logger.info(f"Sumbitted random {invocation.hash}")
+        logger.info("Sumbitted random %s", invocation.hash)
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -178,7 +188,8 @@ class RandomnessMixin:
     ):
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             request_id,
@@ -203,7 +214,8 @@ class RandomnessMixin:
     ):
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions["update_status"].prepare_invoke_v1(
             requestor_address,
@@ -273,7 +285,8 @@ class RandomnessMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.randomness.functions["cancel_random_request"].invoke_v1(
             request_id,
@@ -300,7 +313,8 @@ class RandomnessMixin:
     ):
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account.  You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions[
             "cancel_random_request"
@@ -317,6 +331,7 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
+    # pylint: disable=too-many-locals
     async def refund_operation(
         self,
         request_id: int,
@@ -325,7 +340,8 @@ class RandomnessMixin:
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
-                "Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)"
+                "Must set account. You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.randomness.functions["refund_operation"].invoke_v1(
             requestor_address, request_id, max_fee=max_fee

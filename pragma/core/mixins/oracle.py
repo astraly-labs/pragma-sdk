@@ -443,7 +443,7 @@ class OracleMixin:
         if len(entries) == 0:
             return 1000000000  # arbitrary large number
 
-        max_timestamp = max([entry.base.timestamp for entry in entries])
+        max_timestamp = max(entry.base.timestamp for entry in entries)
 
         diff = int(time.time()) - max_timestamp
 

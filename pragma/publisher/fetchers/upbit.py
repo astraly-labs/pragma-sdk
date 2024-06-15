@@ -25,7 +25,7 @@ class UpbitFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -44,7 +44,7 @@ class UpbitFetcher(PublisherInterfaceT):
         entries = []
         for asset in self.assets:
             if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
-                entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+                entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
             else:
                 logger.debug("Skipping Upbit for non-spot asset %s", asset)
                 continue

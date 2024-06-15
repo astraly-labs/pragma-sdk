@@ -40,6 +40,7 @@ def start_devnet():
     return devnet_port, proc
 
 
+# pylint: disable=consider-using-with
 def fork_start_devnet():
     devnet_port = get_available_port()
 

@@ -42,8 +42,8 @@ def make_secret_key():
     return secrets.token_bytes(nbytes=32)
 
 
-def felt_to_secret_key(sk):
-    return sk.to_bytes(32, sys.byteorder)
+def felt_to_secret_key(felt: int):
+    return felt.to_bytes(32, sys.byteorder)
 
 
 def uint256_to_2_128(num: int):
@@ -61,7 +61,7 @@ def create_randomness(
     # Alice generates a secret and public key pair
     public_key = get_public_key(secret_key)
 
-    p_status, pi_string = ecvrf_prove(secret_key, seed)
+    _, pi_string = ecvrf_prove(secret_key, seed)
     b_status, beta_string = ecvrf_proof_to_hash(pi_string)
     assert b_status == "VALID"
 
@@ -74,5 +74,5 @@ def verify_randomness(
     seed: int,
 ):
     seed = seed.to_bytes(32, sys.byteorder)[:32]
-    result, beta_string2 = ecvrf_verify(public_key, proof_, seed)
+    result, _ = ecvrf_verify(public_key, proof_, seed)
     return result

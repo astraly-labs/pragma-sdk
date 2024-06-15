@@ -15,10 +15,8 @@ from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS
 from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
 from pragma.tests.constants import MOCK_DIR, SAMPLE_ASSETS
-from pragma.tests.fetcher_configs import PUBLISHER_NAME
 from pragma.tests.fixtures.devnet import get_available_port
 
-PUBLISHER_NAME = "TEST_PUBLISHER"
 JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
 
 ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
@@ -26,15 +24,13 @@ ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 # %% SPOT
 
 
-@pytest.fixture(scope="module")
-def forked_client(request, module_mocker, pytestconfig) -> Client:
+def forked_client(request) -> Client:
     """
     This module-scope fixture prepares a forked katana
     client for e2e testing.
 
     :return: a starknet Client
     """
-    # net = pytestconfig.getoption("--net")
     port = get_available_port()
     block_number = request.param.get("block_number", None)
     network = request.param.get("network", "mainnet")
@@ -354,7 +350,12 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 # async def test_async_api_client_volatility(forked_client):
 #     # we only want to mock the external fetcher APIs and not the RPC
 #     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-#         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
+#         api_client = PragmaAPIClient(
+#           ACCOUNT_ADDRESS,
+#           ACCOUNT_PRIVATE_KEY,
+#           'https://api.dev.pragma.build',
+#           'dummy_key'
+#         )
 #         # Mocking the expected call for assets
 #         for asset in SAMPLE_ASSETS:
 #   if asset["type"] == "INDEX":
@@ -362,7 +363,12 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #             quote_asset = asset["pair"][0]
 #             base_asset = asset["pair"][1]
 #             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
-#             with open([config["mock_file"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility'][0], "r", encoding="utf-8") as filepath:
+#             with open(
+#               [
+#                   config["mock_file"] for config in API_CLIENT_CONFIGS.values()
+#                   if config['function'] == 'get_volatility'
+#               ][0]
+#               , "r", encoding="utf-8") as filepath:
 #                 mock_data = json.load(filepath)
 #             mock.get(
 #                     url,
@@ -370,7 +376,10 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #             )
 #             result = await api_client.get_volatility(f'{asset["pair"][0]}/{asset["pair"][1]}')
 
-#             expected_result  = [config["expected_result"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility']
+#             expected_result  = [
+#               config["expected_result"] for config in API_CLIENT_CONFIGS.values()
+#               if config['function'] == 'get_volatility'
+#             ]
 #             assert result == expected_result[0][quote_asset]
 
 

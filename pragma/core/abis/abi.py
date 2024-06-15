@@ -71,6 +71,6 @@ ABIS = {
 
 
 def get_erc20_abi():
-    with open(BUILD_DIR / "pragma_ERC20.json", "r") as file:
-        ERC20_ABI = json.load(file)
-    return ERC20_ABI
+    with open(BUILD_DIR / "pragma_ERC20.json", "r", encoding="UTF-8") as file:
+        erc20_abi = json.load(file)
+    return erc20_abi

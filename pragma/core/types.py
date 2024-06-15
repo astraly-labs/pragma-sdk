@@ -165,6 +165,7 @@ RPC_URLS = {
 }
 
 
+# pylint: disable=too-many-return-statements
 def get_rpc_url(network=DEVNET, port=5050):
     if network.startswith("http"):
         return network
@@ -286,7 +287,11 @@ class Currency:
         }
 
     def __repr__(self):
-        return f"Currency({felt_to_str(self.id)}, {self.decimals}, {self.is_abstract_currency}, {self.starknet_address}, {self.ethereum_address})"
+        return (
+            f"Currency({felt_to_str(self.id)}, {self.decimals}, "
+            f"{self.is_abstract_currency}, {self.starknet_address},"
+            f" {self.ethereum_address})"
+        )
 
 
 class Pair:
@@ -318,7 +323,11 @@ class Pair:
         }
 
     def __repr__(self):
-        return f"Pair({felt_to_str(self.id)}, {felt_to_str(self.quote_currency_id)}, {felt_to_str(self.base_currency_id)})"
+        return (
+            f"Pair({felt_to_str(self.id)}, "
+            f"{felt_to_str(self.quote_currency_id)}, "
+            f"{felt_to_str(self.base_currency_id)})"
+        )
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])

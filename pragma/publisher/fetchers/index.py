@@ -37,7 +37,7 @@ class IndexFetcher(PublisherInterfaceT):
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         spot_entries = []
         for asset_weight in self.asset_quantities:
-            spot_entry = await self.fetcher._fetch_pair(asset_weight.asset, session)
+            spot_entry = await self.fetcher.fetch_pair(asset_weight.asset, session)
             if isinstance(spot_entry, PublisherFetchError):
                 return PublisherFetchError(
                     f"Index Computation failed: asset {asset_weight.asset['pair']} not found"
@@ -86,8 +86,8 @@ class IndexAggregation:
     def standardize_decimals(self):
 
         decimals = self.asset_quantities[0].asset["decimals"]
-        for i in range(0, len(self.asset_quantities)):
-            asset = self.asset_quantities[i].asset
+        for i, asset_quantity in enumerate(self.asset_quantities):
+            asset = asset_quantity.asset
             exponent = abs(asset["decimals"] - decimals)
             if asset["decimals"] > decimals:
                 for j in range(0, i):

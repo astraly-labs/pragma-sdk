@@ -39,6 +39,7 @@ class PragmaClient(
     account: Account = None
     full_node_client: FullNodeClient = None
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         network: str = "devnet",
@@ -62,9 +63,9 @@ class PragmaClient(
             Must be one of ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
 
-        full_node_client: FullNodeClient = get_client_from_network(network, port=port)
-        self.full_node_client = full_node_client
-        self.client = full_node_client
+        self.full_node_client: FullNodeClient = get_client_from_network(
+            network, port=port
+        )
         if network.startswith("http") and chain_name is None:
             raise ClientException(
                 f"Network provided is a URL: {network} but `chain_name` is not provided."
@@ -85,7 +86,7 @@ class PragmaClient(
         self._setup_contracts()
 
     def _setup_contracts(self):
-        provider = self.account if self.account else self.client
+        provider = self.account if self.account else self.full_node_client
         self.oracle = Contract(
             address=self.contract_addresses_config.oracle_proxy_addresss,
             abi=ABIS["pragma_Oracle"],
@@ -99,13 +100,10 @@ class PragmaClient(
             cairo_version=1,
         )
 
-    def full_node_client(self, network, port=None):
-        return get_client_from_network(network, port=port)
-
     async def get_balance(self, account_contract_address, token_address=None):
         client = Account(
             address=account_contract_address,
-            client=self.client,
+            client=self.full_node_client,
             key_pair=KeyPair.from_private_key(1),
             chain=CHAIN_IDS[self.network],
         )
@@ -126,10 +124,10 @@ class PragmaClient(
         )
         self.account = Account(
             address=account_contract_address,
-            client=self.client,
+            client=self.full_node_client,
             signer=self.signer,
         )
-        self.client = self.account.client
+        self.full_node_client = self.account.client
         self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
         self.account_contract_address = account_contract_address
@@ -141,7 +139,7 @@ class PragmaClient(
         self,
         stats_contract_address: int,
     ):
-        provider = self.account if self.account else self.client
+        provider = self.account if self.account else self.full_node_client
         self.stats = Contract(  # pylint: disable=attribute-defined-outside-init
             address=stats_contract_address,
             abi=ABIS["pragma_SummaryStats"],
