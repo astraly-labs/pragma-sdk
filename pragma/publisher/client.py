@@ -278,9 +278,6 @@ class PragmaAPIClient:
         now = int(time.time())
         expiry = now + 24 * 60 * 60
         endpoint = get_endpoint_publish_offchain(data_type)
-        print("===========")
-        print(endpoint)
-        print("===========")
         url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {
