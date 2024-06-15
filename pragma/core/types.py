@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 
 ADDRESS = int
-HEX_STR = str  # pylint: disable=invalid-name
+HEX_STR = str
 
 # Network Types
 DEVNET = "devnet"
@@ -78,6 +78,41 @@ ASSET_MAPPING: Dict[str, str] = {
     "COMP": "compound-governance-token",
     "DPI": "defipulse-index",
     "MVI": "metaverse-index",
+    "MC": "merit-circle",
+    "RNDR": "render",
+    "FET": "fetch-ai",
+    "IMX": "immutable-x",
+    "GALA": "gala",
+    "ILV": "illuvium",
+    "APE": "apecoin",
+    "SAND": "the-sandbox",
+    "AXS": "axie-infinity",
+    "MANA": "decentraland",
+    "ENS": "ethereum-name-service",
+    "BLUR": "blur",
+    "WIF": "dogwifhat",
+    "NEAR": "near",
+    "LTC": "litecoin",
+    "TRX": "tron",
+    "LINK": "chainlink",
+    "BCH": "bitcoin-cash",
+    "ARB": "arbitrum",
+    "WLD": "worldcoin",
+    "OP": "optimism",
+    "DOT": "polkadot",
+    "ONDO": "ondo",
+    "SUI": "sui",
+    "ETC": "ethereum-classic",
+    "ATOM": "cosmos",
+    "FIL": "filecoin",
+    "FTM": "fantom",
+    "ORDI": "ordi",
+    "APT": "aptos",
+    "JUP": "jupiter",
+    "TIA": "celestia",
+    "INJ": "injective-protocol",
+    "PENDLE": "pendle",
+    "SEI": "sei-network",
 }
 
 DPI_ASSETS = [
@@ -216,7 +251,7 @@ class Currency:
     ):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
-        self.id = id_  # pylint: disable=invalid-name
+        self.id = id_
 
         self.decimals = decimals
 
@@ -251,7 +286,11 @@ class Currency:
         }
 
     def __repr__(self):
-        return f"Currency({felt_to_str(self.id)}, {self.decimals}, {self.is_abstract_currency}, {self.starknet_address}, {self.ethereum_address})"
+        return (
+            f"Currency({felt_to_str(self.id)}, {self.decimals}, "
+            f"{self.is_abstract_currency}, {self.starknet_address},"
+            f" {self.ethereum_address})"
+        )
 
 
 class Pair:
@@ -262,7 +301,7 @@ class Pair:
     def __init__(self, id_, quote_currency_id, base_currency_id):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
-        self.id = id_  # pylint: disable=invalid-name
+        self.id = id_
 
         if isinstance(quote_currency_id, str):
             quote_currency_id = str_to_felt(quote_currency_id)
@@ -283,7 +322,11 @@ class Pair:
         }
 
     def __repr__(self):
-        return f"Pair({felt_to_str(self.id)}, {felt_to_str(self.quote_currency_id)}, {felt_to_str(self.base_currency_id)})"
+        return (
+            f"Pair({felt_to_str(self.id)}, "
+            f"{felt_to_str(self.quote_currency_id)}, "
+            f"{felt_to_str(self.base_currency_id)})"
+        )
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])

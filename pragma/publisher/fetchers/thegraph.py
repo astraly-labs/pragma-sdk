@@ -22,6 +22,16 @@ ASSET_MAPPING: Dict[str, str] = {
 }
 
 
+def query_body(quote_asset):
+    pool = ASSET_MAPPING[quote_asset]
+    query = (
+        f'{{pool(id: "{pool}")'
+        f"{{ tick token0 {{ symbol }} token1 {{ symbol }} "
+        f"feeTier sqrtPrice liquidity token0Price token1Price volumeUSD}}}}"
+    )
+    return query
+
+
 class TheGraphFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.thegraph.com/subgraphs/name/"
     SOURCE: str = "THEGRAPH"
@@ -32,7 +42,7 @@ class TheGraphFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
@@ -41,22 +51,19 @@ class TheGraphFetcher(PublisherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query TheGraph for {pair[0]}"
             )
-        quote_result = await self.pool_query(session, self.query_body(pair[0]), pair)
+        quote_result = await self.pool_query(session, query_body(pair[0]), pair)
         if pair[1] != "USDC":
             if pair[1] == "USD":
                 usdc_str = str_to_felt("USDC/USD")
                 usdc_entry = await self.client.get_spot(usdc_str)
                 usdc_price = int(usdc_entry.price) / (10 ** int(usdc_entry.decimals))
                 return self._construct(asset, quote_result, usd_price=usdc_price)
-            elif pair[1] in ASSET_MAPPING.keys():
-                base_result = await self.pool_query(
-                    session, self.query_body(pair[1]), pair
-                )
+            if pair[1] in ASSET_MAPPING:
+                base_result = await self.pool_query(session, query_body(pair[1]), pair)
                 return self._construct(
                     asset=asset, quote_result=quote_result, base_result=base_result
                 )
-            else:
-                return PublisherFetchError(f"Base asset not supported : {pair[1]}")
+            return PublisherFetchError(f"Base asset not supported : {pair[1]}")
         return self._construct(asset, quote_result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
@@ -65,22 +72,13 @@ class TheGraphFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping The Graph for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, base_asset=None, quote_asset=None):
         url_slug = "uniswap/uniswap-v3"
         url = self.BASE_URL + url_slug
         return url
-
-    def query_body(self, quote_asset):
-        pool = ASSET_MAPPING[quote_asset]
-        query = (
-            f'{{pool(id: "{pool}")'
-            f"{{ tick token0 {{ symbol }} token1 {{ symbol }} "
-            f"feeTier sqrtPrice liquidity token0Price token1Price volumeUSD}}}}"
-        )
-        return query
 
     async def pool_query(self, session: ClientSession, query: str, pair: List[str]):
         async with session.post(self.format_url(), json={"query": query}) as resp:

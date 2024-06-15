@@ -3,7 +3,7 @@ import os
 import pytest
 from starknet_py.net.client_models import TransactionType
 
-from pragma.tests.constants import TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY
+from pragma.tests.constants import TESTNET_ACCOUNT_ADDRESS
 
 
 @pytest.fixture

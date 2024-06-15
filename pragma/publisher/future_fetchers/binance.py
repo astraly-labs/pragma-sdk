@@ -40,7 +40,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     volume_arr.append((element["symbol"], element["quoteVolume"]))
             return volume_arr
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaFutureAsset, session: ClientSession
     ) -> Union[FutureEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -72,7 +72,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             if asset["type"] != "FUTURE":
                 logger.debug("Skipping Binance for non-future asset %s", asset)
                 continue
-            future_entries = await self._fetch_pair(asset, session)
+            future_entries = await self.fetch_pair(asset, session)
             if isinstance(future_entries, list):
                 entries.extend(future_entries)
             else:
@@ -82,7 +82,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         return self.BASE_URL
 
-    def retrieve_volume(self, asset, volume_arr):  # pylint: disable=no-self-use
+    def retrieve_volume(self, asset, volume_arr):
         for list_asset, list_vol in volume_arr:
             if asset == list_asset:
                 return list_vol

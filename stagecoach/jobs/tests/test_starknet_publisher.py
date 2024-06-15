@@ -9,8 +9,6 @@ from aioresponses import aioresponses
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
-    TESTNET_ACCOUNT_ADDRESS,
-    TESTNET_ACCOUNT_PRIVATE_KEY,
 )
 from pragma.tests.fetcher_configs import (
     FETCHER_CONFIGS,

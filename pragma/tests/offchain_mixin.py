@@ -7,8 +7,8 @@ from starknet_py.utils.typed_data import TypedData
 
 from pragma.core.client import PragmaClient
 from pragma.core.entry import SpotEntry
-from pragma.core.mixins.offchain import build_publish_message
 from pragma.core.utils import str_to_felt
+from pragma.publisher.signer import build_publish_message
 
 PUBLISHER_NAME = "PRAGMA"
 
@@ -74,7 +74,6 @@ def test_publish_message_empty():
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_publish_api(pragma_offchain_client: PragmaClient):
     response = await pragma_offchain_client.publish_data(MOCK_DATA)
 
@@ -82,7 +81,6 @@ async def test_publish_api(pragma_offchain_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_get_data(pragma_offchain_client: PragmaClient):
     response = await pragma_offchain_client.get_spot_data("ETH", "USD")
     print(response)

@@ -1,5 +1,3 @@
-# pylint: disable=protected-access
-
 from typing import Callable, Optional
 
 from starknet_py.contract import Contract as StarknetContract

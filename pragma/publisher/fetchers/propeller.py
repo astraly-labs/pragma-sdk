@@ -52,6 +52,30 @@ DECIMALS_MAPPING: Dict[str, int] = {
 }
 
 
+# Propeller requires a payload to be sent with the request
+# The payload is a list of orders, each with a sell_token, buy_token, and sell_amount
+# The sell_amount is the amount of the sell_token to be sold
+# The buy_token is the token to be bought
+# The sell_token is the token to be sold
+def build_payload(sell_token, buy_token):
+    address_0 = ASSET_MAPPING.get(sell_token)
+    address_1 = ASSET_MAPPING.get(buy_token)
+    sell_amount = 10 ** DECIMALS_MAPPING.get(sell_token) * SELL_AMOUNTS[0]
+    if address_0 is None or address_1 is None:
+        raise PublisherFetchError(
+            f"Unknown price pair, do not know how to query Propeller for {sell_token}/{buy_token}"
+        )
+    return {
+        "orders": [
+            {
+                "sell_token": address_0,
+                "buy_token": address_1,
+                "sell_amount": sell_amount,
+            }
+        ],
+    }
+
+
 class PropellerFetcher(PublisherInterfaceT):
     BASE_URL: str = (
         "https://api.propellerheads.xyz/partner/v2/solver/quote?blockchain=ethereum"
@@ -68,45 +92,22 @@ class PropellerFetcher(PublisherInterfaceT):
         self.headers = {"X-Api-Key": api_key}
         self.client = client or PragmaClient(network="mainnet")
 
-    # Propeller requires a payload to be sent with the request
-    # The payload is a list of orders, each with a sell_token, buy_token, and sell_amount
-    # The sell_amount is the amount of the sell_token to be sold
-    # The buy_token is the token to be bought
-    # The sell_token is the token to be sold
-    def build_payload(self, sell_token, buy_token):
-        address_0 = ASSET_MAPPING.get(sell_token)
-        address_1 = ASSET_MAPPING.get(buy_token)
-        sell_amount = 10 ** DECIMALS_MAPPING.get(sell_token) * SELL_AMOUNTS[0]
-        if address_0 is None or address_1 is None:
-            raise PublisherFetchError(
-                f"Unknown price pair, do not know how to query Propeller for {sell_token}/{buy_token}"
-            )
-        return {
-            "orders": [
-                {
-                    "sell_token": address_0,
-                    "buy_token": address_1,
-                    "sell_amount": sell_amount,
-                }
-            ],
-        }
-
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
-        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
+        if pair in (("DPI", "USD"), ("MVI", "USD")):
             substitute_pair = (pair[0], "WETH")
-            eth_price = await self.get_stable_price(self.client, "ETH")
+            eth_price = await self.get_stable_price("ETH")
         else:
             substitute_pair = pair
             eth_price = 1
 
         url = f"{self.BASE_URL}"
         try:
-            payload = self.build_payload(substitute_pair[0], substitute_pair[1])
-        except PublisherFetchError as e:
-            return e
+            payload = build_payload(substitute_pair[0], substitute_pair[1])
+        except PublisherFetchError as err:
+            return err
 
         async with session.post(url, headers=self.headers, json=payload) as resp:
             if resp.status == 404:
@@ -141,7 +142,7 @@ class PropellerFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Propeller for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
@@ -164,7 +165,7 @@ class PropellerFetcher(PublisherInterfaceT):
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-        if pair == ("DPI", "USD") or pair == ("MVI", "USD"):
+        if pair in (("DPI", "USD"), ("MVI", "USD")):
             price = sum(mid_prices) * eth_price / len(mid_prices)
         else:
             price = sum(mid_prices) / len(mid_prices)

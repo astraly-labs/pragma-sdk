@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import pytest
 import pytest_asyncio
 from starknet_py.constants import FEE_CONTRACT_ADDRESS

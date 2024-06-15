@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import json
 import math
 import random
@@ -14,7 +12,7 @@ from starknet_py.net.client import Client
 
 from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS
-from pragma.publisher.fetchers.index import AssetWeight, IndexFetcher
+from pragma.publisher.fetchers.index import AssetQuantities, IndexFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
@@ -34,21 +32,17 @@ from pragma.tests.fetcher_configs import (
 from pragma.tests.fixtures.devnet import get_available_port
 from pragma.tests.utils import filter_assets_by_type
 
-PUBLISHER_NAME = "TEST_PUBLISHER"
-
 
 # %% SPOT
 
 
-@pytest.fixture(scope="module")
-def forked_client(request, module_mocker, pytestconfig) -> Client:
+def forked_client(request) -> Client:
     """
     This module-scope fixture prepares a forked katana
     client for e2e testing.
 
     :return: a starknet Client
     """
-    # net = pytestconfig.getoption("--net")
     port = get_available_port()
     block_number = request.param.get("block_number", None)
     network = request.param.get("network", "mainnet")
@@ -71,7 +65,7 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
     if block_number is not None:
         print(f"forking katana at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
-    subprocess.Popen(command)  # pylint: disable=consider-using-with
+    subprocess.Popen(command)
     time.sleep(10)
     pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name=network)
     return pragma_client
@@ -108,26 +102,24 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
             if fetcher_config["name"] == "TheGraph":
                 if asset["pair"] == ("DPI", "USD"):
                     continue
-                else:
-                    query = fetcher.query_body(quote_asset)
-                    mock.post(
-                        url,
-                        status=200,
-                        body={"query": query},
-                        payload=mock_data[quote_asset],
-                    )
+                query = fetcher.query_body(quote_asset)
+                mock.post(
+                    url,
+                    status=200,
+                    body={"query": query},
+                    payload=mock_data[quote_asset],
+                )
             elif fetcher_config["name"] == "Starknet":
                 continue
             else:
                 if fetcher_config["name"] == "IndexCoop" and asset["type"] == "SPOT":
                     continue
-                elif fetcher_config["name"] != "IndexCoop" and asset["name"] == (
+                if fetcher_config["name"] != "IndexCoop" and asset["name"] == (
                     "DPI",
                     "USD",
                 ):
                     continue
-                else:
-                    mock.get(url, status=200, payload=mock_data[quote_asset])
+                mock.get(url, status=200, payload=mock_data[quote_asset])
 
         if fetcher_config["name"] == "Starknet":
             async with aiohttp.ClientSession() as session:
@@ -147,10 +139,10 @@ async def test_async_fetcher(fetcher_config, mock_data, forked_client):
                 result = await fetcher.fetch(session)
             assert result == fetcher_config["expected_result"]
         else:
-            for i in range(len(array_starknet)):
+            for i, elt_starknet in enumerate(array_starknet):
                 assert (
-                    float(array_starknet[i])
-                    == float(fetcher_config["expected_result"][i]).price / 10**18
+                    float(elt_starknet)
+                    == float(fetcher_config["expected_result"][i].price) / 10**18
                 )
 
 
@@ -215,11 +207,6 @@ async def test_async_fetcher_404_error(fetcher_config, forked_client):
                 assert result == expected_result
 
 
-@pytest.fixture(params=FETCHER_CONFIGS.values())
-def fetcher_config(request):
-    return request.param
-
-
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.parametrize(
     "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
@@ -251,7 +238,8 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
 
         weights = [0.5, 0.5]
         assets = [
-            AssetWeight(sample_assets[i], weights[i]) for i in range(len(sample_assets))
+            AssetQuantities(sample_assets[i], weights[i])
+            for i in range(len(sample_assets))
         ]
         index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
         async with aiohttp.ClientSession() as session:
@@ -269,7 +257,7 @@ async def test_async_index_fetcher(fetcher_config, mock_data, forked_client):
     "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
 )
 @pytest.mark.asyncio
-async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client):
+async def test_async_index_fetcher_404(fetcher_config, forked_client):
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses(passthrough=[forked_client.client.url]) as mock:
         sample_assets = filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
@@ -286,7 +274,8 @@ async def test_async_index_fetcher_404(fetcher_config, mock_data, forked_client)
             mock.post(url, status=404)
         weights = [0.5, 0.5]
         assets = [
-            AssetWeight(sample_assets[i], weights[i]) for i in range(len(sample_assets))
+            AssetQuantities(sample_assets[i], weights[i])
+            for i in range(len(sample_assets))
         ]
         index_fetcher = IndexFetcher(fetcher, "IndexName1", assets)
         async with aiohttp.ClientSession() as session:
@@ -470,7 +459,7 @@ def starknet_mock_data(starknet_onchain_fetcher_config):
 async def test_onchain_starknet_async_fetcher_full(
     starknet_onchain_fetcher_config, forked_client, starknet_mock_data
 ):
-    with aioresponses(passthrough=[forked_client.client.url]) as m:
+    with aioresponses(passthrough=[forked_client.client.url]) as mock_responses:
         fetcher = starknet_onchain_fetcher_config["fetcher_class"](
             STARKNET_ONCHAIN_ASSETS,
             PUBLISHER_NAME,
@@ -481,9 +470,9 @@ async def test_onchain_starknet_async_fetcher_full(
             quote_asset = asset["pair"][0]
             base_asset = asset["pair"][1]
             url = fetcher.format_url(quote_asset, base_asset)
-            m.get(url, status=404)  # Use status for aiohttp
+            mock_responses.get(url, status=404)  # Use status for aiohttp
             if asset["pair"] == ("STRK", "USD"):
-                m.get(
+                mock_responses.get(
                     "https://coins.llama.fi/prices/current/coingecko:ethereum?searchWidth=5m",
                     status=200,
                     body=starknet_mock_data["ETH"],

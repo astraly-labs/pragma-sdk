@@ -33,8 +33,8 @@ class IndexCoopFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
+    async def fetch_pair(
+        self, asset: PragmaSpotAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         url = self.format_url(pair[0].lower())
@@ -47,9 +47,9 @@ class IndexCoopFetcher(PublisherInterfaceT):
                         f"No index found for {pair[0]} from IndexCoop"
                     )
                 parsed_data = json.loads(response_text)
-                logger.warning(f"Unexpected content type received: {content_type}")
+                logger.warning("Unexpected content type received: %s", content_type)
 
-            return self._construct(asset, parsed_data, usdt_price)
+            return self._construct(asset, parsed_data)
 
     async def fetch(
         self, session: ClientSession
@@ -59,7 +59,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping IndexCoop for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset=None):
@@ -70,9 +70,9 @@ class IndexCoopFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}/components?chainId=1&isPerpToken=false&address={index_address}"
         response = requests.get(url)
         response.raise_for_status()
-        json = response.json()
+        json_response = response.json()
 
-        components = json["components"]
+        components = json_response["components"]
         quantities = {
             component["symbol"]: float(component["quantity"])
             for component in components
@@ -86,7 +86,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
             for symbol, quantities in quantities.items()
         ]
 
-    def _construct(self, asset, result, usdt_price) -> SpotEntry:
+    def _construct(self, asset, result) -> SpotEntry:
         pair = asset["pair"]
         timestamp = int(time.time())
         price = result["navPrice"]

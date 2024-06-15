@@ -12,18 +12,18 @@ import hashlib
 
 
 # Section 5.1. ECVRF Proving
-def ecvrf_prove(sk, alpha_string):
+def ecvrf_prove(secret_key, alpha_string):
     """
     Input:
-        sk - VRF private key (32 bytes)
+        secret_key - VRF private key (32 bytes)
         alpha_string - input alpha, an octet string
     Output:
         ("VALID", pi_string) - where pi_string is the VRF proof, octet string of length ptLen+n+qLen
         (80) bytes, or ("INVALID", []) upon failure
     """
-    # 1. Use sk to derive the VRF secret scalar x and the VRF public key y = x*B
-    secret_scalar_x = _get_secret_scalar(sk)
-    public_key_y = get_public_key(sk)
+    # 1. Use secret_key to derive the VRF secret scalar x and the VRF public key y = x*B
+    secret_scalar_x = _get_secret_scalar(secret_key)
+    public_key_y = get_public_key(secret_key)
 
     # 2. H = ECVRF_hash_to_curve(suite_string, y, alpha_string)
     h = _ecvrf_hash_to_curve_elligator2_25519(SUITE_STRING, public_key_y, alpha_string)
@@ -38,8 +38,8 @@ def ecvrf_prove(sk, alpha_string):
     # 4. Gamma = x*H
     gamma = _scalar_multiply(p=h_string, e=secret_scalar_x)
 
-    # 5. k = ECVRF_nonce_generation(sk, h_string)
-    k = _ecvrf_nonce_generation_rfc8032(sk, h)
+    # 5. k = ECVRF_nonce_generation(secret_key, h_string)
+    k = _ecvrf_nonce_generation_rfc8032(secret_key, h)
 
     # 6. c = ECVRF_hash_points(H, Gamma, k*B, k*H)
     k_b = _scalar_multiply(p=BASE, e=k)
@@ -99,7 +99,7 @@ def ecvrf_proof_to_hash(pi_string):
         return "INVALID", []
 
     # 3. (Gamma, c, s) = D
-    gamma, c, s = d
+    gamma, _c, _s = d
 
     # 4. three_string = 0x03 = int_to_string(3, 1), a single octet with value 3
     three_string = bytes([0x03])
@@ -173,13 +173,12 @@ def ecvrf_verify(y, pi_string, alpha_string):
     # 8. If c and c’ are equal, output ("VALID", ECVRF_proof_to_hash(pi_string)); else output "INVALID"
     if c == cp:
         return ecvrf_proof_to_hash(pi_string)  # Includes logic for VALID/INVALID
-    else:
-        return "INVALID", []
+    return "INVALID", []
 
 
-def get_public_key(sk):
+def get_public_key(secret_key):
     """Calculate and return the public_key as an encoded point string (bytes)"""
-    secret_int = _get_secret_scalar(sk)
+    secret_int = _get_secret_scalar(secret_key)
     public_point = _scalar_multiply(p=BASE, e=secret_int)
     public_string = _encode_point(public_point)
     return public_string
@@ -263,16 +262,16 @@ def _ecvrf_hash_to_curve_elligator2_25519(suite_string, y, alpha_string):
 
 
 # 5.4.2.2. ECVRF Nonce Generation From RFC 8032
-def _ecvrf_nonce_generation_rfc8032(sk, h_string):
+def _ecvrf_nonce_generation_rfc8032(secret_key, h_string):
     """
     Input:
-        sk - an ECVRF secret key as bytes
+        secret_key - an ECVRF secret key as bytes
         h_string - an octet string
     Output:
         k - an integer between 0 and q-1
     """
-    # 1. hashed_sk_string = Hash (sk)
-    hashed_sk_string = _hash(sk)
+    # 1. hashed_sk_string = Hash (secret_key)
+    hashed_sk_string = _hash(secret_key)
 
     # 2. truncated_hashed_sk_string = hashed_sk_string[32]...hashed_sk_string[63]
     truncated_hashed_sk_string = hashed_sk_string[32:]
@@ -378,15 +377,17 @@ def _assert_and_sample(keys, actuals):
     global test_dict
     for key, actual in zip(keys, actuals):
         if key in test_dict and actual:
-            assert actual == test_dict[key], "{}  actual:{} != expected:{}".format(
-                key, actual.hex(), test_dict[key].hex()
-            )
+            assert (
+                actual == test_dict[key]
+            ), f"{key}  actual:{actual.hex()} != expected:{test_dict[key].hex()}"
         test_dict[key + "_sample"] = actual
 
 
-# Much of the following code has been adapted from ed25519.py at https://ed25519.cr.yp.to/software.html retrieved 27 Dec 2019
-# While it is gloriously inefficient, it provides an excellent demonstration of the underlying math. For example, production
-# code would likely avoid inversion via Fermat's little theorem as it is extremely expensive with a cost of ~300 field multiplies.
+# Much of the following code has been adapted from ed25519.py
+# at https://ed25519.cr.yp.to/software.html retrieved 27 Dec 2019.
+# While it is gloriously inefficient, it provides an excellent demonstration of the underlying math.
+# For example, production code would likely avoid inversion via Fermat's little theorem as it is
+# extremely expensive with a cost of ~300 field multiplies.
 
 
 def _edwards_add(p, q):
@@ -423,9 +424,9 @@ def _get_bit(h, i):
     return (h1 >> i) & 0x01
 
 
-def _get_secret_scalar(sk):
+def _get_secret_scalar(secret_key):
     """Calculate and return the secret_scalar integer"""
-    h = bytearray(_hash(sk)[0:32])
+    h = bytearray(_hash(secret_key)[0:32])
     h[31] = int((h[31] & 0x7F) | 0x40)
     h[0] = int(h[0] & 0xF8)
     secret_int = int.from_bytes(h, "little")

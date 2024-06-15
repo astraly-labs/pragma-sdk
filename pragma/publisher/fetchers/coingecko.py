@@ -54,16 +54,11 @@ class CoingeckoFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession
     ) -> SpotEntry:
         pair = asset["pair"]
-        pair_id = ASSET_MAPPING.get(pair[0])
-        if pair_id is None:
-            return PublisherFetchError(
-                f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
-            )
-        url = self.format_url(pair_id=pair_id)
+        url = self.format_url(ASSET_MAPPING.get(pair[0]), None)
         async with session.get(
             url, headers=self.headers, raise_for_status=True
         ) as resp:
@@ -76,10 +71,15 @@ class CoingeckoFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair_id):
+    def format_url(self, quote_asset, _) -> str:
+        pair_id = ASSET_MAPPING.get(quote_asset)
+        if pair_id is None:
+            return PublisherFetchError(
+                f"Unknown price pair, do not know how to query Coingecko for {quote_asset}"
+            )
         url = self.BASE_URL.format(pair_id=pair_id)
         return url
 

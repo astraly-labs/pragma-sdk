@@ -34,7 +34,6 @@ def start_devnet():
     else:
         start_devnet_command = start_devnet_command_unix(devnet_port)
 
-    # pylint: disable=consider-using-with
     proc = subprocess.Popen(start_devnet_command)
     time.sleep(10)
     return devnet_port, proc

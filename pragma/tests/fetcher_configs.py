@@ -1,7 +1,18 @@
-# pylint: disable=wildcard-import, unused-wildcard-import
 from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.publisher.fetchers import *
-from pragma.publisher.future_fetchers import *
+from pragma.publisher.fetchers import (
+    CexFetcher,
+    DefillamaFetcher,
+    BitstampFetcher,
+    CoinbaseFetcher,
+    AscendexFetcher,
+    OkxFetcher,
+    TheGraphFetcher,
+    StarknetAMMFetcher,
+    PropellerFetcher,
+    IndexCoopFetcher,
+    GeckoTerminalFetcher,
+)
+from pragma.publisher.future_fetchers import ByBitFutureFetcher, OkxFutureFetcher
 from pragma.tests.constants import MOCK_DIR
 
 PUBLISHER_NAME = "TEST_PUBLISHER"

@@ -25,7 +25,7 @@ class AscendexFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -52,13 +52,13 @@ class AscendexFetcher(PublisherInterfaceT):
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
         # Fetching usdt price (done one time)
-        usdt_price = await self.get_stable_price(self.client, "USDT")
+        usdt_price = await self.get_stable_price("USDT")
         for asset in self.assets:
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Ascendex for non-spot asset %s", asset)
                 continue
             entries.append(
-                asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+                asyncio.ensure_future(self.fetch_pair(asset, session, usdt_price))
             )
         return await asyncio.gather(*entries, return_exceptions=True)
 

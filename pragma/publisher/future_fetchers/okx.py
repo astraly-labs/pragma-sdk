@@ -43,7 +43,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
     def format_expiry_timestamp_url(self, instrument_id):
         return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-    async def _fetch_pair(self, asset: PragmaFutureAsset, session: ClientSession):
+    async def fetch_pair(self, asset: PragmaFutureAsset, session: ClientSession):
         pair = asset["pair"]
         url = f"{self.BASE_URL}?instType=FUTURES&uly={pair[0]}-{pair[1]}"
         future_entries = []
@@ -86,7 +86,7 @@ class OkxFutureFetcher(PublisherInterfaceT):
             if asset["type"] != "FUTURE":
                 logger.debug("Skipping OKX for non-future asset %s", asset)
                 continue
-            future_entries = await self._fetch_pair(asset, session)
+            future_entries = await self.fetch_pair(asset, session)
             if isinstance(future_entries, list):
                 entries.extend(future_entries)
             else:

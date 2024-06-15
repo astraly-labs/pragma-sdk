@@ -23,7 +23,7 @@ class KucoinFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -38,7 +38,7 @@ class KucoinFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Kucoin"
                 )
             result = await resp.json()
-            if result["data"] == None:
+            if result["data"] is None:
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset=asset, result=result, usdt_price=usdt_price)
 
@@ -50,7 +50,7 @@ class KucoinFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Kucoin for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):
@@ -66,7 +66,7 @@ class KucoinFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
                 )
             pair1_usdt = await resp.json()
-            if pair1_usdt["data"] == None:
+            if pair1_usdt["data"] is None:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[0]}"
                 )
@@ -77,7 +77,7 @@ class KucoinFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
                 )
             pair2_usdt = await resp.json()
-            if pair2_usdt["data"] == None:
+            if pair2_usdt["data"] is None:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Kucoin - hop failed for {pair[1]}"
                 )

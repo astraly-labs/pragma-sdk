@@ -10,7 +10,7 @@ from moto import mock_secretsmanager
 
 from pragma.core import PragmaClient
 from pragma.core.types import RPC_URLS
-from pragma.tests.fixtures.devnet import get_available_port, get_compiler_manifest
+from pragma.tests.fixtures.devnet import get_available_port
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ def devnet_node(module_mocker, port) -> str:
         "--seed",  # generates same accounts each time
         str(1),
     ]
-    subprocess.Popen(command)  # pylint: disable=consider-using-with
+    subprocess.Popen(command)
     time.sleep(10)
-    pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name="testnet")
+    _ = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name="testnet")
     yield f"http://127.0.0.1:{port}"

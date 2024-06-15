@@ -23,7 +23,7 @@ class HuobiFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -46,11 +46,11 @@ class HuobiFetcher(PublisherInterfaceT):
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        usdt_price = await self.get_stable_price(self.client, "USDT")
+        usdt_price = await self.get_stable_price("USDT")
         for asset in self.assets:
             if asset["type"] == "SPOT":
                 entries.append(
-                    asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+                    asyncio.ensure_future(self.fetch_pair(asset, session, usdt_price))
                 )
             else:
                 logger.debug("Skipping Huobi for non-spot asset %s", asset)

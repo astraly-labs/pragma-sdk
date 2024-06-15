@@ -78,7 +78,8 @@ class OracleMixin:
             return
 
         invocations = []
-        serialized_spot_entries = SpotEntry.serialize_entries(entries)
+        spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
+        serialized_spot_entries = SpotEntry.serialize_entries(spot_entries)
         if pagination:
             index = 0
             while index < len(serialized_spot_entries):
@@ -112,7 +113,8 @@ class OracleMixin:
                 hex(invocation.hash),
             )
 
-        serialized_future_entries = FutureEntry.serialize_entries(entries)
+        future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
+        serialized_future_entries = FutureEntry.serialize_entries(future_entries)
         if pagination:
             index = 0
             while index < len(serialized_future_entries):
@@ -441,7 +443,7 @@ class OracleMixin:
         if len(entries) == 0:
             return 1000000000  # arbitrary large number
 
-        max_timestamp = max([entry.base.timestamp for entry in entries])
+        max_timestamp = max(entry.base.timestamp for entry in entries)
 
         diff = int(time.time()) - max_timestamp
 

@@ -25,9 +25,9 @@ class PublisherInterfaceT(abc.ABC):
             data = await self.fetch(session)
             return data
 
-    async def get_stable_price(self, client, stable_asset):
+    async def get_stable_price(self, stable_asset):
         usdt_str = str_to_felt(stable_asset + "/USD")
-        usdt_entry = await client.get_spot(usdt_str)
+        usdt_entry = await self.client.get_spot(usdt_str)
         return int(usdt_entry.price) / (10 ** int(usdt_entry.decimals))
 
 

@@ -15,10 +15,8 @@ from pragma.core.client import PragmaClient
 from pragma.core.types import RPC_URLS
 from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
 from pragma.tests.constants import MOCK_DIR, SAMPLE_ASSETS
-from pragma.tests.fetcher_configs import PUBLISHER_NAME
 from pragma.tests.fixtures.devnet import get_available_port
 
-PUBLISHER_NAME = "TEST_PUBLISHER"
 JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
 
 ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
@@ -395,4 +393,4 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #                     status=404,
 #             )
 #             result = await api_client.get_volatility(f'{asset["pair"][0]}/{asset["pair"][1]}')
-#             assert result == None
+#             assert result == Nones

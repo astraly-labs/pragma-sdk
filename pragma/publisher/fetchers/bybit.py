@@ -24,7 +24,7 @@ class BybitFetcher(PublisherInterfaceT):
         self.publisher = publisher
         self.client = client or PragmaClient(network="mainnet")
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -47,13 +47,13 @@ class BybitFetcher(PublisherInterfaceT):
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        usdt_price = await self.get_stable_price(self.client, "USDT")
+        usdt_price = await self.get_stable_price("USDT")
         for asset in self.assets:
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Bybit for non-spot asset %s", asset)
                 continue
             entries.append(
-                asyncio.ensure_future(self._fetch_pair(asset, session, usdt_price))
+                asyncio.ensure_future(self.fetch_pair(asset, session, usdt_price))
             )
         return await asyncio.gather(*entries, return_exceptions=True)
 
@@ -61,7 +61,7 @@ class BybitFetcher(PublisherInterfaceT):
         url = f"{self.BASE_URL}symbol={quote_asset}{base_asset}"
         return url
 
-    async def operate_usdt_hop(self, asset, session, usdt_price=None) -> SpotEntry:
+    async def operate_usdt_hop(self, asset, session) -> SpotEntry:
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
         async with session.get(url_pair1) as resp:

@@ -5,8 +5,6 @@ import pytest
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
-    TESTNET_ACCOUNT_ADDRESS,
-    TESTNET_ACCOUNT_PRIVATE_KEY,
 )
 from stagecoach.jobs.publishers.custom import app
 
@@ -42,4 +40,4 @@ def test_fetch_entries(asset):
 @pytest.mark.asyncio
 async def test_publish_all(monkeypatch, mock_custom_env, devnet_node):
     monkeypatch.setenv("RPC_URL", devnet_node)
-    result = await app.publish_all(SAMPLE_ASSETS)
+    _ = await app.publish_all(SAMPLE_ASSETS)

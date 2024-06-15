@@ -23,7 +23,7 @@ class GeminiFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
 
-    async def _fetch_pair(
+    async def fetch_pair(
         self, asset: PragmaAsset, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
@@ -57,7 +57,7 @@ class GeminiFetcher(PublisherInterfaceT):
             if asset["type"] != "SPOT":
                 logger.debug("Skipping Gemini for non-spot asset %s", asset)
                 continue
-            entries.append(asyncio.ensure_future(self._fetch_pair(asset, session)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, quote_asset, base_asset):

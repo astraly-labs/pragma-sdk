@@ -1,20 +1,31 @@
 import asyncio
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import aiohttp
 from dotenv import load_dotenv
+from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.client import PragmaClient
-from pragma.core.entry import SpotEntry
-from pragma.core.types import AggregationMode
+from pragma.core.entry import Entry, FutureEntry, SpotEntry
+from pragma.core.types import AggregationMode, DataTypes
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
 from pragma.publisher.types import Interval, PublisherInterfaceT
 
 load_dotenv()
+
+
+def get_endpoint_publish_offchain(data_type: DataTypes):
+    """
+    Returns the correct publish endpoint for the given data type.
+    """
+    endpoint = "/node/v1/data/publish"
+    if data_type == DataTypes.FUTURE:
+        endpoint += "_future"
+    return endpoint
 
 
 class EntryResult:
@@ -28,7 +39,13 @@ class EntryResult:
         self.decimals = decimals
 
     def __str__(self):
-        return f"Pair ID: {self.pair_id}, Data: {self.data}, Num Sources Aggregated: {self.num_sources_aggregated}, Timestamp: {self.timestamp}, Decimals: {self.decimals}"
+        return (
+            f"Pair ID: {self.pair_id}, "
+            "Data: {self.data}, "
+            "Num Sources Aggregated: {self.num_sources_aggregated}, "
+            "Timestamp: {self.timestamp}, "
+            "Decimals: {self.decimals}"
+        )
 
     def assert_attributes_equal(self, expected_dict):
         """
@@ -112,7 +129,7 @@ class PragmaPublisherClient(PragmaClient):
 
     async def fetch(
         self, filter_exceptions=True, return_exceptions=True, timeout_duration=20
-    ) -> List[any]:
+    ) -> List[Union[Entry, Exception]]:
         tasks = []
         timeout = aiohttp.ClientTimeout(
             total=timeout_duration
@@ -126,6 +143,7 @@ class PragmaPublisherClient(PragmaClient):
                 result = [subl for subl in result if not isinstance(subl, Exception)]
             return [val for subl in result for val in subl]
 
+    # TODO (#000): _fetch_sync() is not defined anywhere
     def fetch_sync(self) -> List[any]:
         results = []
         for fetcher in self.fetchers:
@@ -137,6 +155,7 @@ class PragmaPublisherClient(PragmaClient):
 class PragmaAPIClient:
     api_base_url: str
     api_key: str
+    account_private_key: Optional[int]
     offchain_signer: OffchainSigner
 
     def __init__(
@@ -156,7 +175,6 @@ class PragmaAPIClient:
             KeyPair.from_private_key(account_private_key),
             StarknetChainId.MAINNET,  # not used anyway
         )
-
         self.offchain_signer = OffchainSigner(signer=signer)
 
     async def api_get_ohlc(
@@ -185,7 +203,9 @@ class PragmaAPIClient:
             for key, value in {
                 "timestamp": timestamp,
                 "interval": interval,
-                "aggregation": aggregation.value.lower(),
+                "aggregation": (
+                    aggregation.value.lower() if aggregation is not None else None
+                ),
             }.items()
             if value is not None
         }
@@ -212,15 +232,53 @@ class PragmaAPIClient:
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
-    async def create_entries(self, entries: List[SpotEntry]):
+    async def create_entries(
+        self, entries: List[Entry]
+    ) -> (Optional[Dict], Optional[Dict]):
         """
-        Publishes spot entries to the Pragma API.
+        Publishes spot and future entries to the Pragma API.
+        This function accepts both type of entries - but they need to be sent through
+        different endpoints & signed differently, so we split them in two separate
+        lists.
 
         :param entries: List of SpotEntry objects
         """
-        endpoint = "/node/v1/data/publish"
+        # We accept both types of entries - but they need to be sent through
+        # different endpoints & signed differently, so we split them here.
+        spot_entries: list[SpotEntry] = []
+        future_entries: list[FutureEntry] = []
+
+        for entry in entries:
+            if isinstance(entry, SpotEntry):
+                spot_entries.append(entry)
+            elif isinstance(entry, FutureEntry):
+                future_entries.append(entry)
+
+        # execute both in parralel
+        spot_response, future_response = await asyncio.gather(
+            self._create_entries(spot_entries, DataTypes.SPOT),
+            self._create_entries(future_entries, DataTypes.FUTURE),
+        )
+        return spot_response, future_response
+
+    async def _create_entries(
+        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+    ) -> Optional[Dict]:
+        """
+        Publishes entries to the Pragma API & returns the http response.
+
+        We can only publish entries of the same type at once - if we have a mix of
+        types, the function will raise an error.
+        """
+        if len(entries) == 0:
+            return
+
+        assert all(isinstance(entry, type(entries[0])) for entry in entries)
+
         now = int(time.time())
         expiry = now + 24 * 60 * 60
+        endpoint = get_endpoint_publish_offchain(data_type)
+        url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {
             "PRAGMA-TIMESTAMP": str(now),
@@ -228,14 +286,13 @@ class PragmaAPIClient:
             "x-api-key": self.api_key,
         }
 
-        sig, _ = self.offchain_signer.sign_publish_message(entries)
-
+        sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
+        # Convert entries to JSON string
         data = {
             "signature": [str(s) for s in sig],
-            "entries": SpotEntry.offchain_serialize_entries(entries),
+            "entries": Entry.offchain_serialize_entries(entries),
         }
 
-        url = f"{self.api_base_url}{endpoint}"
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=data) as response:
                 status_code: int = response.status
@@ -244,10 +301,9 @@ class PragmaAPIClient:
                     print(f"Success: {response}")
                     print("Publish successful")
                     return response
-                else:
-                    print(f"Status Code: {status_code}")
-                    print(f"Response Text: {response}")
-                    return PragmaAPIError(f"Unable to POST /v1/data")
+                print(f"Status Code: {status_code}")
+                print(f"Response Text: {response}")
+                return PragmaAPIError("Unable to POST /v1/data")
 
     async def get_entry(
         self,
@@ -342,6 +398,6 @@ class PragmaAPIClient:
                 else:
                     print(f"Status Code: {status_code}")
                     print(f"Response Text: {response}")
-                    raise Exception(f"Unable to GET /v1/volatility for pair {pair} ")
+                    raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
