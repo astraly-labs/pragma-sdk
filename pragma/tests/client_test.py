@@ -83,7 +83,6 @@ async def declare_deploy_oracle(
 
 
 @pytest_asyncio.fixture(scope="package", name="contracts")
-# pylint: disable=redefined-outer-name
 async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
     _, deploy_result, deploy_result_registry = declare_deploy_oracle
     return (deploy_result.deployed_contract, deploy_result_registry.deployed_contract)
@@ -118,7 +117,6 @@ async def test_deploy_contract(contracts):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_client_setup(pragma_client: PragmaClient, account: Account):
     assert pragma_client.account_address() == account.address
 
@@ -130,7 +128,6 @@ async def test_client_setup(pragma_client: PragmaClient, account: Account):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_client_publisher_mixin(pragma_client: PragmaClient):
     publishers = await pragma_client.get_all_publishers()
     assert publishers == []
@@ -166,8 +163,6 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-# pylint: disable=too-many-statements
 async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
     # Add PRAGMA as Publisher
     publisher_name = "PRAGMA"
@@ -231,7 +226,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         )
     except ClientError as err:
         err_msg = "Contract error"  # TODO(#000): check error message 04e6f206461746120656e74727920666f756e64
-        if not err_msg in err.message:
+        if err_msg not in err.message:
             raise err
 
     # Returns correct entries
@@ -279,7 +274,6 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
     # Checks
     publisher_name = "PRAGMA"

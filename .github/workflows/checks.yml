@@ -47,7 +47,7 @@ jobs:
 
       - name: Format
         run: |
-          poetry run poe format_check
+          poetry run poe format
 
       - name: Typecheck
         run: |

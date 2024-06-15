@@ -72,8 +72,9 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         self.client = client or PragmaClient(network="mainnet")
 
     def prepare_call(self) -> Call:
-        token_0, token_1 = min(self.ETH_ADDRESS, self.STRK_ADDRESS), max(
-            self.ETH_ADDRESS, self.STRK_ADDRESS
+        token_0, token_1 = (
+            min(self.ETH_ADDRESS, self.STRK_ADDRESS),
+            max(self.ETH_ADDRESS, self.STRK_ADDRESS),
         )
         fee = math.floor(self.POOL_FEE * 2**128)
         # An TICK_SPACING increaese of a price means the new price is price*(1+TICK_SPACING)
@@ -118,7 +119,6 @@ class StarknetAMMFetcher(PublisherInterfaceT):
             logger.error("Ekubo: Pool is empty")
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
 
-    # pylint: disable=arguments-renamed
     def format_url(self, base_asset, quote_asset, timestamp=None):
         if timestamp:
             return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={timestamp}&period=3600"

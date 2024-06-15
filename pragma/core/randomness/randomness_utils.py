@@ -12,7 +12,6 @@ import hashlib
 
 
 # Section 5.1. ECVRF Proving
-# pylint: disable=invalid-name
 def ecvrf_prove(secret_key, alpha_string):
     """
     Input:
@@ -119,7 +118,6 @@ def ecvrf_proof_to_hash(pi_string):
 
 
 # Section 5.3. ECVRF Verifying
-# pylint: disable=too-many-locals
 def ecvrf_verify(y, pi_string, alpha_string):
     """
     Input:
@@ -366,8 +364,6 @@ def _ecvrf_decode_proof(pi_string):
     return gamma, c, s
 
 
-# pylint: disable=global-variable-not-assigned
-# pylint: disable=undefined-variable
 def _assert_and_sample(keys, actuals):
     """
     Input:
@@ -467,7 +463,6 @@ def _scalar_multiply(p, e):
     q = _scalar_multiply(p, e // 2)
     q = _edwards_add(q, q)
     if e & 1:
-        # pylint: disable=arguments-out-of-order
         q = _edwards_add(q, p)
     return q
 

@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import json
 import os
 import random
@@ -55,7 +53,7 @@ def forked_client(request) -> Client:
     if block_number is not None:
         print(f"forking katana at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
-    subprocess.Popen(command)  # pylint: disable=consider-using-with
+    subprocess.Popen(command)
     time.sleep(10)
     pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name=network)
     return pragma_client

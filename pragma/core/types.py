@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 
 ADDRESS = int
-HEX_STR = str  # pylint: disable=invalid-name
+HEX_STR = str
 
 # Network Types
 DEVNET = "devnet"
@@ -165,7 +165,6 @@ RPC_URLS = {
 }
 
 
-# pylint: disable=too-many-return-statements
 def get_rpc_url(network=DEVNET, port=5050):
     if network.startswith("http"):
         return network
@@ -252,7 +251,7 @@ class Currency:
     ):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
-        self.id = id_  # pylint: disable=invalid-name
+        self.id = id_
 
         self.decimals = decimals
 
@@ -302,7 +301,7 @@ class Pair:
     def __init__(self, id_, quote_currency_id, base_currency_id):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
-        self.id = id_  # pylint: disable=invalid-name
+        self.id = id_
 
         if isinstance(quote_currency_id, str):
             quote_currency_id = str_to_felt(quote_currency_id)

@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import json
 import math
 import random
@@ -34,8 +32,6 @@ from pragma.tests.fetcher_configs import (
 from pragma.tests.fixtures.devnet import get_available_port
 from pragma.tests.utils import filter_assets_by_type
 
-PUBLISHER_NAME = "TEST_PUBLISHER"
-
 
 # %% SPOT
 
@@ -69,7 +65,7 @@ def forked_client(request) -> Client:
     if block_number is not None:
         print(f"forking katana at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
-    subprocess.Popen(command)  # pylint: disable=consider-using-with
+    subprocess.Popen(command)
     time.sleep(10)
     pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name=network)
     return pragma_client

@@ -15,7 +15,6 @@ def index_fetcher_config(request):
     return request.param
 
 
-# pylint: disable=redefined-outer-name
 def test_get_index_value(
     index_fetcher_config,
     sample_spot_entries,

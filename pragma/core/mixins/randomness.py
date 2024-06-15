@@ -104,8 +104,6 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
-    # pylint: disable=too-many-arguments
-    # pylint: disable=invalid-name
     async def submit_random(
         self,
         request_id: int,
@@ -331,7 +329,6 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
-    # pylint: disable=too-many-locals
     async def refund_operation(
         self,
         request_id: int,

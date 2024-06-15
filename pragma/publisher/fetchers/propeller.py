@@ -149,7 +149,6 @@ class PropellerFetcher(PublisherInterfaceT):
         url = self.BASE_URL
         return url
 
-    # pylint: disable=too-many-locals
     def _construct(self, asset, result, eth_price=None) -> SpotEntry:
         pair = asset["pair"]
         mid_prices = []

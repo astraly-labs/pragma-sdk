@@ -56,7 +56,6 @@ async def pragma_fork_client(
 
 
 @pytest_asyncio.fixture(scope="package")
-# pylint: disable=redefined-outer-name
 async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
@@ -83,7 +82,6 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_update_oracle(
     pragma_fork_client: PragmaClient, declare_oracle: DeclareResult
 ):

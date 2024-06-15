@@ -17,7 +17,6 @@ class PragmaSpotAsset(TypedDict):
 class PragmaFutureAsset(TypedDict):
     type: str
     pair: Tuple[str, str]
-    expiry_timestamp: str
     decimals: int
 
 

@@ -144,7 +144,6 @@ class PragmaPublisherClient(PragmaClient):
             return [val for subl in result for val in subl]
 
     # TODO (#000): _fetch_sync() is not defined anywhere
-    # pylint: disable=protected-access
     def fetch_sync(self) -> List[any]:
         results = []
         for fetcher in self.fetchers:

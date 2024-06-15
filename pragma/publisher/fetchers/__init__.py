@@ -16,3 +16,24 @@ from .okx import OkxFetcher
 from .propeller import PropellerFetcher
 from .starknetamm import StarknetAMMFetcher
 from .thegraph import TheGraphFetcher
+
+__all__ = [
+    AscendexFetcher,
+    BinanceFetcher,
+    BitstampFetcher,
+    BybitFetcher,
+    CexFetcher,
+    CoinbaseFetcher,
+    CoingeckoFetcher,
+    DefillamaFetcher,
+    GeckoTerminalFetcher,
+    GeminiFetcher,
+    HuobiFetcher,
+    IndexFetcher,
+    IndexCoopFetcher,
+    KucoinFetcher,
+    OkxFetcher,
+    PropellerFetcher,
+    StarknetAMMFetcher,
+    TheGraphFetcher,
+]

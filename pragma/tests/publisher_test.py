@@ -1,5 +1,3 @@
-# pylint: disable=wildcard-import,unused-wildcard-import
-
 from typing import Sequence
 
 import pytest
@@ -10,8 +8,16 @@ from pragma.core.client import PragmaClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.utils import str_to_felt
 from pragma.publisher.client import PragmaPublisherClient
-from pragma.publisher.fetchers import *
-from pragma.publisher.future_fetchers import *
+from pragma.publisher.fetchers import (
+    CexFetcher,
+    DefillamaFetcher,
+    BitstampFetcher,
+    CoinbaseFetcher,
+    AscendexFetcher,
+    OkxFetcher,
+    GeckoTerminalFetcher,
+)
+from pragma.publisher.future_fetchers import OkxFutureFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import SAMPLE_ASSETS, SAMPLE_FUTURE_ASSETS
 from pragma.tests.utils import wait_for_acceptance

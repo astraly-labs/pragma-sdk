@@ -82,7 +82,7 @@ class BinanceFutureFetcher(PublisherInterfaceT):
     def format_url(self, quote_asset, base_asset):
         return self.BASE_URL
 
-    def retrieve_volume(self, asset, volume_arr):  # pylint: disable=no-self-use
+    def retrieve_volume(self, asset, volume_arr):
         for list_asset, list_vol in volume_arr:
             if asset == list_asset:
                 return list_vol

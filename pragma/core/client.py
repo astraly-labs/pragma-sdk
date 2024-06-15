@@ -39,7 +39,6 @@ class PragmaClient(
     account: Account = None
     full_node_client: FullNodeClient = None
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         network: str = "devnet",
@@ -128,7 +127,7 @@ class PragmaClient(
             signer=self.signer,
         )
         self.full_node_client = self.account.client
-        self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
+        self.account.get_nonce = self._get_nonce
         self.is_user_client = True
         self.account_contract_address = account_contract_address
 
@@ -140,7 +139,7 @@ class PragmaClient(
         stats_contract_address: int,
     ):
         provider = self.account if self.account else self.full_node_client
-        self.stats = Contract(  # pylint: disable=attribute-defined-outside-init
+        self.stats = Contract(
             address=stats_contract_address,
             abi=ABIS["pragma_SummaryStats"],
             provider=provider,

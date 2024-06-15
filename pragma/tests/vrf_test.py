@@ -20,7 +20,6 @@ from pragma.tests.utils import ExtendedPragmaClient as PragmaClient
 from pragma.tests.utils import convert_to_wei, read_contract, wait_for_acceptance
 
 
-# pylint: disable=redefined-outer-name
 @pytest_asyncio.fixture(scope="package")
 async def declare_deploy_randomness(
     account: Account,
@@ -101,7 +100,6 @@ async def declare_deploy_randomness(
 
 
 @pytest_asyncio.fixture(scope="package")
-# pylint: disable=redefined-outer-name
 async def randomness_contracts(
     declare_deploy_randomness,
 ) -> (Contract, Contract, Contract):
@@ -161,7 +159,6 @@ async def test_deploy_contract(randomness_contracts):
 
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
 async def test_client_setup(vrf_pragma_client: PragmaClient, account: Account):
     assert vrf_pragma_client.account_address() == account.address
 
@@ -319,7 +316,6 @@ async def test_fails_gas_limit(
     assert balance_before >= balance_after
 
 
-# pylint: disable=too-many-locals
 @pytest.mark.asyncio
 async def test_balance_evolution(
     vrf_pragma_client: PragmaClient,
@@ -425,7 +421,6 @@ async def test_balance_evolution(
     assert status.variant == "FULFILLED"
 
 
-# pylint: disable=too-many-locals
 @pytest.mark.asyncio
 async def test_balance_evolution_cancel(
     vrf_pragma_client: PragmaClient,

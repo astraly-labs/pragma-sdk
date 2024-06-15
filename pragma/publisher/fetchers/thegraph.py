@@ -75,7 +75,6 @@ class TheGraphFetcher(PublisherInterfaceT):
             entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    # pylint: disable=arguments-renamed
     def format_url(self, base_asset=None, quote_asset=None):
         url_slug = "uniswap/uniswap-v3"
         url = self.BASE_URL + url_slug

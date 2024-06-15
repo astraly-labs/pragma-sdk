@@ -84,7 +84,6 @@ class IndexAggregation:
         return total
 
     def standardize_decimals(self):
-
         decimals = self.asset_quantities[0].asset["decimals"]
         for i, asset_quantity in enumerate(self.asset_quantities):
             asset = asset_quantity.asset
