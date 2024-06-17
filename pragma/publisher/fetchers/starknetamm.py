@@ -20,7 +20,7 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 
 load_dotenv()
 
-logging.basicConfig()
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

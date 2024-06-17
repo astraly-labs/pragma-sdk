@@ -14,7 +14,7 @@ from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
 from pragma.tests.utils import get_deployments, read_contract
 
-logging.basicConfig()
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

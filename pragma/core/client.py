@@ -22,7 +22,7 @@ from pragma.core.types import (
     get_client_from_network,
 )
 
-logging.basicConfig()
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
