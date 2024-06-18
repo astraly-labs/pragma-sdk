@@ -48,6 +48,7 @@ types-deprecated = "^1.2.9"
 
 [tool.poe.tasks]
 format = "ruff format ."
+format_check = "ruff format . --check"
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy pragma"
