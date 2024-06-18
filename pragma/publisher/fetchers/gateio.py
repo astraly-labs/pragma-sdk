@@ -39,12 +39,12 @@ class GateioFetcher(PublisherInterfaceT):
             usdt_price = 1
         url = self.format_url(pair[0], pair[1])
         async with session.get(url) as resp:
-            if resp.status == 400:
+            if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from GATEIO"
                 )
             result = await resp.json()
-            if "code" in result:
+            if resp.status == 400:
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset=asset, result=result, usdt_price=usdt_price)
 
@@ -71,23 +71,23 @@ class GateioFetcher(PublisherInterfaceT):
         pair = asset["pair"]
         url_pair1 = self.format_url(asset["pair"][0], "USDT")
         async with session.get(url_pair1) as resp:
-            if resp.status == 400:
+            if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Gate.io - hop failed for {pair[0]}"
                 )
             pair1_usdt = await resp.json()
-            if "code" in pair1_usdt:
+            if resp.status == 400:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Gate.io - hop failed for {pair[0]}"
                 )
         url_pair2 = self.format_url(asset["pair"][1], "USDT")
         async with session.get(url_pair2) as resp:
-            if resp.status == 400:
+            if resp.status == 404:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Gate.io - hop failed for {pair[1]}"
                 )
             pair2_usdt = await resp.json()
-            if "code" in pair2_usdt:
+            if resp.status == 400:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from Gate.io - hop failed for {pair[1]}"
                 )
@@ -104,6 +104,11 @@ class GateioFetcher(PublisherInterfaceT):
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())
+        volume = (
+            float(result[0]["quote_volume"])
+            if hop_result is None
+            else 0
+        )
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
@@ -115,4 +120,6 @@ class GateioFetcher(PublisherInterfaceT):
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
+            volume=volume,
+            autoscale_volume=False,
         )

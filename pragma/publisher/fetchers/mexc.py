@@ -44,7 +44,7 @@ class MEXCFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from MEXC"
                 )
             result = await resp.json()
-            if "code" in result:
+            if resp.status == 400:
                 return await self.operate_usdt_hop(asset, session)
             return self._construct(asset=asset, result=result, usdt_price=usdt_price)
 
@@ -76,7 +76,7 @@ class MEXCFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from MEXC - hop failed for {pair[0]}"
                 )
             pair1_usdt = await resp.json()
-            if "code" in pair1_usdt:
+            if resp.status == 400:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from MEXC - hop failed for {pair[0]}"
                 )
@@ -87,7 +87,7 @@ class MEXCFetcher(PublisherInterfaceT):
                     f"No data found for {'/'.join(pair)} from MEXC - hop failed for {pair[1]}"
                 )
             pair2_usdt = await resp.json()
-            if "code" in pair2_usdt:
+            if resp.status == 400:
                 return PublisherFetchError(
                     f"No data found for {'/'.join(pair)} from MEXC - hop failed for {pair[1]}"
                 )
@@ -106,6 +106,11 @@ class MEXCFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
+        volume = (
+            float(result["quoteVolume"])
+            if hop_result is None
+            else 0
+        )
 
         logger.info("Fetched price %d for %s from MEXC", price, "/".join(pair))
 
@@ -115,4 +120,6 @@ class MEXCFetcher(PublisherInterfaceT):
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
+            volume=volume,
+            autoscale_volume=False,
         )

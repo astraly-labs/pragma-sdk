@@ -50,7 +50,7 @@ PRAGMA_SPOT_ASSETS: List[PragmaSpotAsset] = [
     {"type": "SPOT", "pair": ("USDT", "USD"), "decimals": 6},
     {"type": "SPOT", "pair": ("USDC", "USD"), "decimals": 6},
     {"type": "SPOT", "pair": ("MATIC", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("NSTR", "USDT"), "decimals": 8},
+    {"type": "SPOT", "pair": ("NSTR", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("LORDS", "USD"), "decimals": 8},
     {"type": "SPOT", "pair": ("ETH", "USDC"), "decimals": 6},
     {"type": "SPOT", "pair": ("DAI", "USDC"), "decimals": 6},
