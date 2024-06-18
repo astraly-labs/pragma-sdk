@@ -113,6 +113,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "INJ": "injective-protocol",
     "PENDLE": "pendle",
     "SEI": "sei-network",
+    "NSTR": "nostra",
 }
 
 DPI_ASSETS = [
