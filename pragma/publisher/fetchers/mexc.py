@@ -14,7 +14,6 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 logger = logging.getLogger(__name__)
 
 
-
 class MEXCFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.mexc.com/api/v3/ticker/24hr"
     SOURCE: str = "MEXC"
@@ -106,11 +105,7 @@ class MEXCFetcher(PublisherInterfaceT):
         timestamp = int(time.time())
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
-        volume = (
-            float(result["quoteVolume"])
-            if hop_result is None
-            else 0
-        )
+        volume = float(result["quoteVolume"]) if hop_result is None else 0
 
         logger.info("Fetched price %d for %s from MEXC", price, "/".join(pair))
 

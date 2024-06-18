@@ -14,7 +14,6 @@ from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
 logger = logging.getLogger(__name__)
 
 
-
 class GateioFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.gateio.ws/api/v4/spot/tickers"
     SOURCE: str = "GATEIO"
@@ -104,11 +103,7 @@ class GateioFetcher(PublisherInterfaceT):
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())
-        volume = (
-            float(result[0]["quote_volume"])
-            if hop_result is None
-            else 0
-        )
+        volume = float(result[0]["quote_volume"]) if hop_result is None else 0
         price_int = int(price * (10 ** asset["decimals"]))
         pair_id = currency_pair_to_pair_id(*pair)
 
