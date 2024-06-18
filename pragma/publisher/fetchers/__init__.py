@@ -16,6 +16,8 @@ from .okx import OkxFetcher
 from .propeller import PropellerFetcher
 from .starknetamm import StarknetAMMFetcher
 from .thegraph import TheGraphFetcher
+from .mexc import MEXCFetcher
+from .gateio import GateioFetcher
 
 __all__ = [
     AscendexFetcher,
@@ -36,4 +38,6 @@ __all__ = [
     PropellerFetcher,
     StarknetAMMFetcher,
     TheGraphFetcher,
+    MEXCFetcher,
+    GateioFetcher,
 ]
