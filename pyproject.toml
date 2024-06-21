@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.4.0"
+version = "1.4.4"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
@@ -48,6 +48,7 @@ types-deprecated = "^1.2.9"
 
 [tool.poe.tasks]
 format = "ruff format ."
+format_check = "ruff format . --check"
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy pragma"

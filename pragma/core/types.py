@@ -65,6 +65,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "R": "r",
     "LORDS": "lords",
     "WSTETH": "wrapped-steth",
+    "STETH": "staked-ether",
     "UNI": "uniswap",
     "LUSD": "liquity-usd",
     "STRK": "starknet",
@@ -113,6 +114,7 @@ ASSET_MAPPING: Dict[str, str] = {
     "INJ": "injective-protocol",
     "PENDLE": "pendle",
     "SEI": "sei-network",
+    "NSTR": "nostra",
 }
 
 DPI_ASSETS = [

@@ -23,6 +23,8 @@ from pragma.publisher.fetchers import (
     OkxFetcher,
     PropellerFetcher,
     StarknetAMMFetcher,
+    MEXCFetcher,
+    GateioFetcher,
 )
 from pragma.publisher.future_fetchers import (
     BinanceFutureFetcher,
@@ -134,6 +136,8 @@ async def _handler(assets):
             HuobiFetcher,
             OkxFetcher,
             BitstampFetcher,
+            MEXCFetcher,
+            GateioFetcher,
             StarknetAMMFetcher,
             BybitFetcher,
             BinanceFutureFetcher,

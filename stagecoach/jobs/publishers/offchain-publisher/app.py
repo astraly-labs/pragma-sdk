@@ -27,8 +27,8 @@ from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFe
 logger = get_stream_logger()
 
 SECRET_NAME = os.environ.get("SECRET_NAME", None)
-SPOT_ASSETS = os.environ.get("SPOT_ASSETS", [])
-FUTURE_ASSETS = os.environ.get("FUTURE_ASSETS", [])
+SPOT_ASSETS = os.environ.get("SPOT_ASSETS", "")
+FUTURE_ASSETS = os.environ.get("FUTURE_ASSETS", "")
 PUBLISHER = os.environ["PUBLISHER"]
 PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")

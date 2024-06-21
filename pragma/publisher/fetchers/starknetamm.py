@@ -34,6 +34,10 @@ SUPPORTED_ASSETS = [
     ("ZEND", "USDC"),
     ("ZEND", "USDT"),
     ("ETH", "ZEND"),
+    ("NSTR", "USD"),
+    ("NSTR", "USDC"),
+    ("NSTR", "USDT"),
+    ("ETH", "NSTR"),
 ]
 
 
@@ -120,6 +124,9 @@ class StarknetAMMFetcher(PublisherInterfaceT):
         return (sqrt_ratio / 2**128) ** 2 * 10 ** (18)
 
     def format_url(self, base_asset, quote_asset, timestamp=None):
+        # TODO: remove that
+        if quote_asset == "USD":
+            quote_asset = "USDC"
         if timestamp:
             return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?atTime={timestamp}&period=3600"
         return f"{self.EKUBO_PUBLIC_API}/price/{base_asset}/{quote_asset}?period=3600"

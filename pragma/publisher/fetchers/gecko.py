@@ -58,6 +58,7 @@ ASSET_MAPPING: Dict[str, any] = {
     "BLUR": ("eth", "0x5283d291dbcf85356a21ba090e6db59121208b44"),
     "DPI": ("eth", "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"),
     "MVI": ("eth", "0x72e364f2abdc788b7e918bc238b21f109cd634d7"),
+    "NSTR": ("eth", "0x610dbd98a28ebba525e9926b6aaf88f9159edbfd"),
 }
 
 
