@@ -1,25 +1,45 @@
-from pragma.core.types import Pair
-from typing import List
+from pragma.core.assets import PragmaSpotAsset, PragmaFutureAsset, get_asset_spec_for_pair_id_by_type
+from typing import List, Optional
+from typing_extensions import Annotated
 from enum import Enum
 
-from pydantic import BaseModel, conint, confloat, field_validator, RootModel
+from pydantic import BaseModel, field_validator, RootModel, Field, ConfigDict
 
 class PriceConfig(BaseModel):
-    pairs: str
-    time_difference: conint(gt=0)  # time_difference must be a positive integer
-    price_deviation: confloat(gt=0)  # price_deviation must be a positive float
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @field_validator('pairs')
-    def validate_pairs(cls, value):
-        pairs = value.split(',')
-        for pair in pairs:
-            if not pair:
-                raise ValueError('Empty pair found in pairs string')
-            if ' ' in pair:
-                raise ValueError('Pairs string must not contain spaces')
-            if len(pair.split('/')) != 2:
-                raise ValueError('Each pair must be in the format base/quote')
-        return value
+    pairs_spot: Optional[List[PragmaSpotAsset]] = None
+    pairs_future: Optional[List[PragmaFutureAsset]] = None
+    time_difference: Annotated[int, Field(strict=True, gt=0)] 
+    price_deviation: Annotated[float, Field(strict=True, gt=0)]
+
+    @field_validator('pairs_spot', mode="before")
+    def validate_pairs_spot(cls, value):
+        assets: List[PragmaSpotAsset] = []
+        for pair in value:
+            pair = pair.replace(' ', '').upper()
+            splitted = pair.split('/')
+            if len(splitted) != 2:
+                return ValueError("Pair should be formatted as X/Y")
+            
+            asset = get_asset_spec_for_pair_id_by_type(pair, "SPOT")
+            assets.append(asset)
+
+        return assets
+    
+    @field_validator('pairs_future', mode="before")
+    def validate_pairs_future(cls, value):
+        assets: List[PragmaFutureAsset] = []
+        for pair in value:
+            pair = pair.replace(' ', '').upper()
+            splitted = pair.split('/')
+            if len(splitted) != 2:
+                return ValueError("Pair should be formatted as X/Y")
+            
+            asset = get_asset_spec_for_pair_id_by_type(pair, "FUTURE")
+            assets.append(asset)
+
+        return assets
 
 
 class PriceConfigFile(RootModel):

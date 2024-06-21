@@ -1,8 +1,14 @@
-- pairs: BTC/USD
+- pairs_spot: 
+    - BTC/USD
+  pairs_future:
+    - BTC/USDT
   time_difference: 60
   price_deviation: 0.5
   
-- pairs: WSTETH/USD,USDC/USD,USDT/USD
+- pairs_spot: 
+    - WSTETH/USD
+    - USDC/USD 
+    - USDT/USD
   time_difference: 60
   price_deviation: 0.1
  
