@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(
+class PragmaOnChainClient(
     NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,

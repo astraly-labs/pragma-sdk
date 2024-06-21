@@ -13,7 +13,7 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 include = ["pragma"]
-exclude = ["pragma/tests/*", "pragma/**/*_test.py"]
+exclude = ["pragma/tests/*", "pragma/**/*_test.py", "stagecoach/*"]
 packages = [{ include = "pragma" }]
 
 [tool.poetry.dependencies]

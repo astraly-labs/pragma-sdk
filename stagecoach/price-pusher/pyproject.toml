@@ -13,16 +13,14 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 include = ["price-pusher"]
-packages = [
-    { include = "price-pusher" }
-]
+packages = [{ include = "price-pusher" }]
 
 [tool.poetry.scripts]
 scheduler = 'price-pusher.main:main'
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-pragma-sdk = "^1.4.0"
+pragma-sdk = { path = "../../../pragma-sdk", develop = true }
 click = "^8.1.0"
 pydantic = "^2.7.4"
 

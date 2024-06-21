@@ -8,7 +8,7 @@ from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataTypes
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
@@ -77,7 +77,7 @@ class PragmaAPIError:
 
 
 @add_sync_methods
-class PragmaPublisherClient(PragmaClient):
+class FetcherClient:
     """
     This client extends the pragma client with functionality for fetching from our third party sources.
     It can be used to synchronously or asynchronously fetch assets using the Asset format, ie.
@@ -95,25 +95,20 @@ class PragmaPublisherClient(PragmaClient):
         cex_fetcher,
         gemini_fetcher,
     ]
-    eapc = PragmaPublisherClient('testnet')
-    eapc.add_fetchers(fetchers)
-    await eapc.fetch()
-    eapc.fetch_sync()
+    fc = FetcherClient('testnet')
+    fc.add_fetchers(fetchers)
+    await fc.fetch()
+    fc.fetch_sync()
     ```
 
     You can also set a custom timeout duration as followed:
     ```python
-    await eapc.fetch(timeout_duration=20) # Denominated in seconds (default=10)
+    await fc.fetch(timeout_duration=20) # Denominated in seconds (default=10)
     ```
 
     """
 
     fetchers: List[PublisherInterfaceT] = []
-
-    @staticmethod
-    def convert_to_publisher(client: PragmaClient):
-        client.__class__ = PragmaPublisherClient
-        return client
 
     def add_fetchers(self, fetchers: List[PublisherInterfaceT]):
         self.fetchers.extend(fetchers)
@@ -143,15 +138,8 @@ class PragmaPublisherClient(PragmaClient):
                 result = [subl for subl in result if not isinstance(subl, Exception)]
             return [val for subl in result for val in subl]
 
-    # TODO (#000): _fetch_sync() is not defined anywhere
-    def fetch_sync(self) -> List[any]:
-        results = []
-        for fetcher in self.fetchers:
-            data = fetcher._fetch_sync()
-            results.extend(data)
-        return results
 
-
+@add_sync_methods
 class PragmaAPIClient:
     api_base_url: str
     api_key: str
@@ -401,3 +389,28 @@ class PragmaAPIClient:
                     raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
+
+
+PragmaPublisherClientT = Union[PragmaOnChainClient, PragmaAPIClient]
+
+
+@add_sync_methods
+class PragmaClient:
+
+    def __init__(self, client: PragmaPublisherClientT):
+        self.client = client
+
+    async def publish_entries(self, entries: List[Entry]) -> Optional[Dict]:
+        """
+        Publishes entries to the associated client.
+
+        :param entries: List of Entry objects
+        """
+        if isinstance(self.client, PragmaAPIClient):
+            return await self.client.create_entries(entries)
+        elif isinstance(self.client, PragmaOnChainClient):
+            return await self.client.publish_many(entries)
+        else:
+            raise ValueError(
+                "Client must be either PragmaAPIClient or PragmaOnChainClient"
+            )
