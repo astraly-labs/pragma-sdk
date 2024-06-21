@@ -31,21 +31,21 @@ logger = logging.getLogger(__name__)
     type=click.Choice(
         ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
     ),
-    help="Logging level",
+    help="Logging level.",
 )
 @click.option(
     "-t",
     "--target",
     required=True,
     type=click.Choice(["onchain", "offchain"], case_sensitive=False),
-    help="Where the prices will be published",
+    help="Where the prices will be published.",
 )
 @click.option(
     "-n",
     "--network",
     required=True,
     type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
-    help="At which network the price corresponds",
+    help="At which network the price corresponds.",
 )
 @click.option(
     "-p",
