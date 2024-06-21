@@ -32,16 +32,16 @@ def get_private_key(args):
 
 
 @click.command()
-@click.option("--config-file", help="Path to config.yaml")
+@click.option("--config-file", required=True, help="Path to config.yaml")
 @click.option(
     "--log-level",
     default="INFO",
     help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
 )
-@click.option("--network", help="<onchain|offchain:testnet|mainnet>")
-@click.option("--private-key", help="<aws|plain:secret_name|value>")
-@click.option("--publisher-name", help="Your publisher name")
-@click.option("--publisher-address", help="Your publisher address")
+@click.option("--network", required=True, help="<onchain|offchain:sepolia|mainnet>")
+@click.option("--private-key", required=True, help="<aws|plain:secret_name|value>")
+@click.option("--publisher-name", required=True, help="Your publisher name")
+@click.option("--publisher-address", required=True, help="Your publisher address")
 @click.option("--api-key", default=None, help="pragma api key to publish offchain")
 @click.option("--api-url", default=None, help="pragma api base url")
 def main(
@@ -64,9 +64,9 @@ def main(
     config = read_price_config_file(config_file)
     print(config)
 
-    if network and not re.match(r"^(onchain|offchain):(testnet|mainnet)$", network):
+    if network and not re.match(r"^(onchain|offchain):(sepolia|mainnet)$", network):
         raise click.BadParameter(
-            "Network must be in the format <onchain|offchain:testnet|mainnet>"
+            "Network must be in the format <onchain|offchain:sepolia|mainnet>"
         )
 
     target, net = network.split(":")
@@ -77,7 +77,6 @@ def main(
     if target == "onchain":
         client = PragmaOnChainClient(
             network=net,
-            publisher=publisher_name,
             account_contract_address=publisher_address,
             account_private_key=key,
         )
