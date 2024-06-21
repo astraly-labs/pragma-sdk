@@ -17,6 +17,10 @@ class Entry(abc.ABC):
     @abc.abstractmethod
     def offchain_serialize(self) -> Dict[str, str]: ...
 
+    @abc.abstractmethod
+    def get_timestamp(self) -> int: ...
+
+
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         # TODO (#000): log errors
@@ -172,6 +176,9 @@ class SpotEntry(Entry):
         self.base.publisher = publisher
         return self
 
+    def get_timestamp(self):
+        return self.base.timestamp
+
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
         base = dict(entry_dict["base"])
@@ -318,6 +325,9 @@ class FutureEntry(Entry):
             f"volume={self.volume}, "
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
+
+    def get_timestamp(self):
+        return self.base.timestamp
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
