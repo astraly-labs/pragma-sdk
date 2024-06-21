@@ -34,7 +34,7 @@ class PragmaOnchainAsset(TypedDict):
     decimals: int
 
 
-PragmaAsset = Union[PragmaSpotAsset, PragmaOnchainAsset]
+PragmaAsset = Union[PragmaSpotAsset, PragmaFutureAsset, PragmaOnchainAsset]
 
 PRAGMA_SPOT_ASSETS: List[PragmaSpotAsset] = [
     {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8},
