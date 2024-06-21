@@ -6,12 +6,11 @@ from pragma.publisher.client import (
     PragmaOnChainClient,
     PragmaAPIClient,
     PragmaClient,
-    PragmaPublisherClientT,
     FetcherClient,
 )
 
-from price_pusher.utils.cli import setup_logging, load_private_key, create_client
-from price_pusher.configs import PriceConfig
+from price_pusher.configs.price_config import PriceConfig
+from price_pusher.configs.cli import setup_logging, load_private_key, create_client
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
     "--config-file",
     type=click.Path(exists=True),
     required=True,
-    help="Path to config.yaml",
+    help="Path to YAML configuration file.",
 )
 @click.option(
     "--log-level",
@@ -58,22 +57,22 @@ logger = logging.getLogger(__name__)
     "--publisher-name",
     type=click.STRING,
     required=True,
-    help="Your publisher name",
+    help="Your publisher name.",
 )
 @click.option(
     "--publisher-address",
     type=click.STRING,
     required=True,
-    help="Your publisher address (required for onchain)",
+    help="Your publisher address.",
+)
+@click.option(
+    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
 )
 @click.option(
     "--api-key",
     type=click.STRING,
     required=False,
-    help="Pragma API key to publish offchain",
-)
-@click.option(
-    "--api-url", type=click.STRING, required=False, help="Pragma API base URL"
+    help="Pragma API key used to publish offchain",
 )
 def main(
     config_file: str,
@@ -83,29 +82,30 @@ def main(
     private_key: str,
     publisher_name: str,
     publisher_address: str,
+    api_base_url: Optional[str],
     api_key: Optional[str],
-    api_url: Optional[str],
 ) -> None:
     # Assert configuration is ok
-    if target == "offchain" and (not api_key or not api_url):
+    if target == "offchain" and (not api_key or not api_base_url):
         raise click.UsageError(
             "API key and API URL are required when destination is 'offchain'."
         )
     # Build needed parameters
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
-    _price_config = PriceConfig.from_yaml(config_file)
+    price_config = PriceConfig.from_yaml(config_file)
+    print(price_config)
     # Create & execute the client
     client: Union[PragmaOnChainClient, PragmaAPIClient] = create_client(
         target=target,
         network=network,
         publisher_address=publisher_address,
         private_key=private_key,
+        api_base_url=api_base_url,
         api_key=api_key,
-        api_url=api_url,
     )
-    publisher_client = PragmaClient(client)
-    fetcher_client = FetcherClient()
+    _publisher_client = PragmaClient(client)
+    _fetcher_client = FetcherClient()
     # run_puller(target, net, keys, publisher)
     # run_pusher(target, net, keys, publisher)
 

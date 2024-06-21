@@ -17,8 +17,8 @@ def create_client(
     network: str,
     publisher_address: str,
     private_key: str,
+    api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
-    api_url: Optional[str] = None,
 ) -> Union[PragmaOnChainClient, PragmaAPIClient]:
     """
     Create the appropriate client based on the target.
@@ -28,8 +28,8 @@ def create_client(
         network: The network type.
         publisher_address: The publisher's address.
         private_key: The private key for the account.
+        api_base_url: The API base URL for offchain publishing.
         api_key: The API key for offchain publishing.
-        api_url: The API base URL for offchain publishing.
 
     Returns:
         Union[PragmaOnChainClient, PragmaAPIClient]
@@ -45,15 +45,15 @@ def create_client(
             raise click.BadParameter(
                 "Argument api-key can't be None if offchain is selected"
             )
-        if not api_url:
+        if not api_base_url:
             raise click.BadParameter(
-                "Argument api-url can't be None if offchain is selected"
+                "Argument api-base-url can't be None if offchain is selected"
             )
         return PragmaAPIClient(
             account_contract_address=publisher_address,
             account_private_key=private_key,
             api_key=api_key,
-            api_base_url=api_url,
+            api_base_url=api_base_url,
         )
     else:
         raise ValueError(f"Invalid target: {target}")

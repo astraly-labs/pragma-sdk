@@ -6,6 +6,7 @@ from pragma.core.assets import (
     PragmaAsset,
 )
 from pragma.core.entry import Entry
+
 from price_pusher.types import DurationInSeconds
 
 
