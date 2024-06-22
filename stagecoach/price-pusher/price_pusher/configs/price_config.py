@@ -47,7 +47,13 @@ class PriceConfig(BaseModel):
         return assets
 
     @classmethod
-    def from_yaml(cls, path: str) -> List["PriceConfig"]:
+    def from_yaml(cls, path: str) -> "PriceConfig":
+        with open(path, "r") as file:
+            price_config = yaml.safe_load(file)
+        return cls(**price_config)
+
+    @classmethod
+    def list_from_yaml(cls, path: str) -> List["PriceConfig"]:
         with open(path, "r") as file:
             price_configs = yaml.safe_load(file)
         return [cls(**config) for config in price_configs]
