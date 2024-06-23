@@ -60,7 +60,7 @@ class EntryResult:
         return True
 
 
-class PragmaAPIError:
+class PragmaAPIError(BaseException):
     message: str
 
     def __init__(self, message: str):
@@ -228,7 +228,7 @@ class PragmaAPIClient:
                     print("Get Ohlc successful")
                 else:
                     print(f"Status Code: {status_code}")
-                    return PragmaAPIError(f"Failed to get OHLC data for pair {pair}")
+                    raise PragmaAPIError(f"Failed to get OHLC data for pair {pair}")
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
@@ -303,7 +303,7 @@ class PragmaAPIClient:
                     return response
                 print(f"Status Code: {status_code}")
                 print(f"Response Text: {response}")
-                return PragmaAPIError("Unable to POST /v1/data")
+                raise PragmaAPIError("Unable to POST /v1/data")
 
     async def get_entry(
         self,
@@ -353,7 +353,7 @@ class PragmaAPIClient:
                 else:
                     print(f"Status Code: {status_code}")
                     print(f"Response Text: {response}")
-                    return PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
+                    raise PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
 
         return EntryResult(
             pair_id=response["pair_id"],
