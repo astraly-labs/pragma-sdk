@@ -93,7 +93,7 @@ def main(
     # Build needed parameters
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
-    price_config: List[PriceConfig] = PriceConfig.list_from_yaml(config_file)
+    price_config: List[PriceConfig] = PriceConfig.from_yaml(config_file)
     print(price_config)
     # Create & execute the client
     client: Union[PragmaOnChainClient, PragmaAPIClient] = create_client(
