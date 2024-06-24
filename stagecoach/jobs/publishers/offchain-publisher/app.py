@@ -34,7 +34,7 @@ PUBLISHER_ADDRESS = int(os.environ.get("PUBLISHER_ADDRESS"), 16)
 PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 API_KEY = os.environ.get("API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
-API_URL = os.environ.get("API_URL", "https://api.dev.pragma.build/node")
+API_URL = os.environ.get("API_URL", "https://api.dev.pragma.build")
 if PAGINATION is not None:
     PAGINATION = int(PAGINATION)
 
