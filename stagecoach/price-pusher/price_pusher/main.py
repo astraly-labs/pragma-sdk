@@ -44,7 +44,7 @@ async def main(
         publisher_name=publisher_name,
         price_configs=price_configs,
     )
-    poller = PricePoller(client=fetcher_client)
+    poller = PricePoller(fetcher_client=fetcher_client)
     listener = ChainPriceListener(polling_frequency=2, assets=[])
     pusher = PricePusher(client=pragma_client)
 

@@ -20,7 +20,6 @@ class Entry(abc.ABC):
     @abc.abstractmethod
     def get_timestamp(self) -> int: ...
 
-
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         # TODO (#000): log errors

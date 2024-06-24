@@ -396,7 +396,6 @@ PragmaPublisherClientT = Union[PragmaOnChainClient, PragmaAPIClient]
 
 @add_sync_methods
 class PragmaClient:
-
     def __init__(self, client: PragmaPublisherClientT):
         self.client = client
 
