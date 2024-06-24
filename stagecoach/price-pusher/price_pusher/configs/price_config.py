@@ -56,9 +56,12 @@ class PriceConfig(BaseModel):
         Returns:
             List of unique PragmaSpotAssets.
         """
-        unique_spot_assets = {
-            asset for config in self.pairs.spot for asset in config.spot
-        }
+        if self.pairs.spot is None:
+            return []
+        unique_spot_assets = []
+        for spot_asset in self.pairs.spot:
+            if spot_asset not in unique_spot_assets:
+                unique_spot_assets.append(spot_asset)
         return list(unique_spot_assets)
 
     def get_unique_future_assets(self) -> List[PragmaFutureAsset]:
@@ -68,9 +71,12 @@ class PriceConfig(BaseModel):
         Returns:
             List of unique PragmaFutureAssets.
         """
-        unique_future_assets = {
-            asset for config in self.pairs.future for asset in config.future
-        }
+        if self.pairs.future is None:
+            return []
+        unique_future_assets = []
+        for future_asset in self.pairs.future:
+            if future_asset not in unique_future_assets:
+                unique_future_assets.append(future_asset)
         return list(unique_future_assets)
 
 
@@ -86,10 +92,12 @@ def get_unique_spot_assets_from_config_list(
     Returns:
         List of unique PragmaSpotAssets.
     """
-    unique_spot_assets: Set[PragmaSpotAsset] = set()
+    unique_spot_assets: List[PragmaSpotAsset] = []
     for config in price_configs:
-        unique_spot_assets.update(config.get_unique_spot_assets())
-    return list(unique_spot_assets)
+        for asset in config.get_unique_spot_assets():
+            if asset not in unique_spot_assets:
+                unique_spot_assets.append(asset)
+    return unique_spot_assets
 
 
 def get_unique_future_assets_from_config_list(
@@ -104,7 +112,9 @@ def get_unique_future_assets_from_config_list(
     Returns:
         List of unique PragmaFutureAssets.
     """
-    unique_future_assets: Set[PragmaFutureAsset] = set()
+    unique_future_assets: List[PragmaFutureAsset] = []
     for config in price_configs:
-        unique_future_assets.update(config.get_unique_future_assets())
-    return list(unique_future_assets)
+        for asset in config.get_unique_future_assets():
+            if asset not in unique_future_assets:
+                unique_future_assets.append(asset)
+    return unique_future_assets

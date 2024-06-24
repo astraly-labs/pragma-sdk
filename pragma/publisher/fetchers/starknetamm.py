@@ -12,7 +12,7 @@ from starknet_py.net.client_models import Call
 from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset
 
 # from starknet_py.net.full_node_client import FullNodeClient
-from pragma.core.client import PragmaClient
+from pragma.publisher.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.types import PoolKey
 from pragma.core.utils import currency_pair_to_pair_id, str_to_felt
@@ -73,7 +73,7 @@ class StarknetAMMFetcher(PublisherInterfaceT):
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
-        self.client = client or PragmaClient(network="mainnet")
+        self.client = client
 
     def prepare_call(self) -> Call:
         token_0, token_1 = (

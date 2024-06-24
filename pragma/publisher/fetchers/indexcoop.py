@@ -8,7 +8,7 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
-from pragma.core.client import PragmaClient
+from pragma.publisher.client import PragmaClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.fetchers.index import AssetQuantities
@@ -31,7 +31,7 @@ class IndexCoopFetcher(PublisherInterfaceT):
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
-        self.client = client or PragmaClient(network="mainnet")
+        self.client = client
 
     async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession

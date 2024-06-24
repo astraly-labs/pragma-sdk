@@ -1,3 +1,4 @@
+import asyncio
 import click
 import logging
 
@@ -15,6 +16,52 @@ from price_pusher.configs.cli import setup_logging, load_private_key, create_cli
 from price_pusher.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
+
+
+async def main(
+    config_file: str,
+    log_level: str,
+    target: str,
+    network: str,
+    private_key: str,
+    publisher_name: str,
+    publisher_address: str,
+    api_base_url: Optional[str],
+    api_key: Optional[str],
+) -> None:
+    if target == "offchain" and (not api_key or not api_base_url):
+        raise click.UsageError(
+            "API key and API URL are required when destination is 'offchain'."
+        )
+
+    setup_logging(logger, log_level)
+    private_key = load_private_key(private_key)
+    price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
+
+    pragma_client: PragmaClient = create_client(
+        target=target,
+        network=network,
+        publisher_address=publisher_address,
+        private_key=private_key,
+        api_base_url=api_base_url,
+        api_key=api_key,
+    )
+    fetcher_client = await add_all_fetchers(
+        fetcher_client=FetcherClient(),
+        publisher_name=publisher_name,
+        price_configs=price_configs,
+    )
+    print(fetcher_client.fetchers)
+    exit(0)
+    poller = PricePoller(fetcher_client)
+    listener = ChainPriceListener()
+    pusher = PricePusher(client=pragma_client)
+
+    # Run the orchestrator
+    orchestrator = Orchestrator(
+        price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
+    )
+    orchestrator.run_forever()
 
 
 @click.command()
@@ -75,7 +122,7 @@ logger = logging.getLogger(__name__)
     required=False,
     help="Pragma API key used to publish offchain",
 )
-def main(
+def cli_entrypoint(
     config_file: str,
     log_level: str,
     target: str,
@@ -86,41 +133,24 @@ def main(
     api_base_url: Optional[str],
     api_key: Optional[str],
 ) -> None:
-    # Assert configuration is ok
-    if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError(
-            "API key and API URL are required when destination is 'offchain'."
+    """
+    Click does not support async functions.
+    To make it work, we have to wrap the main function in this cli handler.
+    """
+    asyncio.run(
+        main(
+            config_file,
+            log_level,
+            target,
+            network,
+            private_key,
+            publisher_name,
+            publisher_address,
+            api_base_url,
+            api_key,
         )
-
-    # Spawn parameters using CLI arguments
-    setup_logging(logger, log_level)
-    private_key = load_private_key(private_key)
-    price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
-
-    # Create components for the orchestrator
-    pragma_client: PragmaClient = create_client(
-        target=target,
-        network=network,
-        publisher_address=publisher_address,
-        private_key=private_key,
-        api_base_url=api_base_url,
-        api_key=api_key,
     )
-    fetcher_client = add_all_fetchers(
-        fetcher_client=FetcherClient(),
-        publisher_name=publisher_name,
-        price_configs=price_configs,
-    )
-    poller = PricePoller(fetcher_client)
-    listener = ChainPriceListener()
-    pusher = PricePusher(client=pragma_client)
-
-    # Run the orchestrator
-    orchestrator = Orchestrator(
-        price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
-    )
-    orchestrator.run_forever()
 
 
 if __name__ == "__main__":
-    main()
+    cli_entrypoint()
