@@ -20,12 +20,12 @@ class IPriceListener(ABC):
         pass
 
 
-class ChainPriceListener(IPriceListener, ABC):
+class ChainPriceListener(IPriceListener):
     def __init__(
-        self, polling_frequency: DurationInSeconds, price_items: List[PragmaAsset]
+        self, polling_frequency: DurationInSeconds, assets: List[PragmaAsset]
     ) -> None:
         self.polling_frequency = polling_frequency
-        self.price_items = price_items
+        self.assets = assets
         self.latest_price_info: Dict[str, Entry] = {}
 
     async def start(self) -> None:
@@ -35,10 +35,10 @@ class ChainPriceListener(IPriceListener, ABC):
             await self.poll_prices()
 
     async def poll_prices(self) -> None:
-        for item in self.price_items:
-            current_price_info = await self.get_on_chain_price_info(item.id)
+        for asset in self.assets:
+            current_price_info = await self.get_on_chain_price_info(asset.id)
             if current_price_info:
-                self.update_latest_price_info(item.id, current_price_info)
+                self.update_latest_price_info(asset.id, current_price_info)
 
     def update_latest_price_info(self, pair_id: str, observed_price: Entry) -> None:
         cached_latest_price_info: Optional[Entry] = self.get_latest_price_info(pair_id)
@@ -55,6 +55,5 @@ class ChainPriceListener(IPriceListener, ABC):
     def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
         return self.latest_price_info.get(pair_id)
 
-    @abstractmethod
     async def get_on_chain_price_info(self, pair_id: str) -> Optional[Entry]:
         pass

@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 
-from typing import Coroutine, List, Union, Optional, Dict
+from typing import List, Dict
 
-from price_pusher.type import UnixTimestamp
 from pragma.publisher.client import FetcherClient
-from pragma.core.entry import Entry
 
 import logging
 
@@ -18,5 +16,8 @@ class IPricePoller(ABC):
 
 
 class PricePoller(IPricePoller, ABC):
-    def poll_prices(self, client: FetcherClient) -> Dict:
+    def __init__(self, client: FetcherClient) -> Dict:
+        pass
+
+    def poll_prices(self) -> Dict:
         pass

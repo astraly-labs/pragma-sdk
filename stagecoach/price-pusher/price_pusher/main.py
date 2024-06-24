@@ -51,10 +51,8 @@ async def main(
         publisher_name=publisher_name,
         price_configs=price_configs,
     )
-    print(fetcher_client.fetchers)
-    exit(0)
     poller = PricePoller(fetcher_client)
-    listener = ChainPriceListener()
+    listener = ChainPriceListener(polling_frequency=2, assets=[])
     pusher = PricePusher(client=pragma_client)
 
     # Run the orchestrator
