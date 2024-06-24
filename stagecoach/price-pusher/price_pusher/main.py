@@ -3,12 +3,11 @@ import click
 import logging
 
 from typing import Optional, List
-from pragma.publisher.client import (
-    PragmaClient,
-    FetcherClient,
-)
+
+from pragma.publisher.client import FetcherClient
+
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listener import ChainPriceListener
+from price_pusher.core.listeners import ChainPriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import PriceConfig
@@ -32,7 +31,7 @@ async def main(
     Main function of the price pusher.
     Create the parts that are then fed to the orchestrator for the main loop.
     """
-    pragma_client: PragmaClient = create_client(
+    pragma_client = create_client(
         target=target,
         network=network,
         publisher_address=publisher_address,
@@ -45,11 +44,10 @@ async def main(
         publisher_name=publisher_name,
         price_configs=price_configs,
     )
-    poller = PricePoller(fetcher_client)
+    poller = PricePoller(client=fetcher_client)
     listener = ChainPriceListener(polling_frequency=2, assets=[])
     pusher = PricePusher(client=pragma_client)
 
-    # Run the orchestrator
     orchestrator = Orchestrator(
         price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
     )
@@ -135,6 +133,7 @@ def cli_entrypoint(
         raise click.UsageError(
             "API key and API URL are required when destination is 'offchain'."
         )
+
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)

@@ -1,7 +1,7 @@
 from typing import List
 from price_pusher.configs.price_config import PriceConfig
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listener import ChainPriceListener
+from price_pusher.core.listeners import ChainPriceListener
 from price_pusher.core.pusher import PricePusher
 
 

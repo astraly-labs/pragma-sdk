@@ -1,5 +1,4 @@
 import asyncio
-from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 from pragma.core.assets import (
@@ -9,15 +8,7 @@ from pragma.core.entry import Entry
 
 from price_pusher.type import DurationInSeconds
 
-
-class IPriceListener(ABC):
-    @abstractmethod
-    async def start(self) -> None:
-        pass
-
-    @abstractmethod
-    def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
-        pass
+from price_pusher.core.listeners import IPriceListener
 
 
 class ChainPriceListener(IPriceListener):
