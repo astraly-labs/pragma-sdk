@@ -28,6 +28,10 @@ async def main(
     api_base_url: Optional[str],
     api_key: Optional[str],
 ) -> None:
+    """
+    Main function of the price pusher.
+    Create the parts that are then fed to the orchestrator for the main loop.
+    """
     pragma_client: PragmaClient = create_client(
         target=target,
         network=network,
