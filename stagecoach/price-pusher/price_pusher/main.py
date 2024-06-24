@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main(
-    config_file: str,
-    log_level: str,
+    price_configs: List[PriceConfig],
     target: str,
     network: str,
     private_key: str,
@@ -29,15 +28,6 @@ async def main(
     api_base_url: Optional[str],
     api_key: Optional[str],
 ) -> None:
-    if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError(
-            "API key and API URL are required when destination is 'offchain'."
-        )
-
-    setup_logging(logger, log_level)
-    private_key = load_private_key(private_key)
-    price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
-
     pragma_client: PragmaClient = create_client(
         target=target,
         network=network,
@@ -134,11 +124,20 @@ def cli_entrypoint(
     """
     Click does not support async functions.
     To make it work, we have to wrap the main function in this cli handler.
+
+    Also handles basic checks/conversions from the CLI args.
     """
+    if target == "offchain" and (not api_key or not api_base_url):
+        raise click.UsageError(
+            "API key and API URL are required when destination is 'offchain'."
+        )
+    setup_logging(logger, log_level)
+    private_key = load_private_key(private_key)
+    price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
+
     asyncio.run(
         main(
-            config_file,
-            log_level,
+            price_configs,
             target,
             network,
             private_key,
