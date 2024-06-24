@@ -1,24 +1,21 @@
 import click
 import logging
 
-from typing import Optional, Union, List
+from typing import Optional, List
 from pragma.publisher.client import (
-    PragmaOnChainClient,
-    PragmaAPIClient,
     PragmaClient,
     FetcherClient,
 )
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import ChainPriceListener
 from price_pusher.core.pusher import PricePusher
-
+from price_pusher.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import PriceConfig
 from price_pusher.configs.cli import setup_logging, load_private_key, create_client
-
-import queue
-
+from price_pusher.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
+
 
 @click.command()
 @click.option(
@@ -94,13 +91,14 @@ def main(
         raise click.UsageError(
             "API key and API URL are required when destination is 'offchain'."
         )
-    # Build needed parameters
+
+    # Spawn parameters using CLI arguments
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
-    price_config: List[PriceConfig] = PriceConfig.from_yaml(config_file)
-    print(price_config)
-    # Create & execute the client
-    client: Union[PragmaOnChainClient, PragmaAPIClient] = create_client(
+    price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
+
+    # Create components for the orchestrator
+    pragma_client: PragmaClient = create_client(
         target=target,
         network=network,
         publisher_address=publisher_address,
@@ -108,22 +106,20 @@ def main(
         api_base_url=api_base_url,
         api_key=api_key,
     )
-    _publisher_client = PragmaClient(client)
-    fetcher_client = FetcherClient()
-    # todo : add fetchers in client
+    fetcher_client = add_all_fetchers(
+        fetcher_client=FetcherClient(),
+        publisher_name=publisher_name,
+        price_configs=price_configs,
+    )
+    poller = PricePoller(fetcher_client)
+    listener = ChainPriceListener()
+    pusher = PricePusher(client=pragma_client)
 
-    _poller = PricePoller(fetcher_client)
-    _listener = ChainPriceListener()
-    _pusher = PricePusher()
-    
-    # main loop
-    entries_queue = queue.Queue()
-    # Retrieve data from poller
-    # Filter data with listener
-    # if data is worth pushing
-        # push filtered data with pusher
-
-    # Drop useless entries (max queue size or used data)
+    # Run the orchestrator
+    orchestrator = Orchestrator(
+        price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
+    )
+    orchestrator.run_forever()
 
 
 if __name__ == "__main__":

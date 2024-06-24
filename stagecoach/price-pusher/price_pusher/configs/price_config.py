@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import yaml
 from pragma.core.assets import (
@@ -25,7 +25,6 @@ class PriceConfig(BaseModel):
 
     @field_validator("pairs", mode="before")
     def validate_pairs(cls, value: PairConfig) -> PairConfig:
-        print(value)
         if "spot" in value:
             value["spot"] = cls.validate_asset_pairs(value["spot"], "SPOT")
         if "future" in value:
@@ -49,3 +48,63 @@ class PriceConfig(BaseModel):
         with open(path, "r") as file:
             price_configs = yaml.safe_load(file)
         return [cls(**config) for config in price_configs]
+
+    def get_unique_spot_assets(self) -> List[PragmaSpotAsset]:
+        """
+        Get unique spot assets from the configuration.
+
+        Returns:
+            List of unique PragmaSpotAssets.
+        """
+        unique_spot_assets = {
+            asset for config in self.pairs.spot for asset in config.spot
+        }
+        return list(unique_spot_assets)
+
+    def get_unique_future_assets(self) -> List[PragmaFutureAsset]:
+        """
+        Get unique future assets from the configuration.
+
+        Returns:
+            List of unique PragmaFutureAssets.
+        """
+        unique_future_assets = {
+            asset for config in self.pairs.future for asset in config.future
+        }
+        return list(unique_future_assets)
+
+
+def get_unique_spot_assets_from_config_list(
+    price_configs: List[PriceConfig],
+) -> List[PragmaSpotAsset]:
+    """
+    Extract unique spot assets from a list of PriceConfig objects.
+
+    Args:
+        price_configs: List of PriceConfig objects.
+
+    Returns:
+        List of unique PragmaSpotAssets.
+    """
+    unique_spot_assets: Set[PragmaSpotAsset] = set()
+    for config in price_configs:
+        unique_spot_assets.update(config.get_unique_spot_assets())
+    return list(unique_spot_assets)
+
+
+def get_unique_future_assets_from_config_list(
+    price_configs: List[PriceConfig],
+) -> List[PragmaFutureAsset]:
+    """
+    Extract unique future assets from a list of PriceConfig objects.
+
+    Args:
+        price_configs: List of PriceConfig objects.
+
+    Returns:
+        List of unique PragmaFutureAssets.
+    """
+    unique_future_assets: Set[PragmaFutureAsset] = set()
+    for config in price_configs:
+        unique_future_assets.update(config.get_unique_future_assets())
+    return list(unique_future_assets)

@@ -5,6 +5,7 @@ import logging
 from logging import Logger
 from typing import Optional, Union
 from pragma.publisher.client import (
+    PragmaClient,
     PragmaOnChainClient,
     PragmaAPIClient,
 )
@@ -35,10 +36,12 @@ def create_client(
         Union[PragmaOnChainClient, PragmaAPIClient]
     """
     if target == "onchain":
-        return PragmaOnChainClient(
-            network=network,
-            account_contract_address=publisher_address,
-            account_private_key=private_key,
+        return PragmaClient(
+            PragmaOnChainClient(
+                network=network,
+                account_contract_address=publisher_address,
+                account_private_key=private_key,
+            )
         )
     elif target == "offchain":
         if not api_key:
@@ -49,11 +52,13 @@ def create_client(
             raise click.BadParameter(
                 "Argument api-base-url can't be None if offchain is selected"
             )
-        return PragmaAPIClient(
-            account_contract_address=publisher_address,
-            account_private_key=private_key,
-            api_key=api_key,
-            api_base_url=api_base_url,
+        return PragmaClient(
+            PragmaAPIClient(
+                account_contract_address=publisher_address,
+                account_private_key=private_key,
+                api_key=api_key,
+                api_base_url=api_base_url,
+            )
         )
     else:
         raise ValueError(f"Invalid target: {target}")

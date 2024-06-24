@@ -7,7 +7,7 @@ from pragma.core.assets import (
 )
 from pragma.core.entry import Entry
 
-from price_pusher.types import DurationInSeconds
+from price_pusher.type import DurationInSeconds
 
 
 class IPriceListener(ABC):

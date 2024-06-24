@@ -10,10 +10,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class IPricePoller(ABC):
     @abstractmethod
     async def poll_prices(self, pair_ids: List[str]) -> None:
         pass
+
 
 class PricePoller(IPricePoller, ABC):
     def poll_prices(self, client: FetcherClient) -> Dict:

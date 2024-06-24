@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 
-from typing import List, Union, Optional, Dict
+from typing import List, Optional, Dict
 
 from price_pusher.type import UnixTimestamp
-from pragma.publisher.client import PragmaAPIError, PragmaAPIClient, PragmaOnChainClient
+from pragma.publisher.client import PragmaAPIError, PragmaClient
 from pragma.core.entry import Entry
 
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class IPricePusher(ABC):
     @abstractmethod
@@ -18,12 +19,14 @@ class IPricePusher(ABC):
         pass
 
 
-class PricePusher(IPricePusher, ABC):
-    def __init__(self, client : Union[PragmaOnChainClient, PragmaAPIClient]) -> None:
+class PricePusher(IPricePusher):
+    def __init__(self, client: PragmaClient) -> None:
         self.client = client
 
     async def update_price_feed(self, entries: List[Entry]) -> Optional[Dict]:
-        #Send
+        """
+        Push the entries passed as parameter with the internal pragma client.
+        """
         try:
             response = self.client.publish_entries(entries)
             logger.debug(f"entries sucessfully published : {response}")
@@ -31,4 +34,3 @@ class PricePusher(IPricePusher, ABC):
         except PragmaAPIError as e:
             logger.error(f"failed to update price feed : {e}")
             return None
-        
