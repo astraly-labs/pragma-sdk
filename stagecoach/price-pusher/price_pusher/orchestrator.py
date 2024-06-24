@@ -39,7 +39,7 @@ class Orchestrator:
         pusher: PricePusher,
     ) -> None:
         # Entities communicate via callbacks. Here, we set them.
-        poller.set_update_callback(self.callback_update_prices)
+        poller.set_update_prices_callback(self.callback_update_prices)
 
         # Init class properties.
         self.price_configs = price_configs
