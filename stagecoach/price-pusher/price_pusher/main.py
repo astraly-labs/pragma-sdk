@@ -8,13 +8,17 @@ from pragma.publisher.client import (
     PragmaClient,
     FetcherClient,
 )
+from price_pusher.core.poller import PricePoller
+from price_pusher.core.listener import ChainPriceListener
+from price_pusher.core.pusher import PricePusher
 
 from price_pusher.configs.price_config import PriceConfig
 from price_pusher.configs.cli import setup_logging, load_private_key, create_client
 
+import queue
+
 
 logger = logging.getLogger(__name__)
-
 
 @click.command()
 @click.option(
@@ -105,9 +109,21 @@ def main(
         api_key=api_key,
     )
     _publisher_client = PragmaClient(client)
-    _fetcher_client = FetcherClient()
-    # run_puller(target, net, keys, publisher)
-    # run_pusher(target, net, keys, publisher)
+    fetcher_client = FetcherClient()
+    # todo : add fetchers in client
+
+    _poller = PricePoller(fetcher_client)
+    _listener = ChainPriceListener()
+    _pusher = PricePusher()
+    
+    # main loop
+    entries_queue = queue.Queue()
+    # Retrieve data from poller
+    # Filter data with listener
+    # if data is worth pushing
+        # push filtered data with pusher
+
+    # Drop useless entries (max queue size or used data)
 
 
 if __name__ == "__main__":
