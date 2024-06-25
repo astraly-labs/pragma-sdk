@@ -1,1 +1,0 @@
-DurationInSeconds = int

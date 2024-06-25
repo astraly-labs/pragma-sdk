@@ -7,7 +7,7 @@ from typing import Optional, List
 from pragma.publisher.client import FetcherClient
 
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listeners import ChainPriceListener
+from price_pusher.core.listeners.interface import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import PriceConfig
@@ -50,8 +50,8 @@ async def main(
 
     logger.info("Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
-    listener = ChainPriceListener(
-        client=pragma_client.client, polling_frequency=2, assets=[]
+    listener = PriceListener(
+        client=pragma_client.client, polling_frequency_in_s=2, assets=[]
     )
     pusher = PricePusher(client=pragma_client)
     orchestrator = Orchestrator(

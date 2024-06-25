@@ -1,19 +1,17 @@
 import logging
 import asyncio
 
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 from pragma.core.entry import Entry, SpotEntry, FutureEntry
 from pragma.core.assets import AssetType
 
 from price_pusher.configs.price_config import PriceConfig
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listeners import ChainPriceListener
+from price_pusher.core.listeners.chain import PriceListener
 from price_pusher.core.pusher import PricePusher
+from price_pusher.type_aliases import LatestPairPrices
 
-PairId = str
-SourceName = str
-LatestPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Entry]]]
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,7 @@ class Orchestrator:
 
     price_configs: List[PriceConfig]
     poller: PricePoller
-    listener: ChainPriceListener
+    listener: PriceListener
     pusher: PricePusher
     # Contains the latest price for each asset type for a pair.
     latest_prices: LatestPairPrices
@@ -36,7 +34,7 @@ class Orchestrator:
         self,
         price_configs: List[PriceConfig],
         poller: PricePoller,
-        listener: ChainPriceListener,
+        listener: PriceListener,
         pusher: PricePusher,
     ) -> None:
         # Init class properties.

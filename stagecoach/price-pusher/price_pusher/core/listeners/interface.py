@@ -4,9 +4,9 @@ from typing import Optional, List
 from pragma.core.entry import Entry
 from pragma.core.assets import PragmaAsset
 from pragma.publisher.client import PragmaPublisherClientT
-
-from price_pusher.type import DurationInSeconds
 from pragma.core.assets import AssetType
+
+from price_pusher.type_aliases import DurationInSeconds, LatestPairPrices
 
 
 class IPriceListener(ABC):
@@ -17,12 +17,12 @@ class IPriceListener(ABC):
     """
 
     client: PragmaPublisherClientT
-    ref_latest_price: dict
-    polling_frequency: DurationInSeconds
     assets: List[PragmaAsset]
+    ref_latest_price: Optional[LatestPairPrices]
+    polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
-    def set_ref_latest_price(self, ref_latest_price: dict) -> None: ...
+    def set_ref_latest_price(self, ref_latest_price: LatestPairPrices) -> None: ...
 
     @abstractmethod
     async def run(self) -> None: ...
@@ -46,11 +46,11 @@ class PriceListener(IPriceListener):
     def __init__(
         self,
         client: PragmaPublisherClientT,
-        polling_frequency: DurationInSeconds,
+        polling_frequency_in_s: DurationInSeconds,
         assets: List[PragmaAsset],
     ) -> None:
         self.client = client
-        self.polling_frequency = polling_frequency
+        self.polling_frequency_in_s = polling_frequency_in_s
         self.assets = assets
         self.ref_latest_price: Optional[dict] = None
 
@@ -71,11 +71,4 @@ class PriceListener(IPriceListener):
         entries = [
             entry for entry in self.ref_latest_price[pair_id][asset_type].values()
         ]
-        most_recent_entry = None
-        for entry in entries:
-            if most_recent_entry is None:
-                most_recent_entry = entry
-                continue
-            if most_recent_entry.entry.timestamp > entry.timestamp:
-                most_recent_entry = entry
-        return most_recent_entry
+        return max(entries, key=lambda entry: entry.base.timestamp, default=None)

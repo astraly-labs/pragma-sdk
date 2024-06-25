@@ -4,14 +4,14 @@ from typing import Optional
 from pragma.core.entry import Entry
 
 
-from price_pusher.core.listeners import PriceListener
+from price_pusher.core.listeners.interface import PriceListener
 
 
 class ChainPriceListener(PriceListener):
     async def run(self) -> None:
         await self.poll_prices()
         while True:
-            await asyncio.sleep(self.polling_frequency)
+            await asyncio.sleep(self.polling_frequency_in_s)
             await self.poll_prices()
 
     async def poll_prices(self) -> None:
