@@ -4,7 +4,7 @@ from typing import Optional
 from pragma.core.entry import Entry
 
 
-from price_pusher.core.listeners.base import PriceListener
+from price_pusher.core.listeners.listener import PriceListener
 
 
 class ChainPriceListener(PriceListener):

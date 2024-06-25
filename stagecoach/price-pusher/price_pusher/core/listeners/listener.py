@@ -81,7 +81,7 @@ class PriceListener(IPriceListener):
         entries = [
             entry for entry in self.ref_latest_prices[pair_id][asset_type].values()
         ]
-        return max(entries, key=lambda entry: entry.base.timestamp, default=None)
+        return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
 
     def notify(self) -> None:
         logger.info("🏓 Sending notification to Pusher.")
