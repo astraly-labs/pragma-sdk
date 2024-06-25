@@ -23,7 +23,7 @@ class Orchestrator:
     poller: PricePoller
     listener: PriceListener
     pusher: PricePusher
-    # Contains the latest prices for each sources
+    # Contains the latest spot/future prices for each sources
     latest_prices: LatestPairPrices
 
     def __init__(
@@ -42,7 +42,7 @@ class Orchestrator:
 
         # Entities communication.
         self.poller.set_update_prices_callback(self.callback_update_prices)
-        self.listener.set_ref_latest_price(self.latest_prices)
+        self.listener.set_orchestrator_prices(self.latest_prices)
 
     async def run_forever(self) -> None:
         """
@@ -55,12 +55,12 @@ class Orchestrator:
             - the pusher, that pushes entries to our oracle.
         """
         await asyncio.gather(
-            self._poll_prices_forever_task(),
-            self._listen_for_signals_task(),
-            self._push_prices_task(),
+            self._poller_service(),
+            self._listener_service(),
+            self._pusher_service(),
         )
 
-    async def _poll_prices_forever_task(self) -> None:
+    async def _poller_service(self) -> None:
         """
         Starts the polling service in its own thread.
         """
@@ -69,7 +69,7 @@ class Orchestrator:
             # Wait 10 seconds before requerying public APIs (rate limits).
             await asyncio.sleep(10)
 
-    async def _listen_for_signals_task(self) -> None:
+    async def _listener_service(self) -> None:
         """
         Starts the listener service in its own thread.
         """
@@ -78,7 +78,7 @@ class Orchestrator:
             # TODO: implement logic
             self.listener.notify()
 
-    async def _push_prices_task(self) -> None:
+    async def _pusher_service(self) -> None:
         """
         Starts the pusher service in its own thread.
         This service waits for notification from the listener service and push
@@ -88,8 +88,21 @@ class Orchestrator:
             await self.listener.notification_event.wait()
             logger.info("💡 Notification received from the Listener! Pushing entries.")
             self.listener.notification_event.clear()
-            all_latest_entries = self.flush_all_entries()
+            all_latest_entries = self._flush_all_entries()
             await self.pusher.update_price_feeds(all_latest_entries)
+
+    def _flush_all_entries(self) -> List[Entry]:
+        """
+        Retrieves all the available entries from our latest_prices dictionnary and
+        clear them (meaning the dictionnary will be empty after this operation).
+        """
+        all_entries = []
+        for pair_id, types in self.latest_prices.items():
+            for entry_type, sources in types.items():
+                for source, entry in sources.items():
+                    all_entries.append(entry)
+        self.latest_prices.clear()
+        return all_entries
 
     def callback_update_prices(self, entries: List[Entry]) -> None:
         """
@@ -117,16 +130,3 @@ class Orchestrator:
                 self.latest_prices[pair_id][entry_type] = {}
 
             self.latest_prices[pair_id][entry_type][source] = entry
-
-    def flush_all_entries(self) -> List[Entry]:
-        """
-        Retrieves all the available entries from our latest_prices dictionnary and
-        clear them (meaning the dictionnary will be empty after this operation).
-        """
-        all_entries = []
-        for pair_id, types in self.latest_prices.items():
-            for entry_type, sources in types.items():
-                for source, entry in sources.items():
-                    all_entries.append(entry)
-        self.latest_prices.clear()
-        return all_entries
