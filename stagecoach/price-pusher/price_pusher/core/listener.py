@@ -117,7 +117,7 @@ class PriceListener(IPriceListener):
             if entry is None:
                 continue
 
-            pair_id = entry.get_pair_id()
+            pair_id = entry.get_pair_id().replace(",", "/")
             asset_type = "SPOT" if isinstance(entry, SpotEntry) else "FUTURE"
 
             if pair_id not in self.oracle_prices:
@@ -136,7 +136,7 @@ class PriceListener(IPriceListener):
         entries = [
             entry for entry in self.orchestrator_prices[pair_id][asset_type].values()
         ]
-        return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
+        return max(entries, key=lambda entry: entry.base.timestamp, default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
         """
@@ -144,7 +144,29 @@ class PriceListener(IPriceListener):
         If some conditions are met, we return true, else false, meaning that we
         can send a notification to the orchestrator.
         """
+        if self.orchestrator_prices is None:
+            raise ValueError("Orchestrator must set the prices dictionnary.")
+        if len(self.orchestrator_prices.keys()) == 0:
+            return False
+        
+        for pairid, oracle_value in self.oracle_prices.items():
+            for asset_type, datas in self.orchestrator_prices[pairid].items():
+                for _,entry in datas.items():
+                    if self._is_in_deviation_bounds(entry.price, oracle_value[asset_type].price) :
+                        return True
+                    delta_t = entry.base.timestamp - self._get_most_recent_orchestrator_entry(pairid,asset_type).base.timestamp
+                    if  delta_t > self.price_config.time_difference:
+                        return True
+
         return False
+
+    def _is_in_deviation_bounds(self, price: int, ref_price: int) -> bool:
+        max_deviation = (self.price_config.price_deviation / 100) * ref_price
+        
+        lower_bound = ref_price - max_deviation
+        upper_bound = ref_price + max_deviation
+        
+        return lower_bound <= price <= upper_bound
 
     def _notify(self) -> None:
         """
