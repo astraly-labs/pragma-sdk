@@ -24,8 +24,8 @@ class PricePusher(IPricePusher):
         Push the entries passed as parameter with the internal pragma client.
         """
         try:
-            response = self.client.publish_entries(entries)
-            logger.debug(f"entries sucessfully published : {response}")
+            response = await self.client.publish_entries(entries)
+            logger.info(f"entries sucessfully published : {response}")
             return response
         except PragmaAPIError as e:
             logger.error(f"failed to update price feed : {e}")

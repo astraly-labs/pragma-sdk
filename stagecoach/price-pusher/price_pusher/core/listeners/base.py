@@ -17,31 +17,31 @@ class IPriceListener(ABC):
     """
 
     client: PragmaPublisherClientT
+    ref_latest_prices: Optional[LatestPairPrices]
     assets: List[PragmaAsset]
-    ref_latest_price: Optional[LatestPairPrices]
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
-    def set_ref_latest_price(self, ref_latest_price: LatestPairPrices) -> None: ...
-
-    @abstractmethod
-    async def run(self) -> None: ...
-
-    @abstractmethod
-    def get_latest_price_info(self, pair_id: str) -> Optional[Entry]: ...
+    def set_ref_latest_price(self, ref_latest_prices: LatestPairPrices) -> None: ...
 
     @abstractmethod
     def get_latest_registered_entry(
         self, pair_id: str, asset_type: AssetType
     ) -> Optional[Entry]: ...
 
+    @abstractmethod
+    async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]: ...
+
+    @abstractmethod
+    async def run(self) -> None: ...
+
 
 class PriceListener(IPriceListener):
     async def run(self) -> None:
-        raise NotImplementedError("Must be implemented by childrens.")
+        raise NotImplementedError("Must be implemented by children listener.")
 
-    def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
-        raise NotImplementedError("Must be implemented by childrens.")
+    async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
+        raise NotImplementedError("Must be implemented by children listener.")
 
     def __init__(
         self,
@@ -50,15 +50,15 @@ class PriceListener(IPriceListener):
         assets: List[PragmaAsset],
     ) -> None:
         self.client = client
+        self.ref_latest_prices = None
         self.polling_frequency_in_s = polling_frequency_in_s
         self.assets = assets
-        self.ref_latest_price: Optional[dict] = None
 
-    def set_ref_latest_price(self, ref_latest_price: dict) -> None:
+    def set_ref_latest_price(self, ref_latest_prices: dict) -> None:
         """
         Set the reference of the orchestrator prices in the Listener.
         """
-        self.ref_latest_price = ref_latest_price
+        self.ref_latest_prices = ref_latest_prices
 
     def get_latest_registered_entry(
         self, pair_id: str, asset_type: AssetType
@@ -66,9 +66,9 @@ class PriceListener(IPriceListener):
         """
         Retrieves the latest registered entry from the latest prices.
         """
-        if self.ref_latest_price is None:
-            raise ValueError("Orchestrator must pass the prices dictionnary.")
+        if self.ref_latest_prices is None:
+            raise ValueError("Orchestrator must set the prices dictionnary.")
         entries = [
-            entry for entry in self.ref_latest_price[pair_id][asset_type].values()
+            entry for entry in self.ref_latest_prices[pair_id][asset_type].values()
         ]
         return max(entries, key=lambda entry: entry.base.timestamp, default=None)

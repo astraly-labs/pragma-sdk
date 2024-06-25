@@ -7,7 +7,7 @@ from typing import Optional, List
 from pragma.publisher.client import FetcherClient
 
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listeners.interface import PriceListener
+from price_pusher.core.listeners.base import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import PriceConfig
@@ -31,7 +31,7 @@ async def main(
     Main function of the price pusher.
     Create the parts that are then fed to the orchestrator for the main loop.
     """
-    logger.info("Creating Pragma client...")
+    logger.info("🔨 Creating Pragma client...")
     pragma_client = create_client(
         target=target,
         network=network,
@@ -41,22 +41,20 @@ async def main(
         api_key=api_key,
     )
 
-    logger.info("Creating Fetcher client & adding fetchers...")
+    logger.info("🔨 Creating Fetcher client & adding fetchers...")
     fetcher_client = await add_all_fetchers(
         fetcher_client=FetcherClient(),
         publisher_name=publisher_name,
         price_configs=price_configs,
     )
 
-    logger.info("Starting orchestration...")
+    logger.info("⏳ Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
     listener = PriceListener(
         client=pragma_client.client, polling_frequency_in_s=2, assets=[]
     )
     pusher = PricePusher(client=pragma_client)
-    orchestrator = Orchestrator(
-        price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
-    )
+    orchestrator = Orchestrator(poller=poller, listener=listener, pusher=pusher)
 
     logger.info("GO! Orchestration starting 🚀")
     await orchestrator.run_forever()
