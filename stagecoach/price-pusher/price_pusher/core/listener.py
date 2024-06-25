@@ -34,21 +34,10 @@ class IPriceListener(ABC):
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
-    def _log_listener_spawning(self) -> None: ...
+    async def run_forever(self) -> None: ...
 
     @abstractmethod
     async def _fetch_all_oracle_prices(self) -> None: ...
-
-    @abstractmethod
-    def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: AssetType
-    ) -> Optional[Entry]: ...
-
-    @abstractmethod
-    async def _does_oracle_needs_update(self) -> bool: ...
-
-    @abstractmethod
-    def _notify(self) -> None: ...
 
     @abstractmethod
     def set_orchestrator_prices(
@@ -56,7 +45,26 @@ class IPriceListener(ABC):
     ) -> None: ...
 
     @abstractmethod
-    async def run_forever(self) -> None: ...
+    def _get_most_recent_orchestrator_entry(
+        self, pair_id: str, asset_type: AssetType
+    ) -> Optional[Entry]: ...
+
+    @abstractmethod
+    def _notify(self) -> None: ...
+
+    @abstractmethod
+    def _log_listener_spawning(self) -> None: ...
+
+    @abstractmethod
+    async def _does_oracle_needs_update(self) -> bool: ...
+
+    @abstractmethod
+    def _new_price_is_deviating(self, pair_id: str, new_price: int, oracle_price: int) -> bool: ...
+
+    @abstractmethod
+    def _oracle_entry_is_outdated(
+        self, pair_id: str, oracle_entry: Entry, newest_entry: Entry
+    ) -> bool: ...
 
 
 class PriceListener(IPriceListener):
