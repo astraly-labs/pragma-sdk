@@ -1,6 +1,7 @@
+from typing import Optional
+
 from price_pusher.core.listeners.listener import PriceListener
 
-from typing import Optional
 from pragma.core.assets import PragmaAsset
 from pragma.core.entry import Entry
 
