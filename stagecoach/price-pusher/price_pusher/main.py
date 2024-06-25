@@ -50,7 +50,9 @@ async def main(
 
     logger.info("Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
-    listener = ChainPriceListener(polling_frequency=2, assets=[])
+    listener = ChainPriceListener(
+        client=pragma_client.client, polling_frequency=2, assets=[]
+    )
     pusher = PricePusher(client=pragma_client)
     orchestrator = Orchestrator(
         price_configs=price_configs, poller=poller, listener=listener, pusher=pusher

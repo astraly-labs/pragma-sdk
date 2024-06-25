@@ -47,7 +47,9 @@ class PriceConfig(BaseModel):
     def from_yaml(cls, path: str) -> List["PriceConfig"]:
         with open(path, "r") as file:
             price_configs = yaml.safe_load(file)
-        return [cls(**config) for config in price_configs]
+        list_configs = [cls(**config) for config in price_configs]
+        # TODO: verify that pairs are unique
+        return list_configs
 
     def get_unique_spot_assets(self) -> List[PragmaSpotAsset]:
         """

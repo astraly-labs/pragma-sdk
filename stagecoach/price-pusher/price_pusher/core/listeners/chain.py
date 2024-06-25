@@ -1,25 +1,14 @@
 import asyncio
-from typing import Dict, List, Optional
+from typing import Optional
 
-from pragma.core.assets import (
-    PragmaAsset,
-)
 from pragma.core.entry import Entry
 
-from price_pusher.type import DurationInSeconds
 
-from price_pusher.core.listeners import IPriceListener
+from price_pusher.core.listeners import PriceListener
 
 
-class ChainPriceListener(IPriceListener):
-    def __init__(
-        self, polling_frequency: DurationInSeconds, assets: List[PragmaAsset]
-    ) -> None:
-        self.polling_frequency = polling_frequency
-        self.assets = assets
-        self.latest_price_info: Dict[str, Entry] = {}
-
-    async def start(self) -> None:
+class ChainPriceListener(PriceListener):
+    async def run(self) -> None:
         await self.poll_prices()
         while True:
             await asyncio.sleep(self.polling_frequency)

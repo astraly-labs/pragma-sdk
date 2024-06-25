@@ -13,7 +13,7 @@ from price_pusher.core.pusher import PricePusher
 
 PairId = str
 SourceName = str
-LatestPairPrices = Dict[PairId, Dict[SourceName, Dict[AssetType, Entry]]]
+LatestPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Entry]]]
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +39,16 @@ class Orchestrator:
         listener: ChainPriceListener,
         pusher: PricePusher,
     ) -> None:
-        # Entities communicate via callbacks. Here, we set them.
-        poller.set_update_prices_callback(self.callback_update_prices)
-
         # Init class properties.
         self.price_configs = price_configs
         self.poller = poller
         self.listener = listener
         self.pusher = pusher
         self.latest_prices = {}
+
+        # Entities communication.
+        self.poller.set_update_prices_callback(self.callback_update_prices)
+        self.listener.set_ref_latest_price(self.latest_prices)
 
     async def run_forever(self) -> None:
         await asyncio.gather(
@@ -66,6 +67,7 @@ class Orchestrator:
         while True:
             await asyncio.sleep(15)
             logger.info("Listen chain/API & at some point, send signal...")
+            print(self.listener.get_latest_registered_entry("BTC/USD", "SPOT"))
             # await self.listener.wait_for_signal()
             # self.push_event.set()
 
@@ -99,7 +101,7 @@ class Orchestrator:
 
             if pair_id not in self.latest_prices:
                 self.latest_prices[pair_id] = {}
-            if source not in self.latest_prices[pair_id]:
-                self.latest_prices[pair_id][source] = {}
+            if entry_type not in self.latest_prices[pair_id]:
+                self.latest_prices[pair_id][entry_type] = {}
 
-            self.latest_prices[pair_id][source][entry_type] = entry
+            self.latest_prices[pair_id][entry_type][source] = entry
