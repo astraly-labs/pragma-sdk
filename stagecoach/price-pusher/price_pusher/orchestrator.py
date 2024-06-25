@@ -9,7 +9,7 @@ from pragma.core.assets import AssetType
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listeners.chain import PriceListener
 from price_pusher.core.pusher import PricePusher
-from price_pusher.type_aliases import LatestPairPrices
+from price_pusher.type_aliases import LatestOrchestratorPairPrices
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class Orchestrator:
     listener: PriceListener
     pusher: PricePusher
     # Contains the latest spot/future prices for each sources
-    latest_prices: LatestPairPrices
+    latest_prices: LatestOrchestratorPairPrices
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class Orchestrator:
         self.pusher = pusher
 
         # Contains the latest prices for each sources
-        self.latest_prices: LatestPairPrices = {}
+        self.latest_prices: LatestOrchestratorPairPrices = {}
 
         # Entities communication.
         self.poller.set_update_prices_callback(self.callback_update_prices)

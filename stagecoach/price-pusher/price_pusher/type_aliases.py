@@ -7,4 +7,5 @@ DurationInSeconds = int
 
 PairId = str
 SourceName = str
-LatestPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Entry]]]
+LatestOrchestratorPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Entry]]]
+LatestOraclePairPrices = Dict[PairId, Dict[AssetType, Entry]]

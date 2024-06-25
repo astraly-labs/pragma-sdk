@@ -9,7 +9,11 @@ from pragma.core.assets import PragmaAsset
 from pragma.publisher.client import PragmaPublisherClientT
 from pragma.core.assets import AssetType
 
-from price_pusher.type_aliases import DurationInSeconds, LatestPairPrices
+from price_pusher.type_aliases import (
+    DurationInSeconds,
+    LatestOrchestratorPairPrices,
+    LatestOraclePairPrices,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +24,24 @@ class IPriceListener(ABC):
     """
 
     client: PragmaPublisherClientT
-    oracle_prices: LatestPairPrices
-    orchestrator_prices: Optional[LatestPairPrices]
+    oracle_prices: LatestOraclePairPrices
+    orchestrator_prices: Optional[LatestOrchestratorPairPrices]
     assets: List[PragmaAsset]
     notification_event: asyncio.Event
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
     def set_orchestrator_prices(
-        self, orchestrator_prices: LatestPairPrices
+        self, orchestrator_prices: LatestOrchestratorPairPrices
     ) -> None: ...
 
     @abstractmethod
     def get_latest_registered_entry(
         self, pair_id: str, asset_type: AssetType
     ) -> Optional[Entry]: ...
+
+    @abstractmethod
+    async def fetch_latest_oracle_prices(self) -> None: ...
 
     @abstractmethod
     async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]: ...
@@ -51,6 +58,9 @@ class PriceListener(IPriceListener):
         raise NotImplementedError("Must be implemented by children listener.")
 
     async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
+        raise NotImplementedError("Must be implemented by children listener.")
+
+    async def fetch_latest_oracle_prices(self) -> None:
         raise NotImplementedError("Must be implemented by children listener.")
 
     def __init__(
