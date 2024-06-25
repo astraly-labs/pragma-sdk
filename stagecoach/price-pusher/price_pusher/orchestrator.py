@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from typing import List, Dict, Optional
 
@@ -48,23 +49,39 @@ class Orchestrator:
         self.pusher = pusher
         self.latest_prices = {}
 
-    def run_forever(self) -> None:
-        print("Orchestrating...")
-        # main loop
-        # entries_queue = queue.Queue()
-        # Retrieve data from poller
-        # Filter data with listener
-        # if data is worth pushing
-        # push filtered data with pusher
-        # Drop useless entries (max queue size or used data)
+    async def run_forever(self) -> None:
+        await asyncio.gather(
+            self._poll_prices_forever_task(),
+            self._listen_for_signals_task(),
+            self._push_prices_task(),
+        )
+
+    async def _poll_prices_forever_task(self) -> None:
+        while True:
+            await self.poller.poll_prices()
+            print(self.latest_prices)
+            await asyncio.sleep(5)
+
+    async def _listen_for_signals_task(self) -> None:
+        while True:
+            await asyncio.sleep(120)
+            # await self.listener.wait_for_signal()
+            # self.push_event.set()
+
+    async def _push_prices_task(self) -> None:
+        while True:
+            await asyncio.sleep(120)
+            # await self.push_event.wait()  # Wait for the signal
+            # self.push_event.clear()
+            # self.pusher.push(self.latest_prices)  # Implement push logic in pusher
 
     def callback_update_prices(self, entries: List[Entry]) -> None:
         """
         Function called by the poller whenever new prices are retrieved.
         """
         for entry in entries:
-            pair_id = entry.pair_id
-            source = entry.base.source
+            pair_id = entry.get_pair_id()
+            source = entry.get_source()
             entry_type: Optional[AssetType] = (
                 "SPOT"
                 if isinstance(entry, SpotEntry)

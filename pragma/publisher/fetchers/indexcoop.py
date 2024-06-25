@@ -8,7 +8,7 @@ import requests
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
-from pragma.publisher.client import PragmaClient
+from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.fetchers.index import AssetQuantities
@@ -25,13 +25,13 @@ SUPPORTED_INDEXES = {
 class IndexCoopFetcher(PublisherInterfaceT):
     BASE_URL: str = "https://api.indexcoop.com"
     SOURCE: str = "INDEXCOOP"
-    client: PragmaClient
+    client: PragmaOnChainClient
     publisher: str
 
     def __init__(self, assets: List[PragmaAsset], publisher, client=None):
         self.assets = assets
         self.publisher = publisher
-        self.client = client
+        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession

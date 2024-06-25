@@ -22,7 +22,7 @@ class IPricePoller(ABC):
     async def poll_prices(self) -> None: ...
 
 
-class PricePoller(IPricePoller, ABC):
+class PricePoller(IPricePoller):
     def __init__(self, fetcher_client: FetcherClient) -> Dict:
         self.fetcher_client = fetcher_client
         self.update_prices_callback = None

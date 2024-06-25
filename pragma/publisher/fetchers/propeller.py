@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
-from pragma.publisher.client import PragmaClient
+from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
@@ -80,8 +80,8 @@ class PropellerFetcher(PublisherInterfaceT):
     BASE_URL: str = (
         "https://api.propellerheads.xyz/partner/v2/solver/quote?blockchain=ethereum"
     )
+    client: PragmaOnChainClient
     SOURCE: str = "PROPELLER"
-
     publisher: str
 
     def __init__(
@@ -90,7 +90,7 @@ class PropellerFetcher(PublisherInterfaceT):
         self.assets = assets
         self.publisher = publisher
         self.headers = {"X-Api-Key": api_key}
-        self.client = client
+        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, asset: PragmaSpotAsset, session: ClientSession

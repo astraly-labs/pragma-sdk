@@ -13,7 +13,7 @@ from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataTypes
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
-from pragma.publisher.types import Interval, PublisherInterfaceT
+from pragma.publisher.types import Interval, PublisherInterfaceT, PublisherFetchError
 
 load_dotenv()
 
@@ -134,9 +134,17 @@ class FetcherClient:
                 data = fetcher.fetch(session)
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
-            if filter_exceptions:
-                result = [subl for subl in result if not isinstance(subl, Exception)]
-            return [val for subl in result for val in subl]
+            if not filter_exceptions:
+                return [val for subl in result for val in subl]
+            result = [
+                subl
+                for subl in result
+                if not isinstance(subl, Exception)
+                and not isinstance(subl, PublisherFetchError)
+            ]
+            return [
+                val for subl in result for val in subl if not isinstance(val, Exception)
+            ]
 
 
 @add_sync_methods

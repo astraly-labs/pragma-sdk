@@ -20,6 +20,12 @@ class Entry(abc.ABC):
     @abc.abstractmethod
     def get_timestamp(self) -> int: ...
 
+    @abc.abstractmethod
+    def get_pair_id(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_source(self) -> str: ...
+
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         # TODO (#000): log errors
@@ -178,6 +184,12 @@ class SpotEntry(Entry):
     def get_timestamp(self):
         return self.base.timestamp
 
+    def get_pair_id(self):
+        return felt_to_str(self.pair_id)
+
+    def get_source(self):
+        return felt_to_str(self.base.source)
+
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
         base = dict(entry_dict["base"])
@@ -327,6 +339,12 @@ class FutureEntry(Entry):
 
     def get_timestamp(self):
         return self.base.timestamp
+
+    def get_pair_id(self):
+        return felt_to_str(self.pair_id)
+
+    def get_source(self):
+        return felt_to_str(self.base.source)
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":

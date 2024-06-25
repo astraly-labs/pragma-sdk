@@ -51,7 +51,7 @@ async def main(
     orchestrator = Orchestrator(
         price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
     )
-    orchestrator.run_forever()
+    await orchestrator.run_forever()
 
 
 @click.command()

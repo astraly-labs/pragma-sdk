@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import List, Type
+from typing import List
 from pragma.publisher.client import FetcherClient
 from concurrent.futures import ThreadPoolExecutor
 from pragma.publisher.fetchers import (
@@ -15,6 +15,7 @@ from pragma.publisher.fetchers import (
     OkxFetcher,
 )
 from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
+from pragma.publisher.types import PublisherInterfaceT
 from price_pusher.configs.price_config import (
     PriceConfig,
     get_unique_spot_assets_from_config_list,
@@ -64,7 +65,7 @@ async def add_all_fetchers(
 
 async def _add_fetchers(
     fetcher_client: FetcherClient,
-    fetchers: List[Type],
+    fetchers: List[PublisherInterfaceT],
     assets: List[str],
     publisher_name: str,
 ) -> None:
@@ -94,7 +95,10 @@ async def _add_fetchers(
 
 
 def _add_one_fetcher(
-    fetcher: Type, fetcher_client: FetcherClient, assets: List[str], publisher_name: str
+    fetcher: PublisherInterfaceT,
+    fetcher_client: FetcherClient,
+    assets: List[str],
+    publisher_name: str,
 ) -> None:
     """
     Add a single fetcher to the FetcherClient.
@@ -105,4 +109,6 @@ def _add_one_fetcher(
         assets: List of assets for the fetcher.
         publisher_name: The name of the publisher.
     """
+    # TODO: use the pragma_client inside the fetcher constructor.
+    # Currently, a new client is created everytime.
     fetcher_client.add_fetcher(fetcher(assets, publisher_name))
