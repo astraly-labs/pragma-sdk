@@ -84,5 +84,8 @@ class PriceListener(IPriceListener):
         return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
 
     def notify(self) -> None:
-        logger.info("🏓 Sending notification to Pusher.")
+        """
+        Sends a notification.
+        """
+        logger.info("🏓 Sending notification to the Orchestrator!")
         self.notification_event.set()
