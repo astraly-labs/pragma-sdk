@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from pragma.core.entry import Entry
+from pragma.core.entry import Entry, SpotEntry
 from pragma.core.assets import PragmaAsset, AssetType
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
@@ -102,14 +102,15 @@ class PriceListener(IPriceListener):
             for asset in self.assets
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error(f"Error fetching oracle price: {result}")
+        for entry in results:
+            if isinstance(entry, Exception):
+                logger.error(f"Error fetching oracle price: {entry}")
                 continue
-            if result is None:
+            if entry is None:
                 continue
-            pair_id = result.get_pair_id()
-            self.oracle_prices[pair_id] = result
+            pair_id = entry.get_pair_id()
+            asset_type = "SPOT" if isinstance(entry, SpotEntry) else "FUTURE"
+            self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
         self, pair_id: str, asset_type: AssetType
