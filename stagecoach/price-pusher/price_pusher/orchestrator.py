@@ -76,7 +76,7 @@ class Orchestrator:
         while True:
             await asyncio.sleep(15)
             # TODO: implement logic
-            self.listener.notify()
+            self.listener._notify()
 
     async def _pusher_service(self) -> None:
         """

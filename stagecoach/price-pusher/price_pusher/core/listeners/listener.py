@@ -31,38 +31,34 @@ class IPriceListener(ABC):
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
-    def set_orchestrator_prices(
-        self, orchestrator_prices: LatestOrchestratorPairPrices
-    ) -> None: ...
+    async def _fetch_latest_oracle_pair_price(
+        self, asset: PragmaAsset
+    ) -> Optional[Entry]: ...
 
     @abstractmethod
-    def get_latest_registered_entry(
+    async def _fetch_all_oracle_prices(self) -> None: ...
+
+    @abstractmethod
+    def _get_most_recent_orchestrator_entry(
         self, pair_id: str, asset_type: AssetType
     ) -> Optional[Entry]: ...
 
     @abstractmethod
-    async def fetch_latest_oracle_prices(self) -> None: ...
+    async def _does_oracle_needs_update(self) -> bool: ...
 
     @abstractmethod
-    async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]: ...
+    def _notify(self) -> None: ...
 
     @abstractmethod
-    def notify(self) -> None: ...
+    def set_orchestrator_prices(
+        self, orchestrator_prices: LatestOrchestratorPairPrices
+    ) -> None: ...
 
     @abstractmethod
     async def run_forever(self) -> None: ...
 
 
 class PriceListener(IPriceListener):
-    async def run_forever(self) -> None:
-        raise NotImplementedError("Must be implemented by children listener.")
-
-    async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]:
-        raise NotImplementedError("Must be implemented by children listener.")
-
-    async def fetch_latest_oracle_prices(self) -> None:
-        raise NotImplementedError("Must be implemented by children listener.")
-
     def __init__(
         self,
         client: PragmaPublisherClientT,
@@ -76,13 +72,25 @@ class PriceListener(IPriceListener):
         self.notification_event = asyncio.Event()
         self.polling_frequency_in_s = polling_frequency_in_s
 
-    def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
-        """
-        Set the reference of the orchestrator prices in the Listener.
-        """
-        self.orchestrator_prices = orchestrator_prices
+    async def _fetch_latest_oracle_pair_price(
+        self, asset: PragmaAsset
+    ) -> Optional[Entry]:
+        raise NotImplementedError("Must be implemented by children listener.")
 
-    def get_latest_registered_entry(
+    async def _fetch_all_oracle_prices(self) -> None:
+        """
+        Fetch the latest oracle prices for all assets in parallel.
+        """
+        tasks = [self._fetch_latest_oracle_pair_price(asset) for asset in self.assets]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"Error fetching oracle price: {result}")
+                continue
+            pair_id = result.get_pair_id()
+            self.oracle_prices[pair_id] = result
+
+    def _get_most_recent_orchestrator_entry(
         self, pair_id: str, asset_type: AssetType
     ) -> Optional[Entry]:
         """
@@ -95,9 +103,37 @@ class PriceListener(IPriceListener):
         ]
         return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
 
-    def notify(self) -> None:
+    async def _does_oracle_needs_update(self) -> bool:
+        # TODO: should be implemented here (the same for every listeners)
+        return False
+
+    def _notify(self) -> None:
         """
         Sends a notification.
         """
         logger.info("🏓 Sending notification to the Orchestrator!")
         self.notification_event.set()
+
+    def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
+        """
+        Set the reference of the orchestrator prices in the Listener.
+        """
+        self.orchestrator_prices = orchestrator_prices
+
+    async def run_forever(self) -> None:
+        """
+        Main loop responsible of:
+            - fetching the latest oracle prices
+            - checking if the oracle needs update
+            - pushing notification to the orchestration if it does.
+        """
+        last_fetch_time = -1
+        while True:
+            current_time = asyncio.get_event_loop().time()
+            if current_time - last_fetch_time >= self.polling_frequency_in_s:
+                await self._fetch_latest_oracle_prices()
+                last_fetch_time = current_time
+            if await self._does_oracle_needs_update():
+                self._notify()
+            # Check every second if the oracle needs an update
+            await asyncio.sleep(1)
