@@ -69,6 +69,30 @@ class PriceListener(IPriceListener):
 
         self.notification_event = asyncio.Event()
 
+    async def run_forever(self) -> None:
+        """
+        Main loop responsible of:
+            - fetching the latest oracle prices
+            - checking if the oracle needs update
+            - pushing notification to the orchestration if it does.
+        """
+        last_fetch_time = -1
+        while True:
+            current_time = asyncio.get_event_loop().time()
+            if current_time - last_fetch_time >= self.polling_frequency_in_s:
+                await self._fetch_all_oracle_prices()
+                last_fetch_time = current_time
+            if await self._does_oracle_needs_update():
+                self._notify()
+            # Check every second if the oracle needs an update
+            await asyncio.sleep(1)
+
+    def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
+        """
+        Set the reference of the orchestrator prices in the Listener.
+        """
+        self.orchestrator_prices = orchestrator_prices
+
     async def _fetch_all_oracle_prices(self) -> None:
         """
         Fetch the latest oracle prices for all assets in parallel.
@@ -110,27 +134,3 @@ class PriceListener(IPriceListener):
         """
         logger.info("🏓 Sending notification to the Orchestrator!")
         self.notification_event.set()
-
-    def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
-        """
-        Set the reference of the orchestrator prices in the Listener.
-        """
-        self.orchestrator_prices = orchestrator_prices
-
-    async def run_forever(self) -> None:
-        """
-        Main loop responsible of:
-            - fetching the latest oracle prices
-            - checking if the oracle needs update
-            - pushing notification to the orchestration if it does.
-        """
-        last_fetch_time = -1
-        while True:
-            current_time = asyncio.get_event_loop().time()
-            if current_time - last_fetch_time >= self.polling_frequency_in_s:
-                await self._fetch_all_oracle_prices()
-                last_fetch_time = current_time
-            if await self._does_oracle_needs_update():
-                self._notify()
-            # Check every second if the oracle needs an update
-            await asyncio.sleep(1)
