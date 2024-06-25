@@ -18,22 +18,28 @@ from price_pusher.type_aliases import (
 logger = logging.getLogger(__name__)
 
 
+class IRequestHandler(ABC):
+    """
+    Responsible of querying new prices from our oracles and returning entries.
+    """
+
+    client: PragmaPublisherClientT
+
+    @abstractmethod
+    async def fetch_latest_asset_price(self, asset: PragmaAsset) -> Optional[Entry]: ...
+
+
 class IPriceListener(ABC):
     """
     Sends a signal to the Orchestrator when we need to update prices.
     """
 
-    client: PragmaPublisherClientT
+    request_handler: IRequestHandler
     oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
     assets: List[PragmaAsset]
     notification_event: asyncio.Event
     polling_frequency_in_s: DurationInSeconds
-
-    @abstractmethod
-    async def _fetch_latest_oracle_pair_price(
-        self, asset: PragmaAsset
-    ) -> Optional[Entry]: ...
 
     @abstractmethod
     async def _fetch_all_oracle_prices(self) -> None: ...
@@ -61,27 +67,28 @@ class IPriceListener(ABC):
 class PriceListener(IPriceListener):
     def __init__(
         self,
-        client: PragmaPublisherClientT,
+        request_handler: IRequestHandler,
         polling_frequency_in_s: DurationInSeconds,
         assets: List[PragmaAsset],
     ) -> None:
-        self.client = client
+        self.request_handler = request_handler
+
         self.oracle_prices = {}
         self.orchestrator_prices = None
-        self.assets = assets
-        self.notification_event = asyncio.Event()
-        self.polling_frequency_in_s = polling_frequency_in_s
 
-    async def _fetch_latest_oracle_pair_price(
-        self, asset: PragmaAsset
-    ) -> Optional[Entry]:
-        raise NotImplementedError("Must be implemented by children listener.")
+        self.polling_frequency_in_s = polling_frequency_in_s
+        self.assets = assets
+
+        self.notification_event = asyncio.Event()
 
     async def _fetch_all_oracle_prices(self) -> None:
         """
         Fetch the latest oracle prices for all assets in parallel.
         """
-        tasks = [self._fetch_latest_oracle_pair_price(asset) for asset in self.assets]
+        tasks = [
+            self.request_handler.fetch_latest_asset_price(asset)
+            for asset in self.assets
+        ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in results:
             if isinstance(result, Exception):
@@ -106,7 +113,7 @@ class PriceListener(IPriceListener):
         return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
-        # TODO: should be implemented here (the same for every listeners)
+        # TODO
         return False
 
     def _notify(self) -> None:

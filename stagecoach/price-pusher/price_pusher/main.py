@@ -7,9 +7,10 @@ from typing import Optional, List
 from pragma.publisher.client import FetcherClient
 
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listeners import (
-    APIPriceListener,
-    ChainPriceListener,
+from price_pusher.core.listeners import PriceListener
+from price_pusher.core.listeners.request_handlers import (
+    APIRequestHandler,
+    ChainRequestHandler,
 )
 from price_pusher.core.pusher import PricePusher
 from price_pusher.fetchers import add_all_fetchers
@@ -53,9 +54,13 @@ async def main(
 
     logger.info("⏳ Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
-    ListenerClass = ChainPriceListener if target == "onchain" else APIPriceListener
-    listener = ListenerClass(
-        client=pragma_client.client, polling_frequency_in_s=2, assets=[]
+    RequestHandlerClass = (
+        ChainRequestHandler if target == "onchain" else APIRequestHandler
+    )
+    listener = PriceListener(
+        request_handler=RequestHandlerClass(client=pragma_client.client),
+        polling_frequency_in_s=2,
+        assets=[],
     )
     pusher = PricePusher(client=pragma_client)
     orchestrator = Orchestrator(poller=poller, listener=listener, pusher=pusher)

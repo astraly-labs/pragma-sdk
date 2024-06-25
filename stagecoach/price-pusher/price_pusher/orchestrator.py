@@ -7,7 +7,7 @@ from pragma.core.entry import Entry, SpotEntry, FutureEntry
 from pragma.core.assets import AssetType
 
 from price_pusher.core.poller import PricePoller
-from price_pusher.core.listeners.chain import PriceListener
+from price_pusher.core.listeners import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.type_aliases import LatestOrchestratorPairPrices
 
