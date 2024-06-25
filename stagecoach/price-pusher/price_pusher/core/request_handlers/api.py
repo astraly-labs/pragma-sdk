@@ -2,15 +2,15 @@ from typing import Optional
 
 from pragma.core.assets import PragmaAsset
 from pragma.core.entry import Entry
-from pragma.publisher.client import PragmaOnChainClient
+from pragma.publisher.client import PragmaAPIClient
 
-from price_pusher.core.listeners.listener import IRequestHandler
+from price_pusher.core.request_handlers.interface import IRequestHandler
 
 
-class ChainRequestHandler(IRequestHandler):
-    client: PragmaOnChainClient
+class APIRequestHandler(IRequestHandler):
+    client: PragmaAPIClient
 
-    def __init__(self, client: PragmaOnChainClient) -> None:
+    def __init__(self, client: PragmaAPIClient) -> None:
         self.client = client
 
     async def fetch_latest_asset_price(self, asset: PragmaAsset) -> Optional[Entry]:

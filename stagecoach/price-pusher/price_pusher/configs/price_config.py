@@ -3,6 +3,7 @@ from typing import List, Optional
 import yaml
 from pragma.core.assets import (
     PragmaFutureAsset,
+    PragmaAsset,
     PragmaSpotAsset,
     AssetType,
     get_asset_spec_for_pair_id_by_type,
@@ -120,3 +121,14 @@ def get_unique_future_assets_from_config_list(
             if asset not in unique_future_assets:
                 unique_future_assets.append(asset)
     return unique_future_assets
+
+
+def get_all_unique_assets_from_config_list(
+    price_configs: List[PriceConfig],
+) -> List[PragmaAsset]:
+    """
+    Retrieve all the assets in the config.
+    """
+    spot_assets = get_unique_spot_assets_from_config_list(price_configs)
+    future_assets = get_unique_future_assets_from_config_list(price_configs)
+    return spot_assets + future_assets

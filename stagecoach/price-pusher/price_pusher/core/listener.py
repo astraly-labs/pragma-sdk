@@ -5,10 +5,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 
 from pragma.core.entry import Entry
-from pragma.core.assets import PragmaAsset
-from pragma.publisher.client import PragmaPublisherClientT
-from pragma.core.assets import AssetType
+from pragma.core.assets import PragmaAsset, AssetType
 
+from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.type_aliases import (
     DurationInSeconds,
     LatestOrchestratorPairPrices,
@@ -16,17 +15,6 @@ from price_pusher.type_aliases import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class IRequestHandler(ABC):
-    """
-    Responsible of querying new prices from our oracles and returning entries.
-    """
-
-    client: PragmaPublisherClientT
-
-    @abstractmethod
-    async def fetch_latest_asset_price(self, asset: PragmaAsset) -> Optional[Entry]: ...
 
 
 class IPriceListener(ABC):
