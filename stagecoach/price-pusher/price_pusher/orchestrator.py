@@ -118,7 +118,7 @@ class Orchestrator:
 
             self.latest_prices[pair_id][entry_type][source] = entry
 
-    def flush_all_entries(self) -> None:
+    def flush_all_entries(self) -> List[Entry]:
         """
         Retrieves all the available entries from our latest_prices dictionnary and
         clear them (meaning the dictionnary will be empty after this operation).

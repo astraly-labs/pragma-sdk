@@ -31,6 +31,11 @@ class PricePoller(IPricePoller):
         self.update_prices_callback = callback
 
     async def poll_prices(self) -> List[Entry]:
+        """
+        Poll in parallel every fetchers for the required pairs and send them
+        to the orchestrator using the callback function.
+        The orchestrator will be responsible of handling the entries.
+        """
         if self.update_prices_callback is None:
             logger.error("Cannot call poll_prices if the update callback is not set.")
             return []
