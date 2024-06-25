@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from typing import List, Optional, Dict
 
-from pragma.publisher.client import PragmaAPIError, PragmaClient
+from pragma.publisher.client import PragmaClient
 from pragma.core.entry import Entry
 
 import logging
@@ -25,8 +25,8 @@ class PricePusher(IPricePusher):
         """
         try:
             response = await self.client.publish_entries(entries)
-            logger.info(f"entries sucessfully published : {response}")
+            logger.info("✅ Successfully published entries!")
             return response
-        except PragmaAPIError as e:
-            logger.error(f"failed to update price feed : {e}")
+        except Exception as e:
+            logger.error(f"⛔ Could not publish entries : {e}")
             return None

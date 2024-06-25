@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
@@ -7,6 +10,8 @@ from pragma.publisher.client import PragmaPublisherClientT
 from pragma.core.assets import AssetType
 
 from price_pusher.type_aliases import DurationInSeconds, LatestPairPrices
+
+logger = logging.getLogger(__name__)
 
 
 class IPriceListener(ABC):
@@ -19,6 +24,7 @@ class IPriceListener(ABC):
     client: PragmaPublisherClientT
     ref_latest_prices: Optional[LatestPairPrices]
     assets: List[PragmaAsset]
+    notification_event: asyncio.Event
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
@@ -31,6 +37,9 @@ class IPriceListener(ABC):
 
     @abstractmethod
     async def get_latest_price_info(self, pair_id: str) -> Optional[Entry]: ...
+
+    @abstractmethod
+    def notify(self) -> None: ...
 
     @abstractmethod
     async def run(self) -> None: ...
@@ -51,8 +60,9 @@ class PriceListener(IPriceListener):
     ) -> None:
         self.client = client
         self.ref_latest_prices = None
-        self.polling_frequency_in_s = polling_frequency_in_s
         self.assets = assets
+        self.notification_event = asyncio.Event()
+        self.polling_frequency_in_s = polling_frequency_in_s
 
     def set_ref_latest_price(self, ref_latest_prices: dict) -> None:
         """
@@ -72,3 +82,7 @@ class PriceListener(IPriceListener):
             entry for entry in self.ref_latest_prices[pair_id][asset_type].values()
         ]
         return max(entries, key=lambda entry: entry.base.timestamp, default=None)
+
+    def notify(self) -> None:
+        logger.info("🏓 Sending notification to Pusher.")
+        self.notification_event.set()

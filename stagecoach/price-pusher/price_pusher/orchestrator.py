@@ -25,8 +25,6 @@ class Orchestrator:
     pusher: PricePusher
     # Contains the latest prices for each sources
     latest_prices: LatestPairPrices
-    # Push event triggered by the listener to notify the pusher
-    push_event: asyncio.Event
 
     def __init__(
         self,
@@ -41,8 +39,6 @@ class Orchestrator:
 
         # Contains the latest prices for each sources
         self.latest_prices: LatestPairPrices = {}
-        # Push event triggered by the listener to notify the pusher
-        self.push_event = asyncio.Event()
 
         # Entities communication.
         self.poller.set_update_prices_callback(self.callback_update_prices)
@@ -79,8 +75,8 @@ class Orchestrator:
         """
         while True:
             await asyncio.sleep(15)
-            logger.info("🏓 Sending notification to Pusher.")
-            self.push_event.set()
+            # TODO: implement logic
+            self.listener.notify()
 
     async def _push_prices_task(self) -> None:
         """
@@ -89,9 +85,9 @@ class Orchestrator:
         all available entries.
         """
         while True:
-            await self.push_event.wait()
+            await self.listener.notification_event.wait()
             logger.info("💡 Notification received from the Listener! Pushing entries.")
-            self.push_event.clear()
+            self.listener.notification_event.clear()
             all_latest_entries = self.flush_all_entries()
             await self.pusher.update_price_feeds(all_latest_entries)
 
