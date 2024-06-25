@@ -87,6 +87,8 @@ class PriceListener(IPriceListener):
             if isinstance(result, Exception):
                 logger.error(f"Error fetching oracle price: {result}")
                 continue
+            if result is None:
+                continue
             pair_id = result.get_pair_id()
             self.oracle_prices[pair_id] = result
 
@@ -131,7 +133,7 @@ class PriceListener(IPriceListener):
         while True:
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
-                await self._fetch_latest_oracle_prices()
+                await self._fetch_all_oracle_prices()
                 last_fetch_time = current_time
             if await self._does_oracle_needs_update():
                 self._notify()
