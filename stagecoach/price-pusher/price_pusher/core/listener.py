@@ -168,9 +168,11 @@ class PriceListener(IPriceListener):
         for pair_id, oracle_entry in self.oracle_prices.items():
             for asset_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
                 oracle_entry = oracle_entry[asset_type]
+                # First check if the oracle entry is outdated
                 newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
                     return True
+                # If not, check its deviation
                 for _, entry in orchestrator_entries.items():
                     if self._new_price_is_deviating(pair_id, entry.price, oracle_entry.price):
                         return True
