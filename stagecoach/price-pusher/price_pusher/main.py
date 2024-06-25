@@ -48,7 +48,7 @@ async def main(
         api_key=api_key,
     )
 
-    logger.info("🔨 Creating Fetcher client & adding fetchers...")
+    logger.info("🪚 Creating Fetcher client & adding fetchers...")
     fetcher_client = await add_all_fetchers(
         fetcher_client=FetcherClient(),
         publisher_name=publisher_name,
