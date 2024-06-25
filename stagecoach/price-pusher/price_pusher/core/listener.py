@@ -173,7 +173,7 @@ class PriceListener(IPriceListener):
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
                     return True
                 # If not, check its deviation
-                for _, entry in orchestrator_entries.items():
+                for entry in orchestrator_entries.values():
                     if self._new_price_is_deviating(pair_id, entry.price, oracle_entry.price):
                         return True
         return False
