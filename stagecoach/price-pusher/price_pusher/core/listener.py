@@ -133,40 +133,8 @@ class PriceListener(IPriceListener):
         """
         if self.orchestrator_prices is None:
             raise ValueError("Orchestrator must set the prices dictionnary.")
-        entries = [
-            entry for entry in self.orchestrator_prices[pair_id][asset_type].values()
-        ]
+        entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
         return max(entries, key=lambda entry: entry.base.timestamp, default=None)
-
-    async def _does_oracle_needs_update(self) -> bool:
-        """
-        Compare the oracle prices with our orchestrator fetched prices from sources.
-        If some conditions are met, we return true, else false, meaning that we
-        can send a notification to the orchestrator.
-        """
-        if self.orchestrator_prices is None:
-            raise ValueError("Orchestrator must set the prices dictionnary.")
-        if len(self.orchestrator_prices.keys()) == 0:
-            return False
-        
-        for pairid, oracle_value in self.oracle_prices.items():
-            for asset_type, datas in self.orchestrator_prices[pairid].items():
-                for _,entry in datas.items():
-                    if self._is_in_deviation_bounds(entry.price, oracle_value[asset_type].price) :
-                        return True
-                    delta_t = entry.base.timestamp - self._get_most_recent_orchestrator_entry(pairid,asset_type).base.timestamp
-                    if  delta_t > self.price_config.time_difference:
-                        return True
-
-        return False
-
-    def _is_in_deviation_bounds(self, price: int, ref_price: int) -> bool:
-        max_deviation = self.price_config.price_deviation * ref_price
-        
-        lower_bound = ref_price - max_deviation
-        upper_bound = ref_price + max_deviation
-        
-        return lower_bound <= price <= upper_bound
 
     def _notify(self) -> None:
         """
@@ -182,3 +150,63 @@ class PriceListener(IPriceListener):
         assets = self.price_config.get_all_assets()
         pairs = [asset_to_pair_id(asset) for asset in assets]
         logging.info(f"👂 Spawned a listener for pairs: {pairs}")
+
+    async def _does_oracle_needs_update(self) -> bool:
+        """
+        Return if the oracle prices needs an update.
+
+        To know if they need we check:
+            - if the latest entry found in our oracle is too old,
+            - if the price deviated too much with the prices fetched from the poller
+        """
+        if self.orchestrator_prices is None:
+            raise ValueError("Orchestrator must set the prices dictionnary.")
+
+        if len(self.orchestrator_prices.keys()) == 0:
+            return False
+
+        for pair_id, oracle_entry in self.oracle_prices.items():
+            for asset_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
+                oracle_entry = oracle_entry[asset_type]
+                newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
+                if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
+                    return True
+                for _, entry in orchestrator_entries.items():
+                    if self._new_price_is_deviating(pair_id, entry.price, oracle_entry.price):
+                        return True
+        return False
+
+    def _new_price_is_deviating(self, pair_id: str, new_price: int, oracle_price: int) -> bool:
+        """
+        Check if a new price is in the bounds allowed by the configuration.
+        """
+        max_deviation = self.price_config.price_deviation * oracle_price
+
+        lower_bound = oracle_price - max_deviation
+        upper_bound = oracle_price + max_deviation
+
+        is_deviating = not (lower_bound <= new_price <= upper_bound)
+        if is_deviating:
+            logger.info(
+                f"🔔 Newest price for {pair_id} is deviating from the "
+                "config bounds. Triggering an update!"
+            )
+        return is_deviating
+
+    def _oracle_entry_is_outdated(
+        self, pair_id: str, oracle_entry: Entry, newest_entry: Entry
+    ) -> bool:
+        """
+        Check if the newest entry is recent enough to trigger an update.
+        We do that by checking the difference between the most recent entry from
+        the orchestrator and the most recent entry for the oracle.
+        """
+        max_time_elapsed = self.price_config.time_difference
+
+        delta_t = newest_entry.get_timestamp() - oracle_entry.get_timestamp()
+        is_outdated = delta_t > max_time_elapsed
+
+        if is_outdated:
+            logger.info(f"🔔 Last oracle entry for {pair_id} is too old. " "Triggering an update!")
+
+        return is_outdated

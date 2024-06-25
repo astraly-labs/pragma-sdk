@@ -145,9 +145,7 @@ class Orchestrator:
                 else None
             )
             if entry_type is None:
-                logger.error(
-                    f'Entry type of "{pair_id}" from "{source}" is unknown. Ignoring.'
-                )
+                logger.error(f'Entry type of "{pair_id}" from "{source}" is unknown. Ignoring.')
                 continue
 
             if pair_id not in self.latest_prices:

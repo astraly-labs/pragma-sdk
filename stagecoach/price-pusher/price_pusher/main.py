@@ -56,9 +56,7 @@ async def main(
 
     logger.info("⏳ Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
-    RequestHandlerClass = (
-        ChainRequestHandler if target == "onchain" else APIRequestHandler
-    )
+    RequestHandlerClass = ChainRequestHandler if target == "onchain" else APIRequestHandler
     listeners: List[PriceListener] = []
     for price_config in price_configs:
         new_listener = PriceListener(
@@ -85,9 +83,7 @@ async def main(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(
-        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
-    ),
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
     help="Logging level.",
 )
 @click.option(
@@ -123,9 +119,7 @@ async def main(
     required=True,
     help="Your publisher address.",
 )
-@click.option(
-    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
-)
+@click.option("--api-base-url", type=click.STRING, required=False, help="Pragma API base URL")
 @click.option(
     "--api-key",
     type=click.STRING,
@@ -150,9 +144,7 @@ def cli_entrypoint(
     Also handles basic checks/conversions from the CLI args.
     """
     if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError(
-            "API key and API URL are required when destination is 'offchain'."
-        )
+        raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
 
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
