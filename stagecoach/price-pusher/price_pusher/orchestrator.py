@@ -85,13 +85,14 @@ class Orchestrator:
     async def _push_prices_task(self) -> None:
         """
         Starts the pusher service in its own thread.
+        This service waits for notification from the listener service and push
+        all available entries.
         """
         while True:
-            # Wait for a notification from the listener
             await self.push_event.wait()
             logger.info("💡 Notification received from the Listener! Pushing entries.")
             self.push_event.clear()
-            all_latest_entries = self.get_all_available_entries()
+            all_latest_entries = self.flush_all_entries()
             await self.pusher.update_price_feeds(all_latest_entries)
 
     def callback_update_prices(self, entries: List[Entry]) -> None:
@@ -121,7 +122,7 @@ class Orchestrator:
 
             self.latest_prices[pair_id][entry_type][source] = entry
 
-    def get_all_available_entries(self) -> None:
+    def flush_all_entries(self) -> None:
         """
         Retrieves all the available entries from our latest_prices dictionnary and
         clear them (meaning the dictionnary will be empty after this operation).
