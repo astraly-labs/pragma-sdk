@@ -40,20 +40,22 @@ async def main(
         api_base_url=api_base_url,
         api_key=api_key,
     )
+
     logger.info("Creating Fetcher client & adding fetchers...")
     fetcher_client = await add_all_fetchers(
         fetcher_client=FetcherClient(),
         publisher_name=publisher_name,
         price_configs=price_configs,
     )
+
     logger.info("Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
     listener = ChainPriceListener(polling_frequency=2, assets=[])
     pusher = PricePusher(client=pragma_client)
-
     orchestrator = Orchestrator(
         price_configs=price_configs, poller=poller, listener=listener, pusher=pusher
     )
+
     logger.info("GO! Orchestration starting 🚀")
     await orchestrator.run_forever()
 
