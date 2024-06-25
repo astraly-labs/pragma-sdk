@@ -94,6 +94,7 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
+  "scripts"
 ]
 # Same as Black.
 line-length = 88
