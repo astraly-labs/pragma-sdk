@@ -64,13 +64,15 @@ class Orchestrator:
 
     async def _listen_for_signals_task(self) -> None:
         while True:
-            await asyncio.sleep(120)
+            await asyncio.sleep(15)
+            logger.info("Listen chain/API & at some point, send signal...")
             # await self.listener.wait_for_signal()
             # self.push_event.set()
 
     async def _push_prices_task(self) -> None:
         while True:
-            await asyncio.sleep(120)
+            await asyncio.sleep(15)
+            logger.info("At some point, push prices...")
             # await self.push_event.wait()  # Wait for the signal
             # self.push_event.clear()
             # self.pusher.push(self.latest_prices)  # Implement push logic in pusher
