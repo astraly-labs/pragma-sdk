@@ -161,7 +161,7 @@ class PriceListener(IPriceListener):
         return False
 
     def _is_in_deviation_bounds(self, price: int, ref_price: int) -> bool:
-        max_deviation = (self.price_config.price_deviation / 100) * ref_price
+        max_deviation = self.price_config.price_deviation * ref_price
         
         lower_bound = ref_price - max_deviation
         upper_bound = ref_price + max_deviation
