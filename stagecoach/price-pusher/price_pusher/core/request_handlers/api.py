@@ -6,6 +6,7 @@ from pragma.core.entry import Entry, SpotEntry
 from pragma.publisher.client import PragmaAPIClient, EntryResult, PragmaAPIError
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
+from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class APIRequestHandler(IRequestHandler):
         Fetch last entry for the asset.
         TODO: does not work for future.
         """
-        pair = list(asset.pair).join("/")
+        pair = asset_to_pair_id(asset)
         try:
             entry_result: EntryResult = await self.client.get_entry(pair)
         except PragmaAPIError:

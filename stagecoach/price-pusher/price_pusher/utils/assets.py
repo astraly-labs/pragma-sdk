@@ -3,7 +3,7 @@ from pragma.core.assets import PragmaAsset
 
 def asset_to_pair_id(asset: PragmaAsset) -> str:
     if "pair" in asset:
-        return list(asset.pair).join("/")
+        return "/".join(list(asset["pair"]))
     elif "detail" in asset:
         return asset.detail.asset_name
     else:

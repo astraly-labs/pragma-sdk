@@ -16,7 +16,6 @@ from price_pusher.core.pusher import PricePusher
 from price_pusher.core.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import (
     PriceConfig,
-    get_all_unique_assets_from_config_list,
 )
 from price_pusher.configs.cli import setup_logging, load_private_key, create_client
 from price_pusher.orchestrator import Orchestrator
@@ -60,13 +59,16 @@ async def main(
     RequestHandlerClass = (
         ChainRequestHandler if target == "onchain" else APIRequestHandler
     )
-    listener = PriceListener(
-        request_handler=RequestHandlerClass(client=pragma_client.client),
-        polling_frequency_in_s=2,
-        assets=get_all_unique_assets_from_config_list(price_configs),
-    )
+    listeners: List[PriceListener] = []
+    for price_config in price_configs:
+        new_listener = PriceListener(
+            request_handler=RequestHandlerClass(client=pragma_client.client),
+            price_config=price_config,
+            polling_frequency_in_s=2,
+        )
+        listeners.append(new_listener)
     pusher = PricePusher(client=pragma_client)
-    orchestrator = Orchestrator(poller=poller, listener=listener, pusher=pusher)
+    orchestrator = Orchestrator(poller=poller, listeners=listeners, pusher=pusher)
 
     logger.info("GO! Orchestration starting 🚀")
     await orchestrator.run_forever()

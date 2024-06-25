@@ -2,12 +2,12 @@ import logging
 
 from typing import Optional
 
-from pragma.core.assets import PragmaAsset, PragmaFutureAsset, PragmaSpotAsset
+from pragma.core.assets import PragmaAsset
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.publisher.client import PragmaOnChainClient
-from pragma.core.mixins.oracle import OracleResponse
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
+from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,18 @@ class ChainRequestHandler(IRequestHandler):
         return entry
 
     async def _fetch_oracle_price(self, asset: PragmaAsset) -> Optional[Entry]:
-        pair_id = list(asset.pair).join("/")
-
-        oracle_response: Optional[OracleResponse] = None
-        if isinstance(asset, PragmaSpotAsset):
-            oracle_response = await self.client.get_spot(pair_id)
-            return SpotEntry.from_dict(oracle_response)
-        elif isinstance(asset, PragmaFutureAsset):
-            oracle_response = await self.client.get_future(pair_id, 0)
-            return FutureEntry.from_dict(oracle_response)
+        pair_id = asset_to_pair_id(asset)
+        oracle_response = None
+        try:
+            if asset["type"] == "SPOT":
+                oracle_response = await self.client.get_spot(pair_id)
+                return SpotEntry.from_oracle_response(asset, oracle_response)
+            elif asset["type"] == "FUTURE":
+                oracle_response = await self.client.get_future(pair_id, 0)
+                return FutureEntry.from_oracle_response(asset, oracle_response)
+        except Exception as e:
+            raise Exception(
+                f"Could not fetch fetch price for {asset_to_pair_id(asset)}: {e}"
+            )
         if oracle_response is None:
             return None

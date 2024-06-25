@@ -3,7 +3,11 @@ from __future__ import annotations
 import abc
 from typing import Dict, List, Optional, Tuple, Union
 
-from pragma.core.assets import get_asset_spec_for_pair_id_by_type
+from pragma.core.assets import (
+    get_asset_spec_for_pair_id_by_type,
+    PragmaSpotAsset,
+    PragmaFutureAsset,
+)
 from pragma.core.utils import felt_to_str, str_to_felt
 
 
@@ -191,6 +195,20 @@ class SpotEntry(Entry):
         return felt_to_str(self.base.source)
 
     @staticmethod
+    def from_oracle_response(
+        asset: PragmaSpotAsset, oracle_response: dict
+    ) -> "SpotEntry":
+        return SpotEntry(
+            str_to_felt(",".join(asset["pair"])),
+            oracle_response[0],
+            oracle_response[2],
+            "ONCHAIN",
+            "AGGREGATION",
+            0,
+            autoscale_volume=False,
+        )
+
+    @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
         base = dict(entry_dict["base"])
         return SpotEntry(
@@ -357,5 +375,20 @@ class FutureEntry(Entry):
             base["publisher"],
             entry_dict["expiration_timestamp"],
             volume=entry_dict["volume"],
+            autoscale_volume=False,
+        )
+
+    @staticmethod
+    def from_oracle_response(
+        asset: PragmaFutureAsset, oracle_response: dict
+    ) -> "FutureEntry":
+        return FutureEntry(
+            str_to_felt(",".join(asset["pair"])),
+            oracle_response[0],
+            oracle_response[2],
+            "ONCHAIN",
+            "AGGREGATION",
+            oracle_response[4],
+            0,
             autoscale_volume=False,
         )

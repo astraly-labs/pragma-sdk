@@ -23,10 +23,13 @@ class PricePusher(IPricePusher):
         """
         Push the entries passed as parameter with the internal pragma client.
         """
+        logger.info(
+            f"👷‍♂️ Processing {len(entries)} new assets to push from the queue..."
+        )
         try:
             response = await self.client.publish_entries(entries)
-            logger.info("✅ Successfully published entries!")
+            logger.info("... ✅ successfully published entries!")
             return response
         except Exception as e:
-            logger.error(f"⛔ Could not publish entries : {e}")
+            logger.error(f"... ⛔ could not publish entries : {e}")
             return None

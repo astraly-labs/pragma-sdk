@@ -2,17 +2,19 @@ import asyncio
 import logging
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional
 
 from pragma.core.entry import Entry, SpotEntry
-from pragma.core.assets import PragmaAsset, AssetType
+from pragma.core.assets import AssetType
 
+from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.type_aliases import (
     DurationInSeconds,
     LatestOrchestratorPairPrices,
     LatestOraclePairPrices,
 )
+from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +25,16 @@ class IPriceListener(ABC):
     """
 
     request_handler: IRequestHandler
+    price_config: PriceConfig
+
     oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
-    assets: List[PragmaAsset]
+
     notification_event: asyncio.Event
     polling_frequency_in_s: DurationInSeconds
+
+    @abstractmethod
+    def _log_listener_spawning(self) -> None: ...
 
     @abstractmethod
     async def _fetch_all_oracle_prices(self) -> None: ...
@@ -56,18 +63,19 @@ class PriceListener(IPriceListener):
     def __init__(
         self,
         request_handler: IRequestHandler,
+        price_config: PriceConfig,
         polling_frequency_in_s: DurationInSeconds,
-        assets: List[PragmaAsset],
     ) -> None:
         self.request_handler = request_handler
+        self.price_config = price_config
 
         self.oracle_prices = {}
         self.orchestrator_prices = None
 
-        self.polling_frequency_in_s = polling_frequency_in_s
-        self.assets = assets
-
         self.notification_event = asyncio.Event()
+        self.polling_frequency_in_s = polling_frequency_in_s
+
+        self._log_listener_spawning()
 
     async def run_forever(self) -> None:
         """
@@ -99,7 +107,7 @@ class PriceListener(IPriceListener):
         """
         tasks = [
             self.request_handler.fetch_latest_asset_price(asset)
-            for asset in self.assets
+            for asset in self.price_config.get_all_assets()
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for entry in results:
@@ -108,8 +116,13 @@ class PriceListener(IPriceListener):
                 continue
             if entry is None:
                 continue
+
             pair_id = entry.get_pair_id()
             asset_type = "SPOT" if isinstance(entry, SpotEntry) else "FUTURE"
+
+            if pair_id not in self.oracle_prices:
+                self.oracle_prices[pair_id] = {}
+
             self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
@@ -126,7 +139,11 @@ class PriceListener(IPriceListener):
         return max(entries, key=lambda entry: entry.listener.timestamp, default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
-        # TODO
+        """
+        Compare the oracle prices with our orchestrator fetched prices from sources.
+        If some conditions are met, we return true, else false, meaning that we
+        can send a notification to the orchestrator.
+        """
         return False
 
     def _notify(self) -> None:
@@ -135,3 +152,11 @@ class PriceListener(IPriceListener):
         """
         logger.info("🏓 Sending notification to the Orchestrator!")
         self.notification_event.set()
+
+    def _log_listener_spawning(self) -> None:
+        """
+        Logs that a thread has been successfuly spawned for this listener.
+        """
+        assets = self.price_config.get_all_assets()
+        pairs = [asset_to_pair_id(asset) for asset in assets]
+        logging.info(f"👂 Spawned a listener for pairs: {pairs}")
