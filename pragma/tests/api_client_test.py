@@ -249,13 +249,15 @@ async def test_async_api_client_spot_404_error(forked_client):
                 + f"{quote_asset}/{base_asset}"
             )
             mock.get(url, status=404)
-            result = await api_client.get_entry(
-                f'{asset["pair"][0]}/{asset["pair"][1]}'
+            # Use pytest.raises to capture the exception
+            with pytest.raises(PragmaAPIError) as exc_info:
+                await api_client.get_entry(f"{quote_asset}/{base_asset}")
+
+            # Assert the error message or other details if needed
+            assert (
+                str(exc_info.value)
+                == f"Unable to GET /v1/data for pair {quote_asset}/{base_asset}"
             )
-            error = PragmaAPIError(
-                f"Unable to GET /v1/data for pair {quote_asset}/{base_asset}"
-            )
-            assert result == error
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -334,13 +336,15 @@ async def test_async_api_client_ohlc_404_error(forked_client):
                 + f"{quote_asset}/{base_asset}"
             )
             mock.get(url, status=404)
-            result = await api_client.api_get_ohlc(
-                f'{asset["pair"][0]}/{asset["pair"][1]}'
+            # Use pytest.raises to capture the exception
+            with pytest.raises(PragmaAPIError) as exc_info:
+                await api_client.api_get_ohlc(f'{asset["pair"][0]}/{asset["pair"][1]}')
+
+            # Assert the error message or other details if needed
+            assert (
+                str(exc_info.value)
+                == f"Failed to get OHLC data for pair {quote_asset}/{base_asset}"
             )
-            error = PragmaAPIError(
-                f"Failed to get OHLC data for pair {quote_asset}/{base_asset}"
-            )
-            assert result == error
 
 
 # @mock.patch("time.time", mock.MagicMock(return_value=12345))
