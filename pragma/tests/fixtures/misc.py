@@ -14,7 +14,7 @@ def pytest_addoption(parser):
         action="store",
         default="",
         help="The block number to fork from. See: "
-        "https://book.dojoengine.org/toolchain/katana/reference.html",
+        "https://0xspaceshard.github.io/starknet-devnet-rs/docs/forking",
     )
     parser.addoption(
         "--client",

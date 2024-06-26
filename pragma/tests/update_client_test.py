@@ -35,7 +35,7 @@ async def pragma_fork_client(
     address_and_private_key: Tuple[str, str],
 ) -> PragmaClient:
     # TODO(#000): refactor this
-    fork_network = os.getenv("FORK_NETWORK")
+    fork_network = os.getenv("NETWORK_FORK")
     deployments = get_deployments(
         fork_network if fork_network != "devnet" else "mainnet"
     )
@@ -86,7 +86,7 @@ async def test_update_oracle(
     pragma_fork_client: PragmaClient, declare_oracle: DeclareResult
 ):
     # TODO(#000): refactor this
-    fork_network = os.getenv("FORK_NETWORK")
+    fork_network = os.getenv("NETWORK_FORK")
     deployments = get_deployments(
         fork_network if fork_network != "devnet" else "sepolia"
     )

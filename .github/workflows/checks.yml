@@ -132,15 +132,15 @@ jobs:
       - name: Install rust
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
 
-      - name: Install dojoup
+      - name: Verify Rust and Cargo installation
         run: |
-          curl -L https://install.dojoengine.org | bash
-      
-      - name: Install dojo
-        run: |-
-          /home/runner/.config/.dojo/bin/dojoup -v 0.6.1-alpha.3
-          sudo mv /home/runner/.config/.dojo/bin/katana /usr/local/bin/
+          rustc --version
+          cargo --version
+
+      - name: Install starknet-devnet
+        run: cargo install starknet-devnet
 
       # ====================== RUN TESTS ====================== #
 
@@ -151,7 +151,7 @@ jobs:
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
-          FORK_NETWORK: mainnet
+          NETWORK_FORK: mainnet
           TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
           TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
         run: |
