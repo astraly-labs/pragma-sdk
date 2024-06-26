@@ -31,7 +31,7 @@ class PricePoller(IPricePoller):
 
     @property
     def is_requesting_onchain(self) -> bool:
-        self.fetcher_client.fetchers[0].client.full_node_client is not None
+        any(fetcher.client.full_node_client is not None for fetcher in self.fetcher_client.fetchers)
 
     def set_update_prices_callback(self, callback: FnUpdatePrices) -> None:
         self.update_prices_callback = callback
@@ -43,8 +43,7 @@ class PricePoller(IPricePoller):
         The orchestrator will be responsible of handling the entries.
         """
         if self.update_prices_callback is None:
-            logger.error("Cannot call poll_prices if the update callback is not set.")
-            return []
+            raise ValueError("Update callback must be set.")
 
         async def fetch_action():
             new_entries = await self.fetcher_client.fetch(
@@ -54,15 +53,15 @@ class PricePoller(IPricePoller):
 
         try:
             new_entries = await fetch_action()
-            logger.info(f"Successfully fetched {len(new_entries)} new entries!")
+            logger.info(f"POLLER successfully fetched {len(new_entries)} new entries!")
             self.update_prices_callback(new_entries)
         except Exception as e:
             if self.is_requesting_onchain():
                 try:
-                    logger.warning("🤔 Fetching on chain prices failed. Retrying...")
+                    logger.warning("🤔 POLLER fetching prices failed. Retrying...")
                     new_entries = await retry_async(fetch_action, retries=5, delay_in_s=5)
                     self.update_prices_callback(new_entries)
                 except Exception as e:
-                    raise ValueError(f"Retries for polling new prices still failed: {e}")
+                    raise ValueError(f"POLLERS retries for fetching new prices still failed: {e}")
             else:
                 raise e

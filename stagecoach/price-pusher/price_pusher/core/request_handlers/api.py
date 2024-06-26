@@ -3,7 +3,7 @@ from typing import Optional
 
 from pragma.core.assets import PragmaAsset
 from pragma.core.entry import Entry, SpotEntry
-from pragma.publisher.client import PragmaAPIClient, EntryResult, PragmaAPIError
+from pragma.publisher.client import PragmaAPIClient, EntryResult
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.utils.assets import asset_to_pair_id
@@ -23,15 +23,7 @@ class APIRequestHandler(IRequestHandler):
         TODO: Currently only works for spot assets.
         """
         pair = asset_to_pair_id(asset)
-        try:
-            entry_result: EntryResult = await self.client.get_entry(pair)
-        except PragmaAPIError:
-            entry_result = None
-
-        if entry_result is None:
-            logger.error("Can't get price for {}: unknown asset type.")
-            return None
-
+        entry_result: EntryResult = await self.client.get_entry(pair)
         entry = SpotEntry(
             pair_id=entry_result.pair_id,
             price=int(entry_result.data, 16),

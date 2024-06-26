@@ -12,11 +12,12 @@ from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.type_aliases import (
     DurationInSeconds,
     LatestOrchestratorPairPrices,
-    LatestOraclePairPrices,
     HumanReadableId,
 )
 from price_pusher.utils.assets import asset_to_pair_id
 from price_pusher.utils.readable_id import generate_human_readable_id
+from pragma.publisher.client import PragmaAPIError
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,6 @@ class IPriceListener(ABC):
     request_handler: IRequestHandler
     price_config: PriceConfig
 
-    oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
 
     notification_event: asyncio.Event
@@ -105,6 +105,7 @@ class PriceListener(IPriceListener):
                 last_fetch_time = current_time
             if await self._does_oracle_needs_update():
                 self._notify()
+                last_fetch_time = -1
             # Check every second if the oracle needs an update
             await asyncio.sleep(1)
 
@@ -123,8 +124,9 @@ class PriceListener(IPriceListener):
             for asset in self.price_config.get_all_assets()
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
+
         for entry in results:
-            if isinstance(entry, Exception):
+            if isinstance(entry, Exception) or isinstance(entry, PragmaAPIError):
                 logger.error(f"Error fetching oracle price: {entry}")
                 continue
             if entry is None:
@@ -163,9 +165,22 @@ class PriceListener(IPriceListener):
         if len(self.orchestrator_prices.keys()) == 0:
             return False
 
-        for pair_id, oracle_entry in self.oracle_prices.items():
+        if len(self.oracle_prices.keys()) == 0:
+            logging.error(
+                f"LISTENER {self.id} have no oracle prices at all... Sending notification."
+            )
+            return True
+
+        for pair_id, oracle_entries in self.oracle_prices.items():
+            if pair_id not in self.orchestrator_prices:
+                continue
             for asset_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
-                oracle_entry = oracle_entry[asset_type]
+                if asset_type not in oracle_entries:
+                    logging.warn(
+                        f"LISTENER {self.id} miss prices in oracle entries. Sending notification."
+                    )
+                    return True
+                oracle_entry = oracle_entries[asset_type]
                 # First check if the oracle entry is outdated
                 newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
@@ -187,6 +202,7 @@ class PriceListener(IPriceListener):
 
         is_deviating = not (lower_bound <= new_price <= upper_bound)
         if is_deviating:
+            # TODO: show current deviation
             logger.info(
                 f"🔔 Newest price for {pair_id} is deviating from the "
                 "config bounds. Triggering an update!"
@@ -207,6 +223,7 @@ class PriceListener(IPriceListener):
         is_outdated = delta_t > max_time_elapsed
 
         if is_outdated:
+            # TODO: show time diff
             logger.info(f"🔔 Last oracle entry for {pair_id} is too old. " "Triggering an update!")
 
         return is_outdated
@@ -215,7 +232,7 @@ class PriceListener(IPriceListener):
         """
         Sends a notification.
         """
-        logger.info(f"🏓 Listener [{self.id}] sending notification to the Orchestrator!")
+        logger.info(f"🏓 LISTENER [{self.id}] sending notification to the Orchestrator!")
         self.notification_event.set()
 
     def _log_listener_spawning(self) -> None:

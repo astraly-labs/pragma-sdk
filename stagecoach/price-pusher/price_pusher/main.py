@@ -62,7 +62,7 @@ async def main(
         new_listener = PriceListener(
             request_handler=RequestHandlerClass(client=pragma_client.client),
             price_config=price_config,
-            polling_frequency_in_s=2,
+            polling_frequency_in_s=20,
         )
         listeners.append(new_listener)
     pusher = PricePusher(client=pragma_client)
@@ -149,6 +149,10 @@ def cli_entrypoint(
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
+
+    # Make sure that the API base url does not ends with /
+    if api_base_url is not None and api_base_url.endswith("/"):
+        api_base_url = api_base_url.rstrip()[:-1]
 
     asyncio.run(
         main(
