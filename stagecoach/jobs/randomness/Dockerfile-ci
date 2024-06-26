@@ -8,7 +8,4 @@ RUN pip install pragma-sdk boto3
 
 COPY app.py .
 
-COPY task_runner.sh /task_runner.sh
-RUN chmod +x /task_runner.sh
-# Run the command on container startup
-ENTRYPOINT ["/task_runner.sh"]
+CMD ["python", "app.py"]
