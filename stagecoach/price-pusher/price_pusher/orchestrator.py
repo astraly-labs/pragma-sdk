@@ -46,6 +46,8 @@ class Orchestrator:
 
         # Entities communication.
         self.poller.set_update_prices_callback(self.callback_update_prices)
+        # Send a reference to the orchestration newest prices to the listeners.
+        # NOTE: the listeners will never mutate the orchestrator prices. Only read.
         for listener in self.listeners:
             listener.set_orchestrator_prices(self.latest_prices)
 
@@ -84,8 +86,8 @@ class Orchestrator:
 
     async def _start_listener(self, listener: PriceListener) -> None:
         """
-        Start each listener in their own thread & listen for them in case they
-        push a notification.
+        Start a listener in its own thread & listen for it in case a notification
+        is pushed.
         """
         await asyncio.gather(listener.run_forever(), self._handle_listener(listener))
 
@@ -103,9 +105,9 @@ class Orchestrator:
                 "Sending entries into queue for: "
                 f"{[asset_to_pair_id(asset) for asset in assets_to_push]}"
             )
-            listener.notification_event.clear()
             entries_to_push = self._flush_entries_for_assets(assets_to_push)
             await self.push_queue.put(entries_to_push)
+            listener.notification_event.clear()
 
     async def _pusher_service(self) -> None:
         """
