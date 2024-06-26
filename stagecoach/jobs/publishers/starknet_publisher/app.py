@@ -166,7 +166,7 @@ async def _handler(assets):
     _entries = await publisher_client.fetch()
     print("entries", _entries)
 
-    enable_strk_fees = enable_strk_fees.lower() in ("true", "1", "yes")
+    enable_strk_fees = ENABLE_STRK_FEES.lower() in ("true", "1", "yes")
 
     print(f"ENABLE_STRK_FEES is set to: {enable_strk_fees}")
     response = await publisher_client.publish_many(
