@@ -329,7 +329,7 @@ async def test_balance_evolution(
 
     request_id = 4
     seed = 1
-    callback_fee_limit = 59600000000000
+    callback_fee_limit = 49600000000000
     callback_address = example_randomness.address
     publish_delay = 0
     calldata = [0x1234, 0x1434, 314141]
