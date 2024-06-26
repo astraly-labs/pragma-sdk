@@ -64,7 +64,6 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         "--seed",
         str(1),
-        
     ]
     return command
 
@@ -103,7 +102,6 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         "--fork-network",
         str(rpc_url),
-        
     ]
 
     return command
