@@ -38,7 +38,7 @@ from pragma.tests.utils import filter_assets_by_type
 
 def forked_client(request) -> Client:
     """
-    This module-scope fixture prepares a forked katana
+    This module-scope fixture prepares a forked starknet
     client for e2e testing.
 
     :return: a starknet Client
@@ -60,10 +60,9 @@ def forked_client(request) -> Client:
         str(1),
         "--seed",
         str(1),
-        ,
     ]
     if block_number is not None:
-        print(f"forking katana at block {block_number}")
+        print(f"forking starknet at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
     subprocess.Popen(command)
     time.sleep(10)
