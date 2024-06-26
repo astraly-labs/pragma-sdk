@@ -45,8 +45,8 @@ def devnet_node(module_mocker, port) -> str:
     rpc_url = RPC_URLS["testnet"][random.randint(0, len(RPC_URLS["testnet"]) - 1)]
 
     command = [
-        "katana",
-        "--rpc-url",
+        "starknet-devnet",
+        "--fork-network",
         str(rpc_url),
         "--host",
         "127.0.0.1",

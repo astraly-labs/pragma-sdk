@@ -49,8 +49,8 @@ def forked_client(request) -> Client:
 
     rpc_url = RPC_URLS[network][random.randint(0, len(RPC_URLS[network]) - 1)]
     command = [
-        "katana",
-        "--rpc-url",
+        "starknet-devnet",
+        "--fork-network",
         str(rpc_url),
         "--host",
         "127.0.0.1",
@@ -60,7 +60,7 @@ def forked_client(request) -> Client:
         str(1),
         "--seed",
         str(1),
-        "--disable-fee",
+        ,
     ]
     if block_number is not None:
         print(f"forking katana at block {block_number}")
