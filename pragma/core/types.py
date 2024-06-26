@@ -6,10 +6,10 @@ from typing import Dict, List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
 
+from pragma.core.logger import get_stream_logger
 from pragma.core.utils import felt_to_str, str_to_felt
 
-logging.basicConfig()
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 logger.setLevel(logging.INFO)
 
 

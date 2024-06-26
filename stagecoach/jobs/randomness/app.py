@@ -5,6 +5,7 @@ import os
 import boto3
 
 from pragma.core.client import PragmaClient
+from pragma.core.logger import get_stream_logger
 
 START_BLOCK = int(os.environ.get("START_BLOCK", 0))
 NETWORK = os.environ.get("NETWORK", "sepolia")
@@ -12,6 +13,8 @@ SECRET_NAME = os.environ["SECRET_NAME"]
 ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 16)
 VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
 VRF_UPDATE_TIME_SECONDS = int(os.environ.get("VRF_UPDATE_TIME_SECONDS", 10))
+
+logger = get_stream_logger()
 
 
 def _get_pvt_key():
@@ -29,6 +32,7 @@ def _get_pvt_key():
 
 async def main():
     admin_private_key = _get_pvt_key()
+    # admin_private_key = int(os.environ.get("ADMIN_PRIVATE_KEY"), 16)
 
     client = PragmaClient(
         network=NETWORK,
@@ -38,6 +42,7 @@ async def main():
     client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
 
     while True:
+        logger.info("Checking for randomness requests...")
         await client.handle_random(admin_private_key, START_BLOCK)
         await asyncio.sleep(VRF_UPDATE_TIME_SECONDS)
 

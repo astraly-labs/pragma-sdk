@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.4.6"
+version = "1.4.7"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
@@ -94,6 +94,7 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
+  "pragma-oracle",
 ]
 # Same as Black.
 line-length = 88

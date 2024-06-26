@@ -1,5 +1,4 @@
 import collections
-import logging
 import time
 from typing import List, Optional
 
@@ -13,10 +12,11 @@ from starknet_py.net.client_models import ResourceBounds
 
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
+from pragma.core.logger import get_stream_logger
 from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 OracleResponse = collections.namedtuple(
     "OracleResponse",
