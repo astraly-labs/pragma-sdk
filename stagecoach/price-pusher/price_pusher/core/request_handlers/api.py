@@ -19,8 +19,8 @@ class APIRequestHandler(IRequestHandler):
 
     async def fetch_latest_asset_price(self, asset: PragmaAsset) -> Optional[Entry]:
         """
-        Fetch last entry for the asset.
-        TODO: does not work for future.
+        Fetch last entry for the asset from the API.
+        TODO: Currently only works for spot assets.
         """
         pair = asset_to_pair_id(asset)
         try:

@@ -13,8 +13,10 @@ from price_pusher.type_aliases import (
     DurationInSeconds,
     LatestOrchestratorPairPrices,
     LatestOraclePairPrices,
+    HumanReadableId,
 )
 from price_pusher.utils.assets import asset_to_pair_id
+from price_pusher.utils.readable_id import generate_human_readable_id
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class IPriceListener(ABC):
     """
     Sends a signal to the Orchestrator when we need to update prices.
     """
+
+    id: HumanReadableId
 
     request_handler: IRequestHandler
     price_config: PriceConfig
@@ -74,6 +78,7 @@ class PriceListener(IPriceListener):
         price_config: PriceConfig,
         polling_frequency_in_s: DurationInSeconds,
     ) -> None:
+        self.id = generate_human_readable_id()
         self.request_handler = request_handler
         self.price_config = price_config
 
@@ -144,21 +149,6 @@ class PriceListener(IPriceListener):
         entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
         return max(entries, key=lambda entry: entry.base.timestamp, default=None)
 
-    def _notify(self) -> None:
-        """
-        Sends a notification.
-        """
-        logger.info("🏓 Sending notification to the Orchestrator!")
-        self.notification_event.set()
-
-    def _log_listener_spawning(self) -> None:
-        """
-        Logs that a thread has been successfuly spawned for this listener.
-        """
-        assets = self.price_config.get_all_assets()
-        pairs = [asset_to_pair_id(asset) for asset in assets]
-        logging.info(f"👂 Spawned a listener for pairs: {pairs}")
-
     async def _does_oracle_needs_update(self) -> bool:
         """
         Return if the oracle prices needs an update.
@@ -220,3 +210,18 @@ class PriceListener(IPriceListener):
             logger.info(f"🔔 Last oracle entry for {pair_id} is too old. " "Triggering an update!")
 
         return is_outdated
+
+    def _notify(self) -> None:
+        """
+        Sends a notification.
+        """
+        logger.info(f"🏓 Listener [{self.id}] sending notification to the Orchestrator!")
+        self.notification_event.set()
+
+    def _log_listener_spawning(self) -> None:
+        """
+        Logs that a thread has been successfuly spawned for this listener.
+        """
+        assets = self.price_config.get_all_assets()
+        pairs = [asset_to_pair_id(asset) for asset in assets]
+        logging.info(f"👂 Spawned listener [{self.id}] for pairs: {pairs}")

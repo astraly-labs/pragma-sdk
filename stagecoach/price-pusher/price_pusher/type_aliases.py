@@ -9,3 +9,5 @@ PairId = str
 SourceName = str
 LatestOrchestratorPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Entry]]]
 LatestOraclePairPrices = Dict[PairId, Dict[AssetType, Entry]]
+
+HumanReadableId = str

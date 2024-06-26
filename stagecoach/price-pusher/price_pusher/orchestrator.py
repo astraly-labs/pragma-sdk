@@ -99,7 +99,8 @@ class Orchestrator:
             await listener.notification_event.wait()
             assets_to_push = listener.price_config.get_all_assets()
             logger.info(
-                "💡 Notification received from a Listener! Pushing entries into queue for:\n"
+                f"💡 Notification received from Listener [{listener.id}] ! "
+                "Pushing entries into queue for: "
                 f"{[asset_to_pair_id(asset) for asset in assets_to_push]}"
             )
             listener.notification_event.clear()
