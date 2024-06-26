@@ -27,7 +27,7 @@ ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 @pytest.fixture(scope="module")
 def forked_client(request, module_mocker, pytestconfig) -> Client:
     """
-    This module-scope fixture prepares a forked katana
+    This module-scope fixture prepares a forked starknet
     client for e2e testing.
 
     :return: a starknet Client
@@ -54,7 +54,7 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
         str(1),
     ]
     if block_number is not None:
-        print(f"forking katana at block {block_number}")
+        print(f"forking starknet at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
     subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)

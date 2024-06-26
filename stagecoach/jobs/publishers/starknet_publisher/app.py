@@ -44,6 +44,7 @@ PROPELLER_API_KEY = os.environ.get("PROPELLER_API_KEY")
 PAGINATION = os.environ.get("PAGINATION")
 RPC_URL = os.environ.get("RPC_URL")
 MAX_FEE = int(os.getenv("MAX_FEE", int(1e17)))
+ENABLE_STRK_FEES = os.environ.get("ENABLE_STRK_FEES", "False")
 
 DEVIATION_THRESHOLD = float(os.getenv("DEVIATION_THRESHOLD", 0.01))
 FREQUENCY_SECONDS = int(os.getenv("FREQUENCY_SECONDS", 60))
@@ -164,10 +165,16 @@ async def _handler(assets):
 
     _entries = await publisher_client.fetch()
     print("entries", _entries)
+
+    enable_strk_fees = ENABLE_STRK_FEES.lower() in ("true", "1", "yes")
+
+    print(f"ENABLE_STRK_FEES is set to: {enable_strk_fees}")
     response = await publisher_client.publish_many(
         _entries,
         pagination=PAGINATION,
         max_fee=MAX_FEE,
+        enable_strk_fees=enable_strk_fees,
+        auto_estimate=True,  # For safety or should we switch to l1_resource_bounds for cost ?
     )
 
     print(

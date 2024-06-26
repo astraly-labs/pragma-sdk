@@ -91,7 +91,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
     # Publish SPOT data
     print(data)
-    await publisher.publish_many(data, pagination=PAGINATION)
+    await publisher.publish_many(data, pagination=PAGINATION, auto_estimate=True)
 
 
 @pytest.mark.asyncio
@@ -118,7 +118,7 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
         d for d in data_async if isinstance(d, FutureEntry)
     ]
     print(data_list)
-    await publisher.publish_many(data_list, pagination=PAGINATION)
+    await publisher.publish_many(data_list, pagination=PAGINATION, auto_estimate=True)
 
 
 @pytest.mark.asyncio
@@ -149,7 +149,7 @@ async def test_publisher_client_all_assets(pragma_client: PragmaClient):
 
     data = [d for d in data if isinstance(d, Entry)]
     print(data)
-    await publisher.publish_many(data, pagination=PAGINATION)
+    await publisher.publish_many(data, pagination=PAGINATION, auto_estimate=True)
 
 
 def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
