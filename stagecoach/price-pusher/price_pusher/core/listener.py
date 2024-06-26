@@ -200,7 +200,7 @@ class PriceListener(IPriceListener):
         lower_bound = oracle_price - max_deviation
         upper_bound = oracle_price + max_deviation
 
-        is_deviating = not (lower_bound <= new_price <= upper_bound)
+        is_deviating = not (lower_bound < new_price < upper_bound)
         if is_deviating:
             # TODO: show current deviation
             logger.info(
