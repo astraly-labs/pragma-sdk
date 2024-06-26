@@ -50,7 +50,7 @@ async def invoke_(
         )
         if enable_strk_fees
         else await self.get_account.sign_invoke_v1(
-            calls=self, max_fee=max_fee, auto_estimate=auto_estimate
+            calls=self, max_fee=max_fee
         )
     )
 
