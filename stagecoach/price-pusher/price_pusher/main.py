@@ -2,20 +2,21 @@ import asyncio
 import click
 import logging
 
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from pragma.publisher.client import FetcherClient
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
-from price_pusher.core.request_handlers import (
-    APIRequestHandler,
-    ChainRequestHandler,
-)
+from price_pusher.core.request_handlers import REQUEST_HANDLER_REGISTRY
 from price_pusher.core.pusher import PricePusher
 from price_pusher.core.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import (
     PriceConfig,
+)
+from pragma.publisher.client import (
+    PragmaOnChainClient,
+    PragmaAPIClient,
 )
 from price_pusher.configs.cli import setup_logging, load_private_key, create_client
 from price_pusher.orchestrator import Orchestrator
@@ -56,20 +57,35 @@ async def main(
 
     logger.info("⏳ Starting orchestration...")
     poller = PricePoller(fetcher_client=fetcher_client)
-    RequestHandlerClass = ChainRequestHandler if target == "onchain" else APIRequestHandler
+    pusher = PricePusher(client=pragma_client)
+    orchestrator = Orchestrator(
+        poller=poller,
+        listeners=_create_listeners(price_configs, target, pragma_client),
+        pusher=pusher,
+    )
+
+    logger.info("GO! Orchestration starting 🚀")
+    await orchestrator.run_forever()
+
+
+def _create_listeners(
+    price_configs: List[PriceConfig],
+    target: str,
+    pragma_client: Union[PragmaOnChainClient, PragmaAPIClient],
+) -> List[PriceListener]:
+    """
+    Create a listener for each price configuration. They will be used to monitor a group
+    of pairs during the orchestration.
+    """
     listeners: List[PriceListener] = []
     for price_config in price_configs:
         new_listener = PriceListener(
-            request_handler=RequestHandlerClass(client=pragma_client.client),
+            request_handler=REQUEST_HANDLER_REGISTRY[target](client=pragma_client.client),
             price_config=price_config,
             polling_frequency_in_s=20,
         )
         listeners.append(new_listener)
-    pusher = PricePusher(client=pragma_client)
-    orchestrator = Orchestrator(poller=poller, listeners=listeners, pusher=pusher)
-
-    logger.info("GO! Orchestration starting 🚀")
-    await orchestrator.run_forever()
+    return listeners
 
 
 @click.command()
