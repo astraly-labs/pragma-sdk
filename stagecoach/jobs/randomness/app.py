@@ -11,14 +11,7 @@ NETWORK = os.environ.get("NETWORK", "sepolia")
 SECRET_NAME = os.environ["SECRET_NAME"]
 ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 16)
 VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
-
-
-def handler(event, context):
-    asyncio.run(main())
-
-    return {
-        "success": True,
-    }
+VRF_UPDATE_TIME_SECONDS = int(os.environ.get("VRF_UPDATE_TIME_SECONDS", 10))
 
 
 def _get_pvt_key():
@@ -44,7 +37,9 @@ async def main():
     )
     client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
 
-    await client.handle_random(admin_private_key, START_BLOCK)
+    while True:
+        await client.handle_random(admin_private_key, START_BLOCK)
+        await asyncio.sleep(VRF_UPDATE_TIME_SECONDS)
 
 
 if __name__ == "__main__":
