@@ -77,7 +77,7 @@ async def declare_deploy_oracle(
         ],
         auto_estimate=True,
     )
-    # await deploy_result.wait_for_acceptance()
+    await deploy_result.wait_for_acceptance()
 
     return declare_result, deploy_result, deploy_result_registry
 
