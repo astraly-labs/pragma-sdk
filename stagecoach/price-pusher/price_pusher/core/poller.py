@@ -29,9 +29,10 @@ class PricePoller(IPricePoller):
         self.fetcher_client = fetcher_client
         self.update_prices_callback = None
 
-    @property
     def is_requesting_onchain(self) -> bool:
-        any(fetcher.client.full_node_client is not None for fetcher in self.fetcher_client.fetchers)
+        return any(
+            fetcher.client.full_node_client is not None for fetcher in self.fetcher_client.fetchers
+        )
 
     def set_update_prices_callback(self, callback: FnUpdatePrices) -> None:
         self.update_prices_callback = callback
