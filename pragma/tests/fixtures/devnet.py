@@ -53,9 +53,9 @@ def fork_start_devnet():
 
 def start_devnet_command_unix(devnet_port: int) -> List[str]:
     command = [
-        "katana",
+        "starknet-devnet",
         "--chain-id",
-        "SN_MAIN",
+        "MAINNET",
         "--host",
         "127.0.0.1",
         "--port",
@@ -64,7 +64,6 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         "--seed",
         str(1),
-        "--disable-fee",
     ]
     return command
 
@@ -72,9 +71,9 @@ def start_devnet_command_unix(devnet_port: int) -> List[str]:
 def start_devnet_command_windows(devnet_port: int) -> List[str]:
     return [
         "wsl",
-        "katana",
+        "starknet-devnet",
         "--chain-id",
-        "SN_MAIN",
+        "MAINNET",
         "--host",
         "127.0.0.1",
         "--port",
@@ -87,12 +86,12 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
 
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
-    fork_network = os.getenv("FORK_NETWORK")
+    fork_network = os.getenv("NETWORK_FORK")
     rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
     command = [
-        "katana",
+        "starknet-devnet",
         "--chain-id",
-        "SN_MAIN",
+        "MAINNET",
         "--host",
         "127.0.0.1",
         "--port",
@@ -101,24 +100,23 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
         str(1),
         "--seed",
         str(1),
-        "--rpc-url",
+        "--fork-network",
         str(rpc_url),
-        "--disable-fee",
     ]
 
     return command
 
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
-    fork_network = os.getenv("FORK_NETWORK")
+    fork_network = os.getenv("NETWORK_FORK")
     rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
 
     return [
         "wsl",
-        "katana",
+        "starknet-devnet",
         "--chain-id",
-        "SN_MAIN",
-        "--rpc-url",
+        "MAINNET",
+        "--fork-network",
         str(rpc_url),
         "--port",
         str(devnet_port),

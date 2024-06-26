@@ -13,14 +13,17 @@ poetry install
 
 ## Running Tests Locally
 
-1. Install katana
+1. Install Rust
 ```shell
-curl -L https://install.dojoengine.org | bash
-source /Users/<user>/.zshenv
-dojoup
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-2. Now, you can run tests:
+2. Install Starknet-devnet
+```shell
+cargo install starknet-devnet
+```
+
+3. Now, you can run tests:
 ```shell
 coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests
 ```

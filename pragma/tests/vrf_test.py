@@ -309,7 +309,7 @@ async def test_fails_gas_limit(
     assert pending_reqs == []
 
     status = await vrf_pragma_client.get_request_status(caller_address, 3)
-    assert status.variant == "OUT_OF_GAS"
+    assert status.variant == "REFUNDED"
 
     balance_after = await vrf_pragma_client.get_balance(caller_address)
 
@@ -329,7 +329,7 @@ async def test_balance_evolution(
 
     request_id = 4
     seed = 1
-    callback_fee_limit = 3248900000000000
+    callback_fee_limit = 49600000000000
     callback_address = example_randomness.address
     publish_delay = 0
     calldata = [0x1234, 0x1434, 314141]
