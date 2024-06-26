@@ -80,7 +80,7 @@ class OracleMixin:
         entries: List[Entry],
         pagination: Optional[int] = 40,
         max_fee=int(1e18),
-        enable_strk_fees: Optional[bool] = True,
+        enable_strk_fees: Optional[bool] = False,
         l1_resource_bounds: Optional[ResourceBounds] = None,
         auto_estimate: Optional[bool] = False
     ) -> List[InvokeResult]:
