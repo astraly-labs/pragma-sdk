@@ -43,7 +43,10 @@ async def main():
 
     while True:
         logger.info("Checking for randomness requests...")
-        await client.handle_random(admin_private_key, START_BLOCK)
+        try:
+            await client.handle_random(admin_private_key, START_BLOCK)
+        except Exception as e:
+            logger.error("Error handling randomness requests: %s", e)
         await asyncio.sleep(VRF_UPDATE_TIME_SECONDS)
 
 
