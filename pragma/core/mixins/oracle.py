@@ -47,7 +47,7 @@ class OracleMixin:
         max_fee: int = int(1e18),
         enable_strk_fees: Optional[bool] = False,
         l1_resource_bounds: Optional[ResourceBounds] = None,
-        auto_estimate: Optional[bool] = False
+        auto_estimate: Optional[bool] = False,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -69,9 +69,9 @@ class OracleMixin:
                 }
             },
             max_fee=max_fee,
-            l1_resource_bounds = l1_resource_bounds,
-            auto_estimate = auto_estimate,
-            enable_strk_fees=enable_strk_fees
+            l1_resource_bounds=l1_resource_bounds,
+            auto_estimate=auto_estimate,
+            enable_strk_fees=enable_strk_fees,
         )
         return invocation
 
@@ -82,7 +82,7 @@ class OracleMixin:
         max_fee=int(1e18),
         enable_strk_fees: Optional[bool] = False,
         l1_resource_bounds: Optional[ResourceBounds] = None,
-        auto_estimate: Optional[bool] = False
+        auto_estimate: Optional[bool] = False,
     ) -> List[InvokeResult]:
         if len(entries) == 0:
             logger.warning("Skipping publishing as entries array is empty")
@@ -99,8 +99,8 @@ class OracleMixin:
                     new_entries=[{"Spot": entry} for entry in entries_subset],
                     enable_strk_fees=enable_strk_fees,
                     max_fee=max_fee,
-                    l1_resource_bounds = l1_resource_bounds,
-                    auto_estimate= auto_estimate,
+                    l1_resource_bounds=l1_resource_bounds,
+                    auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -116,8 +116,8 @@ class OracleMixin:
                 new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
                 max_fee=max_fee,
                 enable_strk_fees=enable_strk_fees,
-                l1_resource_bounds = l1_resource_bounds,
-                auto_estimate= auto_estimate,
+                l1_resource_bounds=l1_resource_bounds,
+                auto_estimate=auto_estimate,
                 callback=self.track_nonce,
             )
             invocations.append(invocation)
@@ -138,8 +138,8 @@ class OracleMixin:
                     new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
                     enable_strk_fees=enable_strk_fees,
-                    l1_resource_bounds = l1_resource_bounds,
-                    auto_estimate= auto_estimate,
+                    l1_resource_bounds=l1_resource_bounds,
+                    auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -155,8 +155,8 @@ class OracleMixin:
                 new_entries=[{"Future": entry} for entry in serialized_future_entries],
                 max_fee=max_fee,
                 enable_strk_fees=enable_strk_fees,
-                l1_resource_bounds = l1_resource_bounds,
-                auto_estimate= auto_estimate,
+                l1_resource_bounds=l1_resource_bounds,
+                auto_estimate=auto_estimate,
                 callback=self.track_nonce,
             )
             invocations.append(invocation)

@@ -173,7 +173,7 @@ async def _handler(assets):
         _entries,
         pagination=PAGINATION,
         max_fee=MAX_FEE,
-        auto_estimate= True # For safety or should we switch to l1_resource_bounds for cost ?
+        auto_estimate=True,  # For safety or should we switch to l1_resource_bounds for cost ?
     )
 
     print(

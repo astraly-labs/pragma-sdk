@@ -62,7 +62,9 @@ async def publish_all(assets):
 
     # Use your own custom logic
     _entries = fetch_entries(assets)
-    await publisher_client.publish_many(_entries, max_fee=int(max_fee), auto_estimate=True)
+    await publisher_client.publish_many(
+        _entries, max_fee=int(max_fee), auto_estimate=True
+    )
 
     logger.info("Publishing the following entries:")
     for entry in _entries:

@@ -22,7 +22,7 @@ async def invoke_(
     max_fee: Optional[int] = None,
     auto_estimate: bool = False,
     enable_strk_fees: Optional[bool] = False,
-    l1_resource_bounds : Optional[ResourceBounds] = None,
+    l1_resource_bounds: Optional[ResourceBounds] = None,
     callback: Optional[Callable[[SentTransactionResponse], None]] = None,
     **kwargs,
 ) -> InvokeResult:
@@ -31,7 +31,11 @@ async def invoke_(
     This is useful for tracking the nonce changes
     """
 
-    prepared_call = self.prepare_invoke_v3(*args, **kwargs) if enable_strk_fees else self.prepare_invoke_v1(*args,**kwargs)
+    prepared_call = (
+        self.prepare_invoke_v3(*args, **kwargs)
+        if enable_strk_fees
+        else self.prepare_invoke_v1(*args, **kwargs)
+    )
 
     # transfer ownership to the prepared call
     self = prepared_call
@@ -41,7 +45,7 @@ async def invoke_(
     transaction = (
         await self.get_account.sign_invoke_v3(
             calls=self,
-            l1_resource_bounds = l1_resource_bounds,
+            l1_resource_bounds=l1_resource_bounds,
             auto_estimate=auto_estimate,
         )
         if enable_strk_fees
