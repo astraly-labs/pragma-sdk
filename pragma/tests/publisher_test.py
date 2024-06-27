@@ -60,7 +60,6 @@ SOURCES = [
 @pytest.mark.asyncio
 async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
     publisher_address = pragma_client.account_address()
-
     # Add PRAGMA as Publisher
     await wait_for_acceptance(
         await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)
@@ -75,37 +74,35 @@ async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(s) for s in SOURCES]
 
-    publisher = FetcherClient.convert_to_publisher(pragma_client)
-
-    publisher.update_fetchers(
+    fetcher = FetcherClient()
+    fetcher.update_fetchers(
         [fetcher(SAMPLE_ASSETS, PUBLISHER_NAME) for fetcher in ALL_SPOT_FETCHERS]
     )
 
-    print(f"🧩 Fetchers : {publisher.get_fetchers()}")
+    print(f"🧩 Fetchers : {fetcher.get_fetchers()}")
 
-    data = await publisher.fetch(return_exceptions=False)
+    data = await fetcher.fetch(return_exceptions=False)
 
     asset_valid_data_type(data, SpotEntry)
 
     # Publish SPOT data
     print(data)
-    await publisher.publish_many(data, pagination=PAGINATION, auto_estimate=True)
+    await pragma_client.publish_many(data, pagination=PAGINATION, auto_estimate=True)
 
 
 @pytest.mark.asyncio
 async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
-    publisher = FetcherClient.convert_to_publisher(pragma_client)
-
-    publisher.update_fetchers(
+    fetcher = FetcherClient()
+    fetcher.update_fetchers(
         [
             fetcher(SAMPLE_FUTURE_ASSETS, PUBLISHER_NAME)
             for fetcher in ALL_FUTURE_FETCHERS
         ]
     )
 
-    print(f"🧩 Fetchers : {publisher.get_fetchers()}")
+    print(f"🧩 Fetchers : {fetcher.get_fetchers()}")
 
-    data_async: Sequence[Entry] = await publisher.fetch()
+    data_async: Sequence[Entry] = await fetcher.fetch()
 
     asset_valid_data_type(data_async, FutureEntry)
 
@@ -114,19 +111,20 @@ async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
         d for d in data_async if isinstance(d, FutureEntry)
     ]
     print(data_list)
-    await publisher.publish_many(data_list, pagination=PAGINATION, auto_estimate=True)
+    await pragma_client.publish_many(
+        data_list, pagination=PAGINATION, auto_estimate=True
+    )
 
 
 @pytest.mark.asyncio
 async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
-    publisher = FetcherClient.convert_to_publisher(pragma_client)
-
-    publisher.update_fetchers(
+    fetcher = FetcherClient()
+    fetcher.update_fetchers(
         [fetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME) for fetcher in ALL_FETCHERS]
     )
 
     # Raise exceptions
-    data = await publisher.fetch(return_exceptions=False)
+    data = await fetcher.fetch(return_exceptions=False)
 
     fetcher_errors = [entry for entry in data if isinstance(entry, PublisherFetchError)]
     print("⚠️ PublisherFetcherErrors : ", fetcher_errors)
@@ -139,11 +137,11 @@ async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
     print("⚠️ Other Errors : ", other_errors)
 
     # Do not raise exceptions
-    data = await publisher.fetch(return_exceptions=True)
+    data = await fetcher.fetch(return_exceptions=True)
 
     data = [d for d in data if isinstance(d, Entry)]
     print(data)
-    await publisher.publish_many(data, pagination=PAGINATION, auto_estimate=True)
+    await pragma_client.publish_many(data, pagination=PAGINATION, auto_estimate=True)
 
 
 def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):
