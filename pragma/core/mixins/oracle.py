@@ -12,7 +12,7 @@ from starknet_py.net.client_models import ResourceBounds
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.logger import get_stream_logger
-from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
+from pragma.core.types import ASSET_MAPPING, AggregationMode, Asset, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
 from pragma.core.mixins.types import OracleResponse
 
@@ -171,7 +171,7 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            DataType(DataTypes.SPOT, pair_id, None).serialize(),
+            Asset(DataTypes.SPOT, pair_id, None).serialize(),
             sources,
             block_number=block_number,
         )
@@ -179,7 +179,7 @@ class OracleMixin:
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
     async def get_all_sources(
-        self, data_type: DataType, block_number="latest"
+        self, data_type: Asset, block_number="latest"
     ) -> List[str]:
         (response,) = await self.oracle.functions["get_all_sources"].call(
             data_type.serialize(), block_number=block_number
@@ -200,7 +200,7 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            DataType(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
+            Asset(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
             sources,
             block_number=block_number,
         )
@@ -222,13 +222,13 @@ class OracleMixin:
             )
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -261,13 +261,13 @@ class OracleMixin:
 
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -283,7 +283,7 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, data_type: DataType, block_number="latest") -> int:
+    async def get_decimals(self, data_type: Asset, block_number="latest") -> int:
         (response,) = await self.oracle.functions["get_decimals"].call(
             data_type.serialize(),
             block_number=block_number,
@@ -305,7 +305,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
-            DataType(DataTypes.SPOT, pair_id, None).serialize(),
+            Asset(DataTypes.SPOT, pair_id, None).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
         )
@@ -326,7 +326,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
-            DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+            Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
         )
@@ -397,7 +397,7 @@ class OracleMixin:
                 pair_ids_subset = pair_ids[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
-                        DataType(DataTypes.SPOT, pair_id, None).serialize()
+                        Asset(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
@@ -413,7 +413,7 @@ class OracleMixin:
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
                 [
-                    DataType(DataTypes.SPOT, pair_id, None).serialize()
+                    Asset(DataTypes.SPOT, pair_id, None).serialize()
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),

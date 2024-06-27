@@ -1,11 +1,12 @@
 import logging
 import random
-from dataclasses import dataclass
+import collections
 from enum import Enum, unique
-from typing import Dict, List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
 from starknet_py.net.full_node_client import FullNodeClient
 
+from pragma.core.constants import RPC_URLS
 from pragma.core.logger import get_stream_logger
 from pragma.core.utils import felt_to_str, str_to_felt
 
@@ -15,201 +16,41 @@ logger.setLevel(logging.INFO)
 
 ADDRESS = int
 HEX_STR = str
+DECIMALS = int
 
-# Network Types
-DEVNET = "devnet"
-SEPOLIA = "sepolia"
-MAINNET = "mainnet"
-SHARINGAN = "sharingan"
-FORK_DEVNET = "fork_devnet"
-PRAGMA_TESTNET = "pragma_testnet"
 
 Network = Literal[
     "devnet",
     "mainnet",
-    "sharingan",
-    "pragma_testnet",
     "fork_devnet",
     "sepolia",
 ]
 
-CHAIN_IDS = {
-    DEVNET: 23448594291968334,
-    SHARINGAN: 1536727068981429685321,
-    MAINNET: 23448594291968334,
-    PRAGMA_TESTNET: 8908953246943201047421899664489,
-    FORK_DEVNET: 23448594291968334,
-    SEPOLIA: 393402133025997798000961,
-}
-
-ASSET_MAPPING: Dict[str, str] = {
-    "ETH": "ethereum",
-    "WETH": "weth",
-    "BTC": "bitcoin",
-    "WBTC": "wrapped-bitcoin",
-    "SOL": "solana",
-    "AVAX": "avalanche-2",
-    "DOGE": "dogecoin",
-    "SHIB": "shiba-inu",
-    "TEMP": "tempus",
-    "DAI": "dai",
-    "USDT": "tether",
-    "USDC": "usd-coin",
-    "TUSD": "true-usd",
-    "BUSD": "binance-usd",
-    "BNB": "binancecoin",
-    "ADA": "cardano",
-    "XRP": "ripple",
-    "MATIC": "matic-network",
-    "AAVE": "aave",
-    "R": "r",
-    "LORDS": "lords",
-    "WSTETH": "wrapped-steth",
-    "STETH": "staked-ether",
-    "UNI": "uniswap",
-    "LUSD": "liquity-usd",
-    "STRK": "starknet",
-    "MKR": "maker",
-    "BAL": "balancer",
-    "ZEND": "zklend-2",
-    "LDO": "lido-dao",
-    "SNX": "havven",
-    "RPL": "rocket-pool",
-    "YFI": "yearn-finance",
-    "COMP": "compound-governance-token",
-    "DPI": "defipulse-index",
-    "MVI": "metaverse-index",
-    "MC": "merit-circle",
-    "RNDR": "render",
-    "FET": "fetch-ai",
-    "IMX": "immutable-x",
-    "GALA": "gala",
-    "ILV": "illuvium",
-    "APE": "apecoin",
-    "SAND": "the-sandbox",
-    "AXS": "axie-infinity",
-    "MANA": "decentraland",
-    "ENS": "ethereum-name-service",
-    "BLUR": "blur",
-    "WIF": "dogwifhat",
-    "NEAR": "near",
-    "LTC": "litecoin",
-    "TRX": "tron",
-    "LINK": "chainlink",
-    "BCH": "bitcoin-cash",
-    "ARB": "arbitrum",
-    "WLD": "worldcoin",
-    "OP": "optimism",
-    "DOT": "polkadot",
-    "ONDO": "ondo",
-    "SUI": "sui",
-    "ETC": "ethereum-classic",
-    "ATOM": "cosmos",
-    "FIL": "filecoin",
-    "FTM": "fantom",
-    "ORDI": "ordi",
-    "APT": "aptos",
-    "JUP": "jupiter",
-    "TIA": "celestia",
-    "INJ": "injective-protocol",
-    "PENDLE": "pendle",
-    "SEI": "sei-network",
-    "NSTR": "nostra",
-}
-
-DPI_ASSETS = [
-    {"type": "SPOT", "pair": ("YFI", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("COMP", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("SNX", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("MKR", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("BAL", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("UNI", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("AAVE", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("LDO", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("ETH", "USD"), "decimals": 8},
-]
-
-MVI_ASSETS = [
-    {"type": "SPOT", "pair": ("MC", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("RNDR", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("FET", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("IMX", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("GALA", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("ILV", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("APE", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("SAND", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("AXS", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("MANA", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("ENS", "USD"), "decimals": 8},
-    {"type": "SPOT", "pair": ("BLUR", "USD"), "decimals": 8},
-]
-
-CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
-
-STARKSCAN_URLS = {
-    MAINNET: "https://starkscan.co",
-    SEPOLIA: "https://sepolia.starkscan.co",
-    DEVNET: "https://devnet.starkscan.co",
-    SHARINGAN: "https://sharingan-explorer.madara.zone",
-    PRAGMA_TESTNET: "https://testnet.pragmaoracle.com/explorer",
-    FORK_DEVNET: "https://devnet.starkscan.co",
-}
-
-PRAGMA_API_URL = "https://api.dev.pragma.build/node"
-
-RPC_URLS = {
-    MAINNET: [
-        "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
-    ],
-    SEPOLIA: [
-        "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
-    ],
-}
+Environment = Literal["dev", "prod"]
 
 
-def get_rpc_url(network=DEVNET, port=5050):
+def get_rpc_url(network: Network = "devnet", port: int = 5050):
     if network.startswith("http"):
         return network
-    if network == SEPOLIA:
-        random_index = random.randint(0, len(RPC_URLS[SEPOLIA]) - 1)
-        return RPC_URLS[SEPOLIA][random_index]
-    if network == MAINNET:
-        random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
-        return RPC_URLS[MAINNET][random_index]
-    if network == PRAGMA_TESTNET:
-        return "https://sepolia.pragma.build/rpc"
-    if network == DEVNET:
+    if network == "sepolia":
+        random_index = random.randint(0, len(RPC_URLS["sepolia"]) - 1)
+        return RPC_URLS["sepolia"][random_index]
+    if network == "mainnet":
+        random_index = random.randint(0, len(RPC_URLS["mainnet"]) - 1)
+        return RPC_URLS["mainnet"][random_index]
+    if network == "devnet":
         return f"http://127.0.0.1:{port}/rpc"
-    if network == FORK_DEVNET:
+    if network == "fork_devnet":
         return f"http://127.0.0.1:{port}/rpc"
 
-    raise ClientException("Must provide a network name or an RPC URL.")
 
-
-def get_client_from_network(network: str, port=5050):
+def get_full_node_client_from_network(network: Network, port: int = 5050):
     return FullNodeClient(node_url=get_rpc_url(network, port=port))
 
 
-@dataclass
-class ContractAddresses:
-    publisher_registry_address: int
-    oracle_proxy_addresss: int
-
-
-CONTRACT_ADDRESSES = {
-    DEVNET: ContractAddresses(0, 0),
-    MAINNET: ContractAddresses(
-        1035964020232444284030697086969999610062982650901949616270651804992179237909,
-        1202089834814778579992154020333959781277480478747022471664051891421849487195,
-    ),
-    SEPOLIA: ContractAddresses(
-        764259049439565269590387705502051444787910047543242149334355727309682685773,
-        1526899943909931281366530977873767661043021921869578496106478460498705257242,
-    ),
-    SHARINGAN: ContractAddresses(0, 0),
-    PRAGMA_TESTNET: ContractAddresses(0, 0),
-    FORK_DEVNET: ContractAddresses(0, 0),
-}
+ContractAddresses = collections.namedtuple(
+    "ContractAddresses", ["publisher_registry_address", "oracle_proxy_addresss"]
+)
 
 
 @unique
@@ -236,18 +77,18 @@ class RequestStatus(Enum):
 
 class Currency:
     id: int
-    decimals: int
+    decimals: DECIMALS
     is_abstract_currency: bool
-    starknet_address: int
-    ethereum_address: int
+    starknet_address: ADDRESS
+    ethereum_address: ADDRESS
 
     def __init__(
         self,
-        id_,
-        decimals,
-        is_abstract_currency,
-        starknet_address=None,
-        ethereum_address=None,
+        id_: Union[str, int],
+        decimals: DECIMALS,
+        is_abstract_currency: bool,
+        starknet_address: ADDRESS = None,
+        ethereum_address: ADDRESS = None,
     ):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
@@ -295,49 +136,61 @@ class Currency:
 
 class Pair:
     id_: int
-    quote_currency_id: int
-    base_currency_id: int
+    quote_currency: Currency
+    base_currency: Currency
 
-    def __init__(self, id_, quote_currency_id, base_currency_id):
+    def __init__(self, id_: int, quote_currency: Currency, base_currency: Currency):
         if isinstance(id_, str):
             id_ = str_to_felt(id_)
         self.id = id_
 
-        if isinstance(quote_currency_id, str):
-            quote_currency_id = str_to_felt(quote_currency_id)
-        self.quote_currency_id = quote_currency_id
+        if isinstance(quote_currency, str):
+            quote_currency = str_to_felt(quote_currency)
+        self.quote_currency = quote_currency
 
-        if isinstance(base_currency_id, str):
-            base_currency_id = str_to_felt(base_currency_id)
-        self.base_currency_id = base_currency_id
+        if isinstance(base_currency, str):
+            base_currency = str_to_felt(base_currency)
+        self.base_currency = base_currency
 
     def serialize(self) -> List[str]:
-        return [self.id, self.quote_currency_id, self.base_currency_id]
+        return [self.id, self.quote_currency, self.base_currency]
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "quote_currency_id": self.quote_currency_id,
-            "base_currency_id": self.base_currency_id,
+            "quote_currency": self.quote_currency,
+            "base_currency": self.base_currency,
         }
 
     def __repr__(self):
         return (
             f"Pair({felt_to_str(self.id)}, "
-            f"{felt_to_str(self.quote_currency_id)}, "
-            f"{felt_to_str(self.base_currency_id)})"
+            f"{self.quote_currency}, "
+            f"{self.base_currency})"
         )
+
+    def decimals(self):
+        """
+        Returns the decimals of the pair.
+        Corresponds to the minimum of both currencies' decimals.
+        """
+        return min(self.quote_currency.decimals, self.base_currency.decimals)
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
 
 
-class DataType:
+class Asset:
     data_type: DataTypes
     pair_id: int
     expiration_timestamp: Optional[int]
 
-    def __init__(self, data_type, pair_id, expiration_timestamp):
+    def __init__(
+        self,
+        data_type: DataTypes,
+        pair_id: Union[str, int],
+        expiration_timestamp: Optional[int],
+    ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -350,6 +203,9 @@ class DataType:
         self.expiration_timestamp = expiration_timestamp
 
     def serialize(self) -> dict:
+        """
+        Serialize method used to interact with Cairo contracts.
+        """
         if self.data_type == DataTypes.SPOT:
             return {"SpotEntry": self.pair_id}
         if self.data_type == DataTypes.FUTURE:
