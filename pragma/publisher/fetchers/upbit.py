@@ -8,14 +8,14 @@ from aiohttp import ClientSession
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 SUPPORTED_ASSETS = [("BTC", "ETH")]
 
 
-class UpbitFetcher(PublisherInterfaceT):
+class UpbitFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://sg-api.upbit.com/v1/ticker"
     SOURCE: str = "UPBIT"
 

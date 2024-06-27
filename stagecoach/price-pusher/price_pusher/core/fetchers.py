@@ -15,7 +15,7 @@ from pragma.publisher.fetchers import (
     OkxFetcher,
 )
 from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
-from pragma.publisher.types import PublisherInterfaceT
+from pragma.publisher.types import FetcherInterfaceT
 from price_pusher.configs.price_config import (
     PriceConfig,
     get_unique_spot_assets_from_config_list,
@@ -65,7 +65,7 @@ async def add_all_fetchers(
 
 async def _add_fetchers(
     fetcher_client: FetcherClient,
-    fetchers: List[PublisherInterfaceT],
+    fetchers: List[FetcherInterfaceT],
     assets: List[str],
     publisher_name: str,
 ) -> None:
@@ -95,7 +95,7 @@ async def _add_fetchers(
 
 
 def _add_one_fetcher(
-    fetcher: PublisherInterfaceT,
+    fetcher: FetcherInterfaceT,
     fetcher_client: FetcherClient,
     assets: List[str],
     publisher_name: str,

@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ ASSET_MAPPING: Dict[str, str] = {
 }
 
 
-class CoingeckoFetcher(PublisherInterfaceT):
+class CoingeckoFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://api.coingecko.com/api/v3/coins/{pair_id}"
         "?localization=false&market_data=true&community_data=false"

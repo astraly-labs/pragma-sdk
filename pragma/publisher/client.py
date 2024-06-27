@@ -3,7 +3,6 @@ import time
 from typing import Dict, List, Optional, Union
 
 import aiohttp
-from dotenv import load_dotenv
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
@@ -13,9 +12,7 @@ from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataTypes
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
-from pragma.publisher.types import Interval, PublisherInterfaceT, PublisherFetchError
-
-load_dotenv()
+from pragma.publisher.types import Interval, FetcherInterfaceT, PublisherFetchError
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):
@@ -108,15 +105,15 @@ class FetcherClient:
 
     """
 
-    fetchers: List[PublisherInterfaceT] = []
+    fetchers: List[FetcherInterfaceT] = []
 
-    def add_fetchers(self, fetchers: List[PublisherInterfaceT]):
+    def add_fetchers(self, fetchers: List[FetcherInterfaceT]):
         self.fetchers.extend(fetchers)
 
-    def add_fetcher(self, fetcher: PublisherInterfaceT):
+    def add_fetcher(self, fetcher: FetcherInterfaceT):
         self.fetchers.append(fetcher)
 
-    def update_fetchers(self, fetchers: List[PublisherInterfaceT]):
+    def update_fetchers(self, fetchers: List[FetcherInterfaceT]):
         self.fetchers = fetchers
 
     def get_fetchers(self):

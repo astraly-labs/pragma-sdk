@@ -5,7 +5,6 @@ import time
 from typing import List, Union
 
 from aiohttp import ClientSession
-from dotenv import load_dotenv
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client_models import Call
 
@@ -16,9 +15,7 @@ from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.types import PoolKey
 from pragma.core.utils import currency_pair_to_pair_id, str_to_felt
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
-
-load_dotenv()
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +38,7 @@ SUPPORTED_ASSETS = [
 ]
 
 
-class StarknetAMMFetcher(PublisherInterfaceT):
+class StarknetAMMFetcher(FetcherInterfaceT):
     EKUBO_PUBLIC_API: str = "https://mainnet-api.ekubo.org"
     EKUBO_MAINNET_CORE_CONTRACT: str = (
         "0x00000005dd3d2f4429af886cd1a3b08289dbcea99a294197e9eb43b0e0325b4b"

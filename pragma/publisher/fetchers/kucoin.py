@@ -8,12 +8,12 @@ from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class KucoinFetcher(PublisherInterfaceT):
+class KucoinFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.kucoin.com/api/v1/market/orderbook/level1"
     client: PragmaOnChainClient
     SOURCE: str = "KUCOIN"

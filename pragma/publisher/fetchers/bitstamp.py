@@ -7,12 +7,12 @@ from aiohttp import ClientSession
 from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class BitstampFetcher(PublisherInterfaceT):
+class BitstampFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://www.bitstamp.net/api/v2/ticker"
     SOURCE: str = "BITSTAMP"
     publisher: str

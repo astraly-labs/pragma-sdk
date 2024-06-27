@@ -8,12 +8,12 @@ from aiohttp import ClientSession
 from pragma.core.assets import PragmaAsset, PragmaFutureAsset
 from pragma.core.entry import FutureEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class ByBitFutureFetcher(PublisherInterfaceT):
+class ByBitFutureFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://api.bybit.com/derivatives/v3/public/tickers?category=linear&symbol="
     )

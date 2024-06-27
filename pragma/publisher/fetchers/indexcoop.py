@@ -12,7 +12,7 @@ from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.fetchers.index import AssetQuantities
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ SUPPORTED_INDEXES = {
 }
 
 
-class IndexCoopFetcher(PublisherInterfaceT):
+class IndexCoopFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.indexcoop.com"
     SOURCE: str = "INDEXCOOP"
     client: PragmaOnChainClient

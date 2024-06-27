@@ -6,7 +6,7 @@ from aiohttp import ClientSession
 
 from pragma.core.assets import PragmaAsset
 from pragma.core.entry import SpotEntry
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class AssetQuantities:
         self.quantities = quantities
 
 
-class IndexFetcher(PublisherInterfaceT):
+class IndexFetcher(FetcherInterfaceT):
     fetcher: any
     index_name: str
     asset_quantities: List[AssetQuantities]

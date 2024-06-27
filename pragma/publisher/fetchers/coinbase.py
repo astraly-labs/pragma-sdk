@@ -5,21 +5,22 @@ from typing import List, Union
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.types import Asset
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class CoinbaseFetcher(PublisherInterfaceT):
+class CoinbaseFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.coinbase.com/v2/exchange-rates?currency="
     SOURCE: str = "COINBASE"
 
     publisher: str
+    assets: List[Asset]
 
-    def __init__(self, assets: List[PragmaAsset], publisher):
+    def __init__(self, assets: List[Asset], publisher):
         self.assets = assets
         self.publisher = publisher
 
