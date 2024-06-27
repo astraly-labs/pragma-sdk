@@ -52,6 +52,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Ruff
+.ruff_cache/
+
 # Pyre type checker
 .pyre/
 
