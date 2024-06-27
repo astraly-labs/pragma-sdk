@@ -10,7 +10,7 @@ import pytest
 from aioresponses import aioresponses
 from starknet_py.net.client import Client
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.types import RPC_URLS
 from pragma.publisher.fetchers.index import AssetQuantities, IndexFetcher
 from pragma.publisher.types import PublisherFetchError
@@ -66,7 +66,9 @@ def forked_client(request) -> Client:
         command.extend(["--fork-block-number", str(block_number)])
     subprocess.Popen(command)
     time.sleep(10)
-    pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name=network)
+    pragma_client = PragmaOnChainClient(
+        f"http://127.0.0.1:{port}/rpc", chain_name=network
+    )
     return pragma_client
 
 

@@ -1,12 +1,12 @@
 from .assets import PRAGMA_ALL_ASSETS
-from .client import PragmaClient
+from .client import PragmaOnChainClient
 from .contract import Contract
 from .entry import FutureEntry, SpotEntry
 from .types import AggregationMode, Currency, Pair
 
 __all__ = [
     PRAGMA_ALL_ASSETS,
-    PragmaClient,
+    PragmaOnChainClient,
     Contract,
     FutureEntry,
     SpotEntry,

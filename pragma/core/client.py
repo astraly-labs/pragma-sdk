@@ -27,7 +27,7 @@ logger = get_stream_logger()
 logger.setLevel(logging.INFO)
 
 
-class PragmaClient(
+class PragmaOnChainClient(
     NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,

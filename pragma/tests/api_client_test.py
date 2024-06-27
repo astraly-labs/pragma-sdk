@@ -11,7 +11,7 @@ import pytest
 from aioresponses import aioresponses
 from starknet_py.net.client import Client
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.types import RPC_URLS
 from pragma.publisher.client import PragmaAPIClient, PragmaAPIError
 from pragma.tests.constants import MOCK_DIR, SAMPLE_ASSETS
@@ -58,7 +58,9 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
         command.extend(["--fork-block-number", str(block_number)])
     subprocess.Popen(command)  # pylint: disable=consider-using-with
     time.sleep(10)
-    pragma_client = PragmaClient(f"http://127.0.0.1:{port}/rpc", chain_name=network)
+    pragma_client = PragmaOnChainClient(
+        f"http://127.0.0.1:{port}/rpc", chain_name=network
+    )
     return pragma_client
 
 

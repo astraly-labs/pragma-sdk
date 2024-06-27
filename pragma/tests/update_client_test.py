@@ -9,12 +9,12 @@ from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.types import ContractAddresses
 from pragma.core.utils import str_to_felt
 from pragma.tests.utils import get_deployments, read_contract
 
-logging.basicConfig()
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -33,7 +33,7 @@ SOURCE_3 = "SOURCE_3"
 async def pragma_fork_client(
     network,
     address_and_private_key: Tuple[str, str],
-) -> PragmaClient:
+) -> PragmaOnChainClient:
     # TODO(#000): refactor this
     fork_network = os.getenv("NETWORK_FORK")
     deployments = get_deployments(
@@ -43,7 +43,7 @@ async def pragma_fork_client(
     registry = deployments["pragma_PublisherRegistry"]
     address, private_key = address_and_private_key
     port = urlparse(network).port
-    return PragmaClient(
+    return PragmaOnChainClient(
         network="fork_devnet",
         chain_name="mainnet",
         account_contract_address=address,
@@ -56,7 +56,7 @@ async def pragma_fork_client(
 
 
 @pytest_asyncio.fixture(scope="package")
-async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
+async def declare_oracle(pragma_fork_client: PragmaOnChainClient) -> DeclareResult:
     try:
         compiled_contract = read_contract("pragma_Oracle.sierra.json", directory=None)
         compiled_contract_casm = read_contract(
@@ -83,7 +83,7 @@ async def declare_oracle(pragma_fork_client: PragmaClient) -> DeclareResult:
 
 @pytest.mark.asyncio
 async def test_update_oracle(
-    pragma_fork_client: PragmaClient, declare_oracle: DeclareResult
+    pragma_fork_client: PragmaOnChainClient, declare_oracle: DeclareResult
 ):
     # TODO(#000): refactor this
     fork_network = os.getenv("NETWORK_FORK")
@@ -129,7 +129,7 @@ async def test_update_oracle(
     assert initial_prices == post_treatment_prices
 
 
-async def retrieve_spot_prices(client: PragmaClient, assets):
+async def retrieve_spot_prices(client: PragmaOnChainClient, assets):
     prices = {}
     for asset in assets:
         if asset["type"] == "SPOT":

@@ -9,7 +9,7 @@ from pragma.core.assets import (
     get_spot_asset_spec_for_pair_id,
 )
 from pragma.core.logger import get_stream_logger
-from pragma.publisher.client import PragmaAPIClient, PragmaPublisherClient
+from pragma.publisher.client import PragmaAPIClient, FetcherClient
 from pragma.publisher.fetchers import (
     BinanceFetcher,
     BitstampFetcher,
@@ -85,7 +85,7 @@ async def _handler(spot_assets, future_assets):
         api_key=API_KEY,
     )
 
-    fetcher_client = PragmaPublisherClient()
+    fetcher_client = FetcherClient()
 
     fetcher_client.add_fetchers(
         [

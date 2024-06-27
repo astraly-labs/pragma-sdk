@@ -3,8 +3,13 @@ from __future__ import annotations
 import abc
 from typing import Dict, List, Optional, Tuple, Union
 
-from pragma.core.assets import get_asset_spec_for_pair_id_by_type
+from pragma.core.assets import (
+    get_asset_spec_for_pair_id_by_type,
+    PragmaSpotAsset,
+    PragmaFutureAsset,
+)
 from pragma.core.utils import felt_to_str, str_to_felt
+from pragma.core.mixins.types import OracleResponse
 
 
 class Entry(abc.ABC):
@@ -16,6 +21,18 @@ class Entry(abc.ABC):
 
     @abc.abstractmethod
     def offchain_serialize(self) -> Dict[str, str]: ...
+
+    @abc.abstractmethod
+    def get_timestamp(self) -> int: ...
+
+    @abc.abstractmethod
+    def get_pair_id(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_source(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_asset_type(self) -> str: ...
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
@@ -168,9 +185,44 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def set_publisher(self, publisher):
+    def set_publisher(self, publisher) -> "SpotEntry":
         self.base.publisher = publisher
         return self
+
+    def get_timestamp(self) -> int:
+        return self.base.timestamp
+
+    def get_pair_id(self) -> str:
+        return felt_to_str(self.pair_id)
+
+    def get_source(self) -> str:
+        return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> str:
+        return "SPOT"
+
+    @staticmethod
+    def from_oracle_response(
+        asset: PragmaSpotAsset,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> "SpotEntry":
+        """
+        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
+        return SpotEntry(
+            str_to_felt(",".join(asset["pair"])),
+            oracle_response[0],
+            oracle_response[2],
+            publisher_name,
+            source_name,
+            0,
+            autoscale_volume=False,
+        )
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
@@ -319,6 +371,18 @@ class FutureEntry(Entry):
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
 
+    def get_timestamp(self) -> int:
+        return self.base.timestamp
+
+    def get_pair_id(self) -> str:
+        return felt_to_str(self.pair_id)
+
+    def get_source(self) -> str:
+        return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> str:
+        return "FUTURE"
+
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
         base = dict(entry_dict["base"])
@@ -330,5 +394,29 @@ class FutureEntry(Entry):
             base["publisher"],
             entry_dict["expiration_timestamp"],
             volume=entry_dict["volume"],
+            autoscale_volume=False,
+        )
+
+    @staticmethod
+    def from_oracle_response(
+        asset: PragmaFutureAsset,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> "FutureEntry":
+        """
+        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
+        return FutureEntry(
+            str_to_felt(",".join(asset["pair"])),
+            oracle_response[0],
+            oracle_response[2],
+            publisher_name,
+            source_name,
+            oracle_response[4],
+            0,
             autoscale_volume=False,
         )
