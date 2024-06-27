@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import sys
 from typing import List, Optional
 
@@ -9,6 +8,7 @@ from starknet_py.net.client_errors import ClientError
 
 from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
+from pragma.core.logger import get_stream_logger
 from pragma.core.randomness.utils import (
     RandomnessRequest,
     create_randomness,
@@ -16,7 +16,7 @@ from pragma.core.randomness.utils import (
 )
 from pragma.core.types import RequestStatus
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 IGNORE_REQUEST_THRESHOLD = 30
 
@@ -138,7 +138,7 @@ class RandomnessMixin:
         try:
             estimate_fee = await prepared_call.estimate_fee()
         except ClientError as e:
-            print("Error while estimating fee: ", e)
+            logger.error("Error while estimating fee: ", e)
             return None
         if estimate_fee.overall_fee > callback_fee_limit:
             logger.error(
@@ -353,13 +353,13 @@ class RandomnessMixin:
         block_number = await self.full_node_client.get_block_number()
 
         min_block = max(min_block, block_number - IGNORE_REQUEST_THRESHOLD)
+        logger.info(f"Handle random job running with min_block: {min_block}")
 
         sk = felt_to_secret_key(private_key)
 
         more_pages = True
         continuation_token = None
 
-        # TODO(#000): add nonce tracking
         while more_pages:
             event_list = await self.full_node_client.get_events(
                 self.randomness.address,
@@ -371,6 +371,7 @@ class RandomnessMixin:
                 continuation_token=continuation_token,
                 chunk_size=500,
             )
+            logger.info(f"Got {len(event_list.events)} events")
             for event in event_list.events:
                 index_to_split = 7
                 event.data.pop(index_to_split)
@@ -381,6 +382,13 @@ class RandomnessMixin:
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
 
+            statuses = await asyncio.gather(
+                *[
+                    self.get_request_status(event.caller_address, event.request_id)
+                    for event in events
+                ]
+            )
+
             for event in events:
                 minimum_block_number = event.minimum_block_number
                 # Skip if block_number is less than minimum_block_number
@@ -390,13 +398,18 @@ class RandomnessMixin:
                     minimum_block_number > block_number + 1
                     or minimum_block_number < block_number - IGNORE_REQUEST_THRESHOLD
                 ):
+                    logger.info(
+                        f"Skipping event: {event.request_id} with min_block: {minimum_block_number}"
+                    )
                     continue
-                request_id = event.request_id
-                status = await self.get_request_status(event.caller_address, request_id)
+                status = statuses.pop(0)
                 if status.variant != "RECEIVED":
+                    logger.info(
+                        f"Skipping event: {event.request_id} with status: {status.variant}"
+                    )
                     continue
 
-                print(f"event {event}")
+                logger.info(f"Found event: {event}")
 
                 is_pending = minimum_block_number == block_number + 1
 
@@ -435,10 +448,7 @@ class RandomnessMixin:
                 )
 
                 if invocation is None:
-                    print("Failed to submit random")
+                    logger.error("Failed to submit randomness")
                     continue
 
-                print(f"Submitted: {hex(invocation.hash)}\n\n")
-
-                # Wait for Tx to pass
-                await asyncio.sleep(5)
+                logger.info(f"Submitted tx: {hex(invocation.hash)}\n\n")

@@ -15,6 +15,8 @@ from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
 from pragma.tests.constants import CURRENCIES, PAIRS
 from pragma.tests.utils import read_contract, wait_for_acceptance
+from starknet_py.net.client_models import ResourceBounds
+
 
 PUBLISHER_NAME = "PRAGMA"
 
@@ -216,7 +218,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         ETH_PAIR, 200, timestamp + 10, SOURCE_1, publisher_name, volume=20
     )
 
-    invocations = await pragma_client.publish_many([spot_entry_1, spot_entry_2])
+    invocations = await pragma_client.publish_many(
+        [spot_entry_1, spot_entry_2], auto_estimate=True
+    )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Fails for UNKNOWN source
     unknown_source = "UNKNOWN"
@@ -246,7 +250,12 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=10
     )
     try:
-        invocations = await pragma_client.publish_many([spot_entry_future])
+        invocations = await pragma_client.publish_many(
+            [spot_entry_future],
+            l1_resource_bounds=ResourceBounds(
+                max_price_per_unit=500 * 10**9, max_amount=10**7
+            ),
+        )
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Unknown Starknet error"
@@ -264,7 +273,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
         ETH_PAIR, 200, timestamp + 30, SOURCE_2, publisher_name, volume=20
     )
 
-    invocations = await pragma_client.publish_many([spot_entry_1, spot_entry_2])
+    invocations = await pragma_client.publish_many(
+        [spot_entry_1, spot_entry_2], auto_estimate=True
+    )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_spot(ETH_PAIR)
     assert res.price == 150
@@ -301,7 +312,9 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
         volume=20000,
     )
 
-    invocations = await pragma_client.publish_many([future_entry_1, future_entry_2])
+    invocations = await pragma_client.publish_many(
+        [future_entry_1, future_entry_2], auto_estimate=True
+    )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Check entries
     entries = await pragma_client.get_future_entries(
@@ -332,7 +345,9 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
         volume=20,
     )
 
-    invocations = await pragma_client.publish_many([future_entry_1, future_entry_2])
+    invocations = await pragma_client.publish_many(
+        [future_entry_1, future_entry_2], auto_estimate=True
+    )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
     assert res.price == 150
@@ -351,7 +366,12 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
         volume=10,
     )
     try:
-        await pragma_client.publish_many([future_entry_future])
+        await pragma_client.publish_many(
+            [future_entry_future],
+            l1_resource_bounds=ResourceBounds(
+                max_price_per_unit=500 * 10**9, max_amount=10**7
+            ),
+        )
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Unknown Starknet error"

@@ -6,10 +6,10 @@ from typing import Dict, List, Literal, Optional
 
 from starknet_py.net.full_node_client import FullNodeClient
 
+from pragma.core.logger import get_stream_logger
 from pragma.core.utils import felt_to_str, str_to_felt
 
-
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 logger.setLevel(logging.INFO)
 
 
@@ -159,10 +159,10 @@ PRAGMA_API_URL = "https://api.dev.pragma.build/node"
 
 RPC_URLS = {
     MAINNET: [
-        "https://starknet-mainnet.public.blastapi.io/rpc/v0_6",
+        "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
     ],
     SEPOLIA: [
-        "https://starknet-sepolia.public.blastapi.io/rpc/v0_6",
+        "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
     ],
 }
 
@@ -176,10 +176,8 @@ def get_rpc_url(network=DEVNET, port=5050):
     if network == MAINNET:
         random_index = random.randint(0, len(RPC_URLS[MAINNET]) - 1)
         return RPC_URLS[MAINNET][random_index]
-    if network == SHARINGAN:
-        return "https://sharingan.madara.zone"
     if network == PRAGMA_TESTNET:
-        return "https://testnet.pragmaoracle.com/rpc"
+        return "https://sepolia.pragma.build/rpc"
     if network == DEVNET:
         return f"http://127.0.0.1:{port}/rpc"
     if network == FORK_DEVNET:

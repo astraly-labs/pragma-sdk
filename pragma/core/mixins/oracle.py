@@ -7,15 +7,17 @@ from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
+from starknet_py.net.client_models import ResourceBounds
+
 
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
+from pragma.core.logger import get_stream_logger
 from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
 from pragma.core.mixins.types import OracleResponse
 
-
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class OracleMixin:
@@ -33,6 +35,9 @@ class OracleMixin:
         publisher: int,
         volume: int = 0,
         max_fee: int = int(1e18),
+        enable_strk_fees: Optional[bool] = False,
+        l1_resource_bounds: Optional[ResourceBounds] = None,
+        auto_estimate: Optional[bool] = False,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -40,7 +45,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["publish_data"].invoke_v1(
+        invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
                 "Spot": {
                     "base": {
@@ -54,6 +59,9 @@ class OracleMixin:
                 }
             },
             max_fee=max_fee,
+            l1_resource_bounds=l1_resource_bounds,
+            auto_estimate=auto_estimate,
+            enable_strk_fees=enable_strk_fees,
         )
         return invocation
 
@@ -62,6 +70,9 @@ class OracleMixin:
         entries: List[Entry],
         pagination: Optional[int] = 40,
         max_fee=int(1e18),
+        enable_strk_fees: Optional[bool] = False,
+        l1_resource_bounds: Optional[ResourceBounds] = None,
+        auto_estimate: Optional[bool] = False,
     ) -> List[InvokeResult]:
         if len(entries) == 0:
             logger.warning("Skipping publishing as entries array is empty")
@@ -74,11 +85,12 @@ class OracleMixin:
             index = 0
             while index < len(serialized_spot_entries):
                 entries_subset = serialized_spot_entries[index : index + pagination]
-                invocation = await self.oracle.functions[
-                    "publish_data_entries"
-                ].invoke_v1(
+                invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Spot": entry} for entry in entries_subset],
+                    enable_strk_fees=enable_strk_fees,
                     max_fee=max_fee,
+                    l1_resource_bounds=l1_resource_bounds,
+                    auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -90,9 +102,12 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         elif len(serialized_spot_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
+            invocation = await self.oracle.functions["publish_data_entries"].invoke(
                 new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
                 max_fee=max_fee,
+                enable_strk_fees=enable_strk_fees,
+                l1_resource_bounds=l1_resource_bounds,
+                auto_estimate=auto_estimate,
                 callback=self.track_nonce,
             )
             invocations.append(invocation)
@@ -109,11 +124,12 @@ class OracleMixin:
             index = 0
             while index < len(serialized_future_entries):
                 entries_subset = serialized_future_entries[index : index + pagination]
-                invocation = await self.oracle.functions[
-                    "publish_data_entries"
-                ].invoke_v1(
+                invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Future": entry} for entry in entries_subset],
                     max_fee=max_fee,
+                    enable_strk_fees=enable_strk_fees,
+                    l1_resource_bounds=l1_resource_bounds,
+                    auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -125,9 +141,12 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         elif len(serialized_future_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke_v1(
+            invocation = await self.oracle.functions["publish_data_entries"].invoke(
                 new_entries=[{"Future": entry} for entry in serialized_future_entries],
                 max_fee=max_fee,
+                enable_strk_fees=enable_strk_fees,
+                l1_resource_bounds=l1_resource_bounds,
+                auto_estimate=auto_estimate,
                 callback=self.track_nonce,
             )
             invocations.append(invocation)
@@ -286,7 +305,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke_v1(
+        invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.SPOT, pair_id, None).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
@@ -307,7 +326,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke_v1(
+        invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
             aggregation_mode.serialize(),
             max_fee=max_fee,
@@ -335,7 +354,7 @@ class OracleMixin:
             index = 0
             while index < len(pair_ids):
                 pair_ids_subset = pair_ids[index : index + pagination]
-                invocation = await self.oracle.functions["set_checkpoints"].invoke_v1(
+                invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
@@ -349,7 +368,7 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         else:
-            invocation = await self.oracle.functions["set_checkpoints"].invoke_v1(
+            invocation = await self.oracle.functions["set_checkpoints"].invoke(
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
@@ -377,7 +396,7 @@ class OracleMixin:
             index = 0
             while index < len(pair_ids):
                 pair_ids_subset = pair_ids[index : index + pagination]
-                invocation = await self.oracle.set_checkpoints.invoke_v1(
+                invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         DataType(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
@@ -393,7 +412,7 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         else:
-            invocation = await self.oracle.set_checkpoints.invoke_v1(
+            invocation = await self.oracle.set_checkpoints.invoke(
                 [
                     DataType(DataTypes.SPOT, pair_id, None).serialize()
                     for pair_id in pair_ids
@@ -413,7 +432,7 @@ class OracleMixin:
         implementation_hash: int,
         max_fee=int(1e18),
     ) -> InvokeResult:
-        invocation = await self.oracle.functions["upgrade"].invoke_v1(
+        invocation = await self.oracle.functions["upgrade"].invoke(
             implementation_hash,
             max_fee=max_fee,
         )

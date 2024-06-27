@@ -7,6 +7,7 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.core.abis import ABIS
 from pragma.core.contract import Contract
+from pragma.core.logger import get_stream_logger
 from pragma.core.mixins import (
     NonceMixin,
     OracleMixin,
@@ -22,8 +23,7 @@ from pragma.core.types import (
     get_client_from_network,
 )
 
-
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 logger.setLevel(logging.INFO)
 
 

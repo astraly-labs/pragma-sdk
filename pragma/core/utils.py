@@ -1,11 +1,12 @@
 import inspect
-import logging
 from functools import wraps
 from typing import TypeVar
 
 from asgiref.sync import async_to_sync
 
-logger = logging.getLogger(__name__)
+from pragma.core.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
 def str_to_felt(text):
