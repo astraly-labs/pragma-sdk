@@ -59,13 +59,7 @@ class PriceConfig(BaseModel):
         Returns:
             List of unique PragmaSpotAssets.
         """
-        if self.pairs.spot is None:
-            return []
-        unique_spot_assets = []
-        for spot_asset in self.pairs.spot:
-            if spot_asset not in unique_spot_assets:
-                unique_spot_assets.append(spot_asset)
-        return list(unique_spot_assets)
+        return list(dict.fromkeys(self.pairs.spot).keys()) if self.pairs.spot else []
 
     def get_unique_future_assets(self) -> List[PragmaFutureAsset]:
         """
@@ -74,13 +68,7 @@ class PriceConfig(BaseModel):
         Returns:
             List of unique PragmaFutureAssets.
         """
-        if self.pairs.future is None:
-            return []
-        unique_future_assets = []
-        for future_asset in self.pairs.future:
-            if future_asset not in unique_future_assets:
-                unique_future_assets.append(future_asset)
-        return list(unique_future_assets)
+        return list(dict.fromkeys(self.pairs.future).keys()) if self.pairs.spot else []
 
     def get_all_assets(self) -> List[PragmaAsset]:
         """
