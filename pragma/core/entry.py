@@ -31,6 +31,9 @@ class Entry(abc.ABC):
     @abc.abstractmethod
     def get_source(self) -> str: ...
 
+    @abc.abstractmethod
+    def get_asset_type(self) -> str: ...
+
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         # TODO (#000): log errors
@@ -182,18 +185,21 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def set_publisher(self, publisher):
+    def set_publisher(self, publisher) -> "SpotEntry":
         self.base.publisher = publisher
         return self
 
-    def get_timestamp(self):
+    def get_timestamp(self) -> int:
         return self.base.timestamp
 
-    def get_pair_id(self):
+    def get_pair_id(self) -> str:
         return felt_to_str(self.pair_id)
 
-    def get_source(self):
+    def get_source(self) -> str:
         return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> str:
+        return "SPOT"
 
     @staticmethod
     def from_oracle_response(
@@ -365,14 +371,17 @@ class FutureEntry(Entry):
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
 
-    def get_timestamp(self):
+    def get_timestamp(self) -> int:
         return self.base.timestamp
 
-    def get_pair_id(self):
+    def get_pair_id(self) -> str:
         return felt_to_str(self.pair_id)
 
-    def get_source(self):
+    def get_source(self) -> str:
         return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> str:
+        return "FUTURE"
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":

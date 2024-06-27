@@ -22,15 +22,17 @@ def test_set_update_prices_callback(price_poller):
     assert price_poller.update_prices_callback == mock_callback
 
 
-def test_is_requesting_onchain(price_poller, fetcher_client):
+def test_is_requesting_onchain(fetcher_client):
     fetcher = MagicMock()
     fetcher.client.full_node_client = "something"
     fetcher_client.fetchers = [fetcher]
-    assert price_poller.is_requesting_onchain() is True
+    poller = PricePoller(fetcher_client)
+    assert poller._is_requesting_onchain is True
 
     fetcher.client.full_node_client = None
     fetcher_client.fetchers = [fetcher]
-    assert price_poller.is_requesting_onchain() is False
+    poller = PricePoller(fetcher_client)
+    assert poller._is_requesting_onchain is False
 
 
 @pytest.mark.asyncio
@@ -91,9 +93,8 @@ async def test_poll_prices_retry_success(price_poller, fetcher_client, caplog):
         publisher="publisher_1",
     )
 
-    fetcher = MagicMock()
-    fetcher.client.full_node_client = "something"
-    fetcher_client.fetchers = [fetcher]
+    fetcher_client.fetchers = [MagicMock()]
+    price_poller._is_requesting_onchain = True
     fetcher_client.fetch = AsyncMock(side_effect=[Exception("Fetch failed"), [dummy_entry]])
 
     retry_async_mock = AsyncMock(return_value=[dummy_entry])
@@ -112,9 +113,8 @@ async def test_poll_prices_retry_failure(price_poller, fetcher_client, caplog):
     mock_callback = MagicMock()
     price_poller.set_update_prices_callback(mock_callback)
 
-    fetcher = MagicMock()
-    fetcher.client.full_node_client = "something"
-    fetcher_client.fetchers = [fetcher]
+    fetcher_client.fetchers = [MagicMock()]
+    price_poller._is_requesting_onchain = True
     fetcher_client.fetch = AsyncMock(side_effect=Exception("Fetch failed"))
 
     retry_async = AsyncMock(side_effect=Exception("Retry failed"))

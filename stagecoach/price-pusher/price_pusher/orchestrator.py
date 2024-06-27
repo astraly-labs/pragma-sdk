@@ -1,10 +1,10 @@
 import logging
 import asyncio
 
-from typing import List, Optional
+from typing import List
 
-from pragma.core.entry import Entry, SpotEntry, FutureEntry
-from pragma.core.assets import AssetType, PragmaAsset
+from pragma.core.entry import Entry
+from pragma.core.assets import PragmaAsset
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
@@ -73,8 +73,8 @@ class Orchestrator:
         """
         while True:
             await self.poller.poll_prices()
-            # Wait 10 seconds before requerying public APIs (rate limits).
-            await asyncio.sleep(10)
+            # Wait 5 seconds before requerying public APIs (rate limits).
+            await asyncio.sleep(5)
 
     async def _listener_services(self) -> None:
         """
@@ -140,16 +140,7 @@ class Orchestrator:
         for entry in entries:
             pair_id = entry.get_pair_id()
             source = entry.get_source()
-            entry_type: Optional[AssetType] = (
-                "SPOT"
-                if isinstance(entry, SpotEntry)
-                else "FUTURE"
-                if isinstance(entry, FutureEntry)
-                else None
-            )
-            if entry_type is None:
-                logger.error(f'Entry type of "{pair_id}" from "{source}" is unknown. Ignoring.')
-                continue
+            entry_type = entry.get_asset_type()
 
             if pair_id not in self.latest_prices:
                 self.latest_prices[pair_id] = {}

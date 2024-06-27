@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from pragma.core.entry import Entry, SpotEntry
+from pragma.core.entry import Entry
 from pragma.core.assets import AssetType
 
 from price_pusher.configs import PriceConfig
@@ -38,15 +38,15 @@ class IPriceListener(ABC):
     polling_frequency_in_s: DurationInSeconds
 
     @abstractmethod
+    def set_orchestrator_prices(
+        self, orchestrator_prices: LatestOrchestratorPairPrices
+    ) -> None: ...
+
+    @abstractmethod
     async def run_forever(self) -> None: ...
 
     @abstractmethod
     async def _fetch_all_oracle_prices(self) -> None: ...
-
-    @abstractmethod
-    def set_orchestrator_prices(
-        self, orchestrator_prices: LatestOrchestratorPairPrices
-    ) -> None: ...
 
     @abstractmethod
     def _get_most_recent_orchestrator_entry(
@@ -106,8 +106,7 @@ class PriceListener(IPriceListener):
             if await self._does_oracle_needs_update():
                 self._notify()
                 last_fetch_time = -1
-            # Check every second if the oracle needs an update
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
@@ -133,7 +132,7 @@ class PriceListener(IPriceListener):
                 continue
 
             pair_id = entry.get_pair_id().replace(",", "/")
-            asset_type = "SPOT" if isinstance(entry, SpotEntry) else "FUTURE"
+            asset_type = entry.get_asset_type()
 
             if pair_id not in self.oracle_prices:
                 self.oracle_prices[pair_id] = {}
@@ -148,8 +147,10 @@ class PriceListener(IPriceListener):
         """
         if self.orchestrator_prices is None:
             raise ValueError("Orchestrator must set the prices dictionnary.")
+        if pair_id not in self.orchestrator_prices:
+            return None
         entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
-        return max(entries, key=lambda entry: entry.base.timestamp, default=None)
+        return max(entries, key=lambda entry: entry.get_timestamp(), default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
         """
@@ -198,11 +199,7 @@ class PriceListener(IPriceListener):
         Check if a new price is in the bounds allowed by the configuration.
         """
         max_deviation = self.price_config.price_deviation * oracle_price
-
-        lower_bound = oracle_price - max_deviation
-        upper_bound = oracle_price + max_deviation
-
-        is_deviating = not (lower_bound < new_price < upper_bound)
+        is_deviating = abs(new_price - oracle_price) >= max_deviation
         if is_deviating:
             # TODO: show current deviation
             logger.info(
