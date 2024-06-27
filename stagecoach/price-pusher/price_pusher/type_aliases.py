@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Literal
 
 from pragma.core.entry import Entry
 from pragma.core.assets import AssetType
@@ -11,3 +11,6 @@ LatestOrchestratorPairPrices = Dict[PairId, Dict[AssetType, Dict[SourceName, Ent
 LatestOraclePairPrices = Dict[PairId, Dict[AssetType, Entry]]
 
 HumanReadableId = str
+
+Target = Literal["onchain", "offchain"]
+Network = Literal["mainnet", "sepolia"]

@@ -67,10 +67,10 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
         source="source_1",
         publisher="publisher_1",
     )
-    mock_request_handler.fetch_latest_asset_price.return_value = mock_entry
+    mock_request_handler.fetch_latest_entry.return_value = mock_entry
     await price_listener._fetch_all_oracle_prices()
 
-    mock_request_handler.fetch_latest_asset_price.assert_called_once_with(
+    mock_request_handler.fetch_latest_entry.assert_called_once_with(
         mock_price_config.get_all_assets.return_value[0]
     )
     assert "BTC/USD" in price_listener.oracle_prices

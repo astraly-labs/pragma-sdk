@@ -1,4 +1,3 @@
-import collections
 import logging
 import time
 from typing import List, Optional
@@ -13,19 +12,10 @@ from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
 from pragma.core.utils import felt_to_str, str_to_felt
+from pragma.core.mixins.types import OracleResponse
+
 
 logger = logging.getLogger(__name__)
-
-OracleResponse = collections.namedtuple(
-    "OracleResponse",
-    [
-        "price",
-        "decimals",
-        "last_updated_timestamp",
-        "num_sources_aggregated",
-        "expiration_timestamp",
-    ],
-)
 
 
 class OracleMixin:

@@ -1,12 +1,13 @@
-from typing import Dict, Literal
+from typing import Dict
+
+from price_pusher.type_aliases import Target
 
 from .api import APIRequestHandler
 from .chain import ChainRequestHandler
 from .interface import IRequestHandler
 
-ALLOWED_TARGETS = Literal["onchain", "offchain"]
 
-REQUEST_HANDLER_REGISTRY: Dict[ALLOWED_TARGETS, IRequestHandler] = {
+REQUEST_HANDLER_REGISTRY: Dict[Target, IRequestHandler] = {
     "onchain": ChainRequestHandler,
     "offchain": APIRequestHandler,
 }

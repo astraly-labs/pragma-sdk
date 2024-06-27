@@ -9,6 +9,7 @@ from pragma.core.assets import (
     PragmaFutureAsset,
 )
 from pragma.core.utils import felt_to_str, str_to_felt
+from pragma.core.mixins.types import OracleResponse
 
 
 class Entry(abc.ABC):
@@ -196,14 +197,23 @@ class SpotEntry(Entry):
 
     @staticmethod
     def from_oracle_response(
-        asset: PragmaSpotAsset, oracle_response: dict
+        asset: PragmaSpotAsset,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
     ) -> "SpotEntry":
+        """
+        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
         return SpotEntry(
             str_to_felt(",".join(asset["pair"])),
             oracle_response[0],
             oracle_response[2],
-            "ONCHAIN",
-            "AGGREGATION",
+            publisher_name,
+            source_name,
             0,
             autoscale_volume=False,
         )
@@ -380,14 +390,23 @@ class FutureEntry(Entry):
 
     @staticmethod
     def from_oracle_response(
-        asset: PragmaFutureAsset, oracle_response: dict
+        asset: PragmaFutureAsset,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
     ) -> "FutureEntry":
+        """
+        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
         return FutureEntry(
             str_to_felt(",".join(asset["pair"])),
             oracle_response[0],
             oracle_response[2],
-            "ONCHAIN",
-            "AGGREGATION",
+            publisher_name,
+            source_name,
             oracle_response[4],
             0,
             autoscale_volume=False,

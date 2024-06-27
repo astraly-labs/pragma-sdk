@@ -120,7 +120,7 @@ class PriceListener(IPriceListener):
         Fetch the latest oracle prices for all assets in parallel.
         """
         tasks = [
-            self.request_handler.fetch_latest_asset_price(asset)
+            self.request_handler.fetch_latest_entry(asset)
             for asset in self.price_config.get_all_assets()
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -181,10 +181,12 @@ class PriceListener(IPriceListener):
                     )
                     return True
                 oracle_entry = oracle_entries[asset_type]
+
                 # First check if the oracle entry is outdated
                 newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
                     return True
+
                 # If not, check its deviation
                 for entry in orchestrator_entries.values():
                     if self._new_price_is_deviating(pair_id, entry.price, oracle_entry.price):

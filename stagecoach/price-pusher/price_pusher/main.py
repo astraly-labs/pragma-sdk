@@ -2,9 +2,9 @@ import asyncio
 import click
 import logging
 
-from typing import Optional, List, Union
+from typing import Optional, List
 
-from pragma.publisher.client import FetcherClient
+from pragma.publisher.client import FetcherClient, PragmaPublisherClientT
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
@@ -14,20 +14,17 @@ from price_pusher.core.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import (
     PriceConfig,
 )
-from pragma.publisher.client import (
-    PragmaOnChainClient,
-    PragmaAPIClient,
-)
 from price_pusher.configs.cli import setup_logging, load_private_key, create_client
 from price_pusher.orchestrator import Orchestrator
+from price_pusher.type_aliases import Target, Network
 
 logger = logging.getLogger(__name__)
 
 
 async def main(
     price_configs: List[PriceConfig],
-    target: str,
-    network: str,
+    target: Target,
+    network: Network,
     private_key: str,
     publisher_name: str,
     publisher_address: str,
@@ -71,7 +68,7 @@ async def main(
 def _create_listeners(
     price_configs: List[PriceConfig],
     target: str,
-    pragma_client: Union[PragmaOnChainClient, PragmaAPIClient],
+    pragma_client: PragmaPublisherClientT,
 ) -> List[PriceListener]:
     """
     Create a listener for each price configuration. They will be used to monitor a group

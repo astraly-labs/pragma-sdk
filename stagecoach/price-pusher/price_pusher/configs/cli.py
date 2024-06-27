@@ -3,24 +3,26 @@ import os
 import logging
 
 from logging import Logger
-from typing import Optional, Union
+from typing import Optional
 from pragma.publisher.client import (
     PragmaClient,
     PragmaOnChainClient,
     PragmaAPIClient,
+    PragmaPublisherClientT,
 )
 
+from price_pusher.type_aliases import Target, Network
 from price_pusher.utils.aws import fetch_aws_private_key
 
 
 def create_client(
-    target: str,
-    network: str,
+    target: Target,
+    network: Network,
     publisher_address: str,
     private_key: str,
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
-) -> Union[PragmaOnChainClient, PragmaAPIClient]:
+) -> PragmaPublisherClientT:
     """
     Create the appropriate client based on the target.
 
@@ -33,7 +35,7 @@ def create_client(
         api_key: The API key for offchain publishing.
 
     Returns:
-        Union[PragmaOnChainClient, PragmaAPIClient]
+        PragmaPublisherClientT
     """
     if target == "onchain":
         return PragmaClient(

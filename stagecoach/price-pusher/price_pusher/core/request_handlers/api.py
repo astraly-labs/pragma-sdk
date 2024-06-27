@@ -10,6 +10,9 @@ from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
+PRAGMA_API_SOURCE_NAME = "PragmaAPI"
+PRAGMA_API_PUBLISHER_NAME = "AGGREGATION"
+
 
 class APIRequestHandler(IRequestHandler):
     client: PragmaAPIClient
@@ -17,7 +20,7 @@ class APIRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaAPIClient) -> None:
         self.client = client
 
-    async def fetch_latest_asset_price(self, asset: PragmaAsset) -> Optional[Entry]:
+    async def fetch_latest_entry(self, asset: PragmaAsset) -> Optional[Entry]:
         """
         Fetch last entry for the asset from the API.
         TODO: Currently only works for spot assets.
@@ -27,8 +30,9 @@ class APIRequestHandler(IRequestHandler):
         entry = SpotEntry(
             pair_id=entry_result.pair_id,
             price=int(entry_result.data, 16),
-            timestamp=entry_result.timestamp,
-            source="PragmaAPI",
-            publisher="AGGREGATION",
+            # PragmaAPI returns timestamp in millis, we convert to s
+            timestamp=entry_result.timestamp / 1000,
+            source=PRAGMA_API_SOURCE_NAME,
+            publisher=PRAGMA_API_PUBLISHER_NAME,
         )
         return entry
