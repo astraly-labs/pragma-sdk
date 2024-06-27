@@ -330,7 +330,7 @@ class PragmaAPIClient:
                 "routing": routing,
                 "timestamp": timestamp,
                 "interval": interval.value if interval else None,
-                "aggregation": aggregation.value if aggregation else None,
+                "aggregation": aggregation.value.lower() if aggregation else None,
             }.items()
             if value is not None
         }
