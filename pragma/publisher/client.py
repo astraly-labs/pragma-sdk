@@ -327,10 +327,10 @@ class PragmaAPIClient:
         params = {
             key: value
             for key, value in {
-                "timestamp": timestamp,
-                "interval": interval,
                 "routing": routing,
-                "aggregation": aggregation,
+                "timestamp": timestamp,
+                "interval": interval.value if interval else None,
+                "aggregation": aggregation.value if aggregation else None,
             }.items()
             if value is not None
         }

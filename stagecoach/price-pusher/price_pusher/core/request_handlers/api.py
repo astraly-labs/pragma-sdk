@@ -4,6 +4,8 @@ from typing import Optional
 from pragma.core.assets import PragmaAsset
 from pragma.core.entry import Entry, SpotEntry
 from pragma.publisher.client import PragmaAPIClient, EntryResult
+from pragma.core.types import AggregationMode
+from pragma.publisher.types import Interval
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.utils.assets import asset_to_pair_id
@@ -26,7 +28,9 @@ class APIRequestHandler(IRequestHandler):
         TODO: Currently only works for spot assets.
         """
         pair = asset_to_pair_id(asset)
-        entry_result: EntryResult = await self.client.get_entry(pair)
+        entry_result: EntryResult = await self.client.get_entry(
+            pair=pair, interval=Interval.ONE_MINUTE, aggregation=AggregationMode.MEDIAN
+        )
         entry = SpotEntry(
             pair_id=entry_result.pair_id,
             price=int(entry_result.data, 16),

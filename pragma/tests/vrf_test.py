@@ -15,7 +15,7 @@ from pragma.tests.constants import (
     MAX_PREMIUM_FEE,
 )
 
-# from pragma.core.client import PragmaClient
+# from pragma.core.client import PragmaOnChainClient
 from pragma.tests.utils import ExtendedPragmaClient as PragmaClient
 from pragma.tests.utils import convert_to_wei, read_contract, wait_for_acceptance
 

@@ -9,7 +9,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import FutureEntry, SpotEntry
 from pragma.core.types import ContractAddresses, DataType, DataTypes
 from pragma.core.utils import str_to_felt
@@ -95,14 +95,14 @@ async def pragma_client(
     contracts: (Contract, Contract),
     network,
     address_and_private_key: Tuple[str, str],
-) -> PragmaClient:
+) -> PragmaOnChainClient:
     oracle, registry = contracts
     address, private_key = address_and_private_key
 
     # Parse port from network url
     port = urlparse(network).port
 
-    return PragmaClient(
+    return PragmaOnChainClient(
         chain_name="devnet",
         account_contract_address=address,
         account_private_key=private_key,
@@ -119,7 +119,7 @@ async def test_deploy_contract(contracts):
 
 
 @pytest.mark.asyncio
-async def test_client_setup(pragma_client: PragmaClient, account: Account):
+async def test_client_setup(pragma_client: PragmaOnChainClient, account: Account):
     assert pragma_client.account_address() == account.address
 
     account_balance = await account.get_balance()
@@ -130,7 +130,7 @@ async def test_client_setup(pragma_client: PragmaClient, account: Account):
 
 
 @pytest.mark.asyncio
-async def test_client_publisher_mixin(pragma_client: PragmaClient):
+async def test_client_publisher_mixin(pragma_client: PragmaOnChainClient):
     publishers = await pragma_client.get_all_publishers()
     assert publishers == []
 
@@ -165,7 +165,7 @@ async def test_client_publisher_mixin(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
+async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     # Add PRAGMA as Publisher
     publisher_name = "PRAGMA"
     publisher_address = pragma_client.account_address()
@@ -285,7 +285,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
+async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     # Checks
     publisher_name = "PRAGMA"
     publishers = await pragma_client.get_all_publishers()
@@ -380,17 +380,17 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaClient):
 
 
 def test_client_with_http_network():
-    client_with_chain_name = PragmaClient(
+    client_with_chain_name = PragmaOnChainClient(
         network="http://test.rpc/rpc", chain_name="devnet"
     )
     assert client_with_chain_name.network == "devnet"
 
-    client_with_chain_name_only = PragmaClient(chain_name="devnet")
+    client_with_chain_name_only = PragmaOnChainClient(chain_name="devnet")
     # default value of network is testnet
     assert client_with_chain_name_only.network == "devnet"
 
     with pytest.raises(Exception) as exception:
-        _ = PragmaClient(network="http://test.rpc/rpc")
+        _ = PragmaOnChainClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
 
 

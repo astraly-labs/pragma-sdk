@@ -4,7 +4,7 @@ import pytest
 from dotenv import load_dotenv
 
 from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.utils import str_to_felt
 from pragma.publisher.client import PragmaPublisherClient
@@ -58,7 +58,7 @@ SOURCES = [
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_spot(pragma_client: PragmaClient):
+async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
     publisher_address = pragma_client.account_address()
 
     # Add PRAGMA as Publisher
@@ -95,7 +95,7 @@ async def test_publisher_client_spot(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_future(pragma_client: PragmaClient):
+async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
     )
@@ -122,7 +122,7 @@ async def test_publisher_client_future(pragma_client: PragmaClient):
 
 
 @pytest.mark.asyncio
-async def test_publisher_client_all_assets(pragma_client: PragmaClient):
+async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
     publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
         pragma_client
     )

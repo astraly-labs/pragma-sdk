@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 from starknet_py.utils.typed_data import TypedData
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import str_to_felt
 from pragma.publisher.signer import build_publish_message
@@ -52,10 +52,10 @@ EMPTY_DATA = [
 @pytest_asyncio.fixture(scope="package", name="pragma_offchain_client")
 async def pragma_offchain_client(
     address_and_private_key: Tuple[str, str],
-) -> PragmaClient:
+) -> PragmaOnChainClient:
     address, private_key = address_and_private_key
 
-    return PragmaClient(
+    return PragmaOnChainClient(
         account_contract_address=address,
         account_private_key=private_key,
     )
@@ -74,14 +74,14 @@ def test_publish_message_empty():
 
 
 @pytest.mark.asyncio
-async def test_publish_api(pragma_offchain_client: PragmaClient):
+async def test_publish_api(pragma_offchain_client: PragmaOnChainClient):
     response = await pragma_offchain_client.publish_data(MOCK_DATA)
 
     assert response.number_entries_created == 2
 
 
 @pytest.mark.asyncio
-async def test_get_data(pragma_offchain_client: PragmaClient):
+async def test_get_data(pragma_offchain_client: PragmaOnChainClient):
     response = await pragma_offchain_client.get_spot_data("ETH", "USD")
     print(response)
 
