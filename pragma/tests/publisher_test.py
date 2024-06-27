@@ -7,7 +7,7 @@ from pragma.core.assets import PRAGMA_ALL_ASSETS
 from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.utils import str_to_felt
-from pragma.publisher.client import PragmaPublisherClient
+from pragma.publisher.client import FetcherClient
 from pragma.publisher.fetchers import (
     CexFetcher,
     DefillamaFetcher,
@@ -75,9 +75,7 @@ async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
     sources = await pragma_client.get_publisher_sources(PUBLISHER_NAME)
     assert sources == [str_to_felt(s) for s in SOURCES]
 
-    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
-        pragma_client
-    )
+    publisher = FetcherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [fetcher(SAMPLE_ASSETS, PUBLISHER_NAME) for fetcher in ALL_SPOT_FETCHERS]
@@ -96,9 +94,7 @@ async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
 
 @pytest.mark.asyncio
 async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
-    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
-        pragma_client
-    )
+    publisher = FetcherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [
@@ -123,9 +119,7 @@ async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
 
 @pytest.mark.asyncio
 async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
-    publisher: PragmaPublisherClient = PragmaPublisherClient.convert_to_publisher(
-        pragma_client
-    )
+    publisher = FetcherClient.convert_to_publisher(pragma_client)
 
     publisher.update_fetchers(
         [fetcher(PRAGMA_ALL_ASSETS, PUBLISHER_NAME) for fetcher in ALL_FETCHERS]
