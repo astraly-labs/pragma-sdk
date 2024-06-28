@@ -77,5 +77,4 @@ class AscendexFetcher(FetcherInterfaceT):
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
-            volume=int(volume),
         )

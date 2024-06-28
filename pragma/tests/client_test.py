@@ -205,9 +205,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     assert res.decimals == 8
 
     # Get Decimals
-    decimals = await pragma_client.get_decimals(
-        Asset(DataTypes.SPOT, BTC_PAIR, None)
-    )
+    decimals = await pragma_client.get_decimals(Asset(DataTypes.SPOT, BTC_PAIR, None))
     assert decimals == 8
 
     # Publish many SPOT entries
