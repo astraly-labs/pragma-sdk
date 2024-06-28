@@ -33,36 +33,49 @@ class AssetConfig(BaseModel):
             is_abstract_currency=self.abstract,
         )
 
+    @staticmethod
+    def get_pair_from_asset_configs(
+        base_asset: "AssetConfig", quote_asset: "AssetConfig"
+    ) -> Pair:
+        """
+        Return a Pair from two AssetConfigs.
 
-def get_pair_from_asset_configs(
-    base_asset: AssetConfig, quote_asset: AssetConfig
-) -> Pair:
+        :param base_asset: Base asset
+        :param quote_asset: Quote asset
+        :return: Pair
+        """
+
+        return Pair(
+            base_currency=base_asset.get_currency(),
+            quote_currency=quote_asset.get_currency(),
+        )
+
+    @classmethod
+    def get_coingecko_id_from_ticker(cls, ticker: str) -> str:
+        """
+        Return the coingecko id from a ticker.
+        Raise UnsupportedAssetError if the ticker is not supported.
+
+        :param ticker: Ticker
+        :return: Coingecko id
+        """
+
+        asset = try_get_asset_config_from_ticker(ticker)
+        return asset.coingecko_id
+
+
+def try_get_asset_config_from_ticker(ticker: str) -> AssetConfig:
     """
-    Return a Pair from two AssetConfigs.
-
-    :param base_asset: Base asset
-    :param quote_asset: Quote asset
-    :return: Pair
-    """
-
-    return Pair(
-        base_currency=base_asset.get_currency(),
-        quote_currency=quote_asset.get_currency(),
-    )
-
-
-def try_get_currency_from_ticker(ticker: str) -> Currency:
-    """
-    Return a Currency from a ticker.
+    Return a AssetConfig from a ticker.
     Raise UnsupportedAssetError if the ticker is not supported.
 
     :param ticker: Ticker
-    :return: Currency
+    :return: AssetConfig
     """
 
     assets = filter(lambda x: x.ticker == ticker, ALL_ASSETS)
     try:
         asset = next(assets)
-        return asset.get_currency()
+        return asset
     except StopIteration:
         raise UnsupportedAssetError(f"Asset with ticker {ticker} is not supported.")

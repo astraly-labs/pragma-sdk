@@ -3,8 +3,10 @@ from functools import wraps
 from typing import TypeVar
 
 from asgiref.sync import async_to_sync
+from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.logger import get_stream_logger
+from pragma.core.types import get_rpc_url
 
 logger = get_stream_logger()
 
@@ -102,3 +104,7 @@ def add_sync_methods(original_class: T) -> T:
 def _set_sync_method_docstring(original_class, sync_name: str):
     sync_method = getattr(original_class, sync_name)
     sync_method.__doc__ = "Synchronous version of the method."
+
+
+def get_full_node_client_from_network(network: Network, port: int = 5050):
+    return FullNodeClient(node_url=get_rpc_url(network, port=port))

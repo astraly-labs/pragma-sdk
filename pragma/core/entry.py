@@ -33,23 +33,15 @@ class Entry(abc.ABC):
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        # TODO (#000): log errors
         serialized_entries = [
-            # TODO (#000): This needs to be much more resilient to publish errors
-            entry.serialize()
-            for entry in entries
-            if isinstance(entry, Entry)
+            entry.serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     @staticmethod
     def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        # TODO (#000): log errors
         serialized_entries = [
-            # TODO (#000): This needs to be much more resilient to publish errors
-            entry.offchain_serialize()
-            for entry in entries
-            if isinstance(entry, Entry)
+            entry.offchain_serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 

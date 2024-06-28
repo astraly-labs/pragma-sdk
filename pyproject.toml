@@ -17,9 +17,8 @@ exclude = ["pragma/tests/*", "pragma/**/*_test.py", "stagecoach/*"]
 packages = [{ include = "pragma" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.10"
+python = ">=3.10,<3.13"
 "starknet.py" = "0.22.0"
-cairo-lang = "^0.12"
 typer = "0.6.1"
 deprecated = "^1.2.14"
 aioresponses = "^0.7.4"

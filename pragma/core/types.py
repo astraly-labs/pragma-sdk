@@ -1,14 +1,17 @@
+from dataclasses import dataclass
 import logging
 import random
 import collections
 from enum import Enum, unique
 from typing import List, Literal, Optional, Union
 
-from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.client_models import ResourceBounds
 
 from pragma.core.constants import RPC_URLS
 from pragma.core.logger import get_stream_logger
 from pragma.core.utils import currency_pair_to_pair_id, felt_to_str, str_to_felt
+
+import re
 
 logger = get_stream_logger()
 logger.setLevel(logging.INFO)
@@ -19,34 +22,40 @@ HEX_STR = str
 DECIMALS = int
 UnixTimestamp = int
 
+HttpUrl = re.compile(r"^http(s)?://.+")
 
-Network = Literal[
-    "devnet",
-    "mainnet",
-    "fork_devnet",
-    "sepolia",
+Network = Union[
+    Literal[
+        "devnet",
+        "mainnet",
+        "fork_devnet",
+        "sepolia",
+    ],
+    HttpUrl,
 ]
 
 Environment = Literal["dev", "prod"]
 
 
-def get_rpc_url(network: Network = "devnet", port: int = 5050):
-    if network.startswith("http"):
-        return network
-    if network == "sepolia":
-        random_index = random.randint(0, len(RPC_URLS["sepolia"]) - 1)
-        return RPC_URLS["sepolia"][random_index]
-    if network == "mainnet":
-        random_index = random.randint(0, len(RPC_URLS["mainnet"]) - 1)
-        return RPC_URLS["mainnet"][random_index]
-    if network == "devnet":
-        return f"http://127.0.0.1:{port}/rpc"
-    if network == "fork_devnet":
-        return f"http://127.0.0.1:{port}/rpc"
+def get_rpc_url(network: Network = "devnet", port: int = 5050) -> str:
+    """
+    Returns the RPC URL for the given network.
+    Will return a random URL in the list if the network is "sepolia" or "mainnet".
 
-
-def get_full_node_client_from_network(network: Network, port: int = 5050):
-    return FullNodeClient(node_url=get_rpc_url(network, port=port))
+    :param network: Network to get the RPC URL for.
+    :param port: Port to use for the RPC URL.
+    :return: RPC URL.
+    """
+    match network:
+        case str(url) if url.startswith("http"):
+            return url
+        case "sepolia" | "mainnet":
+            urls = RPC_URLS[network]
+            return random.choice(urls)
+        case "devnet" | "fork_devnet":
+            return f"http://127.0.0.1:{port}/rpc"
+        case _:
+            raise ValueError(f"Unsupported network: {network}")
 
 
 ContractAddresses = collections.namedtuple(
@@ -74,6 +83,15 @@ class RequestStatus(Enum):
 
     def serialize(self):
         return {self.value: None}
+
+
+@dataclass(frozen=True)
+class ExecutionConfig:
+    pagination: Optional[int] = 40
+    max_fee: Optional[int] = int(1e18)
+    enable_strk_fees: Optional[bool] = False
+    l1_resource_bounds: Optional[ResourceBounds] = None
+    auto_estimate: Optional[bool] = False
 
 
 class Currency:
@@ -176,7 +194,7 @@ class Pair:
         return min(self.base_currency.decimals, self.quote_currency.decimals)
 
 
-DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
+DataTypes = Enum("DataTypes", ["Spot", "Future"])
 
 
 class Asset:
