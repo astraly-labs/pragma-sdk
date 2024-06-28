@@ -3,8 +3,8 @@ from typing import List, Optional
 import yaml
 from pydantic import BaseModel
 
-from pragma.core.types import DECIMALS, Currency, Pair
-from pragma.core.utils import currency_pair_to_pair_id
+from pragma.core.constants import ALL_ASSETS
+from pragma.core.types import DECIMALS, Currency, Pair, UnsupportedAssetError
 
 
 class AssetConfig(BaseModel):
@@ -49,3 +49,20 @@ def get_pair_from_asset_configs(
         base_currency=base_asset.get_currency(),
         quote_currency=quote_asset.get_currency(),
     )
+
+
+def try_get_currency_from_ticker(ticker: str) -> Currency:
+    """
+    Return a Currency from a ticker.
+    Raise UnsupportedAssetError if the ticker is not supported.
+
+    :param ticker: Ticker
+    :return: Currency
+    """
+
+    assets = filter(lambda x: x.ticker == ticker, ALL_ASSETS)
+    try:
+        asset = next(assets)
+        return asset.get_currency()
+    except StopIteration:
+        raise UnsupportedAssetError(f"Asset with ticker {ticker} is not supported.")

@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from pragma.core.assets import AssetConfig
 from pragma.core.types import ContractAddresses, Environment, Network
 
 SUPPORTED_ASSETS_FILE_PATH = "./supported_assets.yaml"
@@ -42,3 +43,5 @@ CONTRACT_ADDRESSES = {
         1526899943909931281366530977873767661043021921869578496106478460498705257242,
     ),
 }
+
+ALL_ASSETS = AssetConfig.from_yaml(SUPPORTED_ASSETS_FILE_PATH)

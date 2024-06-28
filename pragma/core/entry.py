@@ -199,7 +199,7 @@ class SpotEntry(Entry):
         source_name: str,
     ) -> "SpotEntry":
         """
-        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Builds a SpotEntry object from a Pair and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
         lastest oracle prices for comparisons with the latest prices of
         various APIs (binance etc).
