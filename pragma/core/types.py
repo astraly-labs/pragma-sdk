@@ -8,7 +8,7 @@ from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.constants import RPC_URLS
 from pragma.core.logger import get_stream_logger
-from pragma.core.utils import felt_to_str, str_to_felt
+from pragma.core.utils import currency_pair_to_pair_id, felt_to_str, str_to_felt
 
 logger = get_stream_logger()
 logger.setLevel(logging.INFO)
@@ -17,6 +17,7 @@ logger.setLevel(logging.INFO)
 ADDRESS = int
 HEX_STR = str
 DECIMALS = int
+UnixTimestamp = int
 
 
 Network = Literal[
@@ -76,7 +77,7 @@ class RequestStatus(Enum):
 
 
 class Currency:
-    id: int
+    id: str
     decimals: DECIMALS
     is_abstract_currency: bool
     starknet_address: ADDRESS
@@ -84,14 +85,12 @@ class Currency:
 
     def __init__(
         self,
-        id_: Union[str, int],
+        id_: str,
         decimals: DECIMALS,
         is_abstract_currency: bool,
         starknet_address: ADDRESS = None,
         ethereum_address: ADDRESS = None,
     ):
-        if isinstance(id_, str):
-            id_ = str_to_felt(id_)
         self.id = id_
 
         self.decimals = decimals
@@ -135,38 +134,38 @@ class Currency:
 
 
 class Pair:
-    id_: int
-    quote_currency: Currency
+    id: int
     base_currency: Currency
+    quote_currency: Currency
 
-    def __init__(self, id_: int, quote_currency: Currency, base_currency: Currency):
-        if isinstance(id_, str):
-            id_ = str_to_felt(id_)
-        self.id = id_
-
-        if isinstance(quote_currency, str):
-            quote_currency = str_to_felt(quote_currency)
-        self.quote_currency = quote_currency
+    def __init__(self, base_currency: Currency, quote_currency: Currency):
+        self.id = felt_to_str(
+            currency_pair_to_pair_id(base_currency.id, quote_currency.id)
+        )
 
         if isinstance(base_currency, str):
             base_currency = str_to_felt(base_currency)
         self.base_currency = base_currency
 
+        if isinstance(quote_currency, str):
+            quote_currency = str_to_felt(quote_currency)
+        self.quote_currency = quote_currency
+
     def serialize(self) -> List[str]:
-        return [self.id, self.quote_currency, self.base_currency]
+        return [self.id, self.base_currency, self.quote_currency]
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "quote_currency": self.quote_currency,
             "base_currency": self.base_currency,
+            "quote_currency": self.quote_currency,
         }
 
     def __repr__(self):
         return (
             f"Pair({felt_to_str(self.id)}, "
-            f"{self.quote_currency}, "
             f"{self.base_currency})"
+            f"{self.quote_currency}, "
         )
 
     def decimals(self):
@@ -174,7 +173,7 @@ class Pair:
         Returns the decimals of the pair.
         Corresponds to the minimum of both currencies' decimals.
         """
-        return min(self.quote_currency.decimals, self.base_currency.decimals)
+        return min(self.base_currency.decimals, self.quote_currency.decimals)
 
 
 DataTypes = Enum("DataTypes", ["SPOT", "FUTURE", "OPTION"])
@@ -197,9 +196,9 @@ class Asset:
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
             )
-        self.pair_id = pair_id
 
-        self.data_type = DataTypes(data_type)
+        self.pair_id = pair_id
+        self.data_type = data_type
         self.expiration_timestamp = expiration_timestamp
 
     def serialize(self) -> dict:

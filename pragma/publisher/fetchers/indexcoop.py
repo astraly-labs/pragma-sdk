@@ -103,5 +103,4 @@ class IndexCoopFetcher(FetcherInterfaceT):
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
-            autoscale_volume=False,
         )

@@ -185,5 +185,4 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
             volume=int(volume),
-            autoscale_volume=True,
         )

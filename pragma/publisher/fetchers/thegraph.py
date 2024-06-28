@@ -122,5 +122,4 @@ class TheGraphFetcher(FetcherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
             volume=int(volume),
-            autoscale_volume=False,
         )

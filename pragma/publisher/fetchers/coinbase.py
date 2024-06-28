@@ -54,7 +54,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
         url = self.BASE_URL + base_asset
         return url
 
-    def _construct(self, asset, result) -> Union[SpotEntry, PublisherFetchError]:
+    def _construct(self, asset: Asset, result) -> Union[SpotEntry, PublisherFetchError]:
         pair = asset["pair"]
         pair_id = currency_pair_to_pair_id(*pair)
 

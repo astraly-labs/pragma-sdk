@@ -44,7 +44,6 @@ EMPTY_DATA = [
         price=0,
         timestamp=0,
         volume=0,
-        autoscale_volume=False,
     ),
 ]
 

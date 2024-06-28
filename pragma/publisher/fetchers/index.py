@@ -56,7 +56,6 @@ class IndexFetcher(FetcherInterfaceT):
                 timestamp=int(time.time()),
                 source=self.fetcher.SOURCE,
                 publisher=self.fetcher.publisher,
-                autoscale_volume=False,
             )
         ]
 

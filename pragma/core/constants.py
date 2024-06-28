@@ -1,6 +1,8 @@
-from typing import Dict, List, Literal
+from typing import Dict, List
 
 from pragma.core.types import ContractAddresses, Environment, Network
+
+SUPPORTED_ASSETS_FILE_PATH = "./supported_assets.yaml"
 
 CHAIN_IDS: Dict[Network, int] = {
     "devnet": 23448594291968334,

@@ -27,8 +27,17 @@ def log_entry(entry):
     logger.info("Entry: %s", entry.serialize())
 
 
-def currency_pair_to_pair_id(quote, base):
-    return f"{quote}/{base}".upper()
+def currency_pair_to_pair_id(base: str, quote: str):
+    """
+    Return a pair id from base and quote currencies.
+    e.g currency_pair_to_pair_id("btc", "usd") -> "BTC/USD"
+
+    :param base: Base currency
+    :param quote: Quote currency
+    :return: Pair id
+    """
+
+    return f"{base}/{quote}".upper()
 
 
 def key_for_asset(asset):

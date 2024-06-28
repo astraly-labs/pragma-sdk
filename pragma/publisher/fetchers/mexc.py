@@ -117,5 +117,4 @@ class MEXCFetcher(FetcherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
             volume=volume,
-            autoscale_volume=False,
         )

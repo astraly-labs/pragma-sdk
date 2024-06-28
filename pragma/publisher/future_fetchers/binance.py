@@ -121,7 +121,6 @@ class BinanceFutureFetcher(FetcherInterfaceT):
                     source=self.SOURCE,
                     publisher=self.publisher,
                     expiry_timestamp=expiry_timestamp * 1000,
-                    autoscale_volume=True,
                 )
             )
         return result_arr
