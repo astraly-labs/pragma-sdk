@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 from pragma.core.entry import Entry
 from pragma.core.assets import PragmaAsset
-from pragma.publisher.client import PragmaPublisherClientT
+from pragma.publisher.client import PragmaClient
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class IRequestHandler(ABC):
     Responsible of querying new prices from our oracles and returning entries.
     """
 
-    client: PragmaPublisherClientT
+    client: PragmaClient
 
     @abstractmethod
     async def fetch_latest_entry(self, asset: PragmaAsset) -> Optional[Entry]: ...

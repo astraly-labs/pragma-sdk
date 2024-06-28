@@ -4,7 +4,7 @@ import logging
 
 from typing import Optional, List
 
-from pragma.publisher.client import FetcherClient, PragmaPublisherClientT
+from pragma.publisher.client import FetcherClient, PragmaClient
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
@@ -68,7 +68,7 @@ async def main(
 def _create_listeners(
     price_configs: List[PriceConfig],
     target: str,
-    pragma_client: PragmaPublisherClientT,
+    pragma_client: PragmaClient,
 ) -> List[PriceListener]:
     """
     Create a listener for each price configuration. They will be used to monitor a group
@@ -77,7 +77,9 @@ def _create_listeners(
     listeners: List[PriceListener] = []
     for price_config in price_configs:
         new_listener = PriceListener(
-            request_handler=REQUEST_HANDLER_REGISTRY[target](client=pragma_client.client),
+            request_handler=REQUEST_HANDLER_REGISTRY[target](
+                client=pragma_client.client
+            ),
             price_config=price_config,
             polling_frequency_in_s=20,
         )
@@ -96,7 +98,9 @@ def _create_listeners(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
+    ),
     help="Logging level.",
 )
 @click.option(
@@ -132,7 +136,9 @@ def _create_listeners(
     required=True,
     help="Your publisher address.",
 )
-@click.option("--api-base-url", type=click.STRING, required=False, help="Pragma API base URL")
+@click.option(
+    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
+)
 @click.option(
     "--api-key",
     type=click.STRING,
@@ -157,7 +163,9 @@ def cli_entrypoint(
     Also handles basic checks/conversions from the CLI args.
     """
     if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
+        raise click.UsageError(
+            "API key and API URL are required when destination is 'offchain'."
+        )
 
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
