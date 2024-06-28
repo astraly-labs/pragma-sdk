@@ -21,6 +21,7 @@ from pragma.core.types import (
     ClientException,
     ContractAddresses,
     get_client_from_network,
+    get_rpc_url,
 )
 
 logger = get_stream_logger()
@@ -47,6 +48,7 @@ class PragmaOnChainClient(
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
+        rpc_url: Optional[str] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -61,8 +63,8 @@ class PragmaOnChainClient(
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
-
-        full_node_client: FullNodeClient = get_client_from_network(network, port=port)
+        client_rpc_url = get_rpc_url(network, port) if rpc_url is None else rpc_url
+        full_node_client: FullNodeClient = get_client_from_network(client_rpc_url)
         self.full_node_client = full_node_client
         self.client = full_node_client
         if network.startswith("http") and chain_name is None:

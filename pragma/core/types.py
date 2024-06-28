@@ -186,8 +186,8 @@ def get_rpc_url(network=DEVNET, port=5050):
     raise ClientException("Must provide a network name or an RPC URL.")
 
 
-def get_client_from_network(network: str, port=5050):
-    return FullNodeClient(node_url=get_rpc_url(network, port=port))
+def get_client_from_network(rpc_url: str):
+    return FullNodeClient(node_url=rpc_url)
 
 
 @dataclass

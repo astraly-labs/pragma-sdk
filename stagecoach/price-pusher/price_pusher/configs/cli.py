@@ -22,6 +22,7 @@ def create_client(
     private_key: str,
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
+    rpc_url: Optional[str] = None,
 ) -> PragmaPublisherClientT:
     """
     Create the appropriate client based on the target.
@@ -40,6 +41,7 @@ def create_client(
     if target == "onchain":
         return PragmaClient(
             PragmaOnChainClient(
+                rpc_url=rpc_url,
                 network=network,
                 account_contract_address=publisher_address,
                 account_private_key=private_key,

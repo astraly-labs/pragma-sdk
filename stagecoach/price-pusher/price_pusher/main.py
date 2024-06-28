@@ -30,6 +30,7 @@ async def main(
     publisher_address: str,
     api_base_url: Optional[str],
     api_key: Optional[str],
+    rpc_url: Optional[str],
 ) -> None:
     """
     Main function of the price pusher.
@@ -43,6 +44,7 @@ async def main(
         private_key=private_key,
         api_base_url=api_base_url,
         api_key=api_key,
+        rpc_url=rpc_url,
     )
 
     logger.info("🪚 Creating Fetcher client & adding fetchers...")
@@ -139,6 +141,12 @@ def _create_listeners(
     required=False,
     help="Pragma API key used to publish offchain",
 )
+@click.option(
+    "--rpc-url",
+    type=click.STRING,
+    required=False,
+    help="RPC url used by the onchain client",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -149,6 +157,7 @@ def cli_entrypoint(
     publisher_address: str,
     api_base_url: Optional[str],
     api_key: Optional[str],
+    rpc_url: Optional[str],
 ) -> None:
     """
     Click does not support async functions.
@@ -156,8 +165,13 @@ def cli_entrypoint(
 
     Also handles basic checks/conversions from the CLI args.
     """
-    if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
+    if target == "offchain":
+        if not api_key or not api_base_url:
+            raise click.UsageError(
+                "API key and API URL are required when destination is 'offchain'."
+            )
+        if rpc_url:
+            logger.warning("🤔 rpc-url option has no use when the target is offchain. Ignoring it.")
 
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
@@ -177,6 +191,7 @@ def cli_entrypoint(
             publisher_address,
             api_base_url,
             api_key,
+            rpc_url,
         )
     )
 
