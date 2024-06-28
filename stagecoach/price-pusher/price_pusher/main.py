@@ -168,10 +168,12 @@ def cli_entrypoint(
     if target == "offchain":
         if not api_key or not api_base_url:
             raise click.UsageError(
-                "API key and API URL are required when destination is 'offchain'."
+                '"api-key" and "api-base-url" are required when the destination is "offchain".'
             )
         if rpc_url:
-            logger.warning("🤔 rpc-url option has no use when the target is offchain. Ignoring it.")
+            logger.warning(
+                '🤔 "rpc-url" option has no use when the target is "offchain". Ignoring it.'
+            )
 
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)
