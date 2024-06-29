@@ -4,7 +4,7 @@ import os
 
 import boto3
 
-from pragma.core.client import PragmaClient
+from pragma.core.client import PragmaOnChainClient
 from pragma.core.logger import get_stream_logger
 
 START_BLOCK = int(os.environ.get("START_BLOCK", 0))
@@ -37,7 +37,7 @@ async def main():
     admin_private_key = _get_pvt_key()
     # admin_private_key = int(os.environ.get("ADMIN_PRIVATE_KEY"), 16)
 
-    client = PragmaClient(
+    client = PragmaOnChainClient(
         network=RPC_URL,
         account_private_key=admin_private_key,
         account_contract_address=ADMIN_CONTRACT_ADDRESS,
