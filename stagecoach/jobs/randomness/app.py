@@ -9,6 +9,9 @@ from pragma.core.logger import get_stream_logger
 
 START_BLOCK = int(os.environ.get("START_BLOCK", 0))
 NETWORK = os.environ.get("NETWORK", "sepolia")
+RPC_URL = os.environ.get(
+    "RPC_URL", "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
+)
 SECRET_NAME = os.environ["SECRET_NAME"]
 ADMIN_CONTRACT_ADDRESS = int(os.environ["ADMIN_CONTRACT_ADDRESS"], 16)
 VRF_CONTRACT_ADDRESS = int(os.environ["VRF_CONTRACT_ADDRESS"], 16)
@@ -35,9 +38,10 @@ async def main():
     # admin_private_key = int(os.environ.get("ADMIN_PRIVATE_KEY"), 16)
 
     client = PragmaOnChainClient(
-        network=NETWORK,
+        network=RPC_URL,
         account_private_key=admin_private_key,
         account_contract_address=ADMIN_CONTRACT_ADDRESS,
+        chain_name=NETWORK,
     )
     client.init_randomness_contract(VRF_CONTRACT_ADDRESS)
 
