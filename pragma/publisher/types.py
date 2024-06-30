@@ -41,12 +41,12 @@ class Interval(Enum):
 @add_sync_methods
 class FetcherInterfaceT(abc.ABC):
     client: PragmaOnChainClient = PragmaOnChainClient(network="mainnet")
-    assets: List[Pair]
+    pairs: List[Pair]
     publisher: str
     headers: dict
 
-    def __init__(self, assets: List[Pair], publisher: str, api_key: str = None):
-        self.assets = assets
+    def __init__(self, pairs: List[Pair], publisher: str, api_key: str = None):
+        self.pairs = pairs
         self.publisher = publisher
         self.headers = {"Accepts": "application/json"}
         if api_key:
