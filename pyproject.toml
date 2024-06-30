@@ -23,6 +23,7 @@ typer = "0.6.1"
 deprecated = "^1.2.14"
 aioresponses = "^0.7.4"
 requests-mock = "^1.11.0"
+pydantic = "^2.7.4"
 python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
