@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma.core.logger import get_stream_logger
-from pragma.core.types import get_rpc_url
+from pragma.core.types import Network, get_rpc_url
 
 logger = get_stream_logger()
 
