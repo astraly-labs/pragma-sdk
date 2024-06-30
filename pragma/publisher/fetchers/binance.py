@@ -19,14 +19,7 @@ EXCEPTION_LIST = [...]  # TODO: add exception list
 
 class BinanceFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.binance.com/api/v3/ticker/24hr"
-    client: PragmaOnChainClient
     SOURCE: str = "BINANCE"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1

@@ -16,18 +16,7 @@ class DefillamaFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=15m"
     )
-
     SOURCE: str = "DEFILLAMA"
-    api_key: str
-    headers: dict
-    publisher: str
-
-    def __init__(self, pair: List[Pair], publisher, api_key=None):
-        self.pair = pair
-        self.publisher = publisher
-        self.headers = {"Accepts": "application/json"}
-        if api_key:
-            self.headers["X-Api-Key"] = api_key
 
     async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
         pair_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
@@ -54,9 +43,6 @@ class DefillamaFetcher(FetcherInterfaceT):
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
         for pair in self.pair:
-            if pair["type"] != "SPOT":
-                logger.debug("Skipping %s for non-spot pair %s", self.SOURCE, pair)
-                continue
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 

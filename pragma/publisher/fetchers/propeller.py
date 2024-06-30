@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from aiohttp import ClientSession
 
@@ -80,15 +80,7 @@ class PropellerFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://api.propellerheads.xyz/partner/v2/solver/quote?blockchain=ethereum"
     )
-    client: PragmaOnChainClient
     SOURCE: str = "PROPELLER"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, api_key: str = "", client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.headers = {"X-Api-Key": api_key}
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -106,7 +98,7 @@ class PropellerFetcher(FetcherInterfaceT):
             substitute_pair = pair
             eth_price = 1
 
-        url = f"{self.BASE_URL}"
+        url = self.format_url()
         try:
             payload = build_payload(
                 substitute_pair.base_currency.id, substitute_pair.quote_currency.id
@@ -147,7 +139,7 @@ class PropellerFetcher(FetcherInterfaceT):
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Optional[Pair] = None):
         url = self.BASE_URL
         return url
 

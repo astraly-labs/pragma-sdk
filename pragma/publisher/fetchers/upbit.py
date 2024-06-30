@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import Any, List, Union
 
 from aiohttp import ClientSession
 
@@ -15,12 +15,6 @@ logger = logging.getLogger(__name__)
 class UpbitFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://sg-api.upbit.com/v1/ticker"
     SOURCE: str = "UPBIT"
-
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher):
-        self.pairs = pairs
-        self.publisher = publisher
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -46,7 +40,7 @@ class UpbitFetcher(FetcherInterfaceT):
         )
         return url
 
-    def _construct(self, pair: Pair, result) -> SpotEntry:
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry:
         data = result[0]
         timestamp = int(time.time())
         price = float(data["trade_price"])

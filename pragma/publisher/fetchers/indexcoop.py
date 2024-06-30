@@ -26,26 +26,18 @@ SUPPORTED_INDEXES = {
 class IndexCoopFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.indexcoop.com"
     SOURCE: str = "INDEXCOOP"
-    client: PragmaOnChainClient
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = pair["pair"]
-        url = self.format_url(pair[0].lower())
+        url = self.format_url(pair)
         async with session.get(url) as resp:
             content_type = resp.headers.get("Content-Type", "")
             if "application/json" not in content_type:
                 response_text = await resp.text()
                 if not response_text:
                     return PublisherFetchError(
-                        f"No index found for {pair[0]} from IndexCoop"
+                        f"No index found for {pair.base_currency} from IndexCoop"
                     )
                 parsed_data = json.loads(response_text)
                 logger.warning("Unexpected content type received: %s", content_type)
@@ -60,8 +52,8 @@ class IndexCoopFetcher(FetcherInterfaceT):
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_pair, base_pair=None):
-        url = f"{self.BASE_URL}/{quote_pair}/analytics"
+    def format_url(self, pair: Pair):
+        url = f"{self.BASE_URL}/{pair.base_currency.id}/analytics"
         return url
 
     def fetch_quantities(self, index_address) -> List[AssetQuantities]:

@@ -17,6 +17,7 @@ class AssetQuantities:
         self.quantities = quantities
 
 
+# TODO(#000): rewrite this class
 class IndexFetcher(FetcherInterfaceT):
     fetcher: Any
     index_name: str

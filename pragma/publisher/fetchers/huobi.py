@@ -17,12 +17,6 @@ logger = logging.getLogger(__name__)
 class HuobiFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.huobi.pro/market/detail/merged"
     SOURCE: str = "HUOBI"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1

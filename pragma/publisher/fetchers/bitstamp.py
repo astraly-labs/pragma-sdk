@@ -14,11 +14,6 @@ logger = logging.getLogger(__name__)
 class BitstampFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://www.bitstamp.net/api/v2/ticker"
     SOURCE: str = "BITSTAMP"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher):
-        self.pairs = pairs
-        self.publisher = publisher
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession

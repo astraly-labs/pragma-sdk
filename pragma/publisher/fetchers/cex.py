@@ -17,12 +17,6 @@ class CexFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://cex.io/api/ticker"
     SOURCE: str = "CEX"
 
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher):
-        self.pairs = pairs
-        self.publisher = publisher
-
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:

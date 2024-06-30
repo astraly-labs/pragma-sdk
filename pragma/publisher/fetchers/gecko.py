@@ -67,17 +67,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://api.geckoterminal.com/api/v2/networks/{network}/tokens/{token_address}"
     )
-
     SOURCE: str = "GECKOTERMINAL"
-    headers = {
-        "Accepts": "application/json",
-    }
-
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher):
-        self.pairs = pairs
-        self.publisher = publisher
 
     async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
         if pair.quote_currency.id != "USD":

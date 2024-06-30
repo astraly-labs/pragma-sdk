@@ -16,12 +16,6 @@ logger = logging.getLogger(__name__)
 class GateioFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.gateio.ws/api/v4/spot/tickers"
     SOURCE: str = "GATEIO"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1

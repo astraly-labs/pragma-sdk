@@ -2,7 +2,7 @@ import asyncio
 import logging
 import math
 import time
-from typing import List, Union
+from typing import Any, List, Union
 
 from aiohttp import ClientSession
 from starknet_py.hash.selector import get_selector_from_name
@@ -62,19 +62,11 @@ class StarknetAMMFetcher(FetcherInterfaceT):
     STRK_DECIMALS: int = 8
 
     SOURCE = "STARKNET"
-    client: PragmaOnChainClient
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def off_fetch_ekubo_price(
-        self, pair, session: ClientSession, timestamp=None
+        self, pair: Pair, session: ClientSession, timestamp=None
     ) -> Union[SpotEntry, PublisherFetchError]:
         url = self.format_url(pair, timestamp)
-        pair = pair["pair"]
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -108,7 +100,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
 
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def _construct(self, pair: Pair, result) -> SpotEntry:
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))
         return SpotEntry(
             pair_id=pair.id,

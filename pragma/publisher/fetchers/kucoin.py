@@ -16,14 +16,7 @@ logger = logging.getLogger(__name__)
 
 class KucoinFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.kucoin.com/api/v1/market/orderbook/level1"
-    client: PragmaOnChainClient
     SOURCE: str = "KUCOIN"
-    publisher: str
-
-    def __init__(self, pairs: List[Pair], publisher, client=None):
-        self.pairs = pairs
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1

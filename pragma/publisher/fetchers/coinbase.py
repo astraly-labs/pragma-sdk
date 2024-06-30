@@ -17,13 +17,6 @@ class CoinbaseFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.coinbase.com/v2/exchange-rates?currency="
     SOURCE: str = "COINBASE"
 
-    publisher: str
-    pairs: List[Pair]
-
-    def __init__(self, pairs: List[Pair], publisher):
-        self.pairs = pairs
-        self.publisher = publisher
-
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
