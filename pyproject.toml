@@ -60,6 +60,7 @@ test_ci_vrf = "coverage run -m pytest --net=devnet --client=full_node -v --rerun
 test_stagecoach = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError stagecoach/ -s"
 test_ci_api_client = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/api_client_test.py -s"
 test_ci_utils = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/utils_test.py -s"
+test_ci_all = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/ -s"
 
 circular_imports_check.shell = "poetry run pytest circular.py"
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
