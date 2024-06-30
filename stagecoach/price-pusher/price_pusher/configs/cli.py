@@ -5,7 +5,6 @@ import logging
 from logging import Logger
 from typing import Optional
 from pragma.publisher.client import (
-    PragmaClient,
     PragmaOnChainClient,
     PragmaAPIClient,
     PragmaClient,

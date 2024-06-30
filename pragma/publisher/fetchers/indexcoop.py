@@ -9,9 +9,7 @@ from aiohttp import ClientSession
 
 from pragma.core.assets import try_get_asset_config_from_ticker
 from pragma.core.types import Pair
-from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
-from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.fetchers.index import AssetQuantities
 from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 

@@ -8,7 +8,6 @@ from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
-from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataTypes, ExecutionConfig
 from pragma.core.utils import add_sync_methods, get_cur_from_pair

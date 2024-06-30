@@ -9,7 +9,6 @@ from pragma.core.assets import (
     try_get_asset_config_from_ticker,
 )
 from pragma.core.types import Pair
-from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
