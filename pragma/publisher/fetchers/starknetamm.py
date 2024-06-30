@@ -5,7 +5,6 @@ from typing import Any, List, Union
 
 from aiohttp import ClientSession
 
-# from starknet_py.net.full_node_client import FullNodeClient
 from pragma.core.entry import SpotEntry
 from pragma.core.types import Pair
 from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
