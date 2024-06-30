@@ -6,10 +6,10 @@ from typing import Dict, List, Union
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import try_get_asset_config_from_ticker
+from pragma.core.types import Pair
 from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
-from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -84,20 +84,23 @@ class PropellerFetcher(FetcherInterfaceT):
     SOURCE: str = "PROPELLER"
     publisher: str
 
-    def __init__(
-        self, assets: List[PragmaAsset], publisher, api_key: str = "", client=None
-    ):
-        self.assets = assets
+    def __init__(self, pairs: List[Pair], publisher, api_key: str = "", client=None):
+        self.pairs = pairs
         self.publisher = publisher
         self.headers = {"X-Api-Key": api_key}
         self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
+        self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        if pair in (("DPI", "USD"), ("MVI", "USD")):
-            substitute_pair = (pair[0], "WETH")
+        if (pair.base_currency.id, pair.quote_currency.id) in (
+            ("DPI", "USD"),
+            ("MVI", "USD"),
+        ):
+            substitute_pair = Pair(
+                try_get_asset_config_from_ticker("ETH").get_currency(),
+                pair.quote_currency,
+            )
             eth_price = await self.get_stable_price("ETH")
         else:
             substitute_pair = pair
@@ -105,14 +108,16 @@ class PropellerFetcher(FetcherInterfaceT):
 
         url = f"{self.BASE_URL}"
         try:
-            payload = build_payload(substitute_pair[0], substitute_pair[1])
+            payload = build_payload(
+                substitute_pair.base_currency.id, substitute_pair.quote_currency.id
+            )
         except PublisherFetchError as err:
             return err
 
         async with session.post(url, headers=self.headers, json=payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(substitute_pair)} from Propeller"
+                    f"No data found for {substitute_pair.id} from Propeller"
                 )
 
             if resp.status == 403:
@@ -132,25 +137,21 @@ class PropellerFetcher(FetcherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Propeller"
                 )
 
-            return self._construct(asset, result, eth_price)
+            return self._construct(pair, result, eth_price)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping Propeller for non-spot asset %s", asset)
-                continue
-            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
+        for pair in self.pairs:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset):
+    def format_url(self, pair: Pair):
         url = self.BASE_URL
         return url
 
-    def _construct(self, asset, result, eth_price=None) -> SpotEntry:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result, eth_price=None) -> SpotEntry:
         mid_prices = []
 
         for quotes, buy_tokens, sell_tokens in zip(
@@ -165,20 +166,21 @@ class PropellerFetcher(FetcherInterfaceT):
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-        if pair in (("DPI", "USD"), ("MVI", "USD")):
+        if (pair.base_currency.id, pair.quote_currency.id) in (
+            ("DPI", "USD"),
+            ("MVI", "USD"),
+        ):
             price = sum(mid_prices) * eth_price / len(mid_prices)
         else:
             price = sum(mid_prices) / len(mid_prices)
-        price_int = int(price * (10 ** asset["decimals"]))
+        price_int = int(price * (10 ** pair.decimals()))
 
         timestamp = int(time.time())
 
-        pair_id = currency_pair_to_pair_id(*pair)
-
-        logger.info("Fetched price %d for %s from Propeller", price, "/".join(pair))
+        logger.info("Fetched price %d for %s from Propeller", price, pair.id)
 
         return SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,

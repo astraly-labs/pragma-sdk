@@ -46,13 +46,9 @@ def create_client(
 
     elif target == "offchain":
         if not api_key:
-            raise click.BadParameter(
-                "Argument api-key can't be None if offchain is selected"
-            )
+            raise click.BadParameter("Argument api-key can't be None if offchain is selected")
         if not api_base_url:
-            raise click.BadParameter(
-                "Argument api-base-url can't be None if offchain is selected"
-            )
+            raise click.BadParameter("Argument api-base-url can't be None if offchain is selected")
         return PragmaAPIClient(
             account_contract_address=publisher_address,
             account_private_key=private_key,

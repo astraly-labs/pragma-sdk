@@ -5,8 +5,9 @@ from typing import Dict, List
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import try_get_asset_config_from_ticker
 from pragma.core.entry import SpotEntry
+from pragma.core.types import Pair
 from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
@@ -74,26 +75,23 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
 
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher):
-        self.assets = assets
+    def __init__(self, pairs: List[Pair], publisher):
+        self.pairs = pairs
         self.publisher = publisher
 
-    async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
-    ) -> SpotEntry:
-        pair = asset["pair"]
-        if pair[1] != "USD":
-            return await self.operate_usd_hop(asset, session)
-        pool = ASSET_MAPPING.get(pair[0])
+    async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
+        if pair.quote_currency.id != "USD":
+            return await self.operate_usd_hop(pair, session)
+        pool = ASSET_MAPPING.get(pair.base_currency.id)
         if pool is None:
             return PublisherFetchError(
-                f"Unknown price pair, do not know how to query GeckoTerminal for {pair[0]}"
+                f"Unknown price pair, do not know how to query GeckoTerminal for {pair.base_currency}"
             )
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
             result = await resp.json()
             if (
@@ -101,40 +99,41 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
 
-        return self._construct(asset, result)
+        return self._construct(pair, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
-                continue
-            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
+        for pair in self.pairs:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset):
-        pool = ASSET_MAPPING[quote_asset]
+    def format_url(self, pair: Pair):
+        pool = ASSET_MAPPING[pair.quote_currency.id]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
-    async def operate_usd_hop(self, asset, session) -> SpotEntry:
-        pair = asset["pair"]
-        pool_1 = ASSET_MAPPING.get(pair[0])
-        pool_2 = ASSET_MAPPING.get(pair[1])
+    async def operate_usd_hop(self, pair: Pair, session) -> SpotEntry:
+        pool_1 = ASSET_MAPPING.get(pair.base_currency.id)
+        pool_2 = ASSET_MAPPING.get(pair.quote_currency.id)
         if pool_1 is None or pool_2 is None:
             return PublisherFetchError(
-                f"Unknown price pair, do not know how to query GeckoTerminal for hop {pair[0]} to {pair[1]}"
+                f"Unknown price pair, do not know how to query GeckoTerminal for hop {pair.base_currency} to {pair.quote_currency}"
             )
 
-        pair1_url = self.BASE_URL.format(network=pool_1[0], token_address=pool_1[1])
+        pair1_url = self.format_url(
+            Pair(
+                pair.base_currency,
+                try_get_asset_config_from_ticker("USD").get_currency(),
+            )
+        )
 
         async with session.get(pair1_url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
             result = await resp.json()
             if (
@@ -142,14 +141,19 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
 
-        pair2_url = self.BASE_URL.format(network=pool_2[0], token_address=pool_2[1])
+        pair2_url = self.format_url(
+            Pair(
+                pair.quote_currency,
+                try_get_asset_config_from_ticker("USD").get_currency(),
+            )
+        )
         async with session.get(pair2_url, headers=self.headers) as resp2:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
             hop_result = await resp2.json()
             if (
@@ -157,29 +161,28 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from GeckoTerminal"
+                    f"No data found for {pair.id} from GeckoTerminal"
                 )
-        return self._construct(asset, result, hop_result)
+        return self._construct(pair, result, hop_result)
 
-    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result, hop_result=None) -> SpotEntry:
         data = result["data"]["attributes"]
         price = float(data["price_usd"])
+        decimals = pair.decimals()
         if hop_result is not None:
             hop_price = float(hop_result["data"]["attributes"]["price_usd"])
-            price_int = int(hop_price / price * 10 ** asset["decimals"])
+            price_int = int(hop_price / price * 10**decimals)
         else:
-            price_int = int(price * (10 ** asset["decimals"]))
+            price_int = int(price * (10**decimals))
 
-        volume = float(data["volume_usd"]["h24"]) / 10 ** asset["decimals"]
+        volume = float(data["volume_usd"]["h24"]) / 10**decimals
 
         timestamp = int(time.time())
 
-        pair_id = currency_pair_to_pair_id(*pair)
-        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair_id)
+        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair.id)
 
         return SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,

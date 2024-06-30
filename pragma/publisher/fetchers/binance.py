@@ -5,6 +5,7 @@ from typing import List, Union
 
 from aiohttp import ClientSession
 
+from pragma.core.assets import try_get_asset_config_from_ticker
 from pragma.core.types import Pair
 from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
@@ -32,9 +33,15 @@ class BinanceFetcher(FetcherInterfaceT):
     ) -> Union[SpotEntry, PublisherFetchError]:
         # TODO: remove that
         if pair[1] == "USD":
-            pair = (pair[0], "USDT")
+            pair = Pair(
+                pair.base_currency,
+                try_get_asset_config_from_ticker("USDT").get_currency(),
+            )
         if pair[0] == "WETH":
-            pair = ("ETH", pair[1])
+            pair = Pair(
+                try_get_asset_config_from_ticker("ETH").get_currency(),
+                pair.quote_currency,
+            )
         else:
             usdt_price = 1
 
@@ -66,7 +73,12 @@ class BinanceFetcher(FetcherInterfaceT):
         return url
 
     async def operate_usdt_hop(self, pair: Pair, session) -> SpotEntry:
-        url_pair1 = self.format_url(Pair(pair.base_currency, "USDT"))  # TODO: add USDT
+        url_pair1 = self.format_url(
+            Pair(
+                pair.base_currency,
+                try_get_asset_config_from_ticker("USDT").get_currency(),
+            )
+        )
         async with session.get(url_pair1) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -78,7 +90,12 @@ class BinanceFetcher(FetcherInterfaceT):
                     f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
                 )
 
-        url_pair2 = self.format_url(Pair(pair.quote_currency, "USDT"))  # TODO: add USDT
+        url_pair2 = self.format_url(
+            Pair(
+                pair.quote_currency,
+                try_get_asset_config_from_ticker("USDT").get_currency(),
+            )
+        )
         async with session.get(url_pair2) as resp:
             if resp.status == 404:
                 return PublisherFetchError(

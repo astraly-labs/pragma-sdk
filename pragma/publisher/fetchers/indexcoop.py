@@ -7,7 +7,8 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import try_get_asset_config_from_ticker
+from pragma.core.types import Pair
 from pragma.publisher.client import PragmaOnChainClient
 from pragma.core.entry import SpotEntry
 from pragma.core.utils import currency_pair_to_pair_id
@@ -28,15 +29,15 @@ class IndexCoopFetcher(FetcherInterfaceT):
     client: PragmaOnChainClient
     publisher: str
 
-    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
-        self.assets = assets
+    def __init__(self, pairs: List[Pair], publisher, client=None):
+        self.pairs = pairs
         self.publisher = publisher
         self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
+        self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
+        pair = pair["pair"]
         url = self.format_url(pair[0].lower())
         async with session.get(url) as resp:
             content_type = resp.headers.get("Content-Type", "")
@@ -49,21 +50,18 @@ class IndexCoopFetcher(FetcherInterfaceT):
                 parsed_data = json.loads(response_text)
                 logger.warning("Unexpected content type received: %s", content_type)
 
-            return self._construct(asset, parsed_data)
+            return self._construct(pair, parsed_data)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping IndexCoop for non-spot asset %s", asset)
-                continue
-            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
+        for pair in self.pairs:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset=None):
-        url = f"{self.BASE_URL}/{quote_asset}/analytics"
+    def format_url(self, quote_pair, base_pair=None):
+        url = f"{self.BASE_URL}/{quote_pair}/analytics"
         return url
 
     def fetch_quantities(self, index_address) -> List[AssetQuantities]:
@@ -80,24 +78,26 @@ class IndexCoopFetcher(FetcherInterfaceT):
 
         return [
             AssetQuantities(
-                PragmaSpotAsset(pair=(symbol, "USD"), decimals=8, type="SPOT"),
-                quantities,
+                pair=Pair(
+                    try_get_asset_config_from_ticker(symbol).get_currency(),
+                    try_get_asset_config_from_ticker("USD").get_currency(),
+                ),
+                quantities=quantities,
             )
             for symbol, quantities in quantities.items()
         ]
 
-    def _construct(self, asset, result) -> SpotEntry:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result) -> SpotEntry:
         timestamp = int(time.time())
         price = result["navPrice"]
-        price_int = int(price * (10 ** asset["decimals"]))
-        pair_id = currency_pair_to_pair_id(*pair)
-        volume = int(float(result["volume24h"]) * (10 ** asset["decimals"]))
+        decimals = pair.decimals()
+        price_int = int(price * (10**decimals))
+        volume = int(float(result["volume24h"]) * (10**decimals))
 
-        logger.info("Fetched price %d for %s from IndexCoop", price, "/".join(pair))
+        logger.info("Fetched price %d for %s from IndexCoop", price, pair.id)
 
         return SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             volume=volume,
             timestamp=timestamp,

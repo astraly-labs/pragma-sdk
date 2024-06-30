@@ -3,7 +3,7 @@ import logging
 import random
 import collections
 from enum import Enum, unique
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 from starknet_py.net.client_models import ResourceBounds
 
@@ -185,6 +185,9 @@ class Pair:
             f"{self.base_currency})"
             f"{self.quote_currency}, "
         )
+
+    def to_tuple(self) -> Tuple[str, str]:
+        return (self.base_currency.id, self.quote_currency.id)
 
     def decimals(self):
         """
