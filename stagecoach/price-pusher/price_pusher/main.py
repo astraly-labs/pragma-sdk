@@ -28,8 +28,12 @@ async def main(
     private_key: str,
     publisher_name: str,
     publisher_address: str,
-    api_base_url: Optional[str],
-    api_key: Optional[str],
+    api_base_url: Optional[str] = None,
+    api_key: Optional[str] = None,
+    rpc_url: Optional[str] = None,
+    max_fee: Optional[int] = None,
+    pagination: Optional[int] = None,
+    enable_strk_fees: Optional[bool] = None,
 ) -> None:
     """
     Main function of the price pusher.
@@ -43,6 +47,10 @@ async def main(
         private_key=private_key,
         api_base_url=api_base_url,
         api_key=api_key,
+        rpc_url=rpc_url,
+        max_fee=max_fee,
+        pagination=pagination,
+        enable_strk_fees=enable_strk_fees,
     )
 
     logger.info("🪚 Creating Fetcher client & adding fetchers...")
@@ -139,6 +147,30 @@ def _create_listeners(
     required=False,
     help="Pragma API key used to publish offchain",
 )
+@click.option(
+    "--rpc-url",
+    type=click.STRING,
+    required=False,
+    help="RPC url used by the onchain client",
+)
+@click.option(
+    "--max-fee",
+    type=click.INT,
+    required=False,
+    help="Max fee used when using the onchain client",
+)
+@click.option(
+    "--pagination",
+    type=click.INT,
+    required=False,
+    help="Number of elements per page returned from the onchain client",
+)
+@click.option(
+    "--enable-stark-fees",
+    type=click.BOOL,
+    required=False,
+    help="enable_strk_fees option for the onchain client",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -149,6 +181,10 @@ def cli_entrypoint(
     publisher_address: str,
     api_base_url: Optional[str],
     api_key: Optional[str],
+    rpc_url: Optional[str],
+    max_fee: Optional[int],
+    pagination: Optional[int],
+    enable_strk_fees: Optional[bool],
 ) -> None:
     """
     Click does not support async functions.
@@ -156,10 +192,30 @@ def cli_entrypoint(
 
     Also handles basic checks/conversions from the CLI args.
     """
-    if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
-
     setup_logging(logger, log_level)
+
+    if target == "offchain":
+        if not api_key or not api_base_url:
+            raise click.UsageError(
+                '"api-key" and "api-base-url" are required when the destination is "offchain".'
+            )
+        if rpc_url:
+            logger.warning(
+                '🤔 "rpc-url" option has no use when the target is "offchain". Ignoring it.'
+            )
+        if max_fee:
+            logger.warning(
+                '🤔 "max_fee" option has no use when the target is "offchain". Ignoring it.'
+            )
+        if pagination:
+            logger.warning(
+                '🤔 "pagination" option has no use when the target is "offchain". Ignoring it.'
+            )
+        if enable_strk_fees:
+            logger.warning(
+                '🤔 "enable_strk_fees" option has no use when the target is "offchain". Ignoring it.'
+            )
+
     private_key = load_private_key(private_key)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
 
@@ -177,6 +233,7 @@ def cli_entrypoint(
             publisher_address,
             api_base_url,
             api_key,
+            rpc_url,
         )
     )
 

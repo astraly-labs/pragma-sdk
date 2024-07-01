@@ -21,6 +21,7 @@ from pragma.core.types import (
     ClientException,
     ContractAddresses,
     get_client_from_network,
+    get_rpc_url,
 )
 
 logger = get_stream_logger()
@@ -37,7 +38,13 @@ class PragmaOnChainClient(
     is_user_client: bool = False
     account_contract_address: Optional[int] = None
     account: Account = None
+
     full_node_client: FullNodeClient = None
+
+    rpc_url: str
+    max_fee: int
+    pagination: Optional[int]
+    enable_str_fees: bool
 
     def __init__(
         self,
@@ -47,6 +54,10 @@ class PragmaOnChainClient(
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
+        rpc_url: Optional[str] = None,
+        max_fee: Optional[int] = None,
+        pagination: Optional[int] = None,
+        enable_strk_fees: Optional[bool] = None,
     ):
         """
         Client for interacting with Pragma on Starknet.
@@ -61,8 +72,8 @@ class PragmaOnChainClient(
         :param chain_name: A str-representation of the chain if a URL string is given for `network`.
             Must be one of ``"mainnet"``, ``"sepolia"``, ``"pragma_testnet"``, ``"sharingan"`` or ``"devnet"``.
         """
-
-        full_node_client: FullNodeClient = get_client_from_network(network, port=port)
+        client_rpc_url = get_rpc_url(network, port) if rpc_url is None else rpc_url
+        full_node_client: FullNodeClient = get_client_from_network(client_rpc_url)
         self.full_node_client = full_node_client
         self.client = full_node_client
         if network.startswith("http") and chain_name is None:
@@ -81,6 +92,13 @@ class PragmaOnChainClient(
 
         if not contract_addresses_config:
             contract_addresses_config = CONTRACT_ADDRESSES[self.network]
+
+        self.max_fee = max_fee if max_fee is not None else int(1e16)
+        self.pagination = pagination
+        self.enable_str_fees = (
+            enable_strk_fees if enable_strk_fees is not None else False
+        )
+
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 

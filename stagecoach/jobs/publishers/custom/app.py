@@ -49,7 +49,6 @@ def fetch_entries(assets: List[PragmaAsset], *args, **kwargs) -> List[SpotEntry]
 
 
 async def publish_all(assets):
-    max_fee = int(os.getenv("MAX_FEE", int(1e18)))
     # We get the private key and address of the account deployed in step 1.
     publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 0)
     publisher_address = int(os.environ.get("PUBLISHER_ADDRESS"), 0)
@@ -62,9 +61,7 @@ async def publish_all(assets):
 
     # Use your own custom logic
     _entries = fetch_entries(assets)
-    await publisher_client.publish_many(
-        _entries, max_fee=int(max_fee), auto_estimate=True
-    )
+    await publisher_client.publish_many(_entries, auto_estimate=True)
 
     logger.info("Publishing the following entries:")
     for entry in _entries:

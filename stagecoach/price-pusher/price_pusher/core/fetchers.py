@@ -1,21 +1,18 @@
 import logging
 import asyncio
+import os
+
 from typing import List
-from pragma.publisher.client import FetcherClient
 from concurrent.futures import ThreadPoolExecutor
-from pragma.publisher.fetchers import (
-    BinanceFetcher,
-    BitstampFetcher,
-    BybitFetcher,
-    CexFetcher,
-    DefillamaFetcher,
-    GeckoTerminalFetcher,
-    HuobiFetcher,
-    KucoinFetcher,
-    OkxFetcher,
-)
-from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
+
+from pragma.publisher.client import FetcherClient
 from pragma.publisher.types import PublisherInterfaceT
+
+from price_pusher.configs.fetchers import (
+    ALL_SPOT_FETCHERS,
+    ALL_FUTURE_FETCHERS,
+    FETCHERS_WITH_API_KEY,
+)
 from price_pusher.configs.price_config import (
     PriceConfig,
     get_unique_spot_assets_from_config_list,
@@ -43,23 +40,8 @@ async def add_all_fetchers(
     """
     spot_assets = get_unique_spot_assets_from_config_list(price_configs)
     future_assets = get_unique_future_assets_from_config_list(price_configs)
-    spot_fetchers = [
-        BitstampFetcher,
-        CexFetcher,
-        DefillamaFetcher,
-        OkxFetcher,
-        GeckoTerminalFetcher,
-        HuobiFetcher,
-        KucoinFetcher,
-        BybitFetcher,
-        BinanceFetcher,
-    ]
-    future_fetchers = [
-        BinanceFutureFetcher,
-        ByBitFutureFetcher,
-    ]
-    await _add_fetchers(fetcher_client, spot_fetchers, spot_assets, publisher_name)
-    await _add_fetchers(fetcher_client, future_fetchers, future_assets, publisher_name)
+    await _add_fetchers(fetcher_client, ALL_SPOT_FETCHERS, spot_assets, publisher_name)
+    await _add_fetchers(fetcher_client, ALL_FUTURE_FETCHERS, future_assets, publisher_name)
     return fetcher_client
 
 
@@ -109,6 +91,18 @@ def _add_one_fetcher(
         assets: List of assets for the fetcher.
         publisher_name: The name of the publisher.
     """
-    # TODO: use the pragma_client inside the fetcher constructor.
-    # Currently, a new client is created everytime.
-    fetcher_client.add_fetcher(fetcher(assets, publisher_name))
+    config = FETCHERS_WITH_API_KEY.get(fetcher, None)
+    if config is None:
+        fetcher_client.add_fetcher(fetcher(assets, publisher_name))
+        return
+
+    api_key = os.getenv(config.env_api_key)
+    if api_key or config.optional:
+        fetcher_client.add_fetcher(fetcher(assets, publisher_name, api_key))
+    else:
+        logger.warning(
+            f"⚠️ API key for {fetcher.__name__} is missing. "
+            f"Please set {config.env_api_key} as an env variable. "
+            "Skipping it for now."
+        )
+        return

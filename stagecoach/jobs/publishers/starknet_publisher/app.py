@@ -86,14 +86,17 @@ def _get_pvt_key():
 async def _handler(assets):
     publisher_private_key = _get_pvt_key()
     # publisher_private_key = int(os.environ.get("PUBLISHER_PRIVATE_KEY"), 16)
-
     rpc_url = os.getenv("RPC_URL")
+    enable_strk_fees = ENABLE_STRK_FEES.lower() in ("true", "1", "yes")
 
     if not rpc_url:
         publisher_client = PragmaOnChainClient(
             network=NETWORK,
             account_private_key=publisher_private_key,
             account_contract_address=PUBLISHER_ADDRESS,
+            pagination=PAGINATION,
+            max_fee=MAX_FEE,
+            enable_strk_fees=enable_strk_fees,
         )
     else:
         publisher_client = PragmaOnChainClient(
@@ -101,6 +104,9 @@ async def _handler(assets):
             account_private_key=publisher_private_key,
             account_contract_address=PUBLISHER_ADDRESS,
             chain_name=os.getenv("NETWORK"),
+            pagination=PAGINATION,
+            max_fee=MAX_FEE,
+            enable_strk_fees=enable_strk_fees,
         )
 
     # Check for both ETH/USD and STRK/USD
@@ -166,14 +172,9 @@ async def _handler(assets):
     _entries = await publisher_client.fetch()
     print("entries", _entries)
 
-    enable_strk_fees = ENABLE_STRK_FEES.lower() in ("true", "1", "yes")
-
     print(f"ENABLE_STRK_FEES is set to: {enable_strk_fees}")
     response = await publisher_client.publish_many(
         _entries,
-        pagination=PAGINATION,
-        max_fee=MAX_FEE,
-        enable_strk_fees=enable_strk_fees,
         auto_estimate=True,  # For safety or should we switch to l1_resource_bounds for cost ?
     )
 

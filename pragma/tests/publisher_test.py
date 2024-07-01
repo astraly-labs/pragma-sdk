@@ -79,15 +79,12 @@ async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
         [fetcher(SAMPLE_ASSETS, PUBLISHER_NAME) for fetcher in ALL_SPOT_FETCHERS]
     )
 
-    print(f"🧩 Fetchers : {fetcher.get_fetchers()}")
-
     data = await fetcher.fetch(return_exceptions=False)
 
     asset_valid_data_type(data, SpotEntry)
 
     # Publish SPOT data
-    print(data)
-    await pragma_client.publish_many(data, pagination=PAGINATION, auto_estimate=True)
+    await pragma_client.publish_many(data, auto_estimate=True)
 
 
 @pytest.mark.asyncio
@@ -110,10 +107,10 @@ async def test_publisher_client_future(pragma_client: PragmaOnChainClient):
     data_list: Sequence[FutureEntry] = [
         d for d in data_async if isinstance(d, FutureEntry)
     ]
-    print(data_list)
-    await pragma_client.publish_many(
-        data_list, pagination=PAGINATION, auto_estimate=True
-    )
+    await pragma_client.publish_many(data_list, auto_estimate=True)
+
+
+PAGINATION
 
 
 @pytest.mark.asyncio
@@ -140,8 +137,7 @@ async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
     data = await fetcher.fetch(return_exceptions=True)
 
     data = [d for d in data if isinstance(d, Entry)]
-    print(data)
-    await pragma_client.publish_many(data, pagination=PAGINATION, auto_estimate=True)
+    await pragma_client.publish_many(data, auto_estimate=True)
 
 
 def asset_valid_data_type(data: Sequence[Entry], data_type: Entry):

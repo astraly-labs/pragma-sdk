@@ -97,7 +97,7 @@ class PriceListener(IPriceListener):
             - checking if the oracle needs update
             - pushing notification to the orchestration if it does.
         """
-        last_fetch_time = -1
+        last_fetch_time = 0
         while True:
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
@@ -105,7 +105,7 @@ class PriceListener(IPriceListener):
                 last_fetch_time = current_time
             if await self._does_oracle_needs_update():
                 self._notify()
-                last_fetch_time = -1
+                last_fetch_time = 0
             await asyncio.sleep(0.1)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
