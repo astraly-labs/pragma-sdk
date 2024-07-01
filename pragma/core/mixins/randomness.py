@@ -18,7 +18,7 @@ from pragma.core.types import RequestStatus
 
 logger = get_stream_logger()
 
-IGNORE_REQUEST_THRESHOLD = 30
+IGNORE_REQUEST_THRESHOLD = 3
 
 
 class RandomnessMixin:
@@ -349,10 +349,11 @@ class RandomnessMixin:
         self,
         private_key: int,
         min_block: int = 0,
+        ignore_request_threshold: int = IGNORE_REQUEST_THRESHOLD,
     ):
         block_number = await self.full_node_client.get_block_number()
 
-        min_block = max(min_block, block_number - IGNORE_REQUEST_THRESHOLD)
+        min_block = max(min_block, block_number - ignore_request_threshold)
         logger.info(f"Handle random job running with min_block: {min_block}")
 
         sk = felt_to_secret_key(private_key)
@@ -396,7 +397,7 @@ class RandomnessMixin:
                 # Ignore requests that are too old
                 if (
                     minimum_block_number > block_number + 1
-                    or minimum_block_number < block_number - IGNORE_REQUEST_THRESHOLD
+                    or minimum_block_number < block_number - ignore_request_threshold
                 ):
                     logger.info(
                         f"Skipping event: {event.request_id} with min_block: {minimum_block_number}"
