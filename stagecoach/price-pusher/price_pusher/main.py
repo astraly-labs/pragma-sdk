@@ -4,7 +4,7 @@ import logging
 
 from typing import Optional, List
 
-from pragma.publisher.client import FetcherClient, PragmaPublisherClientT
+from pragma.publisher.client import FetcherClient, PragmaClient
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
@@ -68,7 +68,7 @@ async def main(
 def _create_listeners(
     price_configs: List[PriceConfig],
     target: str,
-    pragma_client: PragmaPublisherClientT,
+    pragma_client: PragmaClient,
 ) -> List[PriceListener]:
     """
     Create a listener for each price configuration. They will be used to monitor a group

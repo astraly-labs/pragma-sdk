@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import abc
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
-from pragma.core.assets import (
-    get_asset_spec_for_pair_id_by_type,
-    PragmaSpotAsset,
-    PragmaFutureAsset,
-)
+from pragma.core.types import DataTypes, Pair, UnixTimestamp
 from pragma.core.utils import felt_to_str, str_to_felt
 from pragma.core.mixins.types import OracleResponse
 
@@ -36,41 +33,38 @@ class Entry(abc.ABC):
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        # TODO (#000): log errors
         serialized_entries = [
-            # TODO (#000): This needs to be much more resilient to publish errors
-            entry.serialize()
-            for entry in entries
-            if isinstance(entry, Entry)
+            entry.serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     @staticmethod
     def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        # TODO (#000): log errors
         serialized_entries = [
-            # TODO (#000): This needs to be much more resilient to publish errors
-            entry.offchain_serialize()
-            for entry in entries
-            if isinstance(entry, Entry)
+            entry.offchain_serialize() for entry in entries if isinstance(entry, Entry)
         ]
         return list(filter(lambda item: item is not None, serialized_entries))
 
     @staticmethod
     def flatten_entries(entries: List[Entry]) -> List[int]:
-        """This flattens entriees to tuples.  Useful when you need the raw felt array"""
+        """This flattens entriees to tuples. Useful when you need the raw felt array"""
+
         expanded = [entry.to_tuple() for entry in entries]
         flattened = [x for entry in expanded for x in entry]
         return [len(entries)] + flattened
 
 
+@dataclass
 class BaseEntry:
-    timestamp: int
+    timestamp: UnixTimestamp
     source: int
     publisher: int
 
     def __init__(
-        self, timestamp: int, source: Union[str, int], publisher: Union[str, int]
+        self,
+        timestamp: UnixTimestamp,
+        source: Union[str, int],
+        publisher: Union[str, int],
     ):
         if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
@@ -86,9 +80,6 @@ class BaseEntry:
 class SpotEntry(Entry):
     """
     Represents a Spot Entry.
-
-    ⚠️ By default, the constructor will autoscale the provided volume to be quoted in the base asset.
-    This behavior can be overwritten witht the `autoscale_volume` parameter.
     """
 
     base: BaseEntry
@@ -100,11 +91,10 @@ class SpotEntry(Entry):
         self,
         pair_id: Union[str, int],
         price: int,
-        timestamp: int,
+        timestamp: UnixTimestamp,
         source: Union[str, int],
         publisher: Union[str, int],
-        volume: Optional[float] = 0,
-        autoscale_volume: bool = True,
+        volume: Optional[int] = 0,
     ) -> None:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -118,15 +108,7 @@ class SpotEntry(Entry):
         self.base = BaseEntry(timestamp, source, publisher)
         self.pair_id = pair_id
         self.price = price
-
-        if volume > 0 and autoscale_volume:
-            asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "SPOT")
-            decimals = asset["decimals"] or 0
-            volume = volume or 0
-
-            self.volume = int(volume * price * 10**decimals)
-        else:
-            self.volume = volume
+        self.volume = volume
 
     def __eq__(self, other):
         if isinstance(other, SpotEntry):
@@ -198,30 +180,30 @@ class SpotEntry(Entry):
     def get_source(self) -> str:
         return felt_to_str(self.base.source)
 
-    def get_asset_type(self) -> str:
-        return "SPOT"
+    def get_asset_type(self) -> DataTypes:
+        return DataTypes.SPOT
 
     @staticmethod
     def from_oracle_response(
-        asset: PragmaSpotAsset,
+        pair: Pair,
         oracle_response: OracleResponse,
         publisher_name: str,
         source_name: str,
     ) -> "SpotEntry":
         """
-        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Builds a SpotEntry object from a Pair and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
         lastest oracle prices for comparisons with the latest prices of
         various APIs (binance etc).
         """
+
         return SpotEntry(
-            str_to_felt(",".join(asset["pair"])),
+            pair.id,
             oracle_response[0],
             oracle_response[2],
             publisher_name,
             source_name,
             0,
-            autoscale_volume=False,
         )
 
     @staticmethod
@@ -234,7 +216,6 @@ class SpotEntry(Entry):
             base["source"],
             base["publisher"],
             volume=entry_dict["volume"],
-            autoscale_volume=False,
         )
 
     def __repr__(self):
@@ -252,9 +233,6 @@ class FutureEntry(Entry):
 
     Also used to represent a Perp Entry - the only difference is that a perpetual future has no
     expiry timestamp.
-
-    ⚠️ By default, the constructor will autoscale the provided volume to be quoted in the base asset.
-    This behavior can be overwritten witht the `autoscale_volume` parameter.
     """
 
     base: BaseEntry
@@ -271,8 +249,7 @@ class FutureEntry(Entry):
         source: Union[str, int],
         publisher: Union[str, int],
         expiry_timestamp: Optional[int] = 0,
-        volume: Optional[float] = 0,
-        autoscale_volume: Optional[bool] = True,
+        volume: Optional[int] = 0,
     ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -287,15 +264,7 @@ class FutureEntry(Entry):
         self.pair_id = pair_id
         self.price = price
         self.expiry_timestamp = expiry_timestamp
-
-        if autoscale_volume:
-            asset = get_asset_spec_for_pair_id_by_type(felt_to_str(pair_id), "FUTURE")
-            decimals = asset["decimals"] or 0
-            volume = volume or 0
-
-            self.volume = int(volume * price * 10**decimals)
-        else:
-            self.volume = volume
+        self.volume = volume
 
     def __eq__(self, other):
         if isinstance(other, FutureEntry):
@@ -371,7 +340,7 @@ class FutureEntry(Entry):
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
 
-    def get_timestamp(self) -> int:
+    def get_timestamp(self) -> UnixTimestamp:
         return self.base.timestamp
 
     def get_pair_id(self) -> str:
@@ -380,8 +349,8 @@ class FutureEntry(Entry):
     def get_source(self) -> str:
         return felt_to_str(self.base.source)
 
-    def get_asset_type(self) -> str:
-        return "FUTURE"
+    def get_asset_type(self) -> DataTypes:
+        return DataTypes.FUTURE
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
@@ -394,12 +363,11 @@ class FutureEntry(Entry):
             base["publisher"],
             entry_dict["expiration_timestamp"],
             volume=entry_dict["volume"],
-            autoscale_volume=False,
         )
 
     @staticmethod
     def from_oracle_response(
-        asset: PragmaFutureAsset,
+        pair: Pair,
         oracle_response: OracleResponse,
         publisher_name: str,
         source_name: str,
@@ -411,12 +379,11 @@ class FutureEntry(Entry):
         various APIs (binance etc).
         """
         return FutureEntry(
-            str_to_felt(",".join(asset["pair"])),
+            pair.id,
             oracle_response[0],
             oracle_response[2],
             publisher_name,
             source_name,
             oracle_response[4],
             0,
-            autoscale_volume=False,
         )

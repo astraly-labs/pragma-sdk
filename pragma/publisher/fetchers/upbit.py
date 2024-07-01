@@ -1,72 +1,56 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import Any, List, Union
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
 from pragma.core.entry import SpotEntry
-from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.core.types import Pair
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_ASSETS = [("BTC", "ETH")]
 
-
-class UpbitFetcher(PublisherInterfaceT):
+class UpbitFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://sg-api.upbit.com/v1/ticker"
     SOURCE: str = "UPBIT"
 
-    publisher: str
-
-    def __init__(self, assets: List[PragmaAsset], publisher):
-        self.assets = assets
-        self.publisher = publisher
-
     async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
+        self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = self.format_url(pair[0], pair[1])
+        url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Upbit"
-                )
+                return PublisherFetchError(f"No data found for {pair.id} from Upbit")
             result = await resp.json()
-            return self._construct(asset, result)
+            return self._construct(pair, result)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] == "SPOT" and asset["pair"] in SUPPORTED_ASSETS:
-                entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
-            else:
-                logger.debug("Skipping Upbit for non-spot asset %s", asset)
-                continue
+        for pair in self.pairs:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset):
-        url = f"{self.BASE_URL}?markets={quote_asset}-{base_asset}"
+    def format_url(self, pair: Pair):
+        url = (
+            f"{self.BASE_URL}?markets={pair.base_currency.id}-{pair.quote_currency.id}"
+        )
         return url
 
-    def _construct(self, asset, result) -> SpotEntry:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry:
         data = result[0]
         timestamp = int(time.time())
         price = float(data["trade_price"])
-        price_int = int(price * (10 ** asset["decimals"]))
-        pair_id = currency_pair_to_pair_id(*pair)
+        price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["trade_volume"])
 
-        logger.info("Fetched price %d for %s from Upbit", price, "/".join(pair))
+        logger.info("Fetched price %d for %s from Upbit", price, pair.id)
 
         return SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             volume=volume,
             timestamp=timestamp,

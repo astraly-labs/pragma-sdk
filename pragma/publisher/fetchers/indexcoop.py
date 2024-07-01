@@ -7,12 +7,11 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
-from pragma.publisher.client import PragmaOnChainClient
+from pragma.core.assets import try_get_asset_config_from_ticker
+from pragma.core.types import Pair
 from pragma.core.entry import SpotEntry
-from pragma.core.utils import currency_pair_to_pair_id
 from pragma.publisher.fetchers.index import AssetQuantities
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
@@ -22,48 +21,37 @@ SUPPORTED_INDEXES = {
 }
 
 
-class IndexCoopFetcher(PublisherInterfaceT):
+class IndexCoopFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.indexcoop.com"
     SOURCE: str = "INDEXCOOP"
-    client: PragmaOnChainClient
-    publisher: str
-
-    def __init__(self, assets: List[PragmaAsset], publisher, client=None):
-        self.assets = assets
-        self.publisher = publisher
-        self.client = client or PragmaOnChainClient(network="mainnet")
 
     async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
+        self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        pair = asset["pair"]
-        url = self.format_url(pair[0].lower())
+        url = self.format_url(pair)
         async with session.get(url) as resp:
             content_type = resp.headers.get("Content-Type", "")
             if "application/json" not in content_type:
                 response_text = await resp.text()
                 if not response_text:
                     return PublisherFetchError(
-                        f"No index found for {pair[0]} from IndexCoop"
+                        f"No index found for {pair.base_currency} from IndexCoop"
                     )
                 parsed_data = json.loads(response_text)
                 logger.warning("Unexpected content type received: %s", content_type)
 
-            return self._construct(asset, parsed_data)
+            return self._construct(pair, parsed_data)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Union[SpotEntry, PublisherFetchError]]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping IndexCoop for non-spot asset %s", asset)
-                continue
-            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
+        for pair in self.pairs:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset=None):
-        url = f"{self.BASE_URL}/{quote_asset}/analytics"
+    def format_url(self, pair: Pair):
+        url = f"{self.BASE_URL}/{pair.base_currency.id}/analytics"
         return url
 
     def fetch_quantities(self, index_address) -> List[AssetQuantities]:
@@ -80,28 +68,29 @@ class IndexCoopFetcher(PublisherInterfaceT):
 
         return [
             AssetQuantities(
-                PragmaSpotAsset(pair=(symbol, "USD"), decimals=8, type="SPOT"),
-                quantities,
+                pair=Pair(
+                    try_get_asset_config_from_ticker(symbol).get_currency(),
+                    try_get_asset_config_from_ticker("USD").get_currency(),
+                ),
+                quantities=quantities,
             )
             for symbol, quantities in quantities.items()
         ]
 
-    def _construct(self, asset, result) -> SpotEntry:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result) -> SpotEntry:
         timestamp = int(time.time())
         price = result["navPrice"]
-        price_int = int(price * (10 ** asset["decimals"]))
-        pair_id = currency_pair_to_pair_id(*pair)
-        volume = int(float(result["volume24h"]) * (10 ** asset["decimals"]))
+        decimals = pair.decimals()
+        price_int = int(price * (10**decimals))
+        volume = int(float(result["volume24h"]) * (10**decimals))
 
-        logger.info("Fetched price %d for %s from IndexCoop", price, "/".join(pair))
+        logger.info("Fetched price %d for %s from IndexCoop", price, pair.id)
 
         return SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             volume=volume,
             timestamp=timestamp,
             source=self.SOURCE,
             publisher=self.publisher,
-            autoscale_volume=False,
         )

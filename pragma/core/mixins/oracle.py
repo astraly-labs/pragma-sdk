@@ -1,18 +1,24 @@
 import time
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
-import requests
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
-from starknet_py.net.client_models import ResourceBounds
 
 
 from pragma.core.contract import Contract
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.logger import get_stream_logger
-from pragma.core.types import ASSET_MAPPING, AggregationMode, DataType, DataTypes
+from pragma.core.types import (
+    ADDRESS,
+    DECIMALS,
+    AggregationMode,
+    Asset,
+    DataTypes,
+    ExecutionConfig,
+    Pair,
+)
 from pragma.core.utils import felt_to_str, str_to_felt
 from pragma.core.mixins.types import OracleResponse
 
@@ -23,6 +29,7 @@ class OracleMixin:
     publisher_registry: Contract
     client: Client
     account: Account
+    execution_config: ExecutionConfig
 
     @deprecated
     async def publish_spot_entry(
@@ -33,10 +40,7 @@ class OracleMixin:
         source: int,
         publisher: int,
         volume: int = 0,
-        max_fee: int = int(1e18),
-        enable_strk_fees: Optional[bool] = False,
-        l1_resource_bounds: Optional[ResourceBounds] = None,
-        auto_estimate: Optional[bool] = False,
+        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -44,6 +48,9 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
+
+        config = execution_config or self.execution_config
+
         invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
                 "Spot": {
@@ -57,106 +64,87 @@ class OracleMixin:
                     "volume": volume,
                 }
             },
-            max_fee=max_fee,
-            l1_resource_bounds=l1_resource_bounds,
-            auto_estimate=auto_estimate,
-            enable_strk_fees=enable_strk_fees,
+            max_fee=config.max_fee,
+            l1_resource_bounds=config.l1_resource_bounds,
+            auto_estimate=config.auto_estimate,
+            enable_strk_fees=config.enable_strk_fees,
         )
         return invocation
 
     async def publish_many(
         self,
         entries: List[Entry],
-        pagination: Optional[int] = 40,
-        max_fee=int(1e18),
-        enable_strk_fees: Optional[bool] = False,
-        l1_resource_bounds: Optional[ResourceBounds] = None,
-        auto_estimate: Optional[bool] = False,
+        execution_config: ExecutionConfig,
     ) -> List[InvokeResult]:
-        if len(entries) == 0:
+        if not entries:
             logger.warning("Skipping publishing as entries array is empty")
-            return
+            return []
 
-        invocations = []
+        invocations: List[InvokeResult] = []
+
         spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
-        serialized_spot_entries = SpotEntry.serialize_entries(spot_entries)
-        if pagination:
-            index = 0
-            while index < len(serialized_spot_entries):
-                entries_subset = serialized_spot_entries[index : index + pagination]
-                invocation = await self.oracle.functions["publish_data_entries"].invoke(
-                    new_entries=[{"Spot": entry} for entry in entries_subset],
-                    enable_strk_fees=enable_strk_fees,
-                    max_fee=max_fee,
-                    l1_resource_bounds=l1_resource_bounds,
-                    auto_estimate=auto_estimate,
-                    callback=self.track_nonce,
-                )
-                index += pagination
-                invocations.append(invocation)
-                logger.debug(str(invocation))
-                logger.info(
-                    "Sent %d updated spot entries with transaction %s",
-                    len(entries_subset),
-                    hex(invocation.hash),
-                )
-        elif len(serialized_spot_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke(
-                new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
-                max_fee=max_fee,
-                enable_strk_fees=enable_strk_fees,
-                l1_resource_bounds=l1_resource_bounds,
-                auto_estimate=auto_estimate,
-                callback=self.track_nonce,
-            )
-            invocations.append(invocation)
-            logger.debug(str(invocation))
-            logger.info(
-                "Sent %d updated spot entries with transaction %s",
-                len(serialized_spot_entries),
-                hex(invocation.hash),
-            )
-
         future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
-        serialized_future_entries = FutureEntry.serialize_entries(future_entries)
-        if pagination:
-            index = 0
-            while index < len(serialized_future_entries):
-                entries_subset = serialized_future_entries[index : index + pagination]
-                invocation = await self.oracle.functions["publish_data_entries"].invoke(
-                    new_entries=[{"Future": entry} for entry in entries_subset],
-                    max_fee=max_fee,
-                    enable_strk_fees=enable_strk_fees,
-                    l1_resource_bounds=l1_resource_bounds,
-                    auto_estimate=auto_estimate,
-                    callback=self.track_nonce,
-                )
-                index += pagination
-                invocations.append(invocation)
-                logger.debug(str(invocation))
-                logger.info(
-                    "Sent %d updated future entries with transaction %s",
-                    len(entries_subset),
-                    hex(invocation.hash),
-                )
-        elif len(serialized_future_entries) > 0:
-            invocation = await self.oracle.functions["publish_data_entries"].invoke(
-                new_entries=[{"Future": entry} for entry in serialized_future_entries],
-                max_fee=max_fee,
-                enable_strk_fees=enable_strk_fees,
-                l1_resource_bounds=l1_resource_bounds,
-                auto_estimate=auto_estimate,
-                callback=self.track_nonce,
+
+        invocations.extend(
+            await self._publish_entries(spot_entries, DataTypes.SPOT, execution_config)
+        )
+        invocations.extend(
+            await self._publish_entries(
+                future_entries, DataTypes.FUTURE, execution_config
             )
-            invocations.append(invocation)
-            logger.debug(str(invocation))
-            logger.info(
-                "Sent %d updated future entries with transaction %s",
-                len(serialized_future_entries),
-                hex(invocation.hash),
-            )
+        )
 
         return invocations
+
+    async def _publish_entries(
+        self, entries: List[Entry], data_type: DataTypes, config: ExecutionConfig
+    ) -> List[InvokeResult]:
+        invocations = []
+        serialized_entries = (
+            SpotEntry.serialize_entries(entries)
+            if data_type == DataTypes.SPOT
+            else FutureEntry.serialize_entries(entries)
+        )
+
+        if len(serialized_entries) == 0:
+            return []
+
+        if config.pagination:
+            for i in range(0, len(serialized_entries), config.pagination):
+                entries_subset = serialized_entries[i : i + config.pagination]
+                invocation = await self._invoke_publish(
+                    entries_subset, data_type, config
+                )
+                invocations.append(invocation)
+                self._log_transaction(invocation, len(entries_subset), data_type)
+        else:
+            invocation = await self._invoke_publish(
+                serialized_entries, data_type, config
+            )
+            invocations.append(invocation)
+            self._log_transaction(invocation, len(serialized_entries), data_type)
+
+        return invocations
+
+    async def _invoke_publish(
+        self, entries: List[Dict], data_type: DataTypes, config: ExecutionConfig
+    ) -> InvokeResult:
+        return await self.oracle.functions["publish_data_entries"].invoke(
+            new_entries=[{data_type.name: entry} for entry in entries],
+            enable_strk_fees=config.enable_strk_fees,
+            max_fee=config.max_fee,
+            l1_resource_bounds=config.l1_resource_bounds,
+            auto_estimate=config.auto_estimate,
+            callback=self.track_nonce,
+        )
+
+    def _log_transaction(
+        self, invocation: InvokeResult, entry_count: int, data_type: DataTypes
+    ):
+        logger.debug(str(invocation))
+        logger.info(
+            f"Sent {entry_count} updated {data_type.name.lower()} entries with transaction {hex(invocation.hash)}"
+        )
 
     @deprecated
     async def get_spot_entries(
@@ -171,18 +159,23 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            DataType(DataTypes.SPOT, pair_id, None).serialize(),
+            Asset(DataTypes.SPOT, pair_id, None).serialize(),
             sources,
             block_number=block_number,
         )
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
-    async def get_all_sources(
-        self, data_type: DataType, block_number="latest"
-    ) -> List[str]:
+    async def get_all_sources(self, asset: Asset, block_number="latest") -> List[str]:
+        """
+        Query on-chain all sources used for a given asset.
+
+        :param asset: Asset
+        :param block_number: Block number or Block Tag
+        :return: List of sources
+        """
         (response,) = await self.oracle.functions["get_all_sources"].call(
-            data_type.serialize(), block_number=block_number
+            asset.serialize(), block_number=block_number
         )
 
         return [felt_to_str(source) for source in response]
@@ -200,7 +193,7 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            DataType(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
+            Asset(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
             sources,
             block_number=block_number,
         )
@@ -209,11 +202,20 @@ class OracleMixin:
 
     async def get_spot(
         self,
-        pair_id,
+        pair_id: Union[str, int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources=None,
+        sources: List[Union[str, int]] = None,
         block_number="latest",
     ) -> OracleResponse:
+        """
+        Query the Oracle contract for the data of a spot asset.
+
+        :param pair_id: Pair ID
+        :param aggregation_mode: AggregationMode
+        :param sources: List of sources, if None will use all sources
+        :param block_number: Block number or Block Tag
+        :return: OracleResponse
+        """
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -222,13 +224,13 @@ class OracleMixin:
             )
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                DataType(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -246,12 +248,22 @@ class OracleMixin:
 
     async def get_future(
         self,
-        pair_id,
-        expiry_timestamp,
+        pair_id: Union[str, int],
+        expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources=None,
+        sources: List[Union[str, int]] = None,
         block_number="latest",
     ) -> OracleResponse:
+        """
+        Query the Oracle contract for the data of a future asset.
+
+        :param pair_id: Pair ID
+        :param expiry_timestamp: Expiry timestamp of the future contract
+        :param aggregation_mode: AggregationMode
+        :param sources: List of sources, if None will use all sources
+        :param block_number: Block number or Block Tag
+        :return: OracleResponse
+        """
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
         elif not isinstance(pair_id, int):
@@ -261,13 +273,13 @@ class OracleMixin:
 
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -283,54 +295,20 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, data_type: DataType, block_number="latest") -> int:
+    async def get_decimals(self, asset: Asset, block_number="latest") -> DECIMALS:
+        """
+        Query on-chain the decimals for a given asset
+
+        :param asset: Asset
+        :param block_number: Block number or Block Tag
+        :return: Decimals
+        """
         (response,) = await self.oracle.functions["get_decimals"].call(
-            data_type.serialize(),
+            asset.serialize(),
             block_number=block_number,
         )
 
         return response
-
-    @deprecated
-    async def set_checkpoint(
-        self,
-        pair_id: int,
-        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-    ) -> InvokeResult:
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account. "
-                "You may do this by invoking "
-                "self._setup_account_client(private_key, account_contract_address)"
-            )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke(
-            DataType(DataTypes.SPOT, pair_id, None).serialize(),
-            aggregation_mode.serialize(),
-            max_fee=max_fee,
-        )
-        return invocation
-
-    @deprecated
-    async def set_future_checkpoint(
-        self,
-        pair_id: int,
-        expiry_timestamp: int,
-        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-    ) -> InvokeResult:
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account. "
-                "You may do this by invoking "
-                "self._setup_account_client(private_key, account_contract_address)"
-            )
-        invocation = await self.oracle.functions["set_checkpoint"].invoke(
-            DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
-            aggregation_mode.serialize(),
-            max_fee=max_fee,
-        )
-        return invocation
 
     # TODO (#000): Fix future checkpoints
     async def set_future_checkpoints(
@@ -338,8 +316,7 @@ class OracleMixin:
         pair_ids: List[int],
         expiry_timestamps: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-        pagination: Optional[int] = 15,
+        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -348,18 +325,20 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
+        config = execution_config or self.execution_config
+
         invocation = None
-        if pagination:
+        if config.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + pagination]
+                pair_ids_subset = pair_ids[index : index + config.pagination]
                 invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
-                    max_fee=max_fee,
+                    max_fee=config.max_fee,
                 )
-                index += pagination
+                index += config.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
@@ -371,18 +350,25 @@ class OracleMixin:
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
-                max_fee=max_fee,
+                max_fee=config.max_fee,
             )
 
         return invocation
 
     async def set_checkpoints(
         self,
-        pair_ids: List[int],
+        pair_ids: List[Union[str, int]],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-        pagination: Optional[int] = 15,
+        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
+        """
+        Set checkpoints for a list of pair IDs.
+
+        :param pair_ids: List of pair IDs
+        :param aggregation_mode: AggregationMode
+        :param execution_config: ExecutionConfig
+        :return: InvokeResult
+        """
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
@@ -390,20 +376,22 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
+        config = execution_config or self.execution_config
+
         invocation = None
-        if pagination:
+        if config.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + pagination]
+                pair_ids_subset = pair_ids[index : index + config.pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
-                        DataType(DataTypes.SPOT, pair_id, None).serialize()
+                        Asset(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
-                    max_fee=max_fee,
+                    max_fee=config.max_fee,
                 )
-                index += pagination
+                index += config.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set checkpoints for %d pair IDs with transaction %s",
@@ -413,34 +401,64 @@ class OracleMixin:
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
                 [
-                    DataType(DataTypes.SPOT, pair_id, None).serialize()
+                    Asset(DataTypes.SPOT, pair_id, None).serialize()
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),
-                max_fee=max_fee,
+                max_fee=config.max_fee,
             )
 
         return invocation
 
-    async def get_admin_address(self) -> int:
+    async def get_admin_address(self) -> ADDRESS:
+        """
+        Return the admin address of the Oracle contract.
+        """
+
         (response,) = await self.oracle.functions["get_admin_address"].call()
         return response
 
     async def update_oracle(
         self,
         implementation_hash: int,
-        max_fee=int(1e18),
+        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
+        """
+        Update the Oracle contract to a new implementation.
+
+        :param implementation_hash: New implementation hash
+        :param execution_config: ExecutionConfig
+        :return: InvokeResult
+        """
+
+        config = execution_config or self.execution_config
+
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account. "
+                "You may do this by invoking "
+                "self._setup_account_client(private_key, account_contract_address)"
+            )
+
         invocation = await self.oracle.functions["upgrade"].invoke(
             implementation_hash,
-            max_fee=max_fee,
+            max_fee=config.max_fee,
         )
         return invocation
 
-    async def get_time_since_last_published(
-        self, pair_id, publisher, block_number="latest"
+    async def get_time_since_last_published_spot(
+        self, pair: Pair, publisher: str, block_number="latest"
     ) -> int:
-        all_entries = await self.get_spot_entries(pair_id, block_number=block_number)
+        """
+        Get the time since the last published spot entry by a publisher for a given pair.
+        Will return a large number if no entry is found.
+
+        :param pair: Pair
+        :param publisher: Publisher name e.g "PRAGMA"
+        :param block_number: Block number or Block Tag
+        :return: Time since last published entry
+        """
+        all_entries = await self.get_spot_entries(pair.id, block_number=block_number)
 
         entries = [
             entry
@@ -456,22 +474,3 @@ class OracleMixin:
         diff = int(time.time()) - max_timestamp
 
         return diff
-
-    async def get_current_price_deviation(
-        self, pair_id, block_number="latest"
-    ) -> float:
-        current_data = await self.get_spot(pair_id, block_number=block_number)
-        current_price = current_data.price / 10**current_data.decimals
-
-        # query defillama API for the current price
-        asset = ASSET_MAPPING.get(pair_id.split("/")[0])
-        url = f"https://coins.llama.fi/prices/current/coingecko:{asset}"
-        resp = requests.get(
-            url,
-            headers={"Accepts": "application/json"},
-        )
-        json = resp.json()
-        price = json["coins"][f"coingecko:{asset}"]["price"]
-
-        deviation = abs(price - current_price) / price
-        return deviation

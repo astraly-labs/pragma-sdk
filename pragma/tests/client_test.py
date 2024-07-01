@@ -11,7 +11,7 @@ from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.types import ContractAddresses, DataType, DataTypes
+from pragma.core.types import ContractAddresses, Asset, DataTypes
 from pragma.core.utils import str_to_felt
 from pragma.tests.constants import CURRENCIES, PAIRS
 from pragma.tests.utils import read_contract, wait_for_acceptance
@@ -205,9 +205,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     assert res.decimals == 8
 
     # Get Decimals
-    decimals = await pragma_client.get_decimals(
-        DataType(DataTypes.SPOT, BTC_PAIR, None)
-    )
+    decimals = await pragma_client.get_decimals(Asset(DataTypes.SPOT, BTC_PAIR, None))
     assert decimals == 8
 
     # Publish many SPOT entries

@@ -204,7 +204,6 @@ FETCHER_CONFIGS = {
                 "INDEXCOOP",
                 PUBLISHER_NAME,
                 volume=6454312441521,
-                autoscale_volume=False,
             ),
         ],
     },
@@ -222,7 +221,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "CEX",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "DefillamaFetcher": {
@@ -235,7 +233,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "DEFILLAMA",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "BitstampFetcher": {
@@ -248,7 +245,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "BITSTAMP",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "CoinbaseFetcher": {
@@ -261,7 +257,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "COINBASE",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "OkxFetcher": {
@@ -274,7 +269,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "OKX",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "TheGraphFetcher": {
@@ -287,7 +281,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "THEGRAPH",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
     "PropellerFetcher": {
@@ -300,7 +293,6 @@ INDEX_FETCHER_CONFIGS = {
             12345,
             "PROPELLER",
             PUBLISHER_NAME,
-            autoscale_volume=False,
         ),
     },
 }
@@ -369,7 +361,6 @@ FUTURE_FETCHER_CONFIGS = {
                 publisher=PUBLISHER_NAME,
                 volume=73224927992200000700416,
                 expiry_timestamp=1695369600000,
-                autoscale_volume=False,
             ),
             FutureEntry(
                 pair_id="BTC/USD",
@@ -379,7 +370,6 @@ FUTURE_FETCHER_CONFIGS = {
                 publisher=PUBLISHER_NAME,
                 volume=271979672734799985901568,
                 expiry_timestamp=1695974400000,
-                autoscale_volume=False,
             ),
             FutureEntry(
                 pair_id="ETH/USD",
@@ -389,7 +379,6 @@ FUTURE_FETCHER_CONFIGS = {
                 publisher=PUBLISHER_NAME,
                 volume=36278392896900000907264,
                 expiry_timestamp=1695369600000,
-                autoscale_volume=False,
             ),
             FutureEntry(
                 pair_id="ETH/USD",
@@ -399,7 +388,6 @@ FUTURE_FETCHER_CONFIGS = {
                 publisher=PUBLISHER_NAME,
                 volume=98295299247559996866560,
                 expiry_timestamp=1695974400000,
-                autoscale_volume=False,
             ),
         ],
     },
@@ -470,7 +458,6 @@ INDEX_CONFIGS = {
                 "GECKOTERMINAL",
                 PUBLISHER_NAME,
                 volume=0,
-                autoscale_volume=False,
             ),
             SpotEntry(
                 "INDEXNAME2",
@@ -479,7 +466,6 @@ INDEX_CONFIGS = {
                 "GECKOTERMINAL",
                 PUBLISHER_NAME,
                 volume=0,
-                autoscale_volume=False,
             ),
         ],
     },

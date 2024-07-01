@@ -1,21 +1,18 @@
 import asyncio
 import time
 from typing import Dict, List, Optional, Union
+from abc import abstractmethod, ABC
 
 import aiohttp
-from dotenv import load_dotenv
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
-from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry, FutureEntry, SpotEntry
-from pragma.core.types import AggregationMode, DataTypes
+from pragma.core.types import AggregationMode, DataTypes, ExecutionConfig
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
-from pragma.publisher.types import Interval, PublisherInterfaceT, PublisherFetchError
-
-load_dotenv()
+from pragma.publisher.types import Interval, FetcherInterfaceT, PublisherFetchError
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):
@@ -108,15 +105,15 @@ class FetcherClient:
 
     """
 
-    fetchers: List[PublisherInterfaceT] = []
+    fetchers: List[FetcherInterfaceT] = []
 
-    def add_fetchers(self, fetchers: List[PublisherInterfaceT]):
+    def add_fetchers(self, fetchers: List[FetcherInterfaceT]):
         self.fetchers.extend(fetchers)
 
-    def add_fetcher(self, fetcher: PublisherInterfaceT):
+    def add_fetcher(self, fetcher: FetcherInterfaceT):
         self.fetchers.append(fetcher)
 
-    def update_fetchers(self, fetchers: List[PublisherInterfaceT]):
+    def update_fetchers(self, fetchers: List[FetcherInterfaceT]):
         self.fetchers = fetchers
 
     def get_fetchers(self):
@@ -148,7 +145,22 @@ class FetcherClient:
 
 
 @add_sync_methods
-class PragmaAPIClient:
+class PragmaClient(ABC):
+    @abstractmethod
+    async def publish_entries(
+        self, entries: List[Entry], execution_config: Optional[ExecutionConfig] = None
+    ) -> any:
+        """
+        Publish entries to some destination.
+
+        :param entries: List of Entry objects
+        :param execution_config: ExecutionConfig object. Only used for on-chain publishing.
+        :return: Tuple of responses for spot and future entries
+        """
+
+
+@add_sync_methods
+class PragmaAPIClient(PragmaClient):
     api_base_url: str
     api_key: str
     account_private_key: Optional[int]
@@ -173,7 +185,7 @@ class PragmaAPIClient:
         )
         self.offchain_signer = OffchainSigner(signer=signer)
 
-    async def api_get_ohlc(
+    async def get_ohlc(
         self,
         pair: str,
         timestamp: int = None,
@@ -228,9 +240,9 @@ class PragmaAPIClient:
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
-    async def create_entries(
+    async def publish_entries(
         self, entries: List[Entry]
-    ) -> (Optional[Dict], Optional[Dict]):
+    ) -> (Optional[Dict], Optional[Dict]):  # type: ignore
         """
         Publishes spot and future entries to the Pragma API.
         This function accepts both type of entries - but they need to be sent through
@@ -397,27 +409,3 @@ class PragmaAPIClient:
                     raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
-
-
-PragmaPublisherClientT = Union[PragmaOnChainClient, PragmaAPIClient]
-
-
-@add_sync_methods
-class PragmaClient:
-    def __init__(self, client: PragmaPublisherClientT):
-        self.client = client
-
-    async def publish_entries(self, entries: List[Entry]) -> Optional[Dict]:
-        """
-        Publishes entries to the associated client.
-
-        :param entries: List of Entry objects
-        """
-        if isinstance(self.client, PragmaAPIClient):
-            return await self.client.create_entries(entries)
-        elif isinstance(self.client, PragmaOnChainClient):
-            return await self.client.publish_many(entries)
-        else:
-            raise ValueError(
-                "Client must be either PragmaAPIClient or PragmaOnChainClient"
-            )

@@ -5,10 +5,9 @@ import logging
 from logging import Logger
 from typing import Optional
 from pragma.publisher.client import (
-    PragmaClient,
     PragmaOnChainClient,
     PragmaAPIClient,
-    PragmaPublisherClientT,
+    PragmaClient,
 )
 
 from price_pusher.type_aliases import Target, Network
@@ -22,7 +21,7 @@ def create_client(
     private_key: str,
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
-) -> PragmaPublisherClientT:
+) -> PragmaClient:
     """
     Create the appropriate client based on the target.
 
@@ -35,28 +34,25 @@ def create_client(
         api_key: The API key for offchain publishing.
 
     Returns:
-        PragmaPublisherClientT
+        PragmaClient
     """
     if target == "onchain":
-        return PragmaClient(
-            PragmaOnChainClient(
-                network=network,
-                account_contract_address=publisher_address,
-                account_private_key=private_key,
-            )
+        return PragmaOnChainClient(
+            network=network,
+            account_contract_address=publisher_address,
+            account_private_key=private_key,
         )
+
     elif target == "offchain":
         if not api_key:
             raise click.BadParameter("Argument api-key can't be None if offchain is selected")
         if not api_base_url:
             raise click.BadParameter("Argument api-base-url can't be None if offchain is selected")
-        return PragmaClient(
-            PragmaAPIClient(
-                account_contract_address=publisher_address,
-                account_private_key=private_key,
-                api_key=api_key,
-                api_base_url=api_base_url,
-            )
+        return PragmaAPIClient(
+            account_contract_address=publisher_address,
+            account_private_key=private_key,
+            api_key=api_key,
+            api_base_url=api_base_url,
         )
     else:
         raise ValueError(f"Invalid target: {target}")

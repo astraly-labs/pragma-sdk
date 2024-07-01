@@ -1,39 +1,29 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import List, Union
+from typing import Any, List, Optional, Union
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaFutureAsset
 from pragma.core.entry import FutureEntry
-from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.core.types import Pair
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class BinanceFutureFetcher(PublisherInterfaceT):
+class BinanceFutureFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://fapi.binance.com/fapi/v1/premiumIndex"
     VOLUME_URL: str = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     SOURCE: str = "BINANCE"
 
-    publisher: str
-
-    def __init__(self, assets: List[PragmaAsset], publisher):
-        self.assets = assets
-        self.publisher = publisher
-
-    async def fetch_volume(self, asset, session):
-        pair = asset["pair"]
+    async def _fetch_volume(self, pair: Pair, session) -> List:
         url = f"{self.VOLUME_URL}"
-        selection = f"{pair[0]}{pair[1]}"
+        selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         volume_arr = []
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance"
-                )
+                return PublisherFetchError(f"No data found for {pair.id} from Binance")
             result = await resp.json(content_type="application/json")
             for element in result:
                 if selection in element["symbol"]:
@@ -41,17 +31,14 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             return volume_arr
 
     async def fetch_pair(
-        self, asset: PragmaFutureAsset, session: ClientSession
+        self, pair: Pair, session: ClientSession
     ) -> Union[FutureEntry, PublisherFetchError]:
-        pair = asset["pair"]
         filtered_data = []
-        url = f"{self.BASE_URL}"
-        selection = f"{pair[0]}{pair[1]}"
+        url = self.format_url()
+        selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance"
-                )
+                return PublisherFetchError(f"No data found for {pair.id} from Binance")
 
             content_type = resp.content_type
             if content_type and "json" in content_type:
@@ -63,43 +50,39 @@ class BinanceFutureFetcher(PublisherInterfaceT):
             for element in result:
                 if selection in element["symbol"]:
                     filtered_data.append(element)
-            volume_arr = await self.fetch_volume(asset, session)
-            return self._construct(asset, filtered_data, volume_arr)
+            volume_arr = await self._fetch_volume(pair, session)
+            return self._construct(pair, filtered_data, volume_arr)
 
     async def fetch(self, session: ClientSession):
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "FUTURE":
-                logger.debug("Skipping Binance for non-future asset %s", asset)
-                continue
-            future_entries = await self.fetch_pair(asset, session)
+        for pair in self.pairs:
+            future_entries = await self.fetch_pair(pair, session)
             if isinstance(future_entries, list):
                 entries.extend(future_entries)
             else:
                 entries.append(future_entries)
         return entries
 
-    def format_url(self, quote_asset, base_asset):
+    def format_url(self, pair: Optional[Pair] = None):
         return self.BASE_URL
 
-    def retrieve_volume(self, asset, volume_arr):
-        for list_asset, list_vol in volume_arr:
-            if asset == list_asset:
+    def _retrieve_volume(self, pair: Pair, volume_arr):
+        for list_pair, list_vol in volume_arr:
+            if pair == list_pair:
                 return list_vol
         return 0
 
-    def _construct(self, asset, result, volume_arr) -> List[FutureEntry]:
-        pair = asset["pair"]
+    def _construct(self, pair: Pair, result: Any, volume_arr) -> List[FutureEntry]:
         result_arr = []
+        decimals = pair.decimals()
         for data in result:
             timestamp = int(data["time"])
             price = float(data["markPrice"])
-            price_int = int(price * (10 ** asset["decimals"]))
-            pair_id = currency_pair_to_pair_id(*pair)
-            volume = float(self.retrieve_volume(data["symbol"], volume_arr)) / (
-                10 ** asset["decimals"]
+            price_int = int(price * (10**decimals))
+            volume = float(self._retrieve_volume(data["symbol"], volume_arr)) / (
+                10**decimals
             )
-            if data["symbol"] == f"{pair[0]}{pair[1]}":
+            if data["symbol"] == f"{pair.base_currency.id}{pair.quote_currency.id}":
                 expiry_timestamp = 0
             else:
                 date_arr = data["symbol"].split("_")
@@ -114,14 +97,13 @@ class BinanceFutureFetcher(PublisherInterfaceT):
                     expiry_timestamp = int(0)
             result_arr.append(
                 FutureEntry(
-                    pair_id=pair_id,
+                    pair_id=pair.id,
                     price=price_int,
                     volume=int(volume),
                     timestamp=int(timestamp / 1000),
                     source=self.SOURCE,
                     publisher=self.publisher,
                     expiry_timestamp=expiry_timestamp * 1000,
-                    autoscale_volume=True,
                 )
             )
         return result_arr

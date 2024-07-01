@@ -1,0 +1,38 @@
+- name: 'Bitcoin'
+  decimals: 8
+  ticker: 'BTC'
+  coingecko_id: 'bitcoin'
+
+- name: 'Ethereum'
+  decimals: 18
+  ticker: 'ETH'
+  coingecko_id: 'ethereum'
+
+- name: 'Solana'
+  decimals: 18
+  ticker: 'SOL'
+  coingecko_id: 'solana'
+
+- name: 'Tether USD'
+  decimals: 6
+  ticker: 'USDT'
+  coingecko_id: 'tether-usd'
+
+- name: 'Circle USD'
+  decimals: 6
+  ticker: 'USDC'
+  coingecko_id: 'circle-usd'
+
+- name: 'US Dollar'
+  decimals: 8
+  ticker: 'USD'
+  abstract: true
+
+- name: 'Euro'
+  decimals: 8
+  ticker: 'EUR'
+  abstract: true
+
+
+
+

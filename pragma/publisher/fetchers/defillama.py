@@ -4,123 +4,101 @@ from typing import List
 
 from aiohttp import ClientSession
 
-from pragma.core.assets import PragmaAsset, PragmaSpotAsset
+from pragma.core.assets import AssetConfig
 from pragma.core.entry import SpotEntry
-from pragma.core.types import ASSET_MAPPING
-from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.types import PublisherFetchError, PublisherInterfaceT
+from pragma.core.types import Pair
+from pragma.publisher.types import PublisherFetchError, FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
 
 
-class DefillamaFetcher(PublisherInterfaceT):
+class DefillamaFetcher(FetcherInterfaceT):
     BASE_URL: str = (
         "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=15m"
     )
-
     SOURCE: str = "DEFILLAMA"
-    api_key: str
 
-    headers: dict
-
-    publisher: str
-
-    def __init__(self, assets: List[PragmaAsset], publisher, api_key=None):
-        self.assets = assets
-        self.publisher = publisher
-        self.headers = {"Accepts": "application/json"}
-        if api_key:
-            self.headers["X-Api-Key"] = api_key
-
-    async def fetch_pair(
-        self, asset: PragmaSpotAsset, session: ClientSession
-    ) -> SpotEntry:
-        pair = asset["pair"]
-        pair_id = ASSET_MAPPING.get(pair[0])
+    async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
+        pair_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         if pair_id is None:
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[0]}"
             )
-        if pair[1] != "USD":
-            return await self.operate_usd_hop(asset, session)
+        if pair.quote_currency.id != "USD":
+            return await self.operate_usd_hop(pair, session)
 
-        url = self.BASE_URL.format(pair_id=pair_id)
+        url = self.format_url(pair)
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama"
+                    f"No data found for {pair.id} from Defillama"
                 )
             result = await resp.json()
             if not result["coins"]:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama"
+                    f"No data found for {pair.id} from Defillama"
                 )
-        return self._construct(asset, result)
+        return self._construct(pair, result)
 
     async def fetch(self, session: ClientSession) -> List[SpotEntry]:
         entries = []
-        for asset in self.assets:
-            if asset["type"] != "SPOT":
-                logger.debug("Skipping %s for non-spot asset %s", self.SOURCE, asset)
-                continue
-            entries.append(asyncio.ensure_future(self.fetch_pair(asset, session)))
+        for pair in self.pair:
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, quote_asset, base_asset):
-        pair_id = ASSET_MAPPING.get(quote_asset)
-        url = self.BASE_URL.format(pair_id=pair_id)
+    def format_url(self, pair: Pair):
+        coingecko_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
+        url = self.BASE_URL.format(pair_id=coingecko_id)
         return url
 
-    async def operate_usd_hop(self, asset, session) -> SpotEntry:
-        pair = asset["pair"]
-        pair_id_1 = ASSET_MAPPING.get(pair[0])
-        pair_id_2 = ASSET_MAPPING.get(pair[1])
-        if pair_id_2 is None:
+    async def operate_usd_hop(self, pair: Pair, session) -> SpotEntry:
+        coingecko_id_1 = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
+        coingeck_id_2 = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
+        if coingeck_id_2 is None:
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair[1]} - hop failed"
             )
-        url_pair_1 = self.BASE_URL.format(pair_id=pair_id_1)
+        url_pair_1 = self.BASE_URL.format(pair_id=coingecko_id_1)
         async with session.get(url_pair_1, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+                    f"No data found for {pair.id} from Defillama - hop failed for {pair[0]}"
                 )
             result_base = await resp.json()
             if not result_base["coins"]:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama - hop failed for {pair[0]}"
+                    f"No data found for {pair.id} from Defillama - hop failed for {pair[0]}"
                 )
-        url_pair_2 = self.BASE_URL.format(pair_id=pair_id_2)
+        url_pair_2 = self.BASE_URL.format(pair_id=coingeck_id_2)
         async with session.get(url_pair_2, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama - usd hop failed for {pair[1]}"
+                    f"No data found for {pair.id} from Defillama - usd hop failed for {pair[1]}"
                 )
             result_quote = await resp.json()
             if not result_quote["coins"]:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Defillama -  usd hop failed for {pair[1]}"
+                    f"No data found for {pair.id} from Defillama -  usd hop failed for {pair[1]}"
                 )
-        return self._construct(asset, result_base, result_quote)
+        return self._construct(pair, result_base, result_quote)
 
-    def _construct(self, asset, result, hop_result=None) -> SpotEntry:
-        pair = asset["pair"]
-        base_id = ASSET_MAPPING.get(pair[0])
-        quote_id = ASSET_MAPPING.get(pair[1])
-        pair_id = currency_pair_to_pair_id(*pair)
+    def _construct(self, pair: Pair, result, hop_result=None) -> SpotEntry:
+        base_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
+        quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
         timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
+        decimals = pair.decimals()
         if hop_result is not None:
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
-            price_int = int((price / hop_price) * (10 ** asset["decimals"]))
+            price_int = int((price / hop_price) * (10**decimals))
         else:
             price = result["coins"][f"coingecko:{base_id}"]["price"]
-            price_int = int(price * (10 ** asset["decimals"]))
+            price_int = int(price * (10**decimals))
 
-        logger.info("Fetched price %d for %s from Coingecko", price, pair_id)
+        logger.info("Fetched price %d for %s from Coingecko", price, pair.id)
 
         entry = SpotEntry(
-            pair_id=pair_id,
+            pair_id=pair.id,
             price=price_int,
             timestamp=timestamp,
             source=self.SOURCE,

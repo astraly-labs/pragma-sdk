@@ -1,15 +1,21 @@
 import inspect
 from functools import wraps
-from typing import TypeVar
+from typing import List, TypeVar
 
 from asgiref.sync import async_to_sync
+from starknet_py.net.full_node_client import FullNodeClient
 
+from pragma.core.entry import Entry
 from pragma.core.logger import get_stream_logger
+from pragma.core.types import Network, get_rpc_url
 
 logger = get_stream_logger()
 
 
-def str_to_felt(text):
+def str_to_felt(text: str) -> int:
+    """
+    Convert a string to a felt.
+    """
     if text.upper() != text:
         logger.warning("Converting lower to uppercase for str_to_felt: %s", text)
         text = text.upper()
@@ -17,32 +23,40 @@ def str_to_felt(text):
     return int.from_bytes(b_text, "big")
 
 
-def felt_to_str(felt):
+def felt_to_str(felt: int) -> str:
+    """
+    Convert a felt to a string.
+    """
     num_bytes = (felt.bit_length() + 7) // 8
     bytes_ = felt.to_bytes(num_bytes, "big")
     return bytes_.decode("utf-8")
 
 
-def log_entry(entry):
+def log_entry(entry: Entry):
     logger.info("Entry: %s", entry.serialize())
 
 
-def currency_pair_to_pair_id(quote, base):
-    return f"{quote}/{base}".upper()
+def currency_pair_to_pair_id(base: str, quote: str):
+    """
+    Return a pair id from base and quote currencies.
+    e.g currency_pair_to_pair_id("btc", "usd") -> "BTC/USD"
+
+    :param base: Base currency
+    :param quote: Quote currency
+    :return: Pair id
+    """
+
+    return f"{base}/{quote}".upper()
 
 
-def key_for_asset(asset):
-    return asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
+def get_cur_from_pair(asset: str) -> List[str]:
+    """
+    Get the currency from a pair.
+    e.g get_cur_from_pair("BTC/USD") -> ["BTC", "USD"]
 
-
-def pair_id_for_asset(asset):
-    pair_id = (
-        asset["key"] if "key" in asset else currency_pair_to_pair_id(*asset["pair"])
-    )
-    return pair_id
-
-
-def get_cur_from_pair(asset):
+    :param asset: Asset pair
+    :return: List of currencies
+    """
     return asset.split("/")
 
 
@@ -93,3 +107,7 @@ def add_sync_methods(original_class: T) -> T:
 def _set_sync_method_docstring(original_class, sync_name: str):
     sync_method = getattr(original_class, sync_name)
     sync_method.__doc__ = "Synchronous version of the method."
+
+
+def get_full_node_client_from_network(network: Network, port: int = 5050):
+    return FullNodeClient(node_url=get_rpc_url(network, port=port))
