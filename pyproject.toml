@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "1.5.1"
+version = "1.5.2"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"

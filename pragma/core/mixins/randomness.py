@@ -451,5 +451,5 @@ class RandomnessMixin:
                 if invocation is None:
                     logger.error("Failed to submit randomness")
                     continue
-
-                logger.info(f"Submitted tx: {hex(invocation.hash)}\n\n")
+                else:
+                    logger.info(f"Submitted tx: {hex(invocation.hash)}\n\n")
