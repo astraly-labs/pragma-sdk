@@ -24,6 +24,7 @@ IGNORE_REQUEST_THRESHOLD = 30
 class RandomnessMixin:
     client: Client
     randomness: Optional[Contract] = None
+    max_fee: Optional[int]
 
     def init_randomness_contract(self, contract_address: int):
         provider = self.account if self.account else self.client
@@ -42,7 +43,6 @@ class RandomnessMixin:
         publish_delay: int = 1,
         num_words: int = 1,
         calldata: List[int] = None,
-        max_fee=int(1e16),
     ) -> InvokeResult:
         if calldata is None:
             calldata = []
@@ -59,7 +59,7 @@ class RandomnessMixin:
             publish_delay,
             num_words,
             calldata,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         return invocation
 
@@ -71,7 +71,6 @@ class RandomnessMixin:
         publish_delay: int = 1,
         num_words: int = 1,
         calldata: List[int] = None,
-        max_fee=int(1e16),
     ):
         if calldata is None:
             calldata = []
@@ -87,7 +86,7 @@ class RandomnessMixin:
             publish_delay,
             num_words,
             calldata,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -115,7 +114,6 @@ class RandomnessMixin:
         random_words: List[int],  # List with 1 item
         proof: List[int],  # randomness proof,
         calldata: List[int],
-        max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -133,7 +131,7 @@ class RandomnessMixin:
             random_words,
             proof,
             calldata,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         try:
             estimate_fee = await prepared_call.estimate_fee()
@@ -166,7 +164,7 @@ class RandomnessMixin:
             random_words,
             proof,
             calldata,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         logger.info("Sumbitted random %s", invocation.hash)
         return invocation
@@ -182,7 +180,6 @@ class RandomnessMixin:
         random_words: List[int],  # List with 1 item
         proof: List[int],  # randomness proof,
         calldata: List[int],
-        max_fee=int(1e16),
     ):
         if not self.is_user_client:
             raise AttributeError(
@@ -200,7 +197,7 @@ class RandomnessMixin:
             random_words,
             proof,
             calldata,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -279,7 +276,6 @@ class RandomnessMixin:
         callback_fee_limit: int,
         minimum_block_number: int,
         num_words: int,
-        max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -294,7 +290,7 @@ class RandomnessMixin:
             callback_address,
             callback_fee_limit,
             num_words,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         return invocation
 
@@ -307,7 +303,6 @@ class RandomnessMixin:
         callback_fee_limit: int,
         minimum_block_number: int,
         num_words: int,
-        max_fee=int(1e16),
     ):
         if not self.is_user_client:
             raise AttributeError(
@@ -324,7 +319,7 @@ class RandomnessMixin:
             callback_address,
             callback_fee_limit,
             num_words,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -333,7 +328,6 @@ class RandomnessMixin:
         self,
         request_id: int,
         requestor_address: int,
-        max_fee=int(1e16),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -341,7 +335,7 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         invocation = await self.randomness.functions["refund_operation"].invoke_v1(
-            requestor_address, request_id, max_fee=max_fee
+            requestor_address, request_id, max_fee=self.max_fee
         )
         return invocation
 

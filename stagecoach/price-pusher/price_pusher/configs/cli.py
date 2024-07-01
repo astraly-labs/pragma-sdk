@@ -23,6 +23,9 @@ def create_client(
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
     rpc_url: Optional[str] = None,
+    max_fee: Optional[int] = None,
+    pagination: Optional[int] = None,
+    enable_strk_fees: Optional[bool] = None,
 ) -> PragmaPublisherClientT:
     """
     Create the appropriate client based on the target.
@@ -34,6 +37,10 @@ def create_client(
         private_key: The private key for the account.
         api_base_url: The API base URL for offchain publishing.
         api_key: The API key for offchain publishing.
+        rpc_url: RPC url used for onchain clients.
+        max_fee: max_fee parameter for onchain client.
+        pagination: number of elements per page returned by onchain client.
+        enable_str_fees: boolean used to check if we use strk fees or not.
 
     Returns:
         PragmaPublisherClientT

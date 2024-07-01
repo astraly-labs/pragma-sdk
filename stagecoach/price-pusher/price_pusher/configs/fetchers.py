@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 from typing import Dict, List
 
 from pragma.publisher.types import PublisherInterfaceT
@@ -34,7 +34,8 @@ ALL_SPOT_FETCHERS: List[PublisherInterfaceT] = [
 ALL_FUTURE_FETCHERS: List[PublisherInterfaceT] = [BinanceFutureFetcher, ByBitFutureFetcher]
 
 
-class FetcherWithApiKeyConfig(BaseModel):
+@dataclass
+class FetcherWithApiKeyConfig:
     """
     Configuration used for fetchers that may requires an API key.
     """

@@ -28,7 +28,7 @@ def price_listener(mock_request_handler, mock_price_config):
     return PriceListener(
         request_handler=mock_request_handler,
         price_config=mock_price_config,
-        polling_frequency_in_s=10,
+        polling_frequency_in_s=0.05,
     )
 
 
@@ -42,7 +42,7 @@ async def test_run_forever(price_listener):
         price_listener._fetch_all_oracle_prices.side_effect = lambda: asyncio.sleep(0.1)
         task = asyncio.create_task(price_listener.run_forever())
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task

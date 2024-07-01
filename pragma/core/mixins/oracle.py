@@ -23,6 +23,10 @@ class OracleMixin:
     publisher_registry: Contract
     client: Client
     account: Account
+    rpc_url: str
+    max_fee: int
+    pagination: Optional[int]
+    enable_str_fees: bool
 
     @deprecated
     async def publish_spot_entry(
@@ -33,8 +37,6 @@ class OracleMixin:
         source: int,
         publisher: int,
         volume: int = 0,
-        max_fee: int = int(1e18),
-        enable_strk_fees: Optional[bool] = False,
         l1_resource_bounds: Optional[ResourceBounds] = None,
         auto_estimate: Optional[bool] = False,
     ) -> InvokeResult:
@@ -57,19 +59,16 @@ class OracleMixin:
                     "volume": volume,
                 }
             },
-            max_fee=max_fee,
+            max_fee=self.max_fee,
             l1_resource_bounds=l1_resource_bounds,
             auto_estimate=auto_estimate,
-            enable_strk_fees=enable_strk_fees,
+            enable_strk_fees=self.enable_str_fees,
         )
         return invocation
 
     async def publish_many(
         self,
         entries: List[Entry],
-        pagination: Optional[int] = 40,
-        max_fee=int(1e18),
-        enable_strk_fees: Optional[bool] = False,
         l1_resource_bounds: Optional[ResourceBounds] = None,
         auto_estimate: Optional[bool] = False,
     ) -> List[InvokeResult]:
@@ -80,19 +79,21 @@ class OracleMixin:
         invocations = []
         spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
         serialized_spot_entries = SpotEntry.serialize_entries(spot_entries)
-        if pagination:
+        if self.pagination:
             index = 0
             while index < len(serialized_spot_entries):
-                entries_subset = serialized_spot_entries[index : index + pagination]
+                entries_subset = serialized_spot_entries[
+                    index : index + self.pagination
+                ]
                 invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Spot": entry} for entry in entries_subset],
-                    enable_strk_fees=enable_strk_fees,
-                    max_fee=max_fee,
+                    enable_strk_fees=self.enable_str_fees,
+                    max_fee=self.max_fee,
                     l1_resource_bounds=l1_resource_bounds,
                     auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
-                index += pagination
+                index += self.pagination
                 invocations.append(invocation)
                 logger.debug(str(invocation))
                 logger.info(
@@ -103,8 +104,8 @@ class OracleMixin:
         elif len(serialized_spot_entries) > 0:
             invocation = await self.oracle.functions["publish_data_entries"].invoke(
                 new_entries=[{"Spot": entry} for entry in serialized_spot_entries],
-                max_fee=max_fee,
-                enable_strk_fees=enable_strk_fees,
+                max_fee=self.max_fee,
+                enable_strk_fees=self.enable_str_fees,
                 l1_resource_bounds=l1_resource_bounds,
                 auto_estimate=auto_estimate,
                 callback=self.track_nonce,
@@ -119,19 +120,21 @@ class OracleMixin:
 
         future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
         serialized_future_entries = FutureEntry.serialize_entries(future_entries)
-        if pagination:
+        if self.pagination:
             index = 0
             while index < len(serialized_future_entries):
-                entries_subset = serialized_future_entries[index : index + pagination]
+                entries_subset = serialized_future_entries[
+                    index : index + self.pagination
+                ]
                 invocation = await self.oracle.functions["publish_data_entries"].invoke(
                     new_entries=[{"Future": entry} for entry in entries_subset],
-                    max_fee=max_fee,
-                    enable_strk_fees=enable_strk_fees,
+                    max_fee=self.max_fee,
+                    enable_strk_fees=self.enable_str_fees,
                     l1_resource_bounds=l1_resource_bounds,
                     auto_estimate=auto_estimate,
                     callback=self.track_nonce,
                 )
-                index += pagination
+                index += self.pagination
                 invocations.append(invocation)
                 logger.debug(str(invocation))
                 logger.info(
@@ -142,8 +145,8 @@ class OracleMixin:
         elif len(serialized_future_entries) > 0:
             invocation = await self.oracle.functions["publish_data_entries"].invoke(
                 new_entries=[{"Future": entry} for entry in serialized_future_entries],
-                max_fee=max_fee,
-                enable_strk_fees=enable_strk_fees,
+                max_fee=self.max_fee,
+                enable_strk_fees=self.enable_str_fees,
                 l1_resource_bounds=l1_resource_bounds,
                 auto_estimate=auto_estimate,
                 callback=self.track_nonce,
@@ -296,7 +299,6 @@ class OracleMixin:
         self,
         pair_id: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -307,7 +309,7 @@ class OracleMixin:
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.SPOT, pair_id, None).serialize(),
             aggregation_mode.serialize(),
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         return invocation
 
@@ -317,7 +319,6 @@ class OracleMixin:
         pair_id: int,
         expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -328,7 +329,7 @@ class OracleMixin:
         invocation = await self.oracle.functions["set_checkpoint"].invoke(
             DataType(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
             aggregation_mode.serialize(),
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         return invocation
 
@@ -338,8 +339,6 @@ class OracleMixin:
         pair_ids: List[int],
         expiry_timestamps: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-        pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -349,17 +348,17 @@ class OracleMixin:
             )
 
         invocation = None
-        if pagination:
+        if self.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + pagination]
+                pair_ids_subset = pair_ids[index : index + self.pagination]
                 invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
-                    max_fee=max_fee,
+                    max_fee=self.max_fee,
                 )
-                index += pagination
+                index += self.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
@@ -371,7 +370,7 @@ class OracleMixin:
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
-                max_fee=max_fee,
+                max_fee=self.max_fee,
             )
 
         return invocation
@@ -380,8 +379,6 @@ class OracleMixin:
         self,
         pair_ids: List[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        max_fee=int(1e18),
-        pagination: Optional[int] = 15,
     ) -> InvokeResult:
         if not self.is_user_client:
             raise AttributeError(
@@ -391,19 +388,19 @@ class OracleMixin:
             )
 
         invocation = None
-        if pagination:
+        if self.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + pagination]
+                pair_ids_subset = pair_ids[index : index + self.pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         DataType(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
-                    max_fee=max_fee,
+                    max_fee=self.max_fee,
                 )
-                index += pagination
+                index += self.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set checkpoints for %d pair IDs with transaction %s",
@@ -417,7 +414,7 @@ class OracleMixin:
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),
-                max_fee=max_fee,
+                max_fee=self.max_fee,
             )
 
         return invocation
@@ -429,11 +426,10 @@ class OracleMixin:
     async def update_oracle(
         self,
         implementation_hash: int,
-        max_fee=int(1e18),
     ) -> InvokeResult:
         invocation = await self.oracle.functions["upgrade"].invoke(
             implementation_hash,
-            max_fee=max_fee,
+            max_fee=self.max_fee,
         )
         return invocation
 
