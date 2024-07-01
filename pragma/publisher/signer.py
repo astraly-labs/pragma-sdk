@@ -8,7 +8,7 @@ from pragma.core.types import DataTypes
 
 
 def build_publish_message(
-    entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+    entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.Spot
 ) -> TypedData:
     """
     Builds a typed data message to publish spot entries on the Pragma API.
@@ -46,7 +46,7 @@ def build_publish_message(
             ],
         },
     }
-    if data_type == DataTypes.FUTURE:
+    if data_type == DataTypes.Future:
         message["types"]["Entry"] = message["types"]["Entry"] + [
             {"name": "expiration_timestamp", "type": "felt"},
         ]
@@ -59,7 +59,7 @@ class OffchainSigner:
         self.signer = signer
 
     def sign_publish_message(
-        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.Spot
     ) -> (List[int], int):  # type: ignore
         """
         Sign a publish message

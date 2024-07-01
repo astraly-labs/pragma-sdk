@@ -86,11 +86,11 @@ class OracleMixin:
         future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
 
         invocations.extend(
-            await self._publish_entries(spot_entries, DataTypes.SPOT, execution_config)
+            await self._publish_entries(spot_entries, DataTypes.Spot, execution_config)
         )
         invocations.extend(
             await self._publish_entries(
-                future_entries, DataTypes.FUTURE, execution_config
+                future_entries, DataTypes.Future, execution_config
             )
         )
 
@@ -102,7 +102,7 @@ class OracleMixin:
         invocations = []
         serialized_entries = (
             SpotEntry.serialize_entries(entries)
-            if data_type == DataTypes.SPOT
+            if data_type == DataTypes.Spot
             else FutureEntry.serialize_entries(entries)
         )
 
@@ -159,7 +159,7 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            Asset(DataTypes.SPOT, pair_id, None).serialize(),
+            Asset(DataTypes.Spot, pair_id, None).serialize(),
             sources,
             block_number=block_number,
         )
@@ -193,7 +193,7 @@ class OracleMixin:
                 "Pair ID must be string (will be converted to felt) or integer"
             )
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
-            Asset(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
+            Asset(DataTypes.Future, pair_id, expiration_timestamp).serialize(),
             sources,
             block_number=block_number,
         )
@@ -224,13 +224,13 @@ class OracleMixin:
             )
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                Asset(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.Spot, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                Asset(DataTypes.SPOT, pair_id, None).serialize(),
+                Asset(DataTypes.Spot, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -273,13 +273,13 @@ class OracleMixin:
 
         if sources is None:
             (response,) = await self.oracle.functions["get_data"].call(
-                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.Future, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 block_number=block_number,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
-                Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
+                Asset(DataTypes.Future, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 sources,
                 block_number=block_number,
@@ -385,7 +385,7 @@ class OracleMixin:
                 pair_ids_subset = pair_ids[index : index + config.pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
-                        Asset(DataTypes.SPOT, pair_id, None).serialize()
+                        Asset(DataTypes.Spot, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
@@ -401,7 +401,7 @@ class OracleMixin:
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
                 [
-                    Asset(DataTypes.SPOT, pair_id, None).serialize()
+                    Asset(DataTypes.Spot, pair_id, None).serialize()
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),

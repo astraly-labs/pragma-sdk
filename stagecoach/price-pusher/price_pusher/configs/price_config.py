@@ -23,9 +23,11 @@ class PriceConfig(BaseModel):
     @field_validator("pairs", mode="before")
     def validate_pairs(cls, value: PairConfig) -> PairConfig:
         if "spot" in value:
-            value["spot"] = cls.validate_asset_pairs(value["spot"], DataTypes.SPOT)
+            value["spot"] = cls.validate_asset_pairs(value["spot"], DataTypes.Spot)
         if "future" in value:
-            value["future"] = cls.validate_asset_pairs(value["future"], DataTypes.FUTURE)
+            value["future"] = cls.validate_asset_pairs(
+                value["future"], DataTypes.Future
+            )
         return value
 
     @staticmethod
@@ -38,7 +40,9 @@ class PriceConfig(BaseModel):
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
             base_currency = try_get_asset_config_from_ticker(splitted[0])
             quote_currency = try_get_asset_config_from_ticker(splitted[1])
-            assets.append(AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency))
+            assets.append(
+                AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency)
+            )
         return assets
 
     @classmethod

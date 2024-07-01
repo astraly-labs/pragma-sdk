@@ -20,7 +20,7 @@ def get_endpoint_publish_offchain(data_type: DataTypes):
     Returns the correct publish endpoint for the given data type.
     """
     endpoint = "/node/v1/data/publish"
-    if data_type == DataTypes.FUTURE:
+    if data_type == DataTypes.Future:
         endpoint += "_future"
     return endpoint
 
@@ -105,16 +105,26 @@ class FetcherClient:
 
     """
 
-    fetchers: List[FetcherInterfaceT] = []
+    __fetchers: List[FetcherInterfaceT] = []
+
+    @property
+    def fetchers(self):
+        return self.__fetchers
 
     def add_fetchers(self, fetchers: List[FetcherInterfaceT]):
+        """
+        Add fetchers to the supported fetchers list.
+        """
         self.fetchers.extend(fetchers)
 
     def add_fetcher(self, fetcher: FetcherInterfaceT):
+        """
+        Add a single fetcher to the supported fetchers list.
+        """
         self.fetchers.append(fetcher)
 
-    def update_fetchers(self, fetchers: List[FetcherInterfaceT]):
-        self.fetchers = fetchers
+    @fetchers.setter
+    def 
 
     def get_fetchers(self):
         return self.fetchers
@@ -264,13 +274,13 @@ class PragmaAPIClient(PragmaClient):
 
         # execute both in parralel
         spot_response, future_response = await asyncio.gather(
-            self._create_entries(spot_entries, DataTypes.SPOT),
-            self._create_entries(future_entries, DataTypes.FUTURE),
+            self._create_entries(spot_entries, DataTypes.Spot),
+            self._create_entries(future_entries, DataTypes.Future),
         )
         return spot_response, future_response
 
     async def _create_entries(
-        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.Spot
     ) -> Optional[Dict]:
         """
         Publishes entries to the Pragma API & returns the http response.

@@ -6,7 +6,7 @@ from aiohttp import ClientSession
 
 from pragma.core.client import PragmaOnChainClient
 from pragma.core.entry import Entry
-from pragma.core.types import Pair
+from pragma.core.types import Network, Pair
 from pragma.core.utils import add_sync_methods, str_to_felt
 
 
@@ -40,17 +40,31 @@ class Interval(Enum):
 # Abstract base class for all fetchers
 @add_sync_methods
 class FetcherInterfaceT(abc.ABC):
-    client: PragmaOnChainClient = PragmaOnChainClient(network="mainnet")
     pairs: List[Pair]
     publisher: str
     headers: dict
 
-    def __init__(self, pairs: List[Pair], publisher: str, api_key: str = None):
+    _client = None
+
+    def __init__(
+        self,
+        pairs: List[Pair],
+        publisher: str,
+        api_key: str = None,
+        network: Network = "mainnet",
+    ):
         self.pairs = pairs
         self.publisher = publisher
+        self.client = self.get_client(network)
         self.headers = {"Accepts": "application/json"}
         if api_key:
             self.headers["X-Api-Key"] = api_key
+
+    @classmethod
+    def get_client(cls, network="mainnet"):
+        if cls._client is None:
+            cls._client = PragmaOnChainClient(network=network)
+        return cls._client
 
     @abc.abstractmethod
     async def fetch(self, session: ClientSession) -> List[Entry]: ...

@@ -181,7 +181,7 @@ class SpotEntry(Entry):
         return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
-        return DataTypes.SPOT
+        return DataTypes.Spot
 
     @staticmethod
     def from_oracle_response(
@@ -350,7 +350,7 @@ class FutureEntry(Entry):
         return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
-        return DataTypes.FUTURE
+        return DataTypes.Future
 
     @staticmethod
     def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":

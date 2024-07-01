@@ -226,9 +226,9 @@ class Asset:
         """
         Serialize method used to interact with Cairo contracts.
         """
-        if self.data_type == DataTypes.SPOT:
+        if self.data_type == DataTypes.Spot:
             return {"SpotEntry": self.pair_id}
-        if self.data_type == DataTypes.FUTURE:
+        if self.data_type == DataTypes.Future:
             return {"FutureEntry": (self.pair_id, self.expiration_timestamp)}
         return {}
 
