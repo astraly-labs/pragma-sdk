@@ -628,7 +628,7 @@ async def multiple_randomness_request(
     publish_delay = 0
     num_words = 1
     calldata = [0x1234, 0x1434, 314141]
-    initial_index = await vrf_pragma_client.requestor_current_index(
+    initial_index = await vrf_pragma_client.requestor_current_request_id(
         vrf_pragma_client.account_address()
     )
     for i in range(initial_index, initial_index + number_of_interations):

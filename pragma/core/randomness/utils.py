@@ -1,6 +1,9 @@
+from dataclasses import dataclass
 import secrets
 import sys
 from typing import List
+
+from pragma.core.types import ADDRESS
 
 from .randomness_utils import (
     ecvrf_proof_to_hash,
@@ -10,26 +13,16 @@ from .randomness_utils import (
 )
 
 
+@dataclass(frozen=True)
 class RandomnessRequest:
-    def __init__(
-        self,
-        request_id,
-        caller_address,
-        seed,
-        minimum_block_number,
-        callback_address,
-        callback_fee_limit,
-        num_words,
-        calldata: List[int],
-    ):
-        self.request_id = request_id
-        self.caller_address = caller_address
-        self.seed = seed
-        self.minimum_block_number = minimum_block_number
-        self.callback_address = callback_address
-        self.callback_fee_limit = callback_fee_limit
-        self.num_words = num_words
-        self.calldata = calldata
+    request_id: int
+    caller_address: ADDRESS
+    seed: int
+    minimum_block_number: int
+    callback_address: ADDRESS
+    callback_fee_limit: int
+    num_words: int
+    calldata: List[int]
 
     def __repr__(self):
         return (

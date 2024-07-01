@@ -61,7 +61,7 @@ class FetcherInterfaceT(abc.ABC):
             self.headers["X-Api-Key"] = api_key
 
     @classmethod
-    def get_client(cls, network="mainnet"):
+    def get_client(cls, network: Network = "mainnet"):
         if cls._client is None:
             cls._client = PragmaOnChainClient(network=network)
         return cls._client

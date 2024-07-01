@@ -12,7 +12,7 @@ from pragma.core.entry import Entry, FutureEntry, SpotEntry
 from pragma.core.types import AggregationMode, DataTypes, ExecutionConfig
 from pragma.core.utils import add_sync_methods, get_cur_from_pair
 from pragma.publisher.signer import OffchainSigner
-from pragma.publisher.types import Interval, FetcherInterfaceT, PublisherFetchError
+from pragma.publisher.types import Interval, FetcherInterfaceT
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):
@@ -77,23 +77,22 @@ class PragmaAPIError(BaseException):
 class FetcherClient:
     """
     This client extends the pragma client with functionality for fetching from our third party sources.
-    It can be used to synchronously or asynchronously fetch assets using the Asset format, ie.
-
-    `{"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 18}`
-
-    More to follow on the standardization of this format.
+    It can be used to synchronously or asynchronously fetch assets.
 
     The client works by setting up fetchers that are provided the assets to fetch and the publisher name.
 
     ```python
-    cex_fetcher = CexFetcher(PRAGMA_ALL_ASSETS, "pragma_fetcher_test")
-    gemini_fetcher = GeminiFetcher(PRAGMA_ALL_ASSETS, "pragma_fetcher_test")
+    cex_fetcher = CexFetcher(ALL_ASSETS, "publisher_test")
+    gemini_fetcher = GeminiFetcher(ALL_ASSETS, "publisher_test")
+
     fetchers = [
         cex_fetcher,
         gemini_fetcher,
     ]
-    fc = FetcherClient('testnet')
+
+    fc = FetcherClient()
     fc.add_fetchers(fetchers)
+
     await fc.fetch()
     fc.fetch_sync()
     ```
@@ -111,6 +110,13 @@ class FetcherClient:
     def fetchers(self):
         return self.__fetchers
 
+    @fetchers.setter
+    def fetchers(self, value):
+        if len(value) > 0:
+            self.__fetchers = value
+        else:
+            raise ValueError("Fetcher list cannot be empty")
+
     def add_fetchers(self, fetchers: List[FetcherInterfaceT]):
         """
         Add fetchers to the supported fetchers list.
@@ -123,15 +129,18 @@ class FetcherClient:
         """
         self.fetchers.append(fetcher)
 
-    @fetchers.setter
-    def 
-
-    def get_fetchers(self):
-        return self.fetchers
-
     async def fetch(
         self, filter_exceptions=True, return_exceptions=True, timeout_duration=20
     ) -> List[Union[Entry, Exception]]:
+        """
+        Fetch data from all fetchers asynchronously.
+        Fetching is done in parallel for all fetchers.
+
+        :param filter_exceptions: If True, filters out exceptions from the result list
+        :param return_exceptions: If True, returns exceptions in the result list
+        :param timeout_duration: Timeout duration for each fetcher
+        :return: List of fetched data
+        """
         tasks = []
         timeout = aiohttp.ClientTimeout(
             total=timeout_duration
@@ -143,15 +152,8 @@ class FetcherClient:
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
             if not filter_exceptions:
                 return [val for subl in result for val in subl]
-            result = [
-                subl
-                for subl in result
-                if not isinstance(subl, Exception)
-                and not isinstance(subl, PublisherFetchError)
-            ]
-            return [
-                val for subl in result for val in subl if not isinstance(val, Exception)
-            ]
+            result = [subl for subl in result if not issubclass(subl, Exception)]
+            return result
 
 
 @add_sync_methods
@@ -173,27 +175,31 @@ class PragmaClient(ABC):
 class PragmaAPIClient(PragmaClient):
     api_base_url: str
     api_key: str
-    account_private_key: Optional[int]
-    offchain_signer: OffchainSigner
+    account_private_key: Optional[int] = None
+    offchain_signer: Optional[OffchainSigner] = None
 
     def __init__(
         self,
-        account_private_key,
-        account_contract_address,
-        api_base_url,
-        api_key,
+        account_private_key: Optional[Union[str, int]],
+        account_contract_address: Optional[Union[str, int]],
+        api_base_url: str,
+        api_key: str,
     ):
         self.api_base_url = api_base_url
         self.api_key = api_key
-        if isinstance(account_private_key, str):
-            account_private_key = int(account_private_key, 16)
 
-        signer = StarkCurveSigner(
-            account_contract_address,
-            KeyPair.from_private_key(account_private_key),
-            StarknetChainId.MAINNET,  # not used anyway
-        )
-        self.offchain_signer = OffchainSigner(signer=signer)
+        if account_private_key is not None and account_contract_address is not None:
+            if isinstance(account_private_key, str):
+                account_private_key = int(account_private_key, 16)
+            if isinstance(account_contract_address, str):
+                account_contract_address = int(account_contract_address, 16)
+
+            signer = StarkCurveSigner(
+                account_contract_address,
+                KeyPair.from_private_key(account_private_key),
+                StarknetChainId.MAINNET,  # not used anyway
+            )
+            self.offchain_signer = OffchainSigner(signer=signer)
 
     async def get_ohlc(
         self,
@@ -288,6 +294,9 @@ class PragmaAPIClient(PragmaClient):
         We can only publish entries of the same type at once - if we have a mix of
         types, the function will raise an error.
         """
+        if self.offchain_signer is None:
+            raise PragmaAPIError("No offchain signer set")
+
         if len(entries) == 0:
             return
 
