@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-monorepo"
-version = "0.0.1"
+version = "2.0.0"
 description = "Monorepo container"
 license = "MIT"
 authors = ["0xevolve <matthias@pragma.build>"]
@@ -9,7 +9,7 @@ include = ["VERSION", "README.md"]
 package-mode = false
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
+requires = ["poetry_core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.commitizen]
