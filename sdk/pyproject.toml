@@ -64,7 +64,7 @@ test_ci_utils = "coverage run -m pytest --net=devnet --client=full_node -v --rer
 test_ci_all = "coverage run -m pytest --net=devnet --client=full_node -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError pragma/tests/ -s"
 
 circular_imports_check.shell = "poetry run pytest circular.py"
-update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
+
 
 [tool.ruff]
 exclude = [

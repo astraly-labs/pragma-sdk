@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from typing import List
-from pragma.core.types import Pair
+from pragma.common.types.pair import Pair
 from pragma.publisher.client import FetcherClient
 from concurrent.futures import ThreadPoolExecutor
 from pragma.publisher.fetchers import (

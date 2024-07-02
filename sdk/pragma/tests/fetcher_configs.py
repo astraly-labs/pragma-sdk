@@ -1,4 +1,4 @@
-from pragma.core.entry import FutureEntry, SpotEntry
+from pragma.common.entry import FutureEntry, SpotEntry
 from pragma.publisher.fetchers import (
     CexFetcher,
     DefillamaFetcher,

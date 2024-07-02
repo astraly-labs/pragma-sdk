@@ -4,8 +4,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from pragma.core.entry import Entry
-from pragma.core.assets import AssetType
+from pragma.common.types.entry import Entry
+from pragma.common.assets import AssetType
 
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler

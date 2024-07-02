@@ -2,9 +2,8 @@ import os
 import time
 from pathlib import Path
 
-from pragma.core.entry import SpotEntry
-from pragma.core.types import Currency, Pair
-from pragma.publisher.fetchers.index import AssetQuantities
+from pragma.common.types import Currency, Pair, SpotEntry
+from pragma.common.fetchers.fetchers.index import AssetQuantities
 
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1

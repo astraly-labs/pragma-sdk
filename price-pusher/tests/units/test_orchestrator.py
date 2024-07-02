@@ -3,8 +3,8 @@ import asyncio
 import logging
 from unittest.mock import AsyncMock, MagicMock
 
-from pragma.core.entry import Entry, SpotEntry, FutureEntry
-from pragma.core.assets import PragmaSpotAsset
+from pragma.common.types.entry import Entry, SpotEntry, FutureEntry
+from pragma.common.assets import PragmaSpotAsset
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher

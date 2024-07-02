@@ -8,14 +8,14 @@ from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
 from starknet_py.transaction_errors import TransactionRevertedError
 
-from pragma.core.abis.abi import get_erc20_abi
+from pragma.onchain.abis.abi import get_erc20_abi
 from pragma.tests.constants import (
     ESTIMATED_FEE_MULTIPLIER,
     FEE_TOKEN_ADDRESS,
     MAX_PREMIUM_FEE,
 )
 
-# from pragma.core.client import PragmaOnChainClient
+# from pragma.onchain.client import PragmaOnChainClient
 from pragma.tests.utils import ExtendedPragmaClient as PragmaClient
 from pragma.tests.utils import convert_to_wei, read_contract, wait_for_acceptance
 

@@ -2,8 +2,8 @@ import logging
 
 from typing import Optional
 
-from pragma.core.assets import PragmaAsset
-from pragma.core.entry import Entry, FutureEntry, SpotEntry
+from pragma.common.assets import PragmaAsset
+from pragma.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma.publisher.client import PragmaOnChainClient
 
 from price_pusher.core.request_handlers.interface import IRequestHandler

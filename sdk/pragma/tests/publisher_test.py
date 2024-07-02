@@ -3,10 +3,10 @@ from typing import Sequence
 import pytest
 from dotenv import load_dotenv
 
-from pragma.core.assets import PRAGMA_ALL_ASSETS
-from pragma.core.client import PragmaOnChainClient
-from pragma.core.entry import Entry, FutureEntry, SpotEntry
-from pragma.core.utils import str_to_felt
+from pragma.common.assets import PRAGMA_ALL_ASSETS
+from pragma.onchain.client import PragmaOnChainClient
+from pragma.common.types.entry import Entry, FutureEntry, SpotEntry
+from pragma.common.utils import str_to_felt
 from pragma.publisher.client import FetcherClient
 from pragma.publisher.fetchers import (
     CexFetcher,

@@ -31,10 +31,14 @@ changelog_incremental = true
 bump_message = "bump: $current_version → $new_version"
 
 
+[tool.poe.tasks]
+update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
+
 [tool.poetry.dependencies]
 python = "~3.11"
 
 [tool.poetry.dev-dependencies]
+poethepoet = "^0.21.1"
 mypy = "0.910"
 ruff = "^0.4"
 dunamai = "^1.7.0"

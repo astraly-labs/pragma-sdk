@@ -4,14 +4,12 @@ import os
 import time
 from typing import List
 
-from pragma.core.assets import PRAGMA_ALL_ASSETS, PragmaAsset
-from pragma.core.entry import FutureEntry, SpotEntry
-from pragma.core.utils import currency_pair_to_pair_id, log_entry
+from pragma.common.assets import PRAGMA_ALL_ASSETS, PragmaAsset
+from pragma.common.entry import FutureEntry, SpotEntry
+from pragma.common.utils import currency_pair_to_pair_id
 from pragma.publisher.client import PragmaOnChainClient
 
 logger = logging.getLogger(__name__)
-
-# You can fetch your data using any strategy or libraries you want
 
 
 def fetch_entries(assets: List[PragmaAsset], *args, **kwargs) -> List[SpotEntry]:
@@ -68,7 +66,7 @@ async def publish_all(assets):
 
     logger.info("Publishing the following entries:")
     for entry in _entries:
-        log_entry(entry)
+        logger.info("Entry: %s", entry.serialize())
 
 
 if __name__ == "__main__":

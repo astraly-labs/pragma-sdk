@@ -1,4 +1,4 @@
-from pragma.core.assets import PragmaAsset
+from pragma.common.assets import PragmaAsset
 
 
 def asset_to_pair_id(asset: PragmaAsset) -> str:

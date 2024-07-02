@@ -2,7 +2,7 @@ import pytest
 import logging
 from unittest.mock import AsyncMock, MagicMock
 from pragma.publisher.client import PragmaClient
-from pragma.core.entry import Entry
+from pragma.common.types.entry import Entry
 from price_pusher.core.pusher import PricePusher
 
 

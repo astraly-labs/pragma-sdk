@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Callable
 
-from pragma.core.entry import Entry
+from pragma.common.types.entry import Entry
 from pragma.publisher.client import FetcherClient
 
 from price_pusher.utils.retries import retry_async

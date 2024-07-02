@@ -3,8 +3,8 @@ import logging
 from typing import Optional
 from abc import ABC, abstractmethod
 
-from pragma.core.entry import Entry
-from pragma.core.assets import PragmaAsset
+from pragma.common.types.entry import Entry
+from pragma.common.assets import PragmaAsset
 from pragma.publisher.client import PragmaClient
 
 logger = logging.getLogger(__name__)

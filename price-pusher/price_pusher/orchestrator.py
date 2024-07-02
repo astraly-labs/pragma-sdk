@@ -3,8 +3,8 @@ import asyncio
 
 from typing import List
 
-from pragma.core.entry import Entry
-from pragma.core.assets import PragmaAsset
+from pragma.common.types.entry import Entry
+from pragma.common.assets import PragmaAsset
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from price_pusher.core.listener import PriceListener
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from pragma.core.entry import Entry, SpotEntry
+from pragma.common.types.entry import Entry, SpotEntry
 
 
 @pytest.fixture

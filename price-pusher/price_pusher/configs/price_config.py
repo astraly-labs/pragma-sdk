@@ -4,8 +4,8 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
 
-from pragma.core.assets import try_get_asset_config_from_ticker, AssetConfig
-from pragma.core.types import DataTypes, Pair
+from pragma.common.configs.asset_config import try_get_asset_config_from_ticker, AssetConfig
+from pragma.common.types import DataTypes, Pair
 
 
 class PairConfig(BaseModel):
@@ -23,9 +23,9 @@ class PriceConfig(BaseModel):
     @field_validator("pairs", mode="before")
     def validate_pairs(cls, value: PairConfig) -> PairConfig:
         if "spot" in value:
-            value["spot"] = cls.validate_asset_pairs(value["spot"], DataTypes.Spot)
+            value["spot"] = cls.validate_asset_pairs(value["spot"], DataTypes.SPOT)
         if "future" in value:
-            value["future"] = cls.validate_asset_pairs(value["future"], DataTypes.Future)
+            value["future"] = cls.validate_asset_pairs(value["future"], DataTypes.FUTURE)
         return value
 
     @staticmethod

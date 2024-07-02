@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 
 from pragma.publisher.client import PragmaClient
-from pragma.core.entry import Entry
+from pragma.common.types.entry import Entry
 
 import logging
 

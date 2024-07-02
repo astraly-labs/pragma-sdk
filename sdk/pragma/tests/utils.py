@@ -9,10 +9,10 @@ from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
-from pragma.core.abis import ABIS
-from pragma.core.client import PragmaOnChainClient
-from pragma.core.contract import Contract
-from pragma.core.types import ContractAddresses
+from pragma.onchain.abis.abi import ABIS
+from pragma.onchain.client import PragmaOnChainClient
+from pragma.onchain.types import Contract
+from pragma.common.types import ContractAddresses
 from pragma.tests.constants import (
     CONTRACTS_COMPILED_DIR,
     DEPLOYMENTS_DIR,

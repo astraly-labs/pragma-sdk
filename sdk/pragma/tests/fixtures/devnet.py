@@ -14,7 +14,7 @@ from typing import Generator, List
 import pytest
 from dotenv import load_dotenv
 
-from pragma.core.types import RPC_URLS
+from pragma.onchain.constants import RPC_URLS
 
 load_dotenv()
 

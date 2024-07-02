@@ -10,9 +10,9 @@ import pytest
 from aioresponses import aioresponses
 from starknet_py.net.client import Client
 
-from pragma.core.client import PragmaOnChainClient
-from pragma.core.types import RPC_URLS
-from pragma.publisher.fetchers.index import AssetQuantities, IndexFetcher
+from pragma.onchain.client import PragmaOnChainClient
+from pragma.common.types import RPC_URLS
+from pragma.common.fetchers.fetchers.index import AssetQuantities, IndexFetcher
 from pragma.publisher.types import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,

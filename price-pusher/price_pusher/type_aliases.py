@@ -1,7 +1,7 @@
 from typing import Dict, Literal
 
-from pragma.core.entry import Entry
-from pragma.core.assets import AssetType
+from pragma.common.types.entry import Entry
+from pragma.common.assets import AssetType
 
 DurationInSeconds = int
 

@@ -13,8 +13,14 @@ def _import_from_path(module_name: str, file_path: str) -> None:
 
 
 def test_circular_imports() -> None:
-    for path, _, files in os.walk("starknet_py"):
+    # Start from the src directory
+    for path, _, files in os.walk("pragma"):
         py_files = [f for f in files if f.endswith(".py")]
         for file_ in py_files:
             file_path = os.path.join(path, file_)
-            _import_from_path(file_, file_path)
+            module_name = os.path.splitext(file_)[0]
+            _import_from_path(module_name, file_path)
+
+
+if __name__ == "__main__":
+    test_circular_imports()

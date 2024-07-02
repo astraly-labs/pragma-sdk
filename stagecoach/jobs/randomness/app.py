@@ -4,8 +4,8 @@ import os
 
 import boto3
 
-from pragma.core.client import PragmaOnChainClient
-from pragma.core.logger import get_stream_logger
+from pragma.onchain.client import PragmaOnChainClient
+from pragma.common.logger import get_stream_logger
 
 START_BLOCK = int(os.environ.get("START_BLOCK", 0))
 NETWORK = os.environ.get("NETWORK", "sepolia")
