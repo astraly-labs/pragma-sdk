@@ -10,10 +10,12 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.common.entry import FutureEntry, SpotEntry
-from pragma.common.types import ContractAddresses, Asset, DataTypes
+from pragma.onchain.types import ContractAddresses
+from pragma.common.types.entry import FutureEntry, SpotEntry
+from pragma.common.types.asset import Asset
+from pragma.common.types.types import DataTypes
 from pragma.common.utils import str_to_felt
-from pragma.tests.constants import CURRENCIES, PAIRS
+from pragma.tests.constants import CURRENCIES, USD_PAIRS
 from pragma.tests.utils import read_contract, wait_for_acceptance
 from starknet_py.net.client_models import ResourceBounds
 
@@ -68,7 +70,7 @@ async def declare_deploy_oracle(
 
     # Deploy Oracle
     currencies = [currency.to_dict() for currency in CURRENCIES]
-    pairs = [pair.to_dict() for pair in PAIRS]
+    pairs = [pair.to_dict() for pair in USD_PAIRS]
 
     deploy_result = await declare_result.deploy_v1(
         constructor_args=[
@@ -106,7 +108,10 @@ async def pragma_client(
         chain_name="devnet",
         account_contract_address=address,
         account_private_key=private_key,
-        contract_addresses_config=ContractAddresses(registry.address, oracle.address),
+        contract_addresses_config=ContractAddresses(
+            publisher_registry_address=registry.address,
+            oracle_proxy_addresss=oracle.address,
+        ),
         port=port,
     )
 
@@ -120,7 +125,7 @@ async def test_deploy_contract(contracts):
 
 @pytest.mark.asyncio
 async def test_client_setup(pragma_client: PragmaOnChainClient, account: Account):
-    assert pragma_client.account_address() == account.address
+    assert pragma_client.account_address == account.address
 
     account_balance = await account.get_balance()
     assert await pragma_client.get_balance(account.address) == account_balance
@@ -168,7 +173,7 @@ async def test_client_publisher_mixin(pragma_client: PragmaOnChainClient):
 async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     # Add PRAGMA as Publisher
     publisher_name = "PRAGMA"
-    publisher_address = pragma_client.account_address()
+    publisher_address = pragma_client.account_address
 
     await wait_for_acceptance(
         await pragma_client.add_publisher(publisher_name, publisher_address)
@@ -379,22 +384,14 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
 
 def test_client_with_http_network():
     client_with_chain_name = PragmaOnChainClient(
-        network="http://test.rpc/rpc", chain_name="devnet"
+        network="http://test.rpc/rpc", chain_name="sepolia"
     )
-    assert client_with_chain_name.network == "devnet"
+    assert client_with_chain_name.network == "sepolia"
 
-    client_with_chain_name_only = PragmaOnChainClient(chain_name="devnet")
-    # default value of network is testnet
-    assert client_with_chain_name_only.network == "devnet"
+    client_with_chain_name_only = PragmaOnChainClient(chain_name="sepolia")
+    # default value of network is sepolia
+    assert client_with_chain_name_only.network == "sepolia"
 
     with pytest.raises(Exception) as exception:
         _ = PragmaOnChainClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
-
-
-# @pytest.mark.asyncio
-# async def test_client_live():
-#     client = PragmaClient(network="testnet")
-
-#     print(await client.get_spot("BTC/USD"))
-#     print(await client.get_future("BTC/USD", expiry_timestamp=0))

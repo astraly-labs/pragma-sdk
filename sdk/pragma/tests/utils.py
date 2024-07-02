@@ -11,8 +11,7 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 from pragma.onchain.abis.abi import ABIS
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.onchain.types import Contract
-from pragma.common.types import ContractAddresses
+from pragma.onchain.types import Contract, ContractAddresses
 from pragma.tests.constants import (
     CONTRACTS_COMPILED_DIR,
     DEPLOYMENTS_DIR,

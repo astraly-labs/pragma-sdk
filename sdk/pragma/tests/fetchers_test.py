@@ -11,9 +11,9 @@ from aioresponses import aioresponses
 from starknet_py.net.client import Client
 
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.common.types import RPC_URLS
+from pragma.onchain.constants import RPC_URLS
 from pragma.common.fetchers.fetchers.index import AssetQuantities, IndexFetcher
-from pragma.publisher.types import PublisherFetchError
+from pragma.offchain.exceptions import PublisherFetchError
 from pragma.tests.constants import (
     SAMPLE_ASSETS,
     SAMPLE_FUTURE_ASSETS,
@@ -47,7 +47,7 @@ def forked_client(request) -> Client:
     block_number = request.param.get("block_number", None)
     network = request.param.get("network", "mainnet")
 
-    rpc_url = RPC_URLS[network][random.randint(0, len(RPC_URLS[network]) - 1)]
+    rpc_url = RPC_URLS[network][random.choice(RPC_URLS[network])]
     command = [
         "starknet-devnet",
         "--fork-network",

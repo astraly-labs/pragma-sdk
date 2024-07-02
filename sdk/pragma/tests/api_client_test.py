@@ -37,7 +37,7 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
     block_number = request.param.get("block_number", None)
     network = request.param.get("network", "mainnet")
 
-    rpc_url = RPC_URLS[network][random.randint(0, len(RPC_URLS[network]) - 1)]
+    rpc_url = RPC_URLS[network][random.choice(list(RPC_URLS[network]))]
     command = [
         "starknet-devnet",
         "--fork-network",

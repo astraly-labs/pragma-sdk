@@ -43,7 +43,7 @@ class PragmaOnChainClient(
 
     def __init__(
         self,
-        network: Network = "devnet",
+        network: Network = "sepolia",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[ADDRESS] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
@@ -91,6 +91,7 @@ class PragmaOnChainClient(
             )
 
         if not contract_addresses_config:
+            print("Using default contract addresses")
             contract_addresses_config = CONTRACT_ADDRESSES[self.network]
 
         self.contract_addresses_config = contract_addresses_config
@@ -113,6 +114,7 @@ class PragmaOnChainClient(
         Setup the contracts for the client.
         For now, this includes the Oracle and PublisherRegistry contracts.
         """
+
         provider = self.account if self.account else self.client
         self.oracle = Contract(
             address=self.contract_addresses_config.oracle_proxy_addresss,

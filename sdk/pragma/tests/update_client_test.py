@@ -8,9 +8,8 @@ import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 
-from pragma.common.assets import PRAGMA_ALL_ASSETS
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.common.types import ContractAddresses
+from pragma.onchain.types import ContractAddresses
 from pragma.common.utils import str_to_felt
 from pragma.tests.utils import get_deployments, read_contract
 

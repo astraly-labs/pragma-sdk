@@ -3,8 +3,7 @@ Taken from starknet_py tests :
 https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee3801205a7783645/starknet_py/tests/e2e/contract_interaction/v1_interaction_test.py
 """
 
-import os
-from typing import List, Tuple
+from typing import Tuple
 
 import pytest
 import pytest_asyncio
@@ -17,8 +16,6 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair
 from pragma.tests.constants import (
     DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
-    INTEGRATION_ACCOUNT_ADDRESS,
-    INTEGRATION_ACCOUNT_PRIVATE_KEY,
     TESTNET_ACCOUNT_ADDRESS,
     TESTNET_ACCOUNT_PRIVATE_KEY,
 )
@@ -41,47 +38,26 @@ async def address_and_private_key(
             DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
         ),
         "testnet": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
-        "integration": (
-            INTEGRATION_ACCOUNT_ADDRESS,
-            INTEGRATION_ACCOUNT_PRIVATE_KEY,
-        ),
-        "fork_devnet": (
-            os.getenv("TESTNET_ACCOUNT_ADDRESS"),
-            os.getenv("TESTNET_PRIVATE_KEY"),
-        ),
     }
     return account_details[net]
 
 
 @pytest.fixture(scope="package")
-def full_node_account(
-    address_and_private_key: Tuple[str, str], full_node_client: FullNodeClient
+def account(
+    address_and_private_key: Tuple[str, str], client: FullNodeClient
 ) -> Account:
     """
     Returns a new Account created with FullNodeClient.
     """
     address, private_key = address_and_private_key
+    print(f"address: {address}, private_key: {private_key}")
+
     return Account(
         address=address,
-        client=full_node_client,
+        client=client,
         key_pair=KeyPair.from_private_key(int(private_key, 0)),
         chain=StarknetChainId.MAINNET,
     )
-
-
-def net_to_base_accounts() -> List[str]:
-    return ["full_node_account"]
-
-
-@pytest.fixture(
-    scope="package",
-    params=net_to_base_accounts(),
-)
-def account(request) -> Account:
-    """
-    This parametrized fixture returns all new Accounts, one by one.
-    """
-    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(scope="package")
@@ -95,15 +71,8 @@ def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Acc
             DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
         ),
         "testnet": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
-        "integration": (
-            INTEGRATION_ACCOUNT_ADDRESS,
-            INTEGRATION_ACCOUNT_PRIVATE_KEY,
-        ),
-        "fork_devnet": (
-            os.getenv("TESTNET_ACCOUNT_ADDRESS"),
-            os.getenv("TESTNET_PRIVATE_KEY"),
-        ),
     }
+
     net = pytestconfig.getoption("--net")
     address, private_key = address_and_priv_key[net]
     return Account(
