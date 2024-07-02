@@ -1,5 +1,5 @@
 import collections
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from typing import List, Optional
 
 from pragma.core.types import ADDRESS

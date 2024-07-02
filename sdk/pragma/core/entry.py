@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
 from pragma.core.types import DataTypes, Pair, UnixTimestamp
