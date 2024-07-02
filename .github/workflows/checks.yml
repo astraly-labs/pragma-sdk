@@ -1,61 +1,48 @@
-name: Checks
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - master
-      - development
+    branches: [ main, master, development ]
+    tags:
+      - 'v*'
   pull_request:
+    branches: [ main, master, development ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
   workflow_dispatch:
 
+env:
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_DRIVER: overlay2
+  IMAGE_SHA: ${{ github.repository }}:${{ github.sha }}
+
 jobs:
-
-  # ---------------------------------------------------------- #
-  # ...................LINT-FORMAT-TYPECHECK.................. #
-  # ---------------------------------------------------------- #
-
   lint-format-typecheck:
     name: Lint - Format - Typecheck
     runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v3
-
       - name: Install poetry
         run: |
           python -m pip install --upgrade pip
           pip install poetry
           poetry config installer.modern-installation false
-
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
           cache: 'poetry'
-
       - name: Install dependencies
-        run: |
-          poetry install
-
+        run: poetry install
       - name: Check poetry.lock
-        run: |
-          poetry lock --check
-
+        run: poetry lock --check
       - name: Lint
-        run: |
-          poetry run poe lint
-
+        run: poetry run poe lint
       - name: Format
-        run: |
-          poetry run poe format_check
-
+        run: poetry run poe format_check
       - name: Typecheck
-        run: |
-          poetry run poe typecheck
-
-  # ---------------------------------------------------------- #
-  # .........................TESTS............................ #
-  # ---------------------------------------------------------- #
+        run: poetry run poe typecheck
 
   tests:
     name: Run Tests
@@ -64,90 +51,57 @@ jobs:
       matrix:
         python-version: [ "3.11" ]
     steps:
-
-      # ====================== SETUP ====================== #
-
       - uses: actions/checkout@v3
         with: 
           submodules: 'true'
-
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
-
       - name: Install poetry
         run: |
           python -m pip install --upgrade pip
           pip install poetry
           poetry config installer.modern-installation false
-
       - name: Install python 3.11 requirements
         run: |
           poetry export -f requirements.txt --without-hashes --output requirements.txt
           pip install -r requirements.txt
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
-
       - name: Install dependencies
-        run: |
-          poetry install
-
-      # ====================== CONTRACTS v1 ====================== #
-
+        run: poetry install
       - name: Cache contracts
         id: cache-contracts
         uses: actions/cache@v3
         with:
           path: ./pragma-oracle/target
           key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
-
       - uses: software-mansion/setup-scarb@v1
         with:
           tool-versions: pragma-oracle/.tool-versions
-
       - name: Compile contracts
         if: steps.cache-contracts.outputs.cache-hit != 'true'
         working-directory: ./pragma-oracle
         run: |
           scarb -V
           scarb build
-
       - name: Check ABIs are up-to-date
         run: |
-          # Find and compare *.sierra.json files in both directories
           for file in $(find ./pragma-oracle/target/dev -type f -name "*.sierra.json"); do
-            # Extract the relative path of the file for comparison
             rel_path=${file#./pragma-oracle/target/dev}
-            # Use diff to compare the file with its counterpart in the SDK directory
             diff "$file" "pragma/core/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma/core/abis/" && exit 1) 
           done
-          
-      # ====================== CAIRO SETUP ====================== #
-
       - name: Install rust
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
-
       - name: Verify Rust and Cargo installation
         run: |
           rustc --version
           cargo --version
-
       - name: Install starknet-devnet
         run: cargo install starknet-devnet
-
-      # ====================== RUN TESTS ====================== #
-
       - name: Check circular imports
-        run: |
-          poetry run poe circular_imports_check
-
+        run: poetry run poe circular_imports_check
       - name: Run tests
         env:
           KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
@@ -157,16 +111,130 @@ jobs:
         run: |
           poetry run poe test_ci_update_client
           poetry run poe test_ci_client
-          # poetry run poe test_ci_fetchers
           poetry run poe test_ci_publisher
           poetry run poe test_ci_vrf
           poetry run poe test_ci_api_client
-
       - name: Generate coverage in XML
-        run: |
-          poetry run coverage xml
-
+        run: poetry run coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build_packages:
+    needs: [lint-format-typecheck, tests]
+    strategy:
+      matrix:
+        pkg: [sdk, price-pusher]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+      - name: Build package
+        run: |
+          cd ${{ matrix.pkg }}
+          poetry install --sync
+          poetry build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.pkg }}-dist
+          path: ${{ matrix.pkg }}/dist
+
+  build_containers:
+    needs: build_packages
+    strategy:
+      matrix:
+        pkg: [price-pusher]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.pkg }}-dist
+          path: ${{ matrix.pkg }}/dist
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./${{ matrix.pkg }}
+          push: true
+          tags: ${{ env.IMAGE_SHA }}
+
+  release:
+    needs: [build_packages, build_containers]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install twine
+        run: pip install --upgrade twine
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+
+  bump_version:
+    needs: [build_packages, build_containers]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install Commitizen
+        run: pip install --upgrade Commitizen
+      - name: Configure Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Bump version
+        run: |
+          git fetch --tags
+          cz bump --retry || echo "probably nothing to do"
+      - name: Push changes
+        run: |
+          TAG=$(git tag --points-at HEAD)
+          if [[ $TAG ]]; then
+            echo "Version bumped to $TAG"
+            git push
+            git push --tags
+          else
+            echo "Version NOT bumped"
+          fi

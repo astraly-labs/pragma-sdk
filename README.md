@@ -15,7 +15,14 @@ This SDK should also be used by Data Providers willing to push data on Pragma co
 
 ## About
 
-For more information, see the [project's repository](https://github.com/Astraly-Labs/Pragma), [documentation overview](https://docs.pragmaoracle.com/) and [documentation on how to publish data](https://docs.pragmaoracle.com/using-pragma/publishing-data).
+For more information, see the [project's repository](https://github.com/Astraly-Labs/Pragma), [documentation overview](https://docs.pragma.build/) and [documentation on how to publish data](https://docs.pragma.build/using-pragma/publishing-data).
+
+## Repository Structure
+
+- <a href="./sdk">Python SDK</a>
+- <a href="./price-pusher">Price Pusher</a>
+- <a href="./stagecoach/jobs/randomness/">VRF Service</a>
+
 
 ## Contributing
 

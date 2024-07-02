@@ -19,8 +19,8 @@ packages = [{ include = "price_pusher" }]
 scheduler = 'price_pusher.main:main'
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.10"
-pragma-sdk = { path = "../../", develop = true }
+python = ">=3.10,<3.13"
+pragma-sdk = { path = "../sdk", develop = true }
 click = "^8.1.0"
 pydantic = "^2.7.4"
 boto3 = "^1.28.61"
@@ -52,31 +52,22 @@ typecheck = "mypy price_pusher"
 
 [tool.ruff]
 exclude = [
-  ".bzr",
   ".direnv",
   ".eggs",
   ".git",
   ".github",
   ".git-rewrite",
   ".hg",
-  ".ipynb_checkpoints",
   ".mypy_cache",
-  ".nox",
-  ".pants.d",
   ".pyenv",
   ".pytest_cache",
   ".pytype",
   ".ruff_cache",
-  ".svn",
-  ".tox",
   ".venv",
   ".vscode",
   "__pypackages__",
   "_build",
-  "buck-out",
   "build",
-  "dist",
-  "node_modules",
   "site-packages",
   "venv",
   ".venv",
@@ -115,3 +106,5 @@ source = ["price-pusher"]
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
 skip_empty = true
+
+[tool.poetry-monorepo.deps]
