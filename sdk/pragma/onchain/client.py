@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.client import Client
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from starknet_py.net.models import StarknetChainId
 from starknet_py.contract import InvokeResult
@@ -40,6 +41,7 @@ class PragmaOnChainClient(
     account_contract_address: Optional[ADDRESS] = None
     account: Account = None
     full_node_client: FullNodeClient = None
+    client: Client = None
 
     def __init__(
         self,
@@ -91,7 +93,6 @@ class PragmaOnChainClient(
             )
 
         if not contract_addresses_config:
-            print("Using default contract addresses")
             contract_addresses_config = CONTRACT_ADDRESSES[self.network]
 
         self.contract_addresses_config = contract_addresses_config

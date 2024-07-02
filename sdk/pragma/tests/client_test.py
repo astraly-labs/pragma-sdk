@@ -13,7 +13,7 @@ from pragma.onchain.client import PragmaOnChainClient
 from pragma.onchain.types import ContractAddresses
 from pragma.common.types.entry import FutureEntry, SpotEntry
 from pragma.common.types.asset import Asset
-from pragma.common.types.types import DataTypes
+from pragma.common.types.types import DataTypes, ExecutionConfig
 from pragma.common.utils import str_to_felt
 from pragma.tests.constants import CURRENCIES, USD_PAIRS
 from pragma.tests.utils import read_contract, wait_for_acceptance
@@ -87,14 +87,14 @@ async def declare_deploy_oracle(
 
 
 @pytest_asyncio.fixture(scope="package", name="contracts")
-async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
+async def oracle_contract(declare_deploy_oracle) -> Tuple[Contract, Contract]:
     _, deploy_result, deploy_result_registry = declare_deploy_oracle
     return (deploy_result.deployed_contract, deploy_result_registry.deployed_contract)
 
 
 @pytest_asyncio.fixture(scope="package", name="pragma_client")
 async def pragma_client(
-    contracts: (Contract, Contract),
+    contracts: Tuple[Contract, Contract],
     network,
     address_and_private_key: Tuple[str, str],
 ) -> PragmaOnChainClient:
@@ -105,7 +105,7 @@ async def pragma_client(
     port = urlparse(network).port
 
     return PragmaOnChainClient(
-        chain_name="devnet",
+        network="devnet",
         account_contract_address=address,
         account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
@@ -148,7 +148,6 @@ async def test_client_publisher_mixin(pragma_client: PragmaOnChainClient):
     )
 
     publishers = await pragma_client.get_all_publishers()
-    print(f" here is the publisher {publishers}")
     assert publishers == [str_to_felt(publisher_name)]
 
     publisher_address = await pragma_client.get_publisher_address(publisher_name)
@@ -316,7 +315,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [future_entry_1, future_entry_2], auto_estimate=True
+        [future_entry_1, future_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Check entries

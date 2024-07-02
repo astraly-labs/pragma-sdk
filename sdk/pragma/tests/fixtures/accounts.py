@@ -49,8 +49,8 @@ def account(
     """
     Returns a new Account created with FullNodeClient.
     """
+
     address, private_key = address_and_private_key
-    print(f"address: {address}, private_key: {private_key}")
 
     return Account(
         address=address,

@@ -18,7 +18,6 @@ Network = Union[
     Literal[
         "devnet",
         "mainnet",
-        "fork_devnet",
         "sepolia",
     ],
     HttpUrl,

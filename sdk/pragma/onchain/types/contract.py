@@ -21,7 +21,7 @@ class Contract(StarknetContract):
 async def invoke_(
     self,
     *args,
-    execution_config: Optional[ExecutionConfig] = None,
+    execution_config: ExecutionConfig = ExecutionConfig(),
     callback: Optional[Callable[[SentTransactionResponse], None]] = None,
     **kwargs,
 ) -> InvokeResult:

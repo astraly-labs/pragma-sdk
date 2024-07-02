@@ -21,7 +21,7 @@ def get_rpc_url(network: Network = "devnet", port: int = 5050) -> str:
         case "sepolia" | "mainnet":
             urls = RPC_URLS[network]
             return random.choice(urls)
-        case "devnet" | "fork_devnet":
+        case "devnet":
             return f"http://127.0.0.1:{port}/rpc"
         case _:
             raise ValueError(f"Unsupported network: {network}")
@@ -31,4 +31,5 @@ def get_full_node_client_from_network(network: Network, port: int = 5050):
     """
     Create a new full node client for the passed network/port (rpc url).
     """
+    print(get_rpc_url(network, port=port))
     return FullNodeClient(node_url=get_rpc_url(network, port=port))

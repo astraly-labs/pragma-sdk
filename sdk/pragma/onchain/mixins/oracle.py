@@ -61,10 +61,7 @@ class OracleMixin:
                     "volume": volume,
                 }
             },
-            max_fee=config.max_fee,
-            l1_resource_bounds=config.l1_resource_bounds,
-            auto_estimate=config.auto_estimate,
-            enable_strk_fees=config.enable_strk_fees,
+            execution_config=config,
         )
         return invocation
 
@@ -128,10 +125,7 @@ class OracleMixin:
     ) -> InvokeResult:
         return await self.oracle.functions["publish_data_entries"].invoke(
             new_entries=[{data_type.name: entry} for entry in entries],
-            enable_strk_fees=config.enable_strk_fees,
-            max_fee=config.max_fee,
-            l1_resource_bounds=config.l1_resource_bounds,
-            auto_estimate=config.auto_estimate,
+            execution_config=config,
             callback=self.track_nonce,
         )
 
