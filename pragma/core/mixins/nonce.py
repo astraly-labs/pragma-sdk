@@ -15,6 +15,14 @@ class NonceMixin:
     pending_nonce: Optional[int] = None
 
     async def _get_nonce(self) -> int:
+        """
+        Returns the nonce that should be used for the next transaction.
+        Steps:
+        1. Update nonces' statuses.
+        2. Cleanup nonce_dict.
+        3. Return the pending nonce if there is one.
+        4. Return the latest nonce if there are no pending nonces.
+        """
         await self.update_nonce_dict()
         self.cleanup_nonce_dict()
 
@@ -27,6 +35,10 @@ class NonceMixin:
         return latest_nonce
 
     def cleanup_nonce_dict(self):
+        """
+        Cleanup the nonce_dict by removing all txs that have been either rejected or accepted.
+        """
+
         nonce_seq = [
             x
             for x in self.nonce_dict
@@ -49,9 +61,18 @@ class NonceMixin:
 
     async def track_nonce(
         self,
-        nonce,
-        transaction_hash,
+        nonce: int,
+        transaction_hash: int,
     ):
+        """
+        Callback function to track the nonce of a transaction.
+        Will update the nonce_dict and pending_nonce attributes.
+        We track the nonce used for a given transaction hash.
+
+        :param nonce: The nonce of the transaction.
+        :param transaction_hash: The hash of the transaction.
+        """
+
         self.nonce_dict[nonce] = transaction_hash
 
         nonce_min = min(self.nonce_dict)
@@ -64,6 +85,9 @@ class NonceMixin:
     async def update_nonce_dict(
         self,
     ):
+        """
+        Update the statuses of the nonces in the nonce_dict.
+        """
         for nonce in list(self.nonce_dict):
             self.nonce_status[nonce] = await self.get_status(self.nonce_dict[nonce])
             if self.nonce_status[nonce] in [
@@ -79,7 +103,14 @@ class NonceMixin:
         self,
         include_pending=True,
         block_number: Optional[Union[int, str, Literal["pending", "latest"]]] = None,
-    ):
+    ) -> int:
+        """
+        Get the nonce of the account contract address.
+        Just a wrapper around the client's get_contract_nonce method.
+
+        :param include_pending: Whether to include pending transactions in the nonce calculation.
+        :param block_number: Custom block number to get the nonce from.
+        """
         if not block_number:
             block_number = "pending" if include_pending else "latest"
 
@@ -95,6 +126,14 @@ class NonceMixin:
         check_interval: int = 2,
         retries: int = 500,
     ) -> TransactionStatus:
+        """
+        Tries to get the status of a transaction by its hash.
+
+        :param transaction_hash: The hash of the transaction.
+        :param check_interval: The interval in seconds between each check.
+        :param retries: The number of retries before giving up.
+        :return: The status of the transaction.
+        """
         if check_interval <= 0:
             raise ValueError("Argument check_interval has to be greater than 0.")
         if retries <= 0:
