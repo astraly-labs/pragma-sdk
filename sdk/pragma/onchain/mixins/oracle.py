@@ -46,7 +46,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or self.execution_config
+        config = execution_config or ExecutionConfig()
 
         invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
@@ -61,10 +61,7 @@ class OracleMixin:
                     "volume": volume,
                 }
             },
-            max_fee=config.max_fee,
-            l1_resource_bounds=config.l1_resource_bounds,
-            auto_estimate=config.auto_estimate,
-            enable_strk_fees=config.enable_strk_fees,
+            execution_config=config,
         )
         return invocation
 
@@ -127,11 +124,8 @@ class OracleMixin:
         self, entries: List[Dict], data_type: DataTypes, config: ExecutionConfig
     ) -> InvokeResult:
         return await self.oracle.functions["publish_data_entries"].invoke(
-            new_entries=[{data_type.name: entry} for entry in entries],
-            enable_strk_fees=config.enable_strk_fees,
-            max_fee=config.max_fee,
-            l1_resource_bounds=config.l1_resource_bounds,
-            auto_estimate=config.auto_estimate,
+            new_entries=[{data_type: entry} for entry in entries],
+            execution_config=config,
             callback=self.track_nonce,
         )
 
@@ -322,7 +316,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or self.execution_config
+        config = execution_config or ExecutionConfig()
 
         invocation = None
         if config.pagination:
@@ -373,7 +367,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or self.execution_config
+        config = execution_config or ExecutionConfig()
 
         invocation = None
         if config.pagination:
@@ -428,7 +422,7 @@ class OracleMixin:
         :return: InvokeResult
         """
 
-        config = execution_config or self.execution_config
+        config = execution_config or ExecutionConfig()
 
         if not self.is_user_client:
             raise AttributeError(

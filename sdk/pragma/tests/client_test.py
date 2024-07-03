@@ -10,10 +10,12 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.common.entry import FutureEntry, SpotEntry
-from pragma.common.types import ContractAddresses, Asset, DataTypes
+from pragma.onchain.types import ContractAddresses
+from pragma.common.types.entry import FutureEntry, SpotEntry
+from pragma.common.types.asset import Asset
+from pragma.common.types.types import DataTypes, ExecutionConfig
 from pragma.common.utils import str_to_felt
-from pragma.tests.constants import CURRENCIES, PAIRS
+from pragma.tests.constants import CURRENCIES, USD_PAIRS
 from pragma.tests.utils import read_contract, wait_for_acceptance
 from starknet_py.net.client_models import ResourceBounds
 
@@ -68,7 +70,7 @@ async def declare_deploy_oracle(
 
     # Deploy Oracle
     currencies = [currency.to_dict() for currency in CURRENCIES]
-    pairs = [pair.to_dict() for pair in PAIRS]
+    pairs = [pair.to_dict() for pair in USD_PAIRS]
 
     deploy_result = await declare_result.deploy_v1(
         constructor_args=[
@@ -85,14 +87,14 @@ async def declare_deploy_oracle(
 
 
 @pytest_asyncio.fixture(scope="package", name="contracts")
-async def oracle_contract(declare_deploy_oracle) -> (Contract, Contract):
+async def oracle_contract(declare_deploy_oracle) -> Tuple[Contract, Contract]:
     _, deploy_result, deploy_result_registry = declare_deploy_oracle
     return (deploy_result.deployed_contract, deploy_result_registry.deployed_contract)
 
 
 @pytest_asyncio.fixture(scope="package", name="pragma_client")
 async def pragma_client(
-    contracts: (Contract, Contract),
+    contracts: Tuple[Contract, Contract],
     network,
     address_and_private_key: Tuple[str, str],
 ) -> PragmaOnChainClient:
@@ -103,10 +105,13 @@ async def pragma_client(
     port = urlparse(network).port
 
     return PragmaOnChainClient(
-        chain_name="devnet",
+        network="devnet",
         account_contract_address=address,
         account_private_key=private_key,
-        contract_addresses_config=ContractAddresses(registry.address, oracle.address),
+        contract_addresses_config=ContractAddresses(
+            publisher_registry_address=registry.address,
+            oracle_proxy_addresss=oracle.address,
+        ),
         port=port,
     )
 
@@ -120,7 +125,7 @@ async def test_deploy_contract(contracts):
 
 @pytest.mark.asyncio
 async def test_client_setup(pragma_client: PragmaOnChainClient, account: Account):
-    assert pragma_client.account_address() == account.address
+    assert pragma_client.account_address == account.address
 
     account_balance = await account.get_balance()
     assert await pragma_client.get_balance(account.address) == account_balance
@@ -143,7 +148,6 @@ async def test_client_publisher_mixin(pragma_client: PragmaOnChainClient):
     )
 
     publishers = await pragma_client.get_all_publishers()
-    print(f" here is the publisher {publishers}")
     assert publishers == [str_to_felt(publisher_name)]
 
     publisher_address = await pragma_client.get_publisher_address(publisher_name)
@@ -168,7 +172,7 @@ async def test_client_publisher_mixin(pragma_client: PragmaOnChainClient):
 async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     # Add PRAGMA as Publisher
     publisher_name = "PRAGMA"
-    publisher_address = pragma_client.account_address()
+    publisher_address = pragma_client.account_address
 
     await wait_for_acceptance(
         await pragma_client.add_publisher(publisher_name, publisher_address)
@@ -194,7 +198,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
     assert entries == [
-        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
+        SpotEntry(
+            BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=2000000000000
+        )
     ]
 
     # Get SPOT
@@ -217,7 +223,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [spot_entry_1, spot_entry_2], auto_estimate=True
+        [spot_entry_1, spot_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Fails for UNKNOWN source
@@ -245,13 +252,15 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
 
     # Fails if timestamp too far in the future (>7min)
     spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=10
+        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=100000000000
     )
     try:
         invocations = await pragma_client.publish_many(
             [spot_entry_future],
-            l1_resource_bounds=ResourceBounds(
-                max_price_per_unit=500 * 10**9, max_amount=10**7
+            execution_config=ExecutionConfig(
+                l1_resource_bounds=ResourceBounds(
+                    max_price_per_unit=500 * 10**9, max_amount=10**7
+                )
             ),
         )
     except TransactionRevertedError as err:
@@ -272,7 +281,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [spot_entry_1, spot_entry_2], auto_estimate=True
+        [spot_entry_1, spot_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_spot(ETH_PAIR)
@@ -311,7 +321,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [future_entry_1, future_entry_2], auto_estimate=True
+        [future_entry_1, future_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Check entries
@@ -344,7 +355,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [future_entry_1, future_entry_2], auto_estimate=True
+        [future_entry_1, future_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
@@ -366,8 +378,10 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     try:
         await pragma_client.publish_many(
             [future_entry_future],
-            l1_resource_bounds=ResourceBounds(
-                max_price_per_unit=500 * 10**9, max_amount=10**7
+            execution_config=ExecutionConfig(
+                l1_resource_bounds=ResourceBounds(
+                    max_price_per_unit=500 * 10**9, max_amount=10**7
+                ),
             ),
         )
     except TransactionRevertedError as err:
@@ -379,22 +393,14 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
 
 def test_client_with_http_network():
     client_with_chain_name = PragmaOnChainClient(
-        network="http://test.rpc/rpc", chain_name="devnet"
+        network="http://test.rpc/rpc", chain_name="sepolia"
     )
-    assert client_with_chain_name.network == "devnet"
+    assert client_with_chain_name.network == "sepolia"
 
-    client_with_chain_name_only = PragmaOnChainClient(chain_name="devnet")
-    # default value of network is testnet
-    assert client_with_chain_name_only.network == "devnet"
+    client_with_chain_name_only = PragmaOnChainClient(chain_name="sepolia")
+    # default value of network is sepolia
+    assert client_with_chain_name_only.network == "sepolia"
 
     with pytest.raises(Exception) as exception:
         _ = PragmaOnChainClient(network="http://test.rpc/rpc")
         assert "`chain_name` is not provided" in str(exception)
-
-
-# @pytest.mark.asyncio
-# async def test_client_live():
-#     client = PragmaClient(network="testnet")
-
-#     print(await client.get_spot("BTC/USD"))
-#     print(await client.get_future("BTC/USD", expiry_timestamp=0))

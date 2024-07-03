@@ -86,8 +86,7 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
 
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
-    fork_network = os.getenv("NETWORK_FORK")
-    rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
+    rpc_url = RPC_URLS["mainnet"][random.randint(0, len(RPC_URLS["mainnet"]) - 1)]
     command = [
         "starknet-devnet",
         "--chain-id",
@@ -108,8 +107,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
 
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
-    fork_network = os.getenv("NETWORK_FORK")
-    rpc_url = RPC_URLS[fork_network][random.randint(0, len(RPC_URLS[fork_network]) - 1)]
+    rpc_url = RPC_URLS["mainnet"][random.randint(0, len(RPC_URLS["mainnet"]) - 1)]
 
     return [
         "wsl",
@@ -132,6 +130,7 @@ def run_devnet() -> Generator[str, None, None]:
     """
     Runs devnet instance once per module and returns it's address.
     """
+
     devnet_port, proc = start_devnet()
     yield f"http://127.0.0.1:{devnet_port}"
     proc.kill()
@@ -142,6 +141,7 @@ def fork_testnet_devnet() -> Generator[str, None, None]:
     """
     Runs devnet instance once per module and returns it's address.
     """
+
     devnet_port, proc = fork_start_devnet()
     yield f"http://127.0.0.1:{devnet_port}"
     proc.kill()

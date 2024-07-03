@@ -21,16 +21,16 @@ class Contract(StarknetContract):
 async def invoke_(
     self,
     *args,
-    execution_config: Optional[ExecutionConfig] = None,
-    callback: Optional[Callable[[SentTransactionResponse, str], Awaitable[None]]] = None,
+    execution_config: ExecutionConfig = ExecutionConfig(),
+    callback: Optional[
+        Callable[[SentTransactionResponse, str], Awaitable[None]]
+    ] = None,
     **kwargs,
 ) -> InvokeResult:
     """
     Allows for a callback in the invocation of a contract method.
     This is useful for tracking the nonce changes
     """
-    if execution_config is None :
-        raise AttributeError("Invalid Attribute")
 
     prepared_call = (
         self.prepare_invoke_v3(*args, **kwargs)
@@ -55,12 +55,6 @@ async def invoke_(
         )
     )
 
-<<<<<<< Updated upstream
-    transaction = None
-
-
-=======
->>>>>>> Stashed changes
     response = await self._client.send_transaction(transaction)
     if callback:
         await callback(transaction.nonce, response.transaction_hash)
