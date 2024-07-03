@@ -55,9 +55,12 @@ async def invoke_(
         )
     )
 
+<<<<<<< Updated upstream
     transaction = None
 
 
+=======
+>>>>>>> Stashed changes
     response = await self._client.send_transaction(transaction)
     if callback:
         await callback(transaction.nonce, response.transaction_hash)
