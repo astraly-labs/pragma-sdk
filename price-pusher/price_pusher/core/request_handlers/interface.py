@@ -3,9 +3,10 @@ import logging
 from typing import Optional
 from abc import ABC, abstractmethod
 
+from pragma.common.types import DataTypes
 from pragma.common.types.entry import Entry
-from pragma.common.assets import PragmaAsset
-from pragma.publisher.client import PragmaClient
+from pragma.common.types.pair import Pair
+from pragma.common.types.client import PragmaClient
 
 logger = logging.getLogger(__name__)
 
@@ -18,4 +19,4 @@ class IRequestHandler(ABC):
     client: PragmaClient
 
     @abstractmethod
-    async def fetch_latest_entry(self, asset: PragmaAsset) -> Optional[Entry]: ...
+    async def fetch_latest_entry(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]: ...

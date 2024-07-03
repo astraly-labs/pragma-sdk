@@ -13,13 +13,13 @@ from .types import (
 
 
 __all__ = [
-    Contract,
-    ContractAddresses,
-    HttpUrl,
-    Network,
-    RequestStatus,
-    OracleResponse,
-    VRFRequestParams,
-    VRFSubmitParams,
-    VRFCancelParams,
+    "Contract",
+    "ContractAddresses",
+    "HttpUrl",
+    "Network",
+    "RequestStatus",
+    "OracleResponse",
+    "VRFRequestParams",
+    "VRFSubmitParams",
+    "VRFCancelParams",
 ]

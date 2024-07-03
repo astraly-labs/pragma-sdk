@@ -9,6 +9,8 @@ from pragma.common.types import DataTypes, Pair
 
 
 class PairConfig(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
     spot: Optional[List[Pair]] = None
     future: Optional[List[Pair]] = None
 
@@ -23,9 +25,9 @@ class PriceConfig(BaseModel):
     @field_validator("pairs", mode="before")
     def validate_pairs(cls, value: PairConfig) -> PairConfig:
         if "spot" in value:
-            value["spot"] = cls.validate_asset_pairs(value["spot"], DataTypes.SPOT)
+            value["spot"] = cls.validate_asset_pairs(value["spot"])
         if "future" in value:
-            value["future"] = cls.validate_asset_pairs(value["future"], DataTypes.FUTURE)
+            value["future"] = cls.validate_asset_pairs(value["future"])
         return value
 
     @staticmethod
@@ -86,9 +88,10 @@ class PriceConfig(BaseModel):
         Returns:
             Dict from DataTypes to List of Pairs.
         """
-        spot_pairs = self.get_unique_spot_pairs()
-        future_pairs = self.get_unique_future_pairs()
-        return spot_pairs + future_pairs
+        pair_dict_by_type = {}
+        pair_dict_by_type[DataTypes.SPOT] = self.get_unique_spot_pairs()
+        pair_dict_by_type[DataTypes.FUTURE] = self.get_unique_future_pairs()
+        return pair_dict_by_type
 
 
 def get_unique_spot_pairs_from_config_list(

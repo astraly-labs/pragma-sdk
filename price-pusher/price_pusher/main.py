@@ -4,7 +4,8 @@ import logging
 
 from typing import Optional, List
 
-from pragma.publisher.client import FetcherClient, PragmaClient
+from pragma.common.fetchers.fetcher_client import FetcherClient
+from pragma.common.types.client import PragmaClient
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
@@ -78,7 +79,7 @@ def _create_listeners(
     for price_config in price_configs:
         new_listener = PriceListener(
             request_handler=REQUEST_HANDLER_REGISTRY[target](
-                client=pragma_client.client
+                client=pragma_client
             ),
             price_config=price_config,
             polling_frequency_in_s=20,

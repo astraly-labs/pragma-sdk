@@ -1,14 +1,14 @@
 import logging
 from typing import Optional
 
-from pragma.common.assets import PragmaAsset
+from pragma.common.types import DataTypes
+from pragma.common.types.pair import Pair
 from pragma.common.types.entry import Entry, SpotEntry
-from pragma.publisher.client import PragmaAPIClient, EntryResult
+from pragma.offchain.client import PragmaAPIClient, EntryResult
 from pragma.common.types import AggregationMode
-from pragma.publisher.types import Interval
+from pragma.offchain.types import Interval
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +22,13 @@ class APIRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaAPIClient) -> None:
         self.client = client
 
-    async def fetch_latest_entry(self, asset: PragmaAsset) -> Optional[Entry]:
+    async def fetch_latest_entry(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]:
         """
         Fetch last entry for the asset from the API.
         TODO: Currently only works for spot assets.
         """
-        pair = asset_to_pair_id(asset)
         entry_result: EntryResult = await self.client.get_entry(
-            pair=pair, interval=Interval.ONE_MINUTE, aggregation=AggregationMode.MEDIAN
+            pair=pair.__repr__(), interval=Interval.ONE_MINUTE, aggregation=AggregationMode.MEDIAN
         )
         entry = SpotEntry(
             pair_id=entry_result.pair_id,

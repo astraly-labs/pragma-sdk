@@ -1,16 +1,16 @@
 import logging
 import asyncio
 
-from typing import List
+from typing import List, Dict
 
 from pragma.common.types.entry import Entry
-from pragma.common.assets import PragmaAsset
 
+from pragma.common.types.types import DataTypes
+from pragma.common.types.pair import Pair
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.type_aliases import LatestOrchestratorPairPrices
-from price_pusher.utils.assets import asset_to_pair_id
 
 logger = logging.getLogger(__name__)
 
@@ -103,10 +103,11 @@ class Orchestrator:
             logger.info(
                 f"💡 Notification received from LISTENER [{listener.id}] ! "
                 "Sending entries into queue for: "
-                f"{[asset_to_pair_id(asset) for asset in assets_to_push]}"
+                f"{assets_to_push}"
             )
             entries_to_push = self._flush_entries_for_assets(assets_to_push)
-            await self.push_queue.put(entries_to_push)
+            if len(entries_to_push) > 0:
+                await self.push_queue.put(entries_to_push)
             listener.notification_event.clear()
 
     async def _pusher_service(self) -> None:
@@ -118,19 +119,22 @@ class Orchestrator:
             await self.pusher.update_price_feeds(entries_to_push)
             self.push_queue.task_done()
 
-    def _flush_entries_for_assets(self, assets: List[PragmaAsset]) -> List[Entry]:
+    def _flush_entries_for_assets(self, pairs_per_type: Dict[DataTypes, List[Pair]]) -> List[Entry]:
         """
         Retrieves the prices for the assets that needs to be pushed & remove them from
         the latest_prices dict.
         """
         entries_to_push = []
-        for asset in assets:
-            pair_id = asset_to_pair_id(asset)
-            if pair_id in self.latest_prices:
-                for entry_type, sources in self.latest_prices[pair_id].items():
-                    for source, entry in sources.items():
-                        entries_to_push.append(entry)
-                del self.latest_prices[pair_id]
+        
+        logger.info(f"BLYAT KURWA : {self.latest_prices}")
+
+        for data_type, pairs in pairs_per_type.items():
+            for pair in pairs:
+                if data_type not in self.latest_prices[f"{pair}"]:
+                    continue
+                entries_to_push.append(self.latest_prices[f"{pair}"][data_type].values())
+                del self.latest_prices[f"{pair}"][data_type]
+
         return entries_to_push
 
     def callback_update_prices(self, entries: List[Entry]) -> None:

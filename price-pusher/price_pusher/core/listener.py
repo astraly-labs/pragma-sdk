@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from pragma.common.types.entry import Entry
-from pragma.common.assets import AssetType
+from pragma.common.types.types import DataTypes
 
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
@@ -14,9 +14,8 @@ from price_pusher.type_aliases import (
     LatestOrchestratorPairPrices,
     HumanReadableId,
 )
-from price_pusher.utils.assets import asset_to_pair_id
 from price_pusher.utils.readable_id import generate_human_readable_id
-from pragma.publisher.client import PragmaAPIError
+from pragma.offchain.client import PragmaAPIError
 
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class IPriceListener(ABC):
 
     @abstractmethod
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: AssetType
+        self, pair_id: str, asset_type: DataTypes
     ) -> Optional[Entry]: ...
 
     @abstractmethod
@@ -119,8 +118,9 @@ class PriceListener(IPriceListener):
         Fetch the latest oracle prices for all assets in parallel.
         """
         tasks = [
-            self.request_handler.fetch_latest_entry(asset)
-            for asset in self.price_config.get_all_assets()
+            self.request_handler.fetch_latest_entry(data_type, pair)
+            for data_type, pairs in self.price_config.get_all_assets().items()
+            for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -140,7 +140,7 @@ class PriceListener(IPriceListener):
             self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: AssetType
+        self, pair_id: str, asset_type: DataTypes
     ) -> Optional[Entry]:
         """
         Retrieves the latest registered entry from the orchestrator prices.
@@ -238,6 +238,5 @@ class PriceListener(IPriceListener):
         """
         Logs that a thread has been successfuly spawned for this listener.
         """
-        assets = self.price_config.get_all_assets()
-        pairs = [asset_to_pair_id(asset) for asset in assets]
+        pairs = self.price_config.get_all_assets()
         logging.info(f"👂 Spawned listener [{self.id}] for pairs: {pairs}")

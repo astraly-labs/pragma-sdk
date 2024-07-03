@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Callable
 
 from pragma.common.types.entry import Entry
-from pragma.publisher.client import FetcherClient
+from pragma.common.fetchers.fetcher_client import FetcherClient
+
 
 from price_pusher.utils.retries import retry_async
 
@@ -53,6 +54,7 @@ class PricePoller(IPricePoller):
             logger.info(f"POLLER successfully fetched {len(new_entries)} new entries!")
             self.update_prices_callback(new_entries)
         except Exception as e:
+            logger.info(f"POLLER exception is {e}")
             if not self._is_requesting_onchain:
                 raise e
             try:

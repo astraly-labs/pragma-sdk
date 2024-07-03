@@ -1,4 +1,4 @@
-from typing import List
+from typing import Tuple,Optional
 
 
 from pragma.common.utils import str_to_felt
@@ -17,8 +17,8 @@ class Currency:
         id_: str,
         decimals: DECIMALS,
         is_abstract_currency: bool,
-        starknet_address: ADDRESS = None,
-        ethereum_address: ADDRESS = None,
+        starknet_address: Optional[ADDRESS] = None,
+        ethereum_address: Optional[ADDRESS] = None,
     ):
         self.id = id_
 
@@ -36,14 +36,14 @@ class Currency:
             ethereum_address = 0
         self.ethereum_address = ethereum_address
 
-    def serialize(self) -> List[str]:
-        return [
+    def serialize(self) -> Tuple[str, int, bool, int, int]:
+        return (
             self.id,
             self.decimals,
             self.is_abstract_currency,
             self.starknet_address,
             self.ethereum_address,
-        ]
+        )
 
     def to_dict(self) -> dict:
         return {
