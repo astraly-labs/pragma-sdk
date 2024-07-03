@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
@@ -22,13 +22,15 @@ async def invoke_(
     self,
     *args,
     execution_config: Optional[ExecutionConfig] = None,
-    callback: Optional[Callable[[SentTransactionResponse], None]] = None,
+    callback: Optional[Callable[[SentTransactionResponse, str], Awaitable[None]]] = None,
     **kwargs,
 ) -> InvokeResult:
     """
     Allows for a callback in the invocation of a contract method.
     This is useful for tracking the nonce changes
     """
+    if execution_config is None :
+        raise AttributeError("Invalid Attribute")
 
     prepared_call = (
         self.prepare_invoke_v3(*args, **kwargs)
@@ -52,6 +54,9 @@ async def invoke_(
             calls=self, max_fee=execution_config.max_fee
         )
     )
+
+    transaction = None
+
 
     response = await self._client.send_transaction(transaction)
     if callback:

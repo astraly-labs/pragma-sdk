@@ -3,6 +3,7 @@ import re
 from enum import StrEnum, unique
 from collections import namedtuple
 from typing import Optional, Literal, Union, List
+from pydantic import HttpUrl
 
 from pydantic.dataclasses import dataclass
 
@@ -11,8 +12,6 @@ from pragma.common.types.types import ADDRESS
 ContractAddresses = namedtuple(
     "ContractAddresses", ["publisher_registry_address", "oracle_proxy_addresss"]
 )
-
-HttpUrl = re.compile(r"^http(s)?://.+")
 
 Network = Union[
     Literal[
