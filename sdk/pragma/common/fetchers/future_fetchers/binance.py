@@ -5,9 +5,9 @@ from typing import Any, List, Optional, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.entry import FutureEntry
+from pragma.common.types.entry import FutureEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         volume_arr = []
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Binance")
+                return PublisherFetchError(f"No data found for {pair} from Binance")
             result = await resp.json(content_type="application/json")
             for element in result:
                 if selection in element["symbol"]:
@@ -39,7 +39,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Binance")
+                return PublisherFetchError(f"No data found for {pair} from Binance")
 
             content_type = resp.content_type
             if content_type and "json" in content_type:

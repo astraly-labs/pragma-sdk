@@ -7,8 +7,9 @@ from aiohttp import ClientSession
 from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.common.fetchers.hop_handler import HopHandler
 
 logger = logging.getLogger(__name__)
 
@@ -17,20 +18,20 @@ class KucoinFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.kucoin.com/api/v1/market/orderbook/level1"
     SOURCE: str = "KUCOIN"
 
+    hop_handler = HopHandler(
+        hopped_currencies={
+            "USD": "USDT",
+        }
+    )
+
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
-        if pair.quote_currency.id == "USD":
-            pair = Pair(
-                pair.base_currency, try_get_asset_config_from_ticker("USDT")
-            ).as_currency()
-        else:
-            usdt_price = 1
-
-        url = self.format_url(pair)
+        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Kucoin")
+                return PublisherFetchError(f"No data found for {pair} from Kucoin")
             result = await resp.json()
             if result["data"] is None:
                 return await self.operate_usdt_hop(pair, session)
@@ -58,12 +59,12 @@ class KucoinFetcher(FetcherInterfaceT):
         async with session.get(url_pair1) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from Kucoin - hop failed for {pair.base_currency}"
+                    f"No data found for {pair} from Kucoin - hop failed for {pair.base_currency}"
                 )
             pair1_usdt = await resp.json()
             if pair1_usdt["data"] is None:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from Kucoin - hop failed for {pair.base_currency}"
+                    f"No data found for {pair} from Kucoin - hop failed for {pair.base_currency}"
                 )
         url_pair2 = self.format_url(
             Pair(
@@ -74,12 +75,12 @@ class KucoinFetcher(FetcherInterfaceT):
         async with session.get(url_pair2) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from Kucoin - hop failed for {pair.quote_currency}"
+                    f"No data found for {pair} from Kucoin - hop failed for {pair.quote_currency}"
                 )
             pair2_usdt = await resp.json()
             if pair2_usdt["data"] is None:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from Kucoin - hop failed for {pair.quote_currency}"
+                    f"No data found for {pair} from Kucoin - hop failed for {pair.quote_currency}"
                 )
         return self._construct(pair=pair, result=pair2_usdt, hop_result=pair1_usdt)
 

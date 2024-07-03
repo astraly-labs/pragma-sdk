@@ -5,11 +5,11 @@ from typing import List, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.common.fetchers.hop_handler import HopHandler
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +18,21 @@ class OkxFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://okx.com/api/v5/market/ticker"
     SOURCE: str = "OKX"
 
+    hop_handler = HopHandler(
+        hopped_currencies={
+            "USD": "USDT",
+        }
+    )
+
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
-        if pair.quote_currency.id == "USD":
-            pair = Pair(
-                pair.base_currency,
-                try_get_asset_config_from_ticker("USDT").as_currency(),
-            )
-        else:
-            usdt_price = 1
-        url = self.format_url(pair)
+        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        url = self.format_url(new_pair)
+
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
 
             content_type = resp.content_type
             if content_type and "json" in content_type:
@@ -44,7 +45,7 @@ class OkxFetcher(FetcherInterfaceT):
                 result["code"] == "51001"
                 or result["msg"] == "Instrument ID does not exist"
             ):
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
 
             return self._construct(pair, result, usdt_price)
 

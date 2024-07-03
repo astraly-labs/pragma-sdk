@@ -14,9 +14,10 @@ class BasePragmaException(Exception):
         return self.message
 
 
-class UnsupportedAssetError(BasePragmaException):
-    pass
+class PublisherFetchError(BasePragmaException): ...
 
 
-class ClientException(BasePragmaException):
-    pass
+class UnsupportedAssetError(BasePragmaException): ...
+
+
+class ClientException(BasePragmaException): ...

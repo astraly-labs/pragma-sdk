@@ -9,6 +9,7 @@ from pragma.common.configs.asset_config import (
     AssetConfig,
     try_get_asset_config_from_ticker,
 )
+from pragma.onchain.types.types import OracleResponse
 
 U128_MAX = (1 << 128) - 1
 U256_MAX = (1 << 256) - 1
@@ -30,7 +31,7 @@ current_file_directory = Path(__file__).parent
 repo_root = find_repo_root(current_file_directory).parent
 
 SUBMODULE_DIR = repo_root / "pragma-oracle"
-MOCK_DIR = repo_root / "pragma/tests" / "mock"
+MOCK_DIR = repo_root / "sdk/pragma/tests" / "mock"
 
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
@@ -92,6 +93,10 @@ SAMPLE_SPOT_ENTRIES = [
 ]
 
 USD_ASSET_CONFIG = try_get_asset_config_from_ticker("USD")
+USDT_ASSET_CONFIG = try_get_asset_config_from_ticker("USDT")
+ETH_ASSET_CONFIG = try_get_asset_config_from_ticker("ETH")
+BTC_ASSET_CONFIG = try_get_asset_config_from_ticker("BTC")
+STRK_ASSET_CONFIG = try_get_asset_config_from_ticker("STRK")
 
 CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS]
 USD_PAIRS: List[Pair] = filter(
@@ -100,4 +105,30 @@ USD_PAIRS: List[Pair] = filter(
         AssetConfig.get_pair_from_asset_configs(asset, USD_ASSET_CONFIG)
         for asset in ALL_ASSETS
     ],
+)
+
+# ETH/USD, BTC/USD
+SAMPLE_PAIRS = [
+    AssetConfig.get_pair_from_asset_configs(ETH_ASSET_CONFIG, USD_ASSET_CONFIG),
+    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USD_ASSET_CONFIG),
+]
+
+# STRK/USD, ETH/STRK
+ONCHAIN_SAMPLE_PAIRS = [
+    AssetConfig.get_pair_from_asset_configs(STRK_ASSET_CONFIG, USD_ASSET_CONFIG),
+    AssetConfig.get_pair_from_asset_configs(ETH_ASSET_CONFIG, STRK_ASSET_CONFIG),
+]
+
+# BTC/USD, BTC/USDT
+SAMPLE_FUTURE_PAIRS = [
+    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USD_ASSET_CONFIG),
+    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USDT_ASSET_CONFIG),
+]
+
+STABLE_MOCK_PRICE: OracleResponse = OracleResponse(
+    price=100000000,
+    decimals=8,
+    last_updated_timestamp=int(time.time()),
+    num_sources_aggregated=5,
+    expiration_timestamp=None,
 )

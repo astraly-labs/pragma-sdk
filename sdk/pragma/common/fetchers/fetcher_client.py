@@ -5,7 +5,7 @@ import aiohttp
 
 from pragma.common.types.entry import Entry
 from pragma.common.utils import add_sync_methods
-from pragma.publisher.types import FetcherInterfaceT
+from pragma.common.fetchers.interface import FetcherInterfaceT
 
 
 @add_sync_methods
@@ -17,12 +17,12 @@ class FetcherClient:
     The client works by setting up fetchers that are provided the assets to fetch and the publisher name.
 
     ```python
-    cex_fetcher = CexFetcher(ALL_ASSETS, "publisher_test")
-    gemini_fetcher = GeminiFetcher(ALL_ASSETS, "publisher_test")
+    bitstamp_fetcher = BitstampFetcher(ALL_ASSETS, "publisher_test")
+    gateio_fetcher = GateIOFetcher(ALL_ASSETS, "publisher_test")
 
     fetchers = [
-        cex_fetcher,
-        gemini_fetcher,
+        bitstamp_fetcher,
+        gateio_fetcher,
     ]
 
     fc = FetcherClient()
@@ -85,7 +85,6 @@ class FetcherClient:
                 data = fetcher.fetch(session)
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
-            if not filter_exceptions:
-                return [val for subl in result for val in subl]
-            result = [subl for subl in result if not issubclass(subl, Exception)]
-            return result
+            if filter_exceptions:
+                result = [subl for subl in result if not isinstance(subl, Exception)]
+            return [val for subl in result for val in subl]

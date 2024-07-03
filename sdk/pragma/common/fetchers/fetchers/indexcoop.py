@@ -11,7 +11,7 @@ from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
 from pragma.common.fetchers.fetchers.index import AssetQuantities
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)

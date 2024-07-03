@@ -1,7 +1,7 @@
 from typing import List
 
 
-from pragma.common.utils import felt_to_str
+from pragma.common.utils import str_to_felt
 from pragma.common.types.types import ADDRESS, DECIMALS
 
 
@@ -56,7 +56,18 @@ class Currency:
 
     def __repr__(self):
         return (
-            f"Currency({felt_to_str(self.id)}, {self.decimals}, "
+            f"Currency({str_to_felt(self.id)}, {self.decimals}, "
             f"{self.is_abstract_currency}, {self.starknet_address},"
             f" {self.ethereum_address})"
+        )
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Currency):
+            return False
+        return (
+            self.id == value.id
+            and self.decimals == value.decimals
+            and self.is_abstract_currency == value.is_abstract_currency
+            and self.starknet_address == value.starknet_address
+            and self.ethereum_address == value.ethereum_address
         )

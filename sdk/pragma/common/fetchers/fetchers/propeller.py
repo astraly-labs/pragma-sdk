@@ -6,11 +6,11 @@ from typing import Dict, List, Optional, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.common.types.currency import Currency
 
 logger = logging.getLogger(__name__)
 
@@ -32,35 +32,15 @@ ASSET_MAPPING: Dict[str, str] = {
 }
 
 
-DECIMALS_MAPPING: Dict[str, int] = {
-    "ETH": 18,
-    "USDC": 6,
-    "USD": 6,
-    "USDT": 6,
-    "DAI": 18,
-    "WBTC": 8,
-    "BTC": 8,
-    "WSTETH": 18,
-    "STRK": 18,
-    "LUSD": 18,
-    "UNI": 18,
-    "LORDS": 18,
-    "ZEND": 18,
-    "DPI": 8,
-    "MVI": 8,
-    "WETH": 8,
-}
-
-
 # Propeller requires a payload to be sent with the request
 # The payload is a list of orders, each with a sell_token, buy_token, and sell_amount
 # The sell_amount is the amount of the sell_token to be sold
 # The buy_token is the token to be bought
 # The sell_token is the token to be sold
-def build_payload(sell_token, buy_token):
+def build_payload(sell_token: Currency, buy_token: Currency):
     address_0 = ASSET_MAPPING.get(sell_token)
     address_1 = ASSET_MAPPING.get(buy_token)
-    sell_amount = 10 ** DECIMALS_MAPPING.get(sell_token) * SELL_AMOUNTS[0]
+    sell_amount = 10**sell_token.decimals * SELL_AMOUNTS[0]
     if address_0 is None or address_1 is None:
         raise PublisherFetchError(
             f"Unknown price pair, do not know how to query Propeller for {sell_token}/{buy_token}"
@@ -85,31 +65,16 @@ class PropellerFetcher(FetcherInterfaceT):
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> Union[SpotEntry, PublisherFetchError]:
-        if (pair.base_currency.id, pair.quote_currency.id) in (
-            ("DPI", "USD"),
-            ("MVI", "USD"),
-        ):
-            substitute_pair = Pair(
-                try_get_asset_config_from_ticker("ETH").as_currency(),
-                pair.quote_currency,
-            )
-            eth_price = await self.get_stable_price("ETH")
-        else:
-            substitute_pair = pair
-            eth_price = 1
-
         url = self.format_url()
         try:
-            payload = build_payload(
-                substitute_pair.base_currency.id, substitute_pair.quote_currency.id
-            )
+            payload = build_payload(pair.base_currency, pair.quote_currency)
         except PublisherFetchError as err:
             return err
 
         async with session.post(url, headers=self.headers, json=payload) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {substitute_pair.id} from Propeller"
+                    f"No data found for {pair} from {self.publisher}"
                 )
 
             if resp.status == 403:
@@ -126,10 +91,10 @@ class PropellerFetcher(FetcherInterfaceT):
 
             if "error" in result and result["error"] == "Invalid Symbols Pair":
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Propeller"
+                    f"No data found for {pair} from {self.publisher}"
                 )
 
-            return self._construct(pair, result, eth_price)
+            return self._construct(pair, result)
 
     async def fetch(
         self, session: ClientSession
@@ -143,7 +108,11 @@ class PropellerFetcher(FetcherInterfaceT):
         url = self.BASE_URL
         return url
 
-    def _construct(self, pair: Pair, result, eth_price=None) -> SpotEntry:
+    def _construct(
+        self,
+        pair: Pair,
+        result,
+    ) -> SpotEntry:
         mid_prices = []
 
         for quotes, buy_tokens, sell_tokens in zip(
@@ -158,13 +127,8 @@ class PropellerFetcher(FetcherInterfaceT):
                 sell_decimals - buy_decimals
             )
             mid_prices.append(mid_price)
-        if (pair.base_currency.id, pair.quote_currency.id) in (
-            ("DPI", "USD"),
-            ("MVI", "USD"),
-        ):
-            price = sum(mid_prices) * eth_price / len(mid_prices)
-        else:
-            price = sum(mid_prices) / len(mid_prices)
+
+        price = sum(mid_prices) / len(mid_prices)
         price_int = int(price * (10 ** pair.decimals()))
 
         timestamp = int(time.time())

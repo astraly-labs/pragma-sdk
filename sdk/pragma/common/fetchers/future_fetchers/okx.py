@@ -4,9 +4,9 @@ from typing import List, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.entry import FutureEntry
+from pragma.common.types.entry import FutureEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -21,13 +21,13 @@ class OkxFutureFetcher(FetcherInterfaceT):
         url = self.format_expiry_timestamp_url(instrument_id)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
             result = await resp.json(content_type="application/json")
             if (
                 result["code"] == "51001"
                 or result["msg"] == "Instrument ID does not exist"
             ):
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
             return result["data"][0]["expTime"]
 
     def format_expiry_timestamp_url(self, instrument_id):
@@ -38,7 +38,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
         future_entries = []
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
 
             content_type = resp.content_type
             if content_type and "json" in content_type:
@@ -51,7 +51,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
                 result["code"] == "51001"
                 or result["msg"] == "Instrument ID does not exist"
             ):
-                return PublisherFetchError(f"No data found for {pair.id} from OKX")
+                return PublisherFetchError(f"No data found for {pair} from OKX")
             result_len = len(result["data"])
             if result_len > 1:
                 for i in range(0, result_len):

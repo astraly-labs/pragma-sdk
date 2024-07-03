@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 
-from pragma.common.utils import currency_pair_to_pair_id, felt_to_str, str_to_felt
+from pragma.common.utils import currency_pair_to_pair_id, str_to_felt
 from pragma.common.types.currency import Currency
 
 
@@ -34,11 +34,7 @@ class Pair:
         }
 
     def __repr__(self):
-        return (
-            f"Pair({felt_to_str(self.id)}, "
-            f"{self.base_currency})"
-            f"{self.quote_currency}, "
-        )
+        return f"{self.base_currency.id}/{self.quote_currency.id}"
 
     def to_tuple(self) -> Tuple[str, str]:
         return (self.base_currency.id, self.quote_currency.id)

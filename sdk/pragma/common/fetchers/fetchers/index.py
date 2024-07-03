@@ -6,7 +6,7 @@ from aiohttp import ClientSession
 
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class IndexFetcher(FetcherInterfaceT):
             spot_entry = await self.fetcher.fetch_pair(pair_weight.pair, session)
             if isinstance(spot_entry, PublisherFetchError):
                 return PublisherFetchError(
-                    f"Index Computation failed: pair {pair_weight.pair['pair']} not found"
+                    f"Index Computation failed: pair {pair_weight.pair} not found"
                 )
             spot_entries.append(spot_entry)
 

@@ -10,8 +10,9 @@ from pragma.common.configs import (
 )
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.common.fetchers.hop_handler import HopHandler
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +21,20 @@ class BybitFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.bybit.com/v5/market/tickers?category=spot&"
     SOURCE: str = "BYBIT"
 
+    hop_handler = HopHandler(
+        hopped_currencies={
+            "USD": "USDT",
+        }
+    )
+
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
-        if pair.quote_currency.id == "USD":
-            pair = Pair(
-                pair.base_currency,
-                try_get_asset_config_from_ticker("USDT").as_currency(),
-            )
-        else:
-            usdt_price = 1
-
-        url = self.format_url(pair)
+        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Bybit")
+                return PublisherFetchError(f"No data found for {pair} from Bybit")
             result = await resp.json()
             if result["retCode"] == 10001:
                 return await self.operate_usdt_hop(pair, session)
@@ -65,12 +65,12 @@ class BybitFetcher(FetcherInterfaceT):
         async with session.get(url_pair1) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Bybit - hop failed for {pair[0]}"
+                    f"No data found for {pair} from Bybit - hop failed for {pair.base_currency.id}"
                 )
             pair1_usdt = await resp.json()
             if pair1_usdt["retCode"] == 10001:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Bybit - hop failed for {pair[0]}"
+                    f"No data found for {pair} from Bybit - hop failed for {pair.base_currency.id}"
                 )
         url2 = self.format_url(
             Pair(
@@ -81,12 +81,12 @@ class BybitFetcher(FetcherInterfaceT):
         async with session.get(url2) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Bybit - hop failed for {pair[1]}"
+                    f"No data found for {pair} from Bybit - hop failed for {pair.quote_currency.id}"
                 )
             pair2_usdt = await resp.json()
             if pair2_usdt["retCode"] == 10001:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Bybit - hop failed for {pair[1]}"
+                    f"No data found for {pair} from Bybit - hop failed for {pair.quote_currency.id}"
                 )
         return self._construct(pair=pair, result=pair2_usdt, hop_result=pair1_usdt)
 

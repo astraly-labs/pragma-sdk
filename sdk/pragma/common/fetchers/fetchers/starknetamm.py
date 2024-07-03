@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 
@@ -64,13 +64,16 @@ class StarknetAMMFetcher(FetcherInterfaceT):
         url = self.format_url(pair, timestamp)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Starknet"
-                )
+                return PublisherFetchError(f"No data found for {pair} from Starknet")
             if resp.status == 200:
                 result_json = await resp.json()
                 return self._construct(pair, float(result_json["price"]))
             return await self.operate_eth_hop(pair, session)
+
+    def fetch_pair(
+        self, pair: Pair, session: ClientSession
+    ) -> Union[SpotEntry, PublisherFetchError]:
+        return self.off_fetch_ekubo_price(pair, session)
 
     def format_url(self, pair: Pair, timestamp=None):
         # TODO: remove that
@@ -85,9 +88,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
         entries = []
         for pair in self.pairs:
             if pair.to_tuple() in SUPPORTED_ASSETS:
-                entries.append(
-                    asyncio.ensure_future(self.off_fetch_ekubo_price(pair, session))
-                )
+                entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
             else:
                 logger.debug(
                     "Skipping StarknetAMM for non ETH or non STRK pair: %s", pair

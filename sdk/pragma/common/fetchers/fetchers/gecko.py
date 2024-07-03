@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
             result = await resp.json()
             if (
@@ -89,7 +89,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
 
         return self._construct(pair, result)
@@ -101,7 +101,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         return await asyncio.gather(*entries, return_exceptions=True)
 
     def format_url(self, pair: Pair):
-        pool = ASSET_MAPPING[pair.quote_currency.id]
+        pool = ASSET_MAPPING[pair.base_currency.id]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
@@ -123,7 +123,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         async with session.get(pair1_url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
             result = await resp.json()
             if (
@@ -131,7 +131,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
 
         pair2_url = self.format_url(
@@ -143,7 +143,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         async with session.get(pair2_url, headers=self.headers) as resp2:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
             hop_result = await resp2.json()
             if (
@@ -151,7 +151,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 and result["errors"][0]["title"] == "Not Found"
             ):
                 return PublisherFetchError(
-                    f"No data found for {pair.id} from GeckoTerminal"
+                    f"No data found for {pair} from GeckoTerminal"
                 )
         return self._construct(pair, result, hop_result)
 

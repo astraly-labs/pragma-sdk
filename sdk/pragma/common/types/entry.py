@@ -77,6 +77,9 @@ class BaseEntry:
         self.source = source
         self.publisher = publisher
 
+    def __hash__(self) -> Tuple[str]:
+        return hash((self.timestamp, self.source, self.publisher))
+
 
 class SpotEntry(Entry):
     """
@@ -95,7 +98,7 @@ class SpotEntry(Entry):
         timestamp: UnixTimestamp,
         source: Union[str, int],
         publisher: Union[str, int],
-        volume: Optional[int] = 0,
+        volume: Optional[Union[int, float]] = 0,
     ) -> None:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -109,6 +112,9 @@ class SpotEntry(Entry):
         self.base = BaseEntry(timestamp, source, publisher)
         self.pair_id = pair_id
         self.price = price
+
+        if isinstance(volume, float):
+            volume = int(volume)
         self.volume = volume
 
     def __eq__(self, other):
@@ -227,6 +233,9 @@ class SpotEntry(Entry):
             f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
         )
 
+    def __hash__(self) -> Tuple[str]:
+        return hash((self.base, self.pair_id, self.price, self.volume))
+
 
 class FutureEntry(Entry):
     """
@@ -250,7 +259,7 @@ class FutureEntry(Entry):
         source: Union[str, int],
         publisher: Union[str, int],
         expiry_timestamp: Optional[int] = 0,
-        volume: Optional[int] = 0,
+        volume: Optional[Union[float, int]] = 0,
     ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -265,6 +274,9 @@ class FutureEntry(Entry):
         self.pair_id = pair_id
         self.price = price
         self.expiry_timestamp = expiry_timestamp
+
+        if isinstance(volume, float):
+            volume = int(volume)
         self.volume = volume
 
     def __eq__(self, other):
@@ -339,6 +351,11 @@ class FutureEntry(Entry):
             f'publisher="{felt_to_str(self.base.publisher)}, '
             f"volume={self.volume}, "
             f'expiry_timestamp={self.expiry_timestamp})")'
+        )
+
+    def __hash__(self) -> Tuple[str]:
+        return hash(
+            (self.base, self.pair_id, self.price, self.expiry_timestamp, self.volume)
         )
 
     def get_timestamp(self) -> UnixTimestamp:

@@ -1,5 +1,6 @@
 from enum import StrEnum, unique
-from dataclasses import dataclass
+from pydantic import model_validator
+from pydantic.dataclasses import dataclass
 from typing import Optional
 
 from starknet_py.net.client_models import ResourceBounds
@@ -39,4 +40,9 @@ class ExecutionConfig:
     max_fee: int = int(1e18)
     enable_strk_fees: bool = False
     l1_resource_bounds: Optional[ResourceBounds] = None
-    auto_estimate: bool = False
+    auto_estimate: bool = True
+
+    @model_validator(mode="after")
+    def post_root(self):
+        if self.auto_estimate == (self.l1_resource_bounds is not None):
+            raise ValueError("Either auto_estimate or l1_resource_bounds must be set")

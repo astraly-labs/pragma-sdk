@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Coinbase")
+                return PublisherFetchError(f"No data found for {pair} from Coinbase")
             result = await resp.json()
             return self._construct(pair, result)
 
@@ -40,7 +40,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
         return url
 
     def _construct(self, pair: Pair, result) -> Union[SpotEntry, PublisherFetchError]:
-        if pair[0] in result["data"]["rates"]:
+        if pair.base_currency.id in result["data"]["rates"]:
             rate = float(result["data"]["rates"][pair.base_currency.id])
             price = 1 / rate
             price_int = int(price * (10 ** pair.decimals()))

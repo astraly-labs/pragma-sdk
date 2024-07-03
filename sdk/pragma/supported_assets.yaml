@@ -33,6 +33,11 @@
   ticker: 'EUR'
   abstract: true
 
+- name: 'Starknet'
+  decimals: 18
+  ticker: 'STRK'
+  coingecko_id: 'starknet'
+
 
 
 

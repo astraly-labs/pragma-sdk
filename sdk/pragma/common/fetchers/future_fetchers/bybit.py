@@ -5,9 +5,9 @@ from typing import Any, List, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.entry import FutureEntry
+from pragma.common.types.entry import FutureEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
 
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from BYBIT")
+                return PublisherFetchError(f"No data found for {pair} from BYBIT")
 
             content_type = resp.content_type
             if content_type and "json" in content_type:
@@ -39,7 +39,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
                 result["retCode"] == "51001"
                 or result["retMsg"] == "Instrument ID does not exist"
             ):
-                return PublisherFetchError(f"No data found for {pair.id} from BYBIT")
+                return PublisherFetchError(f"No data found for {pair} from BYBIT")
 
             return self._construct(pair, result)
 

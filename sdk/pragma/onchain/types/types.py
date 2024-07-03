@@ -1,5 +1,3 @@
-import re
-
 from enum import StrEnum, unique
 from collections import namedtuple
 from typing import Optional, Literal, Union, List

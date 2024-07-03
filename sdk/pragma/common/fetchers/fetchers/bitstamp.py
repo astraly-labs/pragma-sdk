@@ -6,7 +6,7 @@ from aiohttp import ClientSession
 
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,7 @@ class BitstampFetcher(FetcherInterfaceT):
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Bitstamp"
-                )
+                return PublisherFetchError(f"No data found for {pair} from Bitstamp")
 
             return self._construct(pair, await resp.json())
 

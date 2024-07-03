@@ -1,7 +1,6 @@
 from .binance import BinanceFetcher
 from .bitstamp import BitstampFetcher
 from .bybit import BybitFetcher
-from .cex import CexFetcher
 from .coinbase import CoinbaseFetcher
 from .defillama import DefillamaFetcher
 from .gecko import GeckoTerminalFetcher
@@ -19,7 +18,6 @@ __all__ = [
     BinanceFetcher,
     BitstampFetcher,
     BybitFetcher,
-    CexFetcher,
     CoinbaseFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,

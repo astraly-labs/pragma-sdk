@@ -1,5 +1,5 @@
 import abc
-from typing import List, Union
+from typing import List, Optional, Union
 
 from aiohttp import ClientSession
 
@@ -8,8 +8,8 @@ from pragma.common.types.entry import Entry
 from pragma.common.types.pair import Pair
 from pragma.onchain.types import Network
 from pragma.common.utils import add_sync_methods, str_to_felt
-
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.fetchers.hop_handler import HopHandler
+from pragma.common.exceptions import PublisherFetchError
 
 
 # Abstract base class for all fetchers
@@ -18,6 +18,7 @@ class FetcherInterfaceT(abc.ABC):
     pairs: List[Pair]
     publisher: str
     headers: dict
+    hop_handler: Optional[HopHandler] = None
 
     _client = None
 
@@ -69,6 +70,7 @@ class FetcherInterfaceT(abc.ABC):
         Query the PragmaOnChainClient for the price of the stable asset in USD
         e.g get_stable_price("USDT") returns the price of USDT in USD
         """
+
         usdt_str = str_to_felt(stable_asset + "/USD")
         usdt_entry = await self.client.get_spot(usdt_str)
         return int(usdt_entry.price) / (10 ** int(usdt_entry.decimals))

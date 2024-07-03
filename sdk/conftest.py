@@ -6,6 +6,7 @@ pytest_plugins = [
     "pragma.tests.fixtures.devnet",
     "pragma.tests.fixtures.contracts",
     "pragma.tests.fixtures.clients",
+    "pragma.tests.fixtures.fetchers",
     "pragma.tests.client_test",
     "pragma.tests.update_client_test",
 ]

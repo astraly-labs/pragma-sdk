@@ -31,5 +31,4 @@ def get_full_node_client_from_network(network: Network, port: int = 5050):
     """
     Create a new full node client for the passed network/port (rpc url).
     """
-    print(get_rpc_url(network, port=port))
     return FullNodeClient(node_url=get_rpc_url(network, port=port))

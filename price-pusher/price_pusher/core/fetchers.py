@@ -8,7 +8,6 @@ from pragma.publisher.fetchers import (
     BinanceFetcher,
     BitstampFetcher,
     BybitFetcher,
-    CexFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
     HuobiFetcher,
@@ -46,7 +45,6 @@ async def add_all_fetchers(
     future_pairs = get_unique_future_pairs_from_config_list(price_configs)
     spot_fetchers = [
         BitstampFetcher,
-        CexFetcher,
         DefillamaFetcher,
         OkxFetcher,
         GeckoTerminalFetcher,

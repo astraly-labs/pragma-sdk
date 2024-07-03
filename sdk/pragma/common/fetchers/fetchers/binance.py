@@ -8,8 +8,9 @@ from aiohttp import ClientSession
 from pragma.common.configs import try_get_asset_config_from_ticker
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
-from pragma.offchain.exceptions import PublisherFetchError
+from pragma.common.exceptions import PublisherFetchError
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.common.fetchers.hop_handler import HopHandler
 
 logger = logging.getLogger(__name__)
 
@@ -21,27 +22,20 @@ class BinanceFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.binance.com/api/v3/ticker/24hr"
     SOURCE: str = "BINANCE"
 
+    hop_handler = HopHandler(
+        hopped_currencies={
+            "USD": "USDT",
+        }
+    )
+
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
     ) -> Union[SpotEntry, PublisherFetchError]:
-        # TODO: remove that
-        if pair[1] == "USD":
-            pair = Pair(
-                pair.base_currency,
-                try_get_asset_config_from_ticker("USDT").as_currency(),
-            )
-        if pair[0] == "WETH":
-            pair = Pair(
-                try_get_asset_config_from_ticker("ETH").as_currency(),
-                pair.quote_currency,
-            )
-        else:
-            usdt_price = 1
-
-        url = self.format_url(pair)
+        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair.id} from Binance")
+                return PublisherFetchError(f"No data found for {pair} from Binance")
 
             result = await resp.json()
             if "code" in result:
@@ -75,12 +69,12 @@ class BinanceFetcher(FetcherInterfaceT):
         async with session.get(url_pair1) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
+                    f"No data found for {pair} from Binance - hop failed for {pair.base_currency.id}"
                 )
             pair1_usdt = await resp.json()
             if "code" in pair1_usdt:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[0]}"
+                    f"No data found for {pair} from Binance - hop failed for {pair.base_currency.id}"
                 )
 
         url_pair2 = self.format_url(
@@ -92,12 +86,12 @@ class BinanceFetcher(FetcherInterfaceT):
         async with session.get(url_pair2) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
+                    f"No data found for {pair} from Binance - hop failed for {pair.quote_currency.id}"
                 )
             pair2_usdt = await resp.json()
             if "code" in pair2_usdt:
                 return PublisherFetchError(
-                    f"No data found for {'/'.join(pair)} from Binance - hop failed for {pair[1]}"
+                    f"No data found for {pair} from Binance - hop failed for {pair.quote_currency.id}"
                 )
 
         return self._construct(pair=pair, result=pair2_usdt, hop_result=pair1_usdt)

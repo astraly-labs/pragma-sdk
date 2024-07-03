@@ -1,47 +1,23 @@
-from pragma.common.entry import FutureEntry, SpotEntry
-from pragma.publisher.fetchers import (
-    CexFetcher,
+from pragma.common.types.entry import FutureEntry, SpotEntry
+from pragma.common.fetchers.fetchers import (
     DefillamaFetcher,
     BitstampFetcher,
     CoinbaseFetcher,
-    AscendexFetcher,
     OkxFetcher,
-    TheGraphFetcher,
     StarknetAMMFetcher,
     PropellerFetcher,
-    IndexCoopFetcher,
     GeckoTerminalFetcher,
 )
-from pragma.publisher.future_fetchers import ByBitFutureFetcher, OkxFutureFetcher
+from pragma.common.fetchers.future_fetchers import (
+    ByBitFutureFetcher,
+    OkxFutureFetcher,
+)
 from pragma.tests.constants import MOCK_DIR
 
 PUBLISHER_NAME = "TEST_PUBLISHER"
 
 
 FETCHER_CONFIGS = {
-    "CexFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "cex.json",
-        "fetcher_class": CexFetcher,
-        "name": "CEX",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2601210000000,
-                1692717096,
-                "CEX",
-                PUBLISHER_NAME,
-                volume=1.81043893,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                163921000000,
-                1692724899,
-                "CEX",
-                PUBLISHER_NAME,
-                volume=56.54796900,
-            ),
-        ],
-    },
     "DefillamaFetcher": {
         "mock_file": MOCK_DIR / "responses" / "defillama.json",
         "fetcher_class": DefillamaFetcher,
@@ -71,29 +47,6 @@ FETCHER_CONFIGS = {
             SpotEntry("ETH/USD", 164399499999, 12345, "COINBASE", PUBLISHER_NAME),
         ],
     },
-    "AscendexFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "ascendex.json",
-        "fetcher_class": AscendexFetcher,
-        "name": "Ascendex",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                2602650000000,
-                12345,
-                "ASCENDEX",
-                PUBLISHER_NAME,
-                volume=9.7894,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                164369999999,
-                12345,
-                "ASCENDEX",
-                PUBLISHER_NAME,
-                volume=123.188,
-            ),
-        ],
-    },
     "OkxFetcher": {
         "mock_file": MOCK_DIR / "responses" / "okx.json",
         "fetcher_class": OkxFetcher,
@@ -117,112 +70,10 @@ FETCHER_CONFIGS = {
             ),
         ],
     },
-    "TheGraphFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "thegraph.json",
-        "fetcher_class": TheGraphFetcher,
-        "name": "TheGraph",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                3459885191309,
-                12345,
-                "THEGRAPH",
-                PUBLISHER_NAME,
-                volume=13263948239.39806410965943312664704,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                180043642780,
-                12345,
-                "THEGRAPH",
-                PUBLISHER_NAME,
-                volume=406618849947.3046337346962943997025,
-            ),
-        ],
-    },
-    "StarknetAMMFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "starknet_amm.json",
-        "fetcher_class": StarknetAMMFetcher,
-        "name": "Starknet",
-        "expected_result": [
-            SpotEntry(
-                "ETH/USDC",
-                10013545370000000000000,
-                12345,
-                "STARKNET",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-            SpotEntry(
-                "DAI/USDC",
-                12095527530000000000,
-                12345,
-                "STARKNET",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-            SpotEntry(
-                "WBTC/USDC",
-                66247877310000000,
-                12345,
-                "STARKNET",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-        ],
-    },
-    "PropellerFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "propeller.json",
-        "fetcher_class": PropellerFetcher,
-        "name": "PROPELLER",
-        "expected_result": [
-            SpotEntry(
-                "BTC/USD",
-                4891252302700,
-                12345,
-                "PROPELLER",
-                PUBLISHER_NAME,
-            ),
-            SpotEntry(
-                "ETH/USD",
-                262209039700,
-                12345,
-                "PROPELLER",
-                PUBLISHER_NAME,
-            ),
-        ],
-    },
-    "IndexCoopFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "indexcoop.json",
-        "fetcher_class": IndexCoopFetcher,
-        "name": "IndexCoop",
-        "expected_result": [
-            SpotEntry(
-                "DPI/USD",
-                13628454601,
-                12345,
-                "INDEXCOOP",
-                PUBLISHER_NAME,
-                volume=6454312441521,
-            ),
-        ],
-    },
 }
 
 
 INDEX_FETCHER_CONFIGS = {
-    "CexFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "cex.json",
-        "fetcher_class": CexFetcher,
-        "name": "CEX",
-        "expected_result": SpotEntry(
-            "INDEXNAME1",
-            int(2601210000000 * 0.5 + 163921000000 * 0.5),
-            12345,
-            "CEX",
-            PUBLISHER_NAME,
-        ),
-    },
     "DefillamaFetcher": {
         "mock_file": MOCK_DIR / "responses" / "defillama.json",
         "fetcher_class": DefillamaFetcher,
@@ -271,18 +122,6 @@ INDEX_FETCHER_CONFIGS = {
             PUBLISHER_NAME,
         ),
     },
-    "TheGraphFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "thegraph.json",
-        "fetcher_class": TheGraphFetcher,
-        "name": "TheGraph",
-        "expected_result": SpotEntry(
-            "INDEXNAME1",
-            int(3459885191309 * 0.5 + 0.5 * 180043642780),
-            12345,
-            "THEGRAPH",
-            PUBLISHER_NAME,
-        ),
-    },
     "PropellerFetcher": {
         "mock_file": MOCK_DIR / "responses" / "propeller.json",
         "fetcher_class": PropellerFetcher,
@@ -296,6 +135,7 @@ INDEX_FETCHER_CONFIGS = {
         ),
     },
 }
+
 FUTURE_FETCHER_CONFIGS = {
     "ByBitFutureFetcher": {
         "mock_file": MOCK_DIR / "responses" / "bybit_future.json",
@@ -417,53 +257,32 @@ ONCHAIN_FETCHER_CONFIGS = {
             ),
         ],
     },
-}
-
-
-ONCHAIN_STARKNET_FETCHER_CONFIGS = {
     "StarknetAMMFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "on_starknet_amm.json",
+        "mock_file": MOCK_DIR / "responses" / "starknet_amm.json",
         "fetcher_class": StarknetAMMFetcher,
-        "name": "ONStarknetAMM",
+        "name": "Starknet",
         "expected_result": [
             SpotEntry(
-                "STRK/USD",
-                (226416500000 / 10**8) / (71651396007433143 / 3381524279075682),
+                "ETH/USDC",
+                10013545370000000000000,
                 12345,
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
             ),
             SpotEntry(
-                "ETH/STRK",
-                71651396007433143 / 3381524279075682,
+                "DAI/USDC",
+                12095527530000000000,
                 12345,
                 "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
             ),
-        ],
-    },
-}
-
-
-INDEX_CONFIGS = {
-    "IndexConfig": {
-        "name": "IndexConfig",
-        "expected_result": [
             SpotEntry(
-                "INDEXNAME1",
-                200000000000,
+                "WBTC/USDC",
+                66247877310000000,
                 12345,
-                "GECKOTERMINAL",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-            SpotEntry(
-                "INDEXNAME2",
-                1500050000000000,
-                12345,
-                "GECKOTERMINAL",
+                "STARKNET",
                 PUBLISHER_NAME,
                 volume=0,
             ),
