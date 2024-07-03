@@ -198,7 +198,9 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
     entries = await pragma_client.get_spot_entries(BTC_PAIR, sources=[])
     assert entries == [
-        SpotEntry(BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=200)
+        SpotEntry(
+            BTC_PAIR, 100, timestamp, SOURCE_1, publisher_name, volume=2000000000000
+        )
     ]
 
     # Get SPOT
@@ -221,7 +223,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [spot_entry_1, spot_entry_2], auto_estimate=True
+        [spot_entry_1, spot_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     # Fails for UNKNOWN source
@@ -249,13 +252,15 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
 
     # Fails if timestamp too far in the future (>7min)
     spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=10
+        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=100000000000
     )
     try:
         invocations = await pragma_client.publish_many(
             [spot_entry_future],
-            l1_resource_bounds=ResourceBounds(
-                max_price_per_unit=500 * 10**9, max_amount=10**7
+            execution_config=ExecutionConfig(
+                l1_resource_bounds=ResourceBounds(
+                    max_price_per_unit=500 * 10**9, max_amount=10**7
+                )
             ),
         )
     except TransactionRevertedError as err:
@@ -276,7 +281,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [spot_entry_1, spot_entry_2], auto_estimate=True
+        [spot_entry_1, spot_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_spot(ETH_PAIR)
@@ -349,7 +355,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     )
 
     invocations = await pragma_client.publish_many(
-        [future_entry_1, future_entry_2], auto_estimate=True
+        [future_entry_1, future_entry_2],
+        execution_config=ExecutionConfig(auto_estimate=True),
     )
     await invocations[len(invocations) - 1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
@@ -371,8 +378,10 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     try:
         await pragma_client.publish_many(
             [future_entry_future],
-            l1_resource_bounds=ResourceBounds(
-                max_price_per_unit=500 * 10**9, max_amount=10**7
+            execution_config=ExecutionConfig(
+                l1_resource_bounds=ResourceBounds(
+                    max_price_per_unit=500 * 10**9, max_amount=10**7
+                ),
             ),
         )
     except TransactionRevertedError as err:
