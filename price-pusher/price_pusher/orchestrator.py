@@ -132,7 +132,7 @@ class Orchestrator:
             for pair in pairs:
                 if data_type not in self.latest_prices[f"{pair}"]:
                     continue
-                entries_to_push.append(self.latest_prices[f"{pair}"][data_type].values())
+                entries_to_push.extend(list(self.latest_prices[f"{pair}"][data_type].values()))
                 del self.latest_prices[f"{pair}"][data_type]
 
         return entries_to_push
