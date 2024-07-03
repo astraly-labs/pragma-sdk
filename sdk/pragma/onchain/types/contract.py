@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
@@ -22,7 +22,9 @@ async def invoke_(
     self,
     *args,
     execution_config: ExecutionConfig = ExecutionConfig(),
-    callback: Optional[Callable[[SentTransactionResponse], None]] = None,
+    callback: Optional[
+        Callable[[SentTransactionResponse, str], Awaitable[None]]
+    ] = None,
     **kwargs,
 ) -> InvokeResult:
     """
@@ -52,6 +54,8 @@ async def invoke_(
             calls=self, max_fee=execution_config.max_fee
         )
     )
+
+    transaction = None
 
     response = await self._client.send_transaction(transaction)
     if callback:

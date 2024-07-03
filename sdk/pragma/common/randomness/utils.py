@@ -40,10 +40,10 @@ def felt_to_secret_key(felt: int):
 
 
 def uint256_to_2_128(num: int):
-    num = num.to_bytes(32, sys.byteorder)
+    num_as_bytes = num.to_bytes(32, sys.byteorder)
     return (
-        int.from_bytes(num[:16], sys.byteorder),
-        int.from_bytes(num[16:], sys.byteorder),
+        int.from_bytes(num_as_bytes[:16], sys.byteorder),
+        int.from_bytes(num_as_bytes[16:], sys.byteorder),
     )
 
 
@@ -66,6 +66,6 @@ def verify_randomness(
     proof_,
     seed: int,
 ):
-    seed = seed.to_bytes(32, sys.byteorder)[:32]
-    result, _ = ecvrf_verify(public_key, proof_, seed)
+    seed_as_bytes = seed.to_bytes(32, sys.byteorder)[:32]
+    result, _ = ecvrf_verify(public_key, proof_, seed_as_bytes)
     return result
