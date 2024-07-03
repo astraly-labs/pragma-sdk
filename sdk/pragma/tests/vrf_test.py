@@ -160,7 +160,7 @@ async def test_deploy_contract(randomness_contracts):
 
 @pytest.mark.asyncio
 async def test_client_setup(vrf_pragma_client: PragmaClient, account: Account):
-    assert vrf_pragma_client.account_address() == account.address
+    assert vrf_pragma_client.account_address == account.address
 
     account_balance = await account.get_balance()
     assert await vrf_pragma_client.get_balance(account.address) == account_balance
@@ -183,7 +183,7 @@ async def test_randomness_mixin(
     publish_delay = 0
     num_words = 1
     calldata = [0x1234, 0x1434, 314141, 13401234]
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
 
     await wait_for_acceptance(
         await vrf_pragma_client.request_random(
@@ -292,7 +292,7 @@ async def test_fails_gas_limit(
     callback_address = example_randomness.address
     publish_delay = 0
     num_words = 1
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
 
     balance_before = await vrf_pragma_client.get_balance(caller_address)
 
@@ -334,7 +334,7 @@ async def test_balance_evolution(
     publish_delay = 0
     calldata = [0x1234, 0x1434, 314141]
     num_words = 1
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
 
     # Determining the estimated cost for the request random operation
     request_estimated_fee = await vrf_pragma_client.estimate_gas_request_random_op(
@@ -434,7 +434,7 @@ async def test_balance_evolution_cancel(
     publish_delay = 0
     num_words = 1
     calldata = [0x1234, 0x1434, 314141]
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
 
     # Fetching user initial balance
     initial_balance = await vrf_pragma_client.get_balance(caller_address)
@@ -550,14 +550,14 @@ async def test_delayed_randomness_request(
         )
     )
     pending_reqs = await vrf_pragma_client.get_pending_requests(
-        vrf_pragma_client.account_address()
+        vrf_pragma_client.account_address
     )
     assert pending_reqs == [request_id]
     block_number_2 = await vrf_pragma_client.full_node_client.get_block_number()
     assert block_number_2 <= block_number_1 + publish_delay
     await vrf_pragma_client.handle_random(int(private_key, 16), min_block=0)
     pending_reqs = await vrf_pragma_client.get_pending_requests(
-        vrf_pragma_client.account_address()
+        vrf_pragma_client.account_address
     )
     assert pending_reqs == [request_id]
     block_number_3 = await vrf_pragma_client.full_node_client.get_block_number()
@@ -575,7 +575,7 @@ async def test_delayed_randomness_request(
     assert block_number_3 > block_number_1 + publish_delay
     await vrf_pragma_client.handle_random(int(private_key, 16), min_block=0)
     pending_reqs = await vrf_pragma_client.get_pending_requests(
-        vrf_pragma_client.account_address()
+        vrf_pragma_client.account_address
     )
     assert pending_reqs == []
 
@@ -589,7 +589,7 @@ async def test_example_randomness_process(
     (_, example_randomness, _) = randomness_contracts
     request_id = 7
     _, private_key = address_and_private_key
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
     seed = 1
     callback_fee_limit = 3248900000000000
     callback_address = example_randomness.address
@@ -629,7 +629,7 @@ async def multiple_randomness_request(
     num_words = 1
     calldata = [0x1234, 0x1434, 314141]
     initial_index = await vrf_pragma_client.requestor_current_request_id(
-        vrf_pragma_client.account_address()
+        vrf_pragma_client.account_address
     )
     for i in range(initial_index, initial_index + number_of_interations):
         seed = i
@@ -651,7 +651,7 @@ async def test_compute_premium_fee(
     vrf_pragma_client: PragmaClient,
     randomness_contracts: (Contract, Contract, Contract),
 ):
-    caller_address = vrf_pragma_client.account_address()
+    caller_address = vrf_pragma_client.account_address
 
     await multiple_randomness_request(vrf_pragma_client, randomness_contracts, 1)
     premium_fee_1st = await vrf_pragma_client.compute_premium_fee(caller_address)

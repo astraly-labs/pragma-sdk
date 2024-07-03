@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.client import Client
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from starknet_py.net.models import StarknetChainId
 from starknet_py.contract import InvokeResult
@@ -40,10 +41,11 @@ class PragmaOnChainClient(
     account_contract_address: Optional[ADDRESS] = None
     account: Account = None
     full_node_client: FullNodeClient = None
+    client: Client = None
 
     def __init__(
         self,
-        network: Network = "devnet",
+        network: Network = "sepolia",
         account_private_key: Optional[int] = None,
         account_contract_address: Optional[ADDRESS] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
@@ -113,6 +115,7 @@ class PragmaOnChainClient(
         Setup the contracts for the client.
         For now, this includes the Oracle and PublisherRegistry contracts.
         """
+
         provider = self.account if self.account else self.client
         self.oracle = Contract(
             address=self.contract_addresses_config.oracle_proxy_addresss,

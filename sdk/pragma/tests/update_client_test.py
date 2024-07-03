@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Tuple
+from typing import List, Tuple
 from urllib.parse import urlparse
 
 import pytest
@@ -8,12 +8,12 @@ import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 
-from pragma.common.assets import PRAGMA_ALL_ASSETS
 from pragma.onchain.client import PragmaOnChainClient
-from pragma.common.types import ContractAddresses
+from pragma.onchain.types import ContractAddresses
 from pragma.common.utils import str_to_felt
 from pragma.tests.utils import get_deployments, read_contract
-
+from pragma.common.types.pair import Pair
+from pragma.tests.constants import USD_PAIRS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,7 +44,7 @@ async def pragma_fork_client(
     address, private_key = address_and_private_key
     port = urlparse(network).port
     return PragmaOnChainClient(
-        network="fork_devnet",
+        network="devnet",
         chain_name="mainnet",
         account_contract_address=address,
         account_private_key=private_key,
@@ -97,7 +97,7 @@ async def test_update_oracle(
     # Retrieve old state
 
     publishers = await pragma_fork_client.get_all_publishers()
-    initial_prices = await retrieve_spot_prices(pragma_fork_client, PRAGMA_ALL_ASSETS)
+    initial_prices = await retrieve_spot_prices(pragma_fork_client, USD_PAIRS)
     oracle_admin = await pragma_fork_client.get_admin_address()
     assert oracle_admin == pragma_fork_client.account_address()
 
@@ -120,20 +120,16 @@ async def test_update_oracle(
     assert class_hash == declare_result.class_hash
     # Retrieve new state
     new_publishers = await pragma_fork_client.get_all_publishers()
-    post_treatment_prices = await retrieve_spot_prices(
-        pragma_fork_client, PRAGMA_ALL_ASSETS
-    )
+    post_treatment_prices = await retrieve_spot_prices(pragma_fork_client, USD_PAIRS)
 
     # Check that state is the same
     assert publishers == new_publishers
     assert initial_prices == post_treatment_prices
 
 
-async def retrieve_spot_prices(client: PragmaOnChainClient, assets):
+async def retrieve_spot_prices(client: PragmaOnChainClient, pairs: List[Pair]):
     prices = {}
-    for asset in assets:
-        if asset["type"] == "SPOT":
-            pair = asset["pair"]
-            price = await client.get_spot(str_to_felt(pair[0] + "/" + pair[1]))
-            prices[pair] = price
+    for pair in pairs:
+        price = await client.get_spot(pair.id)
+        prices[pair] = price
     return prices

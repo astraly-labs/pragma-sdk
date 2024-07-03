@@ -43,14 +43,20 @@ class AssetConfig(BaseModel):
         )
 
     @staticmethod
-    def get_pair_from_asset_configs(base_asset: Self, quote_asset: Self) -> Pair:
+    def get_pair_from_asset_configs(
+        base_asset: "AssetConfig", quote_asset: "AssetConfig"
+    ) -> Optional[Pair]:
         """
         Return a Pair from two AssetConfigs.
+        Return None if the base and quote assets are the same.
 
         :param base_asset: Base asset
         :param quote_asset: Quote asset
         :return: Pair
         """
+
+        if base_asset == quote_asset:
+            return None
 
         return Pair(
             base_currency=base_asset.as_currency(),

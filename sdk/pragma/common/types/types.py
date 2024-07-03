@@ -35,8 +35,8 @@ class DataTypes(StrEnum):
 
 @dataclass(frozen=True)
 class ExecutionConfig:
-    pagination: Optional[int] = 40
-    max_fee: Optional[int] = int(1e18)
-    enable_strk_fees: Optional[bool] = False
+    pagination: int = 40
+    max_fee: int = int(1e18)
+    enable_strk_fees: bool = False
     l1_resource_bounds: Optional[ResourceBounds] = None
-    auto_estimate: Optional[bool] = False
+    auto_estimate: bool = False

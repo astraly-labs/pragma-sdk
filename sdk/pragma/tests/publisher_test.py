@@ -59,7 +59,7 @@ SOURCES = [
 
 @pytest.mark.asyncio
 async def test_publisher_client_spot(pragma_client: PragmaOnChainClient):
-    publisher_address = pragma_client.account_address()
+    publisher_address = pragma_client.account_address
     # Add PRAGMA as Publisher
     await wait_for_acceptance(
         await pragma_client.add_publisher(PUBLISHER_NAME, publisher_address)

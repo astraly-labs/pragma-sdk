@@ -6,7 +6,6 @@ from pragma.onchain.types import ContractAddresses, Network
 CHAIN_IDS: Dict[Network, int] = {
     "devnet": 23448594291968334,
     "mainnet": 23448594291968334,
-    "fork_devnet": 23448594291968334,
     "sepolia": 393402133025997798000961,
 }
 

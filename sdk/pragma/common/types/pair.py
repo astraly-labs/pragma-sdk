@@ -11,7 +11,7 @@ class Pair:
     quote_currency: Currency
 
     def __init__(self, base_currency: Currency, quote_currency: Currency):
-        self.id = felt_to_str(
+        self.id = str_to_felt(
             currency_pair_to_pair_id(base_currency.id, quote_currency.id)
         )
 
@@ -29,8 +29,8 @@ class Pair:
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "base_currency": self.base_currency,
-            "quote_currency": self.quote_currency,
+            "base_currency_id": self.base_currency.id,
+            "quote_currency_id": self.quote_currency.id,
         }
 
     def __repr__(self):
