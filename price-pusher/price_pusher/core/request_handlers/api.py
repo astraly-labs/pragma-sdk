@@ -27,11 +27,18 @@ class APIRequestHandler(IRequestHandler):
         Fetch last entry for the asset from the API.
         TODO: Currently only works for spot assets.
         """
-        entry_result: EntryResult = await self.client.get_entry(
-            pair=pair.__repr__(),
-            interval=Interval.ONE_MINUTE,
-            aggregation=AggregationMode.MEDIAN,
-        )
+        if data_type is DataTypes.FUTURE:
+            entry_result: EntryResult = await self.client.get_future_entry(
+                pair=pair.__repr__(),
+                interval=Interval.ONE_MINUTE,
+                aggregation=AggregationMode.MEDIAN,
+            )
+        else:
+            entry_result: EntryResult = await self.client.get_entry(
+                pair=pair.__repr__(),
+                interval=Interval.ONE_MINUTE,
+                aggregation=AggregationMode.MEDIAN,
+            )
         entry = SpotEntry(
             pair_id=entry_result.pair_id,
             price=int(entry_result.data, 16),
