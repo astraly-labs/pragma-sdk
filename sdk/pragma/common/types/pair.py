@@ -1,8 +1,9 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Self
 
 
 from pragma.common.utils import currency_pair_to_pair_id, str_to_felt
 from pragma.common.types.currency import Currency
+from pragma.common.configs.asset_config import AssetConfig
 
 
 class Pair:
@@ -45,3 +46,39 @@ class Pair:
         Corresponds to the minimum of both currencies' decimals.
         """
         return min(self.base_currency.decimals, self.quote_currency.decimals)
+
+    @classmethod
+    def from_asset_configs(
+        cls, base_asset: AssetConfig, quote_asset: AssetConfig
+    ) -> Optional[Self]:
+        """
+        Return a Pair from two AssetConfigs.
+        Return None if the base and quote assets are the same.
+
+        :param base_asset: Base asset
+        :param quote_asset: Quote asset
+        :return: Pair
+        """
+
+        if base_asset == quote_asset:
+            return None
+
+        return cls(
+            base_currency=base_asset.as_currency(),
+            quote_currency=quote_asset.as_currency(),
+        )
+
+    @staticmethod
+    def from_tickers(base_ticker: str, quote_ticker: str) -> Optional[Self]:
+        """
+        Return a Pair from two tickers.
+        Return None if the base and quote tickers are the same.
+
+        :param base_ticker: Base ticker
+        :param quote_ticker: Quote ticker
+        :return: Pair
+        """
+
+        base_asset = AssetConfig.from_ticker(base_ticker)
+        quote_asset = AssetConfig.from_ticker(quote_ticker)
+        return Pair.from_asset_configs(base_asset, quote_asset)

@@ -5,7 +5,7 @@ from typing import List, Union
 
 from aiohttp import ClientSession
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
+from pragma.common.configs.asset_config import AssetConfig
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
 from pragma.common.exceptions import PublisherFetchError
@@ -57,7 +57,7 @@ class GateioFetcher(FetcherInterfaceT):
         url_pair1 = self.format_url(
             Pair(
                 pair.base_currency,
-                try_get_asset_config_from_ticker("USDT").as_currency(),
+                AssetConfig.from_ticker("USDT").as_currency(),
             )
         )
         async with session.get(url_pair1) as resp:
@@ -73,7 +73,7 @@ class GateioFetcher(FetcherInterfaceT):
         url_pair2 = self.format_url(
             Pair(
                 pair.quote_currency,
-                try_get_asset_config_from_ticker("USDT").as_currency(),
+                AssetConfig.from_ticker("USDT").as_currency(),
             )
         )
         async with session.get(url_pair2) as resp:

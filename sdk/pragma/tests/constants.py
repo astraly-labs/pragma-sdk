@@ -7,7 +7,6 @@ from pragma.common.types import Pair, SpotEntry
 from pragma.common.configs.asset_config import (
     ALL_ASSETS,
     AssetConfig,
-    try_get_asset_config_from_ticker,
 )
 from pragma.onchain.types.types import OracleResponse
 
@@ -92,33 +91,30 @@ SAMPLE_SPOT_ENTRIES = [
     ),
 ]
 
-USD_ASSET_CONFIG = try_get_asset_config_from_ticker("USD")
+USD_ASSET_CONFIG = AssetConfig.from_ticker("USD")
 
 CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS]
 USD_PAIRS: List[Pair] = filter(
     lambda x: x is not None,
-    [
-        AssetConfig.get_pair_from_asset_configs(asset, USD_ASSET_CONFIG)
-        for asset in ALL_ASSETS
-    ],
+    [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS],
 )
 
 # ETH/USD, BTC/USD
 SAMPLE_PAIRS = [
-    AssetConfig.try_get_pair_from_tickers("ETH", "USD"),
-    AssetConfig.try_get_pair_from_tickers("BTC", "USD"),
+    Pair.from_tickers("ETH", "USD"),
+    Pair.from_tickers("BTC", "USD"),
 ]
 
 # LUSD/USD, WBTC/USD
 ONCHAIN_SAMPLE_PAIRS = [
-    AssetConfig.try_get_pair_from_tickers("LUSD", "USD"),
-    AssetConfig.try_get_pair_from_tickers("WBTC", "USD"),
+    Pair.from_tickers("LUSD", "USD"),
+    Pair.from_tickers("WBTC", "USD"),
 ]
 
 # BTC/USD, ETH/USD
 SAMPLE_FUTURE_PAIRS = [
-    AssetConfig.try_get_pair_from_tickers("BTC", "USD"),
-    AssetConfig.try_get_pair_from_tickers("ETH", "USD"),
+    Pair.from_tickers("BTC", "USD"),
+    Pair.from_tickers("ETH", "USD"),
 ]
 
 STABLE_MOCK_PRICE: OracleResponse = OracleResponse(

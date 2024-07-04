@@ -4,6 +4,7 @@ import json
 import os
 import random
 import subprocess
+import logging
 import time
 from unittest import mock
 
@@ -23,6 +24,8 @@ JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675
 ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
 ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 
+logger = logging.getLogger(__name__)
+
 
 @pytest.fixture(scope="module")
 def forked_client(request, module_mocker, pytestconfig) -> Client:
@@ -36,8 +39,7 @@ def forked_client(request, module_mocker, pytestconfig) -> Client:
     port = get_available_port()
     block_number = request.param.get("block_number", None)
     network = request.param.get("network", "mainnet")
-
-    rpc_url = RPC_URLS[network][random.choice(list(RPC_URLS[network]))]
+    rpc_url = random.choice(list(RPC_URLS[network]))
     command = [
         "starknet-devnet",
         "--fork-network",

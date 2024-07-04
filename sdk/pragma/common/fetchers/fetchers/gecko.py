@@ -5,7 +5,7 @@ from typing import Dict, List
 
 from aiohttp import ClientSession
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
+from pragma.common.configs.asset_config import AssetConfig
 from pragma.common.types.entry import SpotEntry
 from pragma.common.types.pair import Pair
 from pragma.common.exceptions import PublisherFetchError
@@ -116,7 +116,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         pair1_url = self.format_url(
             Pair(
                 pair.base_currency,
-                try_get_asset_config_from_ticker("USD").as_currency(),
+                AssetConfig.from_ticker("USD").as_currency(),
             )
         )
 
@@ -137,7 +137,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         pair2_url = self.format_url(
             Pair(
                 pair.quote_currency,
-                try_get_asset_config_from_ticker("USD").as_currency(),
+                AssetConfig.from_ticker("USD").as_currency(),
             )
         )
         async with session.get(pair2_url, headers=self.headers) as resp2:

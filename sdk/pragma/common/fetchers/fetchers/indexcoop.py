@@ -7,7 +7,7 @@ from typing import List, Union
 import requests
 from aiohttp import ClientSession
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
+from pragma.common.configs.asset_config import AssetConfig
 from pragma.common.types.pair import Pair
 from pragma.common.types.entry import SpotEntry
 from pragma.common.fetchers.fetchers.index import AssetQuantities
@@ -70,8 +70,8 @@ class IndexCoopFetcher(FetcherInterfaceT):
         return [
             AssetQuantities(
                 pair=Pair(
-                    try_get_asset_config_from_ticker(symbol).as_currency(),
-                    try_get_asset_config_from_ticker("USD").as_currency(),
+                    AssetConfig.from_ticker(symbol).as_currency(),
+                    AssetConfig.from_ticker("USD").as_currency(),
                 ),
                 quantities=quantities,
             )

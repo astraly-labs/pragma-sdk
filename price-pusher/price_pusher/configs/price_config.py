@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
 
 from pragma.common.configs.asset_config import (
-    try_get_asset_config_from_ticker,
     AssetConfig,
 )
 from pragma.common.types import DataTypes, Pair
@@ -40,9 +39,9 @@ class PriceConfig(BaseModel):
             splitted = pair.split("/")
             if len(splitted) != 2:
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
-            base_currency = try_get_asset_config_from_ticker(splitted[0])
-            quote_currency = try_get_asset_config_from_ticker(splitted[1])
-            assets.append(AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency))
+            base_currency = AssetConfig.from_ticker(splitted[0])
+            quote_currency = AssetConfig.from_ticker(splitted[1])
+            assets.append(Pair.from_asset_configs(base_currency, quote_currency))
         return assets
 
     @classmethod

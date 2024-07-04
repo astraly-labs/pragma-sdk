@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 from pragma.common.types.pair import Pair
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker
+from pragma.common.configs.asset_config import AssetConfig
 from pydantic.dataclasses import dataclass
 from dataclasses import field
 import unittest
@@ -26,16 +26,16 @@ class HopHandler:
 
         return Pair(
             pair.base_currency,
-            try_get_asset_config_from_ticker(new_currency_id).as_currency(),
+            AssetConfig.from_ticker(new_currency_id).as_currency(),
         )
 
 
 class TestHopHandler(unittest.TestCase):
     def setUp(self):
-        self.usdt = try_get_asset_config_from_ticker("USDT").as_currency()
-        self.usdc = try_get_asset_config_from_ticker("USDC").as_currency()
-        self.eth = try_get_asset_config_from_ticker("ETH").as_currency()
-        self.btc = try_get_asset_config_from_ticker("BTC").as_currency()
+        self.usdt = AssetConfig.from_ticker("USDT").as_currency()
+        self.usdc = AssetConfig.from_ticker("USDC").as_currency()
+        self.eth = AssetConfig.from_ticker("ETH").as_currency()
+        self.btc = AssetConfig.from_ticker("BTC").as_currency()
 
         self.hop_handler = HopHandler(
             hopped_currencies={"USDC": "USDT", "USDT": "ETH", "ETH": "BTC"}
