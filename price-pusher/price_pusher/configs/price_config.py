@@ -4,13 +4,15 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
 
-from pragma.common.configs.asset_config import try_get_asset_config_from_ticker, AssetConfig
+from pragma.common.configs.asset_config import (
+    try_get_asset_config_from_ticker,
+    AssetConfig,
+)
 from pragma.common.types import DataTypes, Pair
 
 
 class PairConfig(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     spot: Optional[List[Pair]] = None
     future: Optional[List[Pair]] = None
 
@@ -40,7 +42,9 @@ class PriceConfig(BaseModel):
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
             base_currency = try_get_asset_config_from_ticker(splitted[0])
             quote_currency = try_get_asset_config_from_ticker(splitted[1])
-            assets.append(AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency))
+            assets.append(
+                AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency)
+            )
         return assets
 
     @classmethod

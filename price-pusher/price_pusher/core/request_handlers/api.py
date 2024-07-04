@@ -22,13 +22,17 @@ class APIRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaAPIClient) -> None:
         self.client = client
 
-    async def fetch_latest_entry(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]:
+    async def fetch_latest_entry(
+        self, data_type: DataTypes, pair: Pair
+    ) -> Optional[Entry]:
         """
         Fetch last entry for the asset from the API.
         TODO: Currently only works for spot assets.
         """
         entry_result: EntryResult = await self.client.get_entry(
-            pair=pair.__repr__(), interval=Interval.ONE_MINUTE, aggregation=AggregationMode.MEDIAN
+            pair=pair.__repr__(),
+            interval=Interval.ONE_MINUTE,
+            aggregation=AggregationMode.MEDIAN,
         )
         entry = SpotEntry(
             pair_id=entry_result.pair_id,

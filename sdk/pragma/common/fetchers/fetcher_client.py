@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import List, Union
 
 import aiohttp
@@ -8,7 +7,6 @@ from pragma.common.types.entry import Entry
 from pragma.common.utils import add_sync_methods
 from pragma.common.fetchers.interface import FetcherInterfaceT
 
-logger = logging.getLogger(__name__)
 
 @add_sync_methods
 class FetcherClient:
