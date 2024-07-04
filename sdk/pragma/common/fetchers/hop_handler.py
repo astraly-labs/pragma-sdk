@@ -9,6 +9,13 @@ import unittest
 
 @dataclass
 class HopHandler:
+    """
+    Dataclass in charge of handling pair hopping.
+    Is mostly integrated within fetchers to handle different quote currencies.
+
+    :param hopped_currencies: Dict between the quote currency and the new quote currency
+    """
+
     hopped_currencies: Dict[str, str] = field(default_factory=dict)
 
     def get_hop_pair(self, pair: Pair) -> Optional[Pair]:
