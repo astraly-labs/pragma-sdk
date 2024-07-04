@@ -22,7 +22,7 @@ def test_get_index_value(
     # Create an instance of IndexAggregation
     for i, asset_quantity in enumerate(SAMPLE_ASSET_QUANTITIES):
         index_aggregation = IndexAggregation(sample_spot_entries, asset_quantity)
-        expected_index_value = index_fetcher_config["expected_result"][i]
+        expected_index_value = index_fetcher_config["expected_result"]
         # Calculate the index value
         index_value = index_aggregation.get_index_value()
 
