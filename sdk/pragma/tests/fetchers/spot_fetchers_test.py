@@ -43,7 +43,7 @@ async def test_async_fetcher(fetcher_config, mock_data):
                 assert are_entries_list_equal(result, fetcher_config["expected_result"])
 
 
-@pytest.mark.asynciow
+@pytest.mark.asyncio
 async def test_async_fetcher_404_error(fetcher_config):
     with aioresponses() as mock:
         fetcher: FetcherInterfaceT = fetcher_config["fetcher_class"](
