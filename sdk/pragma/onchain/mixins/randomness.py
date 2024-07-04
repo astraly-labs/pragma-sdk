@@ -53,10 +53,11 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if request_params.calldata is None:
             request_params.calldata = []
-
-        config = execution_config or ExecutionConfig()
 
         if not self.is_user_client:
             raise AttributeError(
@@ -65,8 +66,8 @@ class RandomnessMixin:
             )
 
         invocation = await self.randomness.functions["request_random"].invoke(
-            *request_params,
-            execution_config=config,
+            *request_params.to_list(),
+            execution_config=execution_config,
         )
         return invocation
 
@@ -82,10 +83,11 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if vrf_request_params.calldata is None:
             vrf_request_params.calldata = []
-
-        config = execution_config or ExecutionConfig()
 
         if not self.is_user_client:
             raise AttributeError(
@@ -93,8 +95,8 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
         prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
-            *vrf_request_params,
-            max_fee=config.max_fee,
+            *vrf_request_params.to_list(),
+            max_fee=execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -115,17 +117,18 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by "
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-            *vrf_submit_params,
-            max_fee=config.max_fee,
+            *vrf_submit_params.to_list(),
+            max_fee=execution_config.max_fee,
         )
 
         try:
@@ -144,7 +147,7 @@ class RandomnessMixin:
                 vrf_submit_params.requestor_address,
                 vrf_submit_params.request_id,
                 RequestStatus.OUT_OF_GAS.serialize(),
-                execution_config=config,
+                execution_config=execution_config,
             )
 
             # Refund gas
@@ -156,8 +159,8 @@ class RandomnessMixin:
         vrf_submit_params.callback_fee = estimate_fee.overall_fee
 
         invocation = await self.randomness.functions["submit_random"].invoke(
-            *vrf_submit_params,
-            execution_config=config,
+            *vrf_submit_params.to_list(),
+            execution_config=execution_config,
         )
         logger.info("Sumbitted random %s", invocation.hash)
 
@@ -175,19 +178,20 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by "
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         vrf_submit_params.callback_fee = vrf_submit_params.callback_fee_limit
 
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-            *vrf_submit_params,
-            max_fee=config.max_fee,
+            *vrf_submit_params.to_list(),
+            max_fee=execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -288,17 +292,18 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. You may do this by "
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         invocation = await self.randomness.functions["cancel_random_request"].invoke(
-            *vrf_cancel_params,
-            execution_config=config,
+            *vrf_cancel_params.to_list(),
+            execution_config=execution_config,
         )
         return invocation
 
@@ -314,6 +319,8 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         if not self.is_user_client:
             raise AttributeError(
@@ -321,13 +328,11 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         prepared_call = self.randomness.functions[
             "cancel_random_request"
         ].prepare_invoke_v1(
-            *vrf_cancel_params,
-            max_fee=config.max_fee,
+            *vrf_cancel_params.to_list(),
+            max_fee=execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -347,6 +352,8 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         if not self.is_user_client:
             raise AttributeError(
@@ -354,10 +361,8 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         invocation = await self.randomness.functions["refund_operation"].invoke(
-            requestor_address, request_id, execution_config=config
+            requestor_address, request_id, execution_config=execution_config
         )
 
         return invocation
@@ -456,6 +461,7 @@ class RandomnessMixin:
                 vrf_submit_params = VRFSubmitParams(
                     event.request_id,
                     event.caller_address,
+                    event.seed,
                     event.callback_address,
                     event.callback_fee_limit,
                     event.minimum_block_number,

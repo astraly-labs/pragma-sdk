@@ -40,7 +40,7 @@ class ExecutionConfig:
     max_fee: int = int(1e18)
     enable_strk_fees: bool = False
     l1_resource_bounds: Optional[ResourceBounds] = None
-    auto_estimate: bool = True
+    auto_estimate: bool = False
 
     @model_validator(mode="after")
     def post_root(self):

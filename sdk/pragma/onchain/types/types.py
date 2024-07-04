@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, Union, List
+from typing import Optional, Literal, Union, List, Any
 from pydantic import HttpUrl
 
 from pydantic.dataclasses import dataclass
@@ -54,6 +54,17 @@ class VRFRequestParams:
     num_words: int = 1
     calldata: Optional[List[int]] = None
 
+    def to_list(self) -> List[Any]:
+        result = [
+            self.seed,
+            self.callback_address,
+            self.callback_fee_limit,
+            self.publish_delay,
+            self.num_words,
+        ]
+        result.append(self.calldata if self.calldata is not None else [])
+        return result
+
 
 @dataclass
 class VRFSubmitParams:
@@ -68,6 +79,24 @@ class VRFSubmitParams:
     calldata: List[int]
     callback_fee: Optional[int] = None
 
+    def to_list(self) -> List[Any]:
+        result = [
+            self.request_id,
+            self.requestor_address,
+            self.seed,
+            self.callback_address,
+            self.callback_fee_limit,
+            self.minimum_block_number,
+            self.random_words,
+            self.proof,
+            self.calldata,
+        ]
+        if self.callback_fee:
+            result.append(self.callback_fee)
+        else:
+            result.append(1000000)
+        return result
+
 
 @dataclass
 class VRFCancelParams:
@@ -78,3 +107,14 @@ class VRFCancelParams:
     callback_fee_limit: int
     minimum_block_number: int
     num_words: int
+
+    def to_list(self) -> List[Any]:
+        return [
+            self.request_id,
+            self.requestor_address,
+            self.seed,
+            self.callback_address,
+            self.callback_fee_limit,
+            self.minimum_block_number,
+            self.num_words,
+        ]

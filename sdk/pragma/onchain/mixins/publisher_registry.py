@@ -67,13 +67,13 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-
-        config = execution_config or ExecutionConfig()
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         invocation = await self.publisher_registry.functions["add_publisher"].invoke(
             str_to_felt(publisher),
             publisher_address,
-            execution_config=config,
+            execution_config=execution_config,
         )
         return invocation
 
@@ -92,15 +92,15 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-
-        config = execution_config or ExecutionConfig()
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         invocation = await self.publisher_registry.functions[
             "add_source_for_publisher"
         ].invoke(
             str_to_felt(publisher),
             str_to_felt(source),
-            execution_config=config,
+            execution_config=execution_config,
         )
         return invocation
 
@@ -119,15 +119,15 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-
-        config = execution_config or ExecutionConfig()
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         invocation = await self.publisher_registry.functions[
             "add_sources_for_publisher"
         ].invoke(
             str_to_felt(publisher),
             [str_to_felt(source) for source in sources],
-            execution_config=config,
+            execution_config=execution_config,
         )
         return invocation
 
@@ -146,14 +146,14 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-
-        config = execution_config or ExecutionConfig()
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         invocation = await self.publisher_registry.functions[
             "update_publisher_address"
         ].invoke(
             str_to_felt(publisher),
             publisher_address,
-            execution_config=config,
+            execution_config=execution_config,
         )
         return invocation

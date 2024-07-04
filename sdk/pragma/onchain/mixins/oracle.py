@@ -39,14 +39,14 @@ class OracleMixin:
         volume: int = 0,
         execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-
-        config = execution_config or ExecutionConfig()
 
         invocation = await self.oracle.functions["publish_data"].invoke(
             new_entry={
@@ -61,7 +61,7 @@ class OracleMixin:
                     "volume": volume,
                 }
             },
-            execution_config=config,
+            execution_config=execution_config,
         )
         return invocation
 
@@ -309,6 +309,9 @@ class OracleMixin:
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
@@ -316,20 +319,18 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         invocation = None
-        if config.pagination:
+        if execution_config.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + config.pagination]
+                pair_ids_subset = pair_ids[index : index + execution_config.pagination]
                 invocation = await self.oracle.functions["set_checkpoints"].invoke(
                     pair_ids_subset,
                     expiry_timestamps,
                     aggregation_mode.serialize(),
-                    max_fee=config.max_fee,
+                    max_fee=execution_config.max_fee,
                 )
-                index += config.pagination
+                index += execution_config.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
@@ -341,7 +342,7 @@ class OracleMixin:
                 pair_ids,
                 expiry_timestamps,
                 aggregation_mode.serialize(),
-                max_fee=config.max_fee,
+                max_fee=execution_config.max_fee,
             )
 
         return invocation
@@ -360,6 +361,9 @@ class OracleMixin:
         :param execution_config: ExecutionConfig
         :return: InvokeResult
         """
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
+
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
@@ -367,22 +371,20 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        config = execution_config or ExecutionConfig()
-
         invocation = None
-        if config.pagination:
+        if execution_config.pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[index : index + config.pagination]
+                pair_ids_subset = pair_ids[index : index + execution_config.pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.SPOT, pair_id, None).serialize()
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
-                    max_fee=config.max_fee,
+                    max_fee=execution_config.max_fee,
                 )
-                index += config.pagination
+                index += execution_config.pagination
                 logger.debug(str(invocation))
                 logger.info(
                     "Set checkpoints for %d pair IDs with transaction %s",
@@ -396,7 +398,7 @@ class OracleMixin:
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),
-                max_fee=config.max_fee,
+                max_fee=execution_config.max_fee,
             )
 
         return invocation
@@ -421,8 +423,8 @@ class OracleMixin:
         :param execution_config: ExecutionConfig
         :return: InvokeResult
         """
-
-        config = execution_config or ExecutionConfig()
+        if execution_config is None:
+            execution_config = ExecutionConfig(auto_estimate=True)
 
         if not self.is_user_client:
             raise AttributeError(
@@ -433,7 +435,7 @@ class OracleMixin:
 
         invocation = await self.oracle.functions["upgrade"].invoke(
             implementation_hash,
-            max_fee=config.max_fee,
+            max_fee=execution_config.max_fee,
         )
         return invocation
 
