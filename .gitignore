@@ -69,3 +69,6 @@ devnet.pkl
 
 # Vscode workspaces
 *.code-workspace
+
+# Mac
+.DS_STORE
