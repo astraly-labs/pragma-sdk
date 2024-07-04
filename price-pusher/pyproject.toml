@@ -16,7 +16,7 @@ include = ["price_pusher"]
 packages = [{ include = "price_pusher" }]
 
 [tool.poetry.scripts]
-scheduler = 'price_pusher.main:main'
+scheduler = 'price_pusher.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
