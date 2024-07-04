@@ -21,10 +21,10 @@ from pragma.onchain.mixins import (
 )
 from pragma.common.types.types import ADDRESS
 from pragma.common.exceptions import ClientException
-from pragma.common.types import ExecutionConfig
+from pragma.common.types.types import ExecutionConfig
 from pragma.onchain.types import ContractAddresses, Network
 from pragma.onchain.utils import get_full_node_client_from_network
-from pragma.common.types import PragmaClient
+from pragma.common.types.client import PragmaClient
 
 logger = get_stream_logger()
 logger.setLevel(logging.INFO)

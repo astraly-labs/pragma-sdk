@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import abc
+
 from pydantic.dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
 from pragma.common.types.types import DataTypes, UnixTimestamp
 from pragma.common.types.pair import Pair
 from pragma.common.utils import felt_to_str, str_to_felt
-from pragma.onchain.types import OracleResponse
+from pragma.onchain.types.types import OracleResponse
 
 
 class Entry(abc.ABC):

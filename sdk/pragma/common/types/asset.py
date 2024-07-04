@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 
-from pragma.common.types import DataTypes
+from pragma.common.types.types import DataTypes
 from pragma.common.utils import str_to_felt
 
 

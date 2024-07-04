@@ -8,7 +8,7 @@ from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma.common.types.entry import Entry, FutureEntry, SpotEntry
-from pragma.common.types import AggregationMode, DataTypes
+from pragma.common.types.types import AggregationMode, DataTypes
 from pragma.common.utils import add_sync_methods, get_cur_from_pair
 from pragma.offchain.signer import OffchainSigner
 from pragma.offchain.types import Interval

@@ -3,11 +3,13 @@ import time
 from pathlib import Path
 from typing import List
 
-from pragma.common.types import Pair, SpotEntry
+from pragma.common.fetchers.fetchers.index import AssetQuantities
+from pragma.common.types.entry import Pair, SpotEntry
 from pragma.common.configs.asset_config import (
     ALL_ASSETS_CONFIGS,
     AssetConfig,
 )
+from pragma.common.types.currency import Currency
 from pragma.onchain.types.types import OracleResponse
 
 U128_MAX = (1 << 128) - 1
@@ -90,10 +92,32 @@ SAMPLE_SPOT_ENTRIES = [
         publisher="PRAGMA_TEST",
     ),
 ]
+SAMPLE_ASSET_QUANTITIES = [
+    [
+        AssetQuantities(
+            pair=Pair.from_tickers("ETH", "USD"),
+            quantities=0.5,
+        ),
+        AssetQuantities(
+            pair=Pair.from_tickers("BTC", "USD"),
+            quantities=0.5,
+        ),
+    ],
+    [
+        AssetQuantities(
+            pair=Pair.from_tickers("ETH", "USD"),
+            quantities=0.5,
+        ),
+        AssetQuantities(
+            pair=Pair.from_tickers("BTC", "USD"),
+            quantities=0.5,
+        ),
+    ],
+]
 
 USD_ASSET_CONFIG = AssetConfig.from_ticker("USD")
 
-CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS_CONFIGS]
+CURRENCIES = [Currency.from_asset_config(asset) for asset in ALL_ASSETS_CONFIGS]
 USD_PAIRS: List[Pair] = filter(
     lambda x: x is not None,
     [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS_CONFIGS],

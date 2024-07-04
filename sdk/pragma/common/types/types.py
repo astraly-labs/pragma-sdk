@@ -1,8 +1,8 @@
 from enum import StrEnum, unique
-from pydantic import model_validator
-from pydantic.dataclasses import dataclass
 from typing import Optional
 
+from pydantic import model_validator
+from pydantic.dataclasses import dataclass
 from starknet_py.net.client_models import ResourceBounds
 
 

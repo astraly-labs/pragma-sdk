@@ -1,5 +1,4 @@
-from typing import List, Optional
-
+from typing import List, Optional, Self
 
 from pragma.common.utils import str_to_felt
 from pragma.common.types.types import ADDRESS, DECIMALS
@@ -14,13 +13,13 @@ class Currency:
 
     def __init__(
         self,
-        id_: str,
+        currency_id: str,
         decimals: DECIMALS,
         is_abstract_currency: bool,
         starknet_address: Optional[ADDRESS] = None,
         ethereum_address: Optional[ADDRESS] = None,
     ):
-        self.id = id_
+        self.id = currency_id
 
         self.decimals = decimals
 
@@ -35,6 +34,14 @@ class Currency:
         if ethereum_address is None:
             ethereum_address = 0
         self.ethereum_address = ethereum_address
+
+    @classmethod
+    def from_asset_config(cls, config: "AssetConfig") -> Self:
+        return cls(
+            currency_id=config.ticker,
+            decimals=config.decimals,
+            is_abstract_currency=config.abstract,
+        )
 
     def serialize(self) -> List[str]:
         return [

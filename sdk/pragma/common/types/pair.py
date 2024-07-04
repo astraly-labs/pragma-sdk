@@ -64,8 +64,8 @@ class Pair:
             return None
 
         return cls(
-            base_currency=base_asset.as_currency(),
-            quote_currency=quote_asset.as_currency(),
+            base_currency=Currency.from_asset_config(base_asset),
+            quote_currency=Currency.from_asset_config(quote_asset),
         )
 
     @staticmethod
