@@ -37,6 +37,20 @@ class PragmaOnChainClient(
     PublisherRegistryMixin,
     RandomnessMixin,
 ):
+    """
+    Client for interacting with Pragma on Starknet.
+    :param network: Target network for the client.
+        Can be a URL string, or one of
+        ``"mainnet"``, ``"sepolia"`` or ``"devnet"``
+    :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
+    :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
+    :param contract_addresses_config: Optional Contract Addresses for Pragma contracts.
+        Will default to the provided network but must be set if using non standard contracts.
+    :param port: Optional port to interact with local node. Will default to 5050.
+    :param chain_name: A str-representation of the chain if a URL string is given for `network`.
+        Must be one of ``"mainnet"``, ``"sepolia"`` or ``"devnet"``.
+    """
+
     is_user_client: bool = False
     account_contract_address: Optional[ADDRESS] = None
     account: Account = None
@@ -53,20 +67,6 @@ class PragmaOnChainClient(
         chain_name: Optional[str] = None,
         execution_config: Optional[ExecutionConfig] = None,
     ):
-        """
-        Client for interacting with Pragma on Starknet.
-        :param network: Target network for the client.
-            Can be a URL string, or one of
-            ``"mainnet"``, ``"sepolia"`` or ``"devnet"``
-        :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
-        :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
-        :param contract_addresses_config: Optional Contract Addresses for Pragma contracts.
-            Will default to the provided network but must be set if using non standard contracts.
-        :param port: Optional port to interact with local node. Will default to 5050.
-        :param chain_name: A str-representation of the chain if a URL string is given for `network`.
-            Must be one of ``"mainnet"``, ``"sepolia"`` or ``"devnet"``.
-        """
-
         full_node_client: FullNodeClient = get_full_node_client_from_network(
             network, port=port
         )

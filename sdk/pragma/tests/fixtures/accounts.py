@@ -37,7 +37,7 @@ async def address_and_private_key(
             DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
             DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
         ),
-        "testnet": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
+        "sepolia": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
     }
     return account_details[net]
 
@@ -70,7 +70,7 @@ def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Acc
             DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
             DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
         ),
-        "testnet": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
+        "sepolia": (TESTNET_ACCOUNT_ADDRESS, TESTNET_ACCOUNT_PRIVATE_KEY),
     }
 
     net = pytestconfig.getoption("--net")

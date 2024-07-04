@@ -1,12 +1,13 @@
 from typing import Dict, List
 
 from pragma.onchain.types import ContractAddresses, Network
+from starknet_py.net.models.chains import StarknetChainId
 
 
 CHAIN_IDS: Dict[Network, int] = {
-    "devnet": 23448594291968334,
-    "mainnet": 23448594291968334,
-    "sepolia": 393402133025997798000961,
+    "devnet": StarknetChainId.MAINNET,
+    "mainnet": StarknetChainId.MAINNET,
+    "sepolia": StarknetChainId.SEPOLIA,
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}

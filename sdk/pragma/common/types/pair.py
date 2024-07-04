@@ -7,6 +7,14 @@ from pragma.common.configs.asset_config import AssetConfig
 
 
 class Pair:
+    """
+    Pair class to represent a trading pair.
+
+    :param id: Corresponds to the felt representation of the pair e.g str_to_felt("ETH/USD")
+    :param base_currency: Base currency
+    :param quote_currency: Quote currency
+    """
+
     id: int
     base_currency: Currency
     quote_currency: Currency

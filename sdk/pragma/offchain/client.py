@@ -20,6 +20,13 @@ from pragma.offchain.exceptions import PragmaAPIError
 
 @add_sync_methods
 class PragmaAPIClient(PragmaClient):
+    """
+    Client for interacting with the Pragma API.
+    see https://docs.pragma.build/Resources/PragmApi/overview
+
+    An API Key is required to interact with the API.
+    """
+
     api_base_url: str
     api_key: str
     account_private_key: Optional[int] = None

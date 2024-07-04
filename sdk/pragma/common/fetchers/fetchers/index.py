@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, List, Union
+from typing import List, Union
 
 from aiohttp import ClientSession
 
@@ -20,13 +20,13 @@ class AssetQuantities:
 
 # TODO(#000): rewrite this class
 class IndexFetcher(FetcherInterfaceT):
-    fetcher: Any
+    fetcher: FetcherInterfaceT
     index_name: str
     pair_quantities: List[AssetQuantities]
 
     def __init__(
         self,
-        fetcher: Any,
+        fetcher: FetcherInterfaceT,
         index_name: str,
         pair_quantities: List[AssetQuantities],
     ):

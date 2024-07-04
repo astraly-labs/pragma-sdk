@@ -6,7 +6,7 @@ def pytest_addoption(parser):
         "--net",
         action="store",
         default="devnet",
-        help="Network to run tests on, one of: " "`mainnet`, `testnet`, `devnet`",
+        help="Network to run tests on, one of: " "`mainnet`, `sepolia`, `devnet`",
     )
 
 
@@ -18,7 +18,7 @@ def network(pytestconfig, run_devnet: str) -> str:
     net = pytestconfig.getoption("--net")
     net_address = {
         "devnet": run_devnet,
-        "testnet": "testnet",
+        "sepolia": "sepolia",
     }
 
     return net_address[net]
@@ -28,13 +28,13 @@ def pytest_collection_modifyitems(config, items):
     if config.getoption("--net") == "all":
         return
 
-    run_testnet = config.getoption("--net") == "testnet"
+    run_sepolia = config.getoption("--net") == "sepolia"
     run_devnet = config.getoption("--net") == "devnet"
     for item in items:
-        runs_on_testnet = "run_on_testnet" in item.keywords
+        runs_on_sepolia = "run_on_sepolia" in item.keywords
         runs_on_devnet = "run_on_devnet" in item.keywords
         should_not_run = (runs_on_devnet and not run_devnet) or (
-            runs_on_testnet and not run_testnet
+            runs_on_sepolia and not run_sepolia
         )
         if should_not_run:
             item.add_marker(pytest.mark.skip())

@@ -5,6 +5,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_stream_logger():
+    """
+    Return the logger with a stream handler.
+    Log format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    The logger level is set to DEBUG.
+    There can only be one stream handler.
+    """
+
     global logger
 
     logger.setLevel(logging.DEBUG)

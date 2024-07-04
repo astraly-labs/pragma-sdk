@@ -55,6 +55,10 @@ def build_publish_message(
 
 
 class OffchainSigner:
+    """
+    Class used to sign messages for the Pragma API
+    """
+
     def __init__(self, signer: StarkCurveSigner):
         self.signer = signer
 

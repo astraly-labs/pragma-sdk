@@ -12,6 +12,11 @@ from pragma.onchain.types.types import OracleResponse
 
 
 class Entry(abc.ABC):
+    """
+    Abstract class that represents an Entry.
+    All entries must implement this class.
+    """
+
     @abc.abstractmethod
     def to_tuple(self) -> Tuple: ...
 
@@ -58,6 +63,10 @@ class Entry(abc.ABC):
 
 @dataclass
 class BaseEntry:
+    """
+    BaseEntry is a dataclass that represents the common fields between SpotEntry and FutureEntry.
+    """
+
     timestamp: UnixTimestamp
     source: int
     publisher: int
