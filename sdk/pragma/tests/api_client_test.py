@@ -195,11 +195,11 @@ async def test_async_api_client_spot(forked_client):
         )
         # Mocking the expected call for assets
         for asset in SAMPLE_PAIRS:
-            quote_asset = asset.quote_currency.id
             base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_spot_data"]["url"]
-                + f"{quote_asset}/{base_asset}"
+                + f"{base_asset}/{quote_asset}"
             )
             with open(
                 [
@@ -213,7 +213,7 @@ async def test_async_api_client_spot(forked_client):
                 mock_data = json.load(filepath)
             mock.get(
                 url,
-                payload=mock_data[quote_asset],
+                payload=mock_data[base_asset],
             )
             result = await api_client.get_entry(
                 f"{asset.base_currency.id}/{asset.quote_currency.id}"
@@ -223,7 +223,7 @@ async def test_async_api_client_spot(forked_client):
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "get_entry"
             ]
-            assert result.assert_attributes_equal(expected_result[0][quote_asset])
+            assert result.assert_attributes_equal(expected_result[0][base_asset])
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -242,23 +242,21 @@ async def test_async_api_client_spot_404_error(forked_client):
         )
         # Mocking the expected call for assets
         for asset in SAMPLE_PAIRS:
-            if asset["type"] == "INDEX":
-                continue
-            quote_asset = asset.base_currency.id
-            base_asset = asset.quote_currency.id
+            base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_spot_data"]["url"]
-                + f"{quote_asset}/{base_asset}"
+                + f"{base_asset}/{quote_asset}"
             )
             mock.get(url, status=404)
             # Use pytest.raises to capture the exception
             with pytest.raises(PragmaAPIError) as exc_info:
-                await api_client.get_entry(f"{quote_asset}/{base_asset}")
+                await api_client.get_entry(f"{base_asset}/{quote_asset}")
 
             # Assert the error message or other details if needed
             assert (
                 str(exc_info.value)
-                == f"Unable to GET /v1/data for pair {quote_asset}/{base_asset}"
+                == f"Unable to GET /v1/data for pair {base_asset}/{quote_asset}"
             )
 
 
@@ -278,11 +276,11 @@ async def test_async_api_client_ohlc(forked_client):
         )
         # Mocking the expected call for assets
         for asset in SAMPLE_PAIRS:
-            quote_asset = asset.base_currency.id
-            base_asset = asset.quote_currency.id
+            base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_ohlc_data"]["url"]
-                + f"{quote_asset}/{base_asset}"
+                + f"{base_asset}/{quote_asset}"
             )
             with open(
                 [
@@ -294,12 +292,11 @@ async def test_async_api_client_ohlc(forked_client):
                 encoding="utf-8",
             ) as filepath:
                 mock_data = json.load(filepath)
-            print(mock_data[quote_asset])
             mock.get(
                 url,
-                payload=mock_data[quote_asset],
+                payload=mock_data[base_asset],
             )
-            result = await api_client.api_get_ohlc(
+            result = await api_client.get_ohlc(
                 f"{asset.base_currency.id}/{asset.quote_currency.id}"
             )
 
@@ -308,7 +305,7 @@ async def test_async_api_client_ohlc(forked_client):
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "api_get_ohlc"
             ]
-            assert result.data == expected_result[0][quote_asset]
+            assert result.data == expected_result[0][base_asset]
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -327,75 +324,21 @@ async def test_async_api_client_ohlc_404_error(forked_client):
         )
         # Mocking the expected call for assets
         for asset in SAMPLE_PAIRS:
-            if asset["type"] == "INDEX":
-                continue
-            quote_asset = asset.base_currency.id
-            base_asset = asset.quote_currency.id
+            base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_ohlc_data"]["url"]
-                + f"{quote_asset}/{base_asset}"
+                + f"{base_asset}/{quote_asset}"
             )
             mock.get(url, status=404)
             # Use pytest.raises to capture the exception
             with pytest.raises(PragmaAPIError) as exc_info:
-                await api_client.api_get_ohlc(
+                await api_client.get_ohlc(
                     f"{asset.base_currency.id}/{asset.quote_currency.id}"
                 )
 
             # Assert the error message or other details if needed
             assert (
                 str(exc_info.value)
-                == f"Failed to get OHLC data for pair {quote_asset}/{base_asset}"
+                == f"Failed to get OHLC data for pair {base_asset}/{quote_asset}"
             )
-
-
-# @mock.patch("time.time", mock.MagicMock(return_value=12345))
-# @pytest.mark.parametrize(
-#     "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-# )
-# @pytest.mark.asyncio
-# async def test_async_api_client_volatility(forked_client):
-#     # we only want to mock the external fetcher APIs and not the RPC
-#     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-#         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
-#         # Mocking the expected call for assets
-#         for asset in SAMPLE_PAIRS:
-#   if asset["type"] == "INDEX":
-#     continue
-#             quote_asset = asset.base_currency.id
-#             base_asset = asset.quote_currency.id
-#             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
-#             with open([config["mock_file"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility'][0], "r", encoding="utf-8") as filepath:
-#                 mock_data = json.load(filepath)
-#             mock.get(
-#                     url,
-#                     payload=mock_data[quote_asset],
-#             )
-#             result = await api_client.get_volatility(f'{asset.base_currency.id}/{asset.quote_currency.id}')
-
-#             expected_result  = [config["expected_result"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility']
-#             assert result == expected_result[0][quote_asset]
-
-
-# @mock.patch("time.time", mock.MagicMock(return_value=12345))
-# @pytest.mark.parametrize(
-#     "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-# )
-# @pytest.mark.asyncio
-# async def test_async_api_client_volatility(forked_client):
-#     # we only want to mock the external fetcher APIs and not the RPC
-#     with aioresponses(passthrough=[forked_client.client.url]) as mock:
-#         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
-#         # Mocking the expected call for assets
-#         for asset in SAMPLE_PAIRS:
-# if asset["type"] == "INDEX":
-# continue
-#             quote_asset = asset.base_currency.id
-#             base_asset = asset.quote_currency.id
-#             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
-#             mock.get(
-#                     url,
-#                     status=404,
-#             )
-#             result = await api_client.get_volatility(f'{asset.base_currency.id}/{asset.quote_currency.id}')
-#             assert result == Nones
