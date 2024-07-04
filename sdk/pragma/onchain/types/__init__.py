@@ -1,6 +1,6 @@
-from .contract import Contract
+from pragma.onchain.types.contract import Contract
 
-from .types import (
+from pragma.onchain.types.types import (
     ContractAddresses,
     HttpUrl,
     Network,
