@@ -128,10 +128,12 @@ class Orchestrator:
 
         for data_type, pairs in pairs_per_type.items():
             for pair in pairs:
-                if data_type not in self.latest_prices[f"{pair}"]:
+                pair_name = f"{pair}"
+                if pair_name not in self.latest_prices or data_type not in self.latest_prices[pair_name]:
+                    logger.warning(f"ORCHESTRATOR : {pair_name} not found, continuing ...")
                     continue
-                entries_to_push.extend(list(self.latest_prices[f"{pair}"][data_type].values()))
-                del self.latest_prices[f"{pair}"][data_type]
+                entries_to_push.extend(list(self.latest_prices[pair_name][data_type].values()))
+                del self.latest_prices[pair_name][data_type]
 
         return entries_to_push
 
@@ -139,6 +141,7 @@ class Orchestrator:
         """
         Function called by the poller whenever new prices are retrieved.
         """
+
         for entry in entries:
             pair_id = entry.get_pair_id()
             source = entry.get_source()
