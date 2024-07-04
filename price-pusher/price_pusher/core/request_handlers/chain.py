@@ -22,14 +22,14 @@ class ChainRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaOnChainClient) -> None:
         self.client = client
 
-    async def fetch_latest_entry(self, data_type : DataTypes, pair: Pair) -> Optional[Entry]:
+    async def fetch_latest_entry(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]:
         entry = await self._fetch_oracle_price(data_type, pair)
         if entry is None:
             logger.error("Can't get price for {}: unknown asset type.")
             return None
         return entry
 
-    async def _fetch_oracle_price(self, data_type : DataTypes, pair: Pair) -> Optional[Entry]:
+    async def _fetch_oracle_price(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]:
         pair_id = pair.__repr__()
 
         async def fetch_action():

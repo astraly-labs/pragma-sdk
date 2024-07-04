@@ -119,9 +119,7 @@ class Orchestrator:
             await self.pusher.update_price_feeds(entries_to_push)
             self.push_queue.task_done()
 
-    def _flush_entries_for_assets(
-        self, pairs_per_type: Dict[DataTypes, List[Pair]]
-    ) -> List[Entry]:
+    def _flush_entries_for_assets(self, pairs_per_type: Dict[DataTypes, List[Pair]]) -> List[Entry]:
         """
         Retrieves the prices for the assets that needs to be pushed & remove them from
         the latest_prices dict.
@@ -132,9 +130,7 @@ class Orchestrator:
             for pair in pairs:
                 if data_type not in self.latest_prices[f"{pair}"]:
                     continue
-                entries_to_push.extend(
-                    list(self.latest_prices[f"{pair}"][data_type].values())
-                )
+                entries_to_push.extend(list(self.latest_prices[f"{pair}"][data_type].values()))
                 del self.latest_prices[f"{pair}"][data_type]
 
         return entries_to_push

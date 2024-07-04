@@ -33,8 +33,7 @@ class PricePoller(IPricePoller):
         # If we're requesting some onchain fetchers, we allow for requests
         # retry in case of a small RPC down time etc...
         self._is_requesting_onchain = any(
-            getattr(getattr(fetcher, "client", None), "full_node_client", None)
-            is not None
+            getattr(getattr(fetcher, "client", None), "full_node_client", None) is not None
             for fetcher in self.fetcher_client.fetchers
         )
 
@@ -60,14 +59,10 @@ class PricePoller(IPricePoller):
                 raise e
             try:
                 logger.warning("🤔 POLLER fetching prices failed. Retrying...")
-                new_entries = await retry_async(
-                    self._fetch_action, retries=5, delay_in_s=5
-                )
+                new_entries = await retry_async(self._fetch_action, retries=5, delay_in_s=5)
                 self.update_prices_callback(new_entries)
             except Exception as e:
-                raise ValueError(
-                    f"POLLERS retries for fetching new prices still failed: {e}"
-                )
+                raise ValueError(f"POLLERS retries for fetching new prices still failed: {e}")
 
     async def _fetch_action(self) -> None:
         """

@@ -6,7 +6,6 @@ from pragma.common.types.entry import SpotEntry
 from pragma.common.fetchers.fetcher_client import FetcherClient
 
 
-
 @pytest.fixture
 def fetcher_client():
     return MagicMock(spec=FetcherClient)

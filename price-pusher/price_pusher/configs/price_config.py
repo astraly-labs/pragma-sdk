@@ -42,9 +42,7 @@ class PriceConfig(BaseModel):
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
             base_currency = try_get_asset_config_from_ticker(splitted[0])
             quote_currency = try_get_asset_config_from_ticker(splitted[1])
-            assets.append(
-                AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency)
-            )
+            assets.append(AssetConfig.get_pair_from_asset_configs(base_currency, quote_currency))
         return assets
 
     @classmethod

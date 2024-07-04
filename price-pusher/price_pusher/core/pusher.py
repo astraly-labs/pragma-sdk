@@ -26,7 +26,9 @@ class PricePusher(IPricePusher):
         logger.info(f"👷‍♂️ PUSHER processing {len(entries)} new assets to push...")
         try:
             response = await self.client.publish_entries(entries)  # TODO: add execution config
-            logger.info(f"PUSHER ✅ successfully published {len(entries)} entries! response {response}")
+            logger.info(
+                f"PUSHER ✅ successfully published {len(entries)} entries! response {response}"
+            )
 
             return response
         except Exception as e:

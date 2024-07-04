@@ -78,9 +78,7 @@ def _create_listeners(
     listeners: List[PriceListener] = []
     for price_config in price_configs:
         new_listener = PriceListener(
-            request_handler=REQUEST_HANDLER_REGISTRY[target](
-                client=pragma_client
-            ),
+            request_handler=REQUEST_HANDLER_REGISTRY[target](client=pragma_client),
             price_config=price_config,
             polling_frequency_in_s=20,
         )
@@ -99,9 +97,7 @@ def _create_listeners(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(
-        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
-    ),
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
     help="Logging level.",
 )
 @click.option(
@@ -137,9 +133,7 @@ def _create_listeners(
     required=True,
     help="Your publisher address.",
 )
-@click.option(
-    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
-)
+@click.option("--api-base-url", type=click.STRING, required=False, help="Pragma API base URL")
 @click.option(
     "--api-key",
     type=click.STRING,
@@ -164,9 +158,7 @@ def cli_entrypoint(
     Also handles basic checks/conversions from the CLI args.
     """
     if target == "offchain" and (not api_key or not api_base_url):
-        raise click.UsageError(
-            "API key and API URL are required when destination is 'offchain'."
-        )
+        raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
 
     setup_logging(logger, log_level)
     private_key = load_private_key(private_key)

@@ -6,7 +6,6 @@ from pragma.common.fetchers.fetcher_client import FetcherClient
 
 from concurrent.futures import ThreadPoolExecutor
 from pragma.common.fetchers.fetchers import (
-    BinanceFetcher,
     BitstampFetcher,
     BybitFetcher,
     DefillamaFetcher,
