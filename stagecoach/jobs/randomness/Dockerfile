@@ -1,4 +1,4 @@
-FROM amazon/aws-lambda-python:3.11
+FROM amazon/aws-lambda-python:3.12
 
 RUN yum install -y gcc python-devel gmp-devel git
 RUN python -m pip install --upgrade pip

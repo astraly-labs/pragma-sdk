@@ -4,10 +4,10 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
 
-from pragma.common.configs.asset_config import (
+from pragma_sdk.common.configs.asset_config import (
     AssetConfig,
 )
-from pragma.common.types import DataTypes, Pair
+from pragma_sdk.common.types import DataTypes, Pair
 
 
 class PairConfig(BaseModel):

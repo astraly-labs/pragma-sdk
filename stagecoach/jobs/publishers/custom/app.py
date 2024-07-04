@@ -4,10 +4,10 @@ import os
 import time
 from typing import List
 
-from pragma.common.assets import PRAGMA_ALL_ASSETS, PragmaAsset
-from pragma.common.types.entry import FutureEntry, SpotEntry
-from pragma.common.utils import currency_pair_to_pair_id
-from pragma.publisher.client import PragmaOnChainClient
+from pragma_sdk.common.assets import PRAGMA_ALL_ASSETS, PragmaAsset
+from pragma_sdk.common.types.entry import FutureEntry, SpotEntry
+from pragma_sdk.common.utils import currency_pair_to_pair_id
+from pragma_sdk.publisher.client import PragmaOnChainClient
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from pragma.common.types.entry import Entry
-from pragma.common.types.types import DataTypes
+from pragma_sdk.common.types.entry import Entry
+from pragma_sdk.common.types.types import DataTypes
 
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
@@ -15,7 +15,7 @@ from price_pusher.type_aliases import (
     HumanReadableId,
 )
 from price_pusher.utils.readable_id import generate_human_readable_id
-from pragma.offchain.client import PragmaAPIError
+from pragma_sdk.offchain.client import PragmaAPIError
 
 
 logger = logging.getLogger(__name__)

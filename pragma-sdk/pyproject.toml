@@ -1,0 +1,156 @@
+[tool.poetry]
+name = "pragma-sdk"
+version = "1.4.7"
+authors = ["0xevolve <matthias@pragma.build>"]
+description = "Core package for rollup-native Pragma Oracle"
+readme = "README.md"
+homepage = "https://pragma.build"
+repository = "https://github.com/Astraly-Labs/pragma-sdk"
+documentation = "https://docs.pragma.build"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+include = ["pragma_sdk"]
+exclude = ["tests/*", "tests/**/*_test.py"]
+packages = [{ include = "pragma_sdk" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+"starknet.py" = "0.22.0"
+typer = "0.6.1"
+deprecated = "^1.2.14"
+aioresponses = "^0.7.4"
+requests-mock = "^1.11.0"
+pydantic = "^2.7.4"
+python-dotenv = "^1.0.0"
+sphinx = "^7.3.7"
+enum-tools = { extras = ["sphinx"], version = "0.12.0", optional = true }
+furo = "^2024.5.6"
+
+[tool.poetry.extras]
+docs = ["sphinx", "enum-tools", "furo"]
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.21.1"
+ruff = "^0.4"
+mypy = "^1.10"
+coverage = "^7.2.1"
+pytest = "^7.2.2"
+pytest-asyncio = "^0.21.1"
+pytest-mock = "^3.6.1"
+pytest-xdist = "^3.2.1"
+pytest-cov = "^4.0.0"
+setuptools = "^68.0.0"
+pytest-rerunfailures = "^12.0"
+moto = { extras = ["s3", "secretsmanager"], version = "^4.2.5" }
+boto3 = "^1.28.61"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+types-requests = "^2.26.0"
+types-deprecated = "^1.2.9"
+
+[tool.poe.tasks]
+lint = "ruff check ."
+format = "ruff format ."
+format_check = "ruff format . --check"
+typecheck = "mypy pragma_sdk"
+
+test_ci_all_integration = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/ -s"
+test_ci_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/client_test.py -s"
+test_ci_update_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/update_client_test.py -s"
+test_ci_publisher = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/publisher_test.py -s"
+test_ci_fetchers = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/fetchers/ -s"
+test_ci_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/vrf_test.py -s"
+test_ci_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/api_client_test.py -s"
+
+circular_imports_check = "poetry run pytest tests/check_circular_imports.py"
+
+
+[tool.ruff]
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".github",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+  "scripts",
+  "pragma-oracle",
+]
+# Same as Black.
+line-length = 88
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+select = ["E4", "E7", "E9", "F"]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.mypy]
+files = ["pragma_sdk"]
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+exclude = [
+  "tests/",
+  # TODO: Stop ignoring those two folders one by one & fix the mypy 
+  # https://github.com/astraly-labs/pragma-sdk/issues/116
+  "pragma_sdk/core",
+  "pragma_sdk/publisher",
+]
+
+[tool.poetry.build]
+generate-setup-file = true
+
+[build-system]
+requires = ["setuptools", "wheel", "build", "Cython"]
+
+build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+source = ["pragma_sdk"]
+
+[tool.coverage.report]
+omit = ["*_test.py", "tests/*"]
+skip_empty = true

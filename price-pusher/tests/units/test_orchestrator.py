@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 from tests.constants import BTC_USD_PAIR
 
-from pragma.common.types.types import DataTypes
-from pragma.common.types.entry import Entry, SpotEntry, FutureEntry
+from pragma_sdk.common.types.types import DataTypes
+from pragma_sdk.common.types.entry import Entry, SpotEntry, FutureEntry
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener

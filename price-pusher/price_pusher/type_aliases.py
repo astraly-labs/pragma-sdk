@@ -1,7 +1,7 @@
 from typing import Dict, Literal
 
-from pragma.common.types.entry import Entry
-from pragma.common.types.types import DataTypes
+from pragma_sdk.common.types.entry import Entry
+from pragma_sdk.common.types.types import DataTypes
 
 DurationInSeconds = int
 

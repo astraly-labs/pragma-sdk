@@ -20,7 +20,7 @@ scheduler = 'price_pusher.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-pragma-sdk = { path = "../sdk", develop = true }
+pragma-sdk = { path = "../pragma-sdk", develop = true }
 click = "^8.1.0"
 pydantic = "^2.7.4"
 boto3 = "^1.28.61"

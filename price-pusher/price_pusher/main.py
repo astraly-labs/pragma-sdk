@@ -4,8 +4,8 @@ import logging
 
 from typing import Optional, List
 
-from pragma.common.fetchers.fetcher_client import FetcherClient
-from pragma.common.types.client import PragmaClient
+from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
+from pragma_sdk.common.types.client import PragmaClient
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener

@@ -1,0 +1,417 @@
+from __future__ import annotations
+
+import abc
+
+from pydantic.dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Union
+
+from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
+from pragma_sdk.common.types.pair import Pair
+from pragma_sdk.common.utils import felt_to_str, str_to_felt
+from pragma_sdk.onchain.types.types import OracleResponse
+
+
+class Entry(abc.ABC):
+    """
+    Abstract class that represents an Entry.
+    All entries must implement this class.
+    """
+
+    @abc.abstractmethod
+    def to_tuple(self) -> Tuple: ...
+
+    @abc.abstractmethod
+    def serialize(self) -> Dict[str, str]: ...
+
+    @abc.abstractmethod
+    def offchain_serialize(self) -> Dict[str, str]: ...
+
+    @abc.abstractmethod
+    def get_timestamp(self) -> int: ...
+
+    @abc.abstractmethod
+    def get_pair_id(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_source(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_asset_type(self) -> str: ...
+
+    @staticmethod
+    def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
+        serialized_entries = [
+            entry.serialize() for entry in entries if isinstance(entry, Entry)
+        ]
+        return list(filter(lambda item: item is not None, serialized_entries))
+
+    @staticmethod
+    def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
+        serialized_entries = [
+            entry.offchain_serialize() for entry in entries if isinstance(entry, Entry)
+        ]
+        return list(filter(lambda item: item is not None, serialized_entries))
+
+    @staticmethod
+    def flatten_entries(entries: List[Entry]) -> List[int]:
+        """This flattens entriees to tuples. Useful when you need the raw felt array"""
+
+        expanded = [entry.to_tuple() for entry in entries]
+        flattened = [x for entry in expanded for x in entry]
+        return [len(entries)] + flattened
+
+
+@dataclass
+class BaseEntry:
+    """
+    BaseEntry is a dataclass that represents the common fields between SpotEntry and FutureEntry.
+    """
+
+    timestamp: UnixTimestamp
+    source: int
+    publisher: int
+
+    def __init__(
+        self,
+        timestamp: UnixTimestamp,
+        source: Union[str, int],
+        publisher: Union[str, int],
+    ):
+        if isinstance(publisher, str):
+            publisher = str_to_felt(publisher)
+
+        if isinstance(source, str):
+            source = str_to_felt(source)
+
+        self.timestamp = timestamp
+        self.source = source
+        self.publisher = publisher
+
+    def __hash__(self) -> Tuple[str]:
+        return hash((self.timestamp, self.source, self.publisher))
+
+
+class SpotEntry(Entry):
+    """
+    Represents a Spot Entry.
+    """
+
+    base: BaseEntry
+    pair_id: int
+    price: int
+    volume: int
+
+    def __init__(
+        self,
+        pair_id: Union[str, int],
+        price: int,
+        timestamp: UnixTimestamp,
+        source: Union[str, int],
+        publisher: Union[str, int],
+        volume: Optional[Union[int, float]] = 0,
+    ) -> None:
+        if isinstance(pair_id, str):
+            pair_id = str_to_felt(pair_id)
+
+        if isinstance(publisher, str):
+            publisher = str_to_felt(publisher)
+
+        if isinstance(source, str):
+            source = str_to_felt(source)
+
+        self.base = BaseEntry(timestamp, source, publisher)
+        self.pair_id = pair_id
+        self.price = price
+
+        if isinstance(volume, float):
+            volume = int(volume)
+        self.volume = volume
+
+    def __eq__(self, other):
+        if isinstance(other, SpotEntry):
+            return (
+                self.pair_id == other.pair_id
+                and self.price == other.price
+                and self.base.timestamp == other.base.timestamp
+                and self.base.source == other.base.source
+                and self.base.publisher == other.base.publisher
+                and self.volume == other.volume
+            )
+        # This supports comparing against entries that are returned by starknet.py,
+        # which will be namedtuples.
+        if isinstance(other, Tuple) and len(other) == 4:
+            return (
+                self.pair_id == other.pair_id
+                and self.price == other.price
+                and self.base.timestamp == other.base.timestamp
+                and self.base.source == other.base.source
+                and self.base.publisher == other.base.publisher
+                and self.volume == other.volume
+            )
+        return False
+
+    def to_tuple(self):
+        return (
+            self.base.timestamp,
+            self.base.source,
+            self.base.publisher,
+            self.pair_id,
+            self.price,
+            self.volume,
+        )
+
+    def serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": self.base.source,
+                "publisher": self.base.publisher,
+            },
+            "pair_id": self.pair_id,
+            "price": self.price,
+            "volume": self.volume,
+        }
+
+    def offchain_serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": felt_to_str(self.base.source),
+                "publisher": felt_to_str(self.base.publisher),
+            },
+            "pair_id": felt_to_str(self.pair_id),
+            "price": self.price,
+            "volume": self.volume,
+        }
+
+    def set_publisher(self, publisher) -> "SpotEntry":
+        self.base.publisher = publisher
+        return self
+
+    def get_timestamp(self) -> int:
+        return self.base.timestamp
+
+    def get_pair_id(self) -> str:
+        return felt_to_str(self.pair_id)
+
+    def get_source(self) -> str:
+        return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> DataTypes:
+        return DataTypes.SPOT
+
+    @staticmethod
+    def from_oracle_response(
+        pair: Pair,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> "SpotEntry":
+        """
+        Builds a SpotEntry object from a Pair and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
+
+        return SpotEntry(
+            pair.id,
+            oracle_response[0],
+            oracle_response[2],
+            publisher_name,
+            source_name,
+            0,
+        )
+
+    @staticmethod
+    def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
+        base = dict(entry_dict["base"])
+        return SpotEntry(
+            entry_dict["pair_id"],
+            entry_dict["price"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+            volume=entry_dict["volume"],
+        )
+
+    def __repr__(self):
+        return (
+            f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
+        )
+
+    def __hash__(self) -> Tuple[str]:
+        return hash((self.base, self.pair_id, self.price, self.volume))
+
+
+class FutureEntry(Entry):
+    """
+    Represents a Future Entry.
+
+    Also used to represent a Perp Entry - the only difference is that a perpetual future has no
+    expiry timestamp.
+    """
+
+    base: BaseEntry
+    pair_id: int
+    price: int
+    expiry_timestamp: int
+    volume: int
+
+    def __init__(
+        self,
+        pair_id: Union[str, int],
+        price: int,
+        timestamp: int,
+        source: Union[str, int],
+        publisher: Union[str, int],
+        expiry_timestamp: Optional[int] = 0,
+        volume: Optional[Union[float, int]] = 0,
+    ):
+        if isinstance(pair_id, str):
+            pair_id = str_to_felt(pair_id)
+
+        if isinstance(publisher, str):
+            publisher = str_to_felt(publisher)
+
+        if isinstance(source, str):
+            source = str_to_felt(source)
+
+        self.base = BaseEntry(timestamp, source, publisher)
+        self.pair_id = pair_id
+        self.price = price
+        self.expiry_timestamp = expiry_timestamp
+
+        if isinstance(volume, float):
+            volume = int(volume)
+        self.volume = volume
+
+    def __eq__(self, other):
+        if isinstance(other, FutureEntry):
+            return (
+                self.pair_id == other.pair_id
+                and self.price == other.price
+                and self.base.timestamp == other.base.timestamp
+                and self.base.source == other.base.source
+                and self.base.publisher == other.base.publisher
+                and self.expiry_timestamp == other.expiry_timestamp
+                and self.volume == other.volume
+            )
+        # This supports comparing against entries that are returned by starknet.py,
+        # which will be namedtuples.
+        if isinstance(other, Tuple) and len(other) == 4:
+            return (
+                self.pair_id == other.pair_id
+                and self.price == other.price
+                and self.base.timestamp == other.base.timestamp
+                and self.base.source == other.base.source
+                and self.base.publisher == other.base.publisher
+                and self.expiry_timestamp == other.expiry_timestamp
+                and self.volume == other.volume
+            )
+        return False
+
+    def to_tuple(self) -> Tuple:
+        return (
+            self.base.timestamp,
+            self.base.source,
+            self.base.publisher,
+            self.pair_id,
+            self.price,
+            self.expiry_timestamp,
+            self.volume,
+        )
+
+    def serialize(self) -> Dict[str, str]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": self.base.source,
+                "publisher": self.base.publisher,
+            },
+            "pair_id": self.pair_id,
+            "price": self.price,
+            "expiration_timestamp": self.expiry_timestamp,
+            "volume": self.volume,
+        }
+
+    def offchain_serialize(self) -> Dict[str, str]:
+        serialized = {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": felt_to_str(self.base.source),
+                "publisher": felt_to_str(self.base.publisher),
+            },
+            "pair_id": felt_to_str(self.pair_id),
+            "price": self.price,
+            "volume": self.volume,
+            "expiration_timestamp": self.expiry_timestamp,
+        }
+        return serialized
+
+    def __repr__(self):
+        return (
+            f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
+            f"price={self.price}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, '
+            f"volume={self.volume}, "
+            f'expiry_timestamp={self.expiry_timestamp})")'
+        )
+
+    def __hash__(self) -> Tuple[str]:
+        return hash(
+            (self.base, self.pair_id, self.price, self.expiry_timestamp, self.volume)
+        )
+
+    def get_timestamp(self) -> UnixTimestamp:
+        return self.base.timestamp
+
+    def get_pair_id(self) -> str:
+        return felt_to_str(self.pair_id)
+
+    def get_source(self) -> str:
+        return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> DataTypes:
+        return DataTypes.FUTURE
+
+    @staticmethod
+    def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
+        base = dict(entry_dict["base"])
+        return FutureEntry(
+            entry_dict["pair_id"],
+            entry_dict["price"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+            entry_dict["expiration_timestamp"],
+            volume=entry_dict["volume"],
+        )
+
+    @staticmethod
+    def from_oracle_response(
+        pair: Pair,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> "FutureEntry":
+        """
+        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
+        return FutureEntry(
+            pair.id,
+            oracle_response[0],
+            oracle_response[2],
+            publisher_name,
+            source_name,
+            oracle_response[4],
+            0,
+        )

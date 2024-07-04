@@ -19,9 +19,9 @@ tag_format = "v$version"
 version_files = [
     "VERSION",
     "pyproject.toml:^version",
-    "sdk/VERSION",
-    "sdk/pyproject.toml:^version",
-    "sdk/pragma-sdk/__init__.py:^__version",
+    "pragma-sdk/VERSION",
+    "pragma-sdk/pyproject.toml:^version",
+    "pragma-sdk/pragma_sdk/__init__.py:^__version",
     "price-pusher/VERSION",
     "price-pusher/pyproject.toml:^version",
     "price-pusher/price_pusher/__init__.py:^__version",
@@ -35,7 +35,7 @@ bump_message = "bump: $current_version → $new_version"
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = ">=3.10,<3.13"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.21.1"

@@ -3,10 +3,10 @@ import asyncio
 
 from typing import List, Dict
 
-from pragma.common.types.entry import Entry
+from pragma_sdk.common.types.entry import Entry
 
-from pragma.common.types.types import DataTypes
-from pragma.common.types.pair import Pair
+from pragma_sdk.common.types.types import DataTypes
+from pragma_sdk.common.types.pair import Pair
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher

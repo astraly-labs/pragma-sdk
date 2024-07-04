@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from typing import List, Optional, Dict
 
-from pragma.common.types.client import PragmaClient
-from pragma.common.types.entry import Entry
+from pragma_sdk.common.types.client import PragmaClient
+from pragma_sdk.common.types.entry import Entry
 
 import logging
 

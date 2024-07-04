@@ -2,10 +2,10 @@ import logging
 
 from typing import Optional
 
-from pragma.common.types.pair import Pair
-from pragma.common.types.entry import Entry, FutureEntry, SpotEntry
-from pragma.common.types.types import DataTypes
-from pragma.onchain.client import PragmaOnChainClient
+from pragma_sdk.common.types.pair import Pair
+from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
+from pragma_sdk.common.types.types import DataTypes
+from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.utils.retries import retry_async
