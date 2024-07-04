@@ -93,10 +93,6 @@ SAMPLE_SPOT_ENTRIES = [
 ]
 
 USD_ASSET_CONFIG = try_get_asset_config_from_ticker("USD")
-USDT_ASSET_CONFIG = try_get_asset_config_from_ticker("USDT")
-ETH_ASSET_CONFIG = try_get_asset_config_from_ticker("ETH")
-BTC_ASSET_CONFIG = try_get_asset_config_from_ticker("BTC")
-STRK_ASSET_CONFIG = try_get_asset_config_from_ticker("STRK")
 
 CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS]
 USD_PAIRS: List[Pair] = filter(
@@ -109,20 +105,20 @@ USD_PAIRS: List[Pair] = filter(
 
 # ETH/USD, BTC/USD
 SAMPLE_PAIRS = [
-    AssetConfig.get_pair_from_asset_configs(ETH_ASSET_CONFIG, USD_ASSET_CONFIG),
-    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USD_ASSET_CONFIG),
+    AssetConfig.try_get_pair_from_tickers("ETH", "USD"),
+    AssetConfig.try_get_pair_from_tickers("BTC", "USD"),
 ]
 
-# STRK/USD, ETH/STRK
+# LUSD/USD, WBTC/USD
 ONCHAIN_SAMPLE_PAIRS = [
-    AssetConfig.get_pair_from_asset_configs(STRK_ASSET_CONFIG, USD_ASSET_CONFIG),
-    AssetConfig.get_pair_from_asset_configs(ETH_ASSET_CONFIG, STRK_ASSET_CONFIG),
+    AssetConfig.try_get_pair_from_tickers("LUSD", "USD"),
+    AssetConfig.try_get_pair_from_tickers("WBTC", "USD"),
 ]
 
-# BTC/USD, BTC/USDT
+# BTC/USD, ETH/USD
 SAMPLE_FUTURE_PAIRS = [
-    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USD_ASSET_CONFIG),
-    AssetConfig.get_pair_from_asset_configs(BTC_ASSET_CONFIG, USDT_ASSET_CONFIG),
+    AssetConfig.try_get_pair_from_tickers("BTC", "USD"),
+    AssetConfig.try_get_pair_from_tickers("ETH", "USD"),
 ]
 
 STABLE_MOCK_PRICE: OracleResponse = OracleResponse(

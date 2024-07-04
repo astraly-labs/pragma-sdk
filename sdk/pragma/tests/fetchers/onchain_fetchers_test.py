@@ -10,6 +10,7 @@ from pragma.tests.fetchers.fetcher_configs import (
 )
 from pragma.tests.constants import ONCHAIN_SAMPLE_PAIRS
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.tests.utils import are_entries_list_equal
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -28,7 +29,8 @@ async def test_onchain_async_fetcher(onchain_fetcher_config, onchain_mock_data):
 
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
-        assert result == onchain_fetcher_config["expected_result"]
+
+        assert are_entries_list_equal(result, onchain_fetcher_config["expected_result"])
 
 
 @pytest.mark.asyncio

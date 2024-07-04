@@ -97,12 +97,12 @@ def other_mock_endpoints(future_fetcher_config):
 
     responses = []
     for asset in SAMPLE_PAIRS:
-        quote_asset = asset["pair"][0]
+        base_asset = asset.base_currency.id
         for mock_fn in other_mock_fns:
             [*fn], [*val] = zip(*mock_fn.items())
             fn, val = fn[0], val[0]
-            url = getattr(fetcher, fn)(**val["kwargs"][quote_asset])
+            url = getattr(fetcher, fn)(**val["kwargs"][base_asset])
             with open(val["mock_file"], "r", encoding="utf-8") as filepath:
                 mock_file = json.load(filepath)
-            responses.append({"url": url, "json": mock_file[quote_asset]})
+            responses.append({"url": url, "json": mock_file[base_asset]})
     return responses

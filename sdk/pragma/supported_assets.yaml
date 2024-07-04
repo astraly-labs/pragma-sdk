@@ -38,6 +38,16 @@
   ticker: 'STRK'
   coingecko_id: 'starknet'
 
+- name: 'Liquity USD'
+  decimals: 18
+  ticker: 'LUSD'
+  coingecko_id: 'liquity-usd'
+
+- name: 'Wrapped Bitcoin'
+  decimals: 8
+  ticker: 'WBTC'
+  coingecko_id: 'wrapped-bitcoin'
+
 
 
 

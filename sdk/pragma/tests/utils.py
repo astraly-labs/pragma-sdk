@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
@@ -9,6 +9,7 @@ from starknet_py.net.models.transaction import DeployAccount
 from starknet_py.net.networks import Network
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 
+from pragma.common.types.entry import Entry
 from pragma.onchain.abis.abi import ABIS
 from pragma.onchain.client import PragmaOnChainClient
 from pragma.onchain.types import Contract, ContractAddresses
@@ -138,15 +139,17 @@ class ExtendedPragmaClient(PragmaOnChainClient, ExampleRandomnessMixin):
     # You can override or add new methods here if needed
 
 
-def filter_assets_by_type(assets, type_):
-    """
-    Filter the given assets list by the given type.
-
-    e.g
-    filter_assets_by_type(SAMPLE_ASSETS, "SPOT")
-    """
-    return [assets[i] for i in range(len(assets)) if assets[i]["type"] == type_]
-
-
 async def wait_for_acceptance(invocation):
     await invocation.wait_for_acceptance()
+
+
+def are_entries_list_equal(a: List[Entry], b: List[Entry]) -> bool:
+    """
+    Check if two lists of entries are equal no matter the order.
+
+    :param a: List of entries
+    :param b: List of entries
+    :return: True if equal, False otherwise
+    """
+
+    return set(a) == set(b)

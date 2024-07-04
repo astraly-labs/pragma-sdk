@@ -63,7 +63,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
         price = float(data["lastPrice"])
         price_int = int(price * (10**decimals))
 
-        volume = float(data["volume24h"]) / 10**decimals
+        volume = float(data["volume24h"])
         expiry_timestamp = int(data["deliveryTime"])
 
         logger.info("Fetched future for %s from BYBIT", (pair.id))

@@ -14,6 +14,7 @@ from pragma.tests.fetchers.fetcher_configs import (
     PUBLISHER_NAME,
 )
 from pragma.common.fetchers.interface import FetcherInterfaceT
+from pragma.tests.utils import are_entries_list_equal
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -39,10 +40,10 @@ async def test_async_fetcher(fetcher_config, mock_data):
                 fetcher.client, "get_spot", return_value=STABLE_MOCK_PRICE
             ):
                 result = await fetcher.fetch(session)
-                assert set(result) == set(fetcher_config["expected_result"])
+                assert are_entries_list_equal(result, fetcher_config["expected_result"])
 
 
-@pytest.mark.asyncio
+@pytest.mark.asynciow
 async def test_async_fetcher_404_error(fetcher_config):
     with aioresponses() as mock:
         fetcher: FetcherInterfaceT = fetcher_config["fetcher_class"](

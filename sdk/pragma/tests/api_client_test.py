@@ -214,7 +214,7 @@ async def test_async_api_client_spot(forked_client):
                 payload=mock_data[quote_asset],
             )
             result = await api_client.get_entry(
-                f'{asset.base_currency.id}/{asset.quote_currency.id}'
+                f"{asset.base_currency.id}/{asset.quote_currency.id}"
             )
             expected_result = [
                 config["expected_result"]
@@ -298,7 +298,7 @@ async def test_async_api_client_ohlc(forked_client):
                 payload=mock_data[quote_asset],
             )
             result = await api_client.api_get_ohlc(
-                f'{asset.base_currency.id}/{asset.quote_currency.id}'
+                f"{asset.base_currency.id}/{asset.quote_currency.id}"
             )
 
             expected_result = [
@@ -337,7 +337,7 @@ async def test_async_api_client_ohlc_404_error(forked_client):
             # Use pytest.raises to capture the exception
             with pytest.raises(PragmaAPIError) as exc_info:
                 await api_client.api_get_ohlc(
-                    f'{asset.base_currency.id}/{asset.quote_currency.id}'
+                    f"{asset.base_currency.id}/{asset.quote_currency.id}"
                 )
 
             # Assert the error message or other details if needed

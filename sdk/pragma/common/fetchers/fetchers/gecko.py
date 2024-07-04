@@ -165,7 +165,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         else:
             price_int = int(price * (10**decimals))
 
-        volume = float(data["volume_usd"]["h24"]) / 10**decimals
+        volume = float(data["volume_usd"]["h24"])
 
         timestamp = int(time.time())
 

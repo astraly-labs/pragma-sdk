@@ -84,7 +84,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
         decimals = pair.decimals()
         price = float(data["last"])
         price_int = int(price * (10**decimals))
-        volume = float(data["volCcy24h"]) / 10**decimals
+        volume = float(data["volCcy24h"])
 
         logger.info("Fetched future for %s from OKX", pair.id)
 

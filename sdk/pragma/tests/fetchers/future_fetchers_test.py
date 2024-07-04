@@ -5,12 +5,14 @@ import pytest
 from aioresponses import aioresponses
 
 from pragma.common.exceptions import PublisherFetchError
+from pragma.common.fetchers.interface import FetcherInterfaceT
 from pragma.tests.constants import (
     SAMPLE_FUTURE_PAIRS,
 )
 from pragma.tests.fetchers.fetcher_configs import (
     PUBLISHER_NAME,
 )
+from pragma.tests.utils import are_entries_list_equal
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
@@ -19,7 +21,7 @@ async def test_async_future_fetcher(
     future_fetcher_config, mock_future_data, other_mock_endpoints
 ):
     with aioresponses() as mock:
-        fetcher = future_fetcher_config["fetcher_class"](
+        fetcher: FetcherInterfaceT = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_PAIRS, PUBLISHER_NAME
         )
 
@@ -36,13 +38,13 @@ async def test_async_future_fetcher(
         async with aiohttp.ClientSession() as session:
             result = await fetcher.fetch(session)
 
-        assert result == future_fetcher_config["expected_result"]
+        assert are_entries_list_equal(result, future_fetcher_config["expected_result"])
 
 
 @pytest.mark.asyncio
 async def test_async_future_fetcher_404_error(future_fetcher_config):
     with aioresponses() as mock:
-        fetcher = future_fetcher_config["fetcher_class"](
+        fetcher: FetcherInterfaceT = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_PAIRS, PUBLISHER_NAME
         )
 
