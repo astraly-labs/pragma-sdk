@@ -1,4 +1,3 @@
-from pragma.common.configs.asset_config import AssetConfig
 from pragma.common.types.pair import Pair
 
 

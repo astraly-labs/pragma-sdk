@@ -5,7 +5,7 @@ from typing import List
 
 from pragma.common.types import Pair, SpotEntry
 from pragma.common.configs.asset_config import (
-    ALL_ASSETS,
+    ALL_ASSETS_CONFIGS,
     AssetConfig,
 )
 from pragma.onchain.types.types import OracleResponse
@@ -93,10 +93,10 @@ SAMPLE_SPOT_ENTRIES = [
 
 USD_ASSET_CONFIG = AssetConfig.from_ticker("USD")
 
-CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS]
+CURRENCIES = [asset.as_currency() for asset in ALL_ASSETS_CONFIGS]
 USD_PAIRS: List[Pair] = filter(
     lambda x: x is not None,
-    [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS],
+    [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS_CONFIGS],
 )
 
 # ETH/USD, BTC/USD

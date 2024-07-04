@@ -51,7 +51,7 @@ class AssetConfig(BaseModel):
         :return: AssetConfig
         """
 
-        assets = filter(lambda x: x.ticker == ticker, ALL_ASSETS)
+        assets = filter(lambda x: x.ticker == ticker, ALL_ASSETS_CONFIGS)
         try:
             asset = next(assets)
             return asset
@@ -72,4 +72,6 @@ class AssetConfig(BaseModel):
         return asset.coingecko_id
 
 
-ALL_ASSETS = AssetConfig.from_yaml(SUPPORTED_ASSETS_FILE_PATH)
+ALL_ASSETS_CONFIGS: List[AssetConfig] = AssetConfig.from_yaml(
+    SUPPORTED_ASSETS_FILE_PATH
+)
