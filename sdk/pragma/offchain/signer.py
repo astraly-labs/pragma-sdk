@@ -4,7 +4,7 @@ from starknet_py.net.signer.stark_curve_signer import StarkCurveSigner
 from starknet_py.utils.typed_data import TypedData
 
 from pragma.common.types.entry import Entry
-from pragma.common.types import DataTypes
+from pragma.common.types.types import DataTypes
 
 
 def build_publish_message(

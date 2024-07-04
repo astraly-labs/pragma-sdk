@@ -5,7 +5,6 @@ from typing import List, Optional, Self
 from pydantic import BaseModel
 
 from pragma.common.types.types import DECIMALS
-from pragma.common.types.currency import Currency
 from pragma.common.exceptions import UnsupportedAssetError
 
 from pathlib import Path
@@ -21,17 +20,6 @@ class AssetConfig(BaseModel):
     ticker: str
     coingecko_id: Optional[str] = None
     abstract: Optional[bool] = False
-
-    def as_currency(self) -> Currency:
-        """
-        Return a Currency object from the AssetConfig.
-        """
-
-        return Currency(
-            id_=self.ticker,
-            decimals=self.decimals,
-            is_abstract_currency=self.abstract,
-        )
 
     @classmethod
     def from_yaml(cls, path: str) -> List[Self]:

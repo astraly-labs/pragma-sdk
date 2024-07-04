@@ -11,7 +11,7 @@ from pragma.onchain.types import Contract
 from pragma.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma.common.logger import get_stream_logger
 
-from pragma.common.types import AggregationMode
+from pragma.common.types.types import AggregationMode
 from pragma.common.types.asset import Asset
 from pragma.common.types.types import DataTypes, ADDRESS, DECIMALS, ExecutionConfig
 from pragma.common.types.pair import Pair
