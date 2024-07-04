@@ -2,22 +2,14 @@
 
 import json
 import os
-import random
-import subprocess
 import logging
-import time
-from unittest import mock
 
 import pytest
 from aioresponses import aioresponses
-from starknet_py.net.client import Client
 
-from pragma.onchain.client import PragmaOnChainClient
-from pragma.onchain.constants import RPC_URLS
 from pragma.offchain.client import PragmaAPIClient
 from pragma.offchain.exceptions import PragmaAPIError
 from pragma.tests.constants import MOCK_DIR, SAMPLE_PAIRS
-from pragma.tests.fixtures.devnet import get_available_port
 
 JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
 
@@ -25,45 +17,6 @@ ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
 ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture(scope="module")
-def forked_client(request, module_mocker, pytestconfig) -> Client:
-    """
-    This module-scope fixture prepares a forked starknet
-    client for e2e testing.
-
-    :return: a starknet Client
-    """
-    # net = pytestconfig.getoption("--net")
-    port = get_available_port()
-    block_number = request.param.get("block_number", None)
-    network = request.param.get("network", "mainnet")
-    rpc_url = random.choice(list(RPC_URLS[network]))
-    command = [
-        "starknet-devnet",
-        "--fork-network",
-        str(rpc_url),
-        "--chain-id",
-        "MAINNET",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        str(port),
-        "--accounts",
-        str(1),
-        "--seed",
-        str(1),
-    ]
-    if block_number is not None:
-        print(f"forking starknet at block {block_number}")
-        command.extend(["--fork-block-number", str(block_number)])
-    subprocess.Popen(command)  # pylint: disable=consider-using-with
-    time.sleep(10)
-    pragma_client = PragmaOnChainClient(
-        f"http://127.0.0.1:{port}/rpc", chain_name=network
-    )
-    return pragma_client
 
 
 API_CLIENT_CONFIGS = {
@@ -179,14 +132,10 @@ API_CLIENT_CONFIGS = {
 }
 
 
-@mock.patch("time.time", mock.MagicMock(return_value=12345))
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-)
 @pytest.mark.asyncio
-async def test_async_api_client_spot(forked_client):
+async def test_async_api_client_spot():
     # we only want to mock the external fetcher APIs and not the RPC
-    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+    with aioresponses() as mock:
         api_client = PragmaAPIClient(
             ACCOUNT_ADDRESS,
             ACCOUNT_PRIVATE_KEY,
@@ -226,14 +175,10 @@ async def test_async_api_client_spot(forked_client):
             assert result.assert_attributes_equal(expected_result[0][base_asset])
 
 
-@mock.patch("time.time", mock.MagicMock(return_value=12345))
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-)
 @pytest.mark.asyncio
-async def test_async_api_client_spot_404_error(forked_client):
+async def test_async_api_client_spot_404_error():
     # we only want to mock the external fetcher APIs and not the RPC
-    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+    with aioresponses() as mock:
         api_client = PragmaAPIClient(
             ACCOUNT_ADDRESS,
             ACCOUNT_PRIVATE_KEY,
@@ -260,14 +205,10 @@ async def test_async_api_client_spot_404_error(forked_client):
             )
 
 
-@mock.patch("time.time", mock.MagicMock(return_value=12345))
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-)
 @pytest.mark.asyncio
-async def test_async_api_client_ohlc(forked_client):
+async def test_async_api_client_ohlc():
     # we only want to mock the external fetcher APIs and not the RPC
-    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+    with aioresponses() as mock:
         api_client = PragmaAPIClient(
             ACCOUNT_ADDRESS,
             ACCOUNT_PRIVATE_KEY,
@@ -308,14 +249,10 @@ async def test_async_api_client_ohlc(forked_client):
             assert result.data == expected_result[0][base_asset]
 
 
-@mock.patch("time.time", mock.MagicMock(return_value=12345))
-@pytest.mark.parametrize(
-    "forked_client", [{"block_number": None, "network": "mainnet"}], indirect=True
-)
 @pytest.mark.asyncio
-async def test_async_api_client_ohlc_404_error(forked_client):
+async def test_async_api_client_ohlc_404_error():
     # we only want to mock the external fetcher APIs and not the RPC
-    with aioresponses(passthrough=[forked_client.client.url]) as mock:
+    with aioresponses() as mock:
         api_client = PragmaAPIClient(
             ACCOUNT_ADDRESS,
             ACCOUNT_PRIVATE_KEY,
