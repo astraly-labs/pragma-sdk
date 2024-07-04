@@ -212,7 +212,6 @@ class RandomnessMixin:
             caller_address,
             request_id,
         )
-
         return RequestStatus(response.variant)
 
     async def get_total_fees(self, caller_address: ADDRESS, request_id: int) -> int:
@@ -459,15 +458,15 @@ class RandomnessMixin:
                 random_words = [beta_string]
 
                 vrf_submit_params = VRFSubmitParams(
-                    event.request_id,
-                    event.caller_address,
-                    event.seed,
-                    event.callback_address,
-                    event.callback_fee_limit,
-                    event.minimum_block_number,
-                    random_words,
-                    proof,
-                    event.calldata,
+                    request_id=event.request_id,
+                    requestor_address=event.caller_address,
+                    seed=event.seed,
+                    minimum_block_number=event.minimum_block_number,
+                    callback_address=event.callback_address,
+                    callback_fee_limit=event.callback_fee_limit,
+                    random_words=random_words,
+                    proof=proof,
+                    calldata=event.calldata,
                 )
 
                 invocation = await self.submit_random(vrf_submit_params)

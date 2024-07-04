@@ -28,6 +28,7 @@ class RequestStatus(StrEnum):
     FULFILLED = "FULFILLED"
     CANCELLED = "CANCELLED"
     OUT_OF_GAS = "OUT_OF_GAS"
+    REFUNDED = "REFUNDED"
 
     def serialize(self):
         return {self.value: None}
@@ -54,6 +55,10 @@ class VRFRequestParams:
     num_words: int = 1
     calldata: Optional[List[int]] = None
 
+    def __post_init__(self):
+        if self.calldata is None:
+            self.calldata = []
+
     def to_list(self) -> List[Any]:
         result = [
             self.seed,
@@ -61,8 +66,8 @@ class VRFRequestParams:
             self.callback_fee_limit,
             self.publish_delay,
             self.num_words,
+            self.calldata,
         ]
-        result.append(self.calldata if self.calldata is not None else [])
         return result
 
 
@@ -71,30 +76,33 @@ class VRFSubmitParams:
     request_id: int
     requestor_address: int
     seed: int
+    minimum_block_number: int
     callback_address: int
     callback_fee_limit: int
-    minimum_block_number: int
     random_words: List[int]
     proof: List[int]
-    calldata: List[int]
+    calldata: Optional[List[int]] = None
     callback_fee: Optional[int] = None
+
+    def __post_init__(self):
+        if self.calldata is None:
+            self.calldata = []
+        if self.callback_fee is None:
+            self.callback_fee = 0
 
     def to_list(self) -> List[Any]:
         result = [
             self.request_id,
             self.requestor_address,
             self.seed,
+            self.minimum_block_number,
             self.callback_address,
             self.callback_fee_limit,
-            self.minimum_block_number,
+            self.callback_fee,
             self.random_words,
             self.proof,
             self.calldata,
         ]
-        if self.callback_fee:
-            result.append(self.callback_fee)
-        else:
-            result.append(1000000)
         return result
 
 
@@ -103,9 +111,9 @@ class VRFCancelParams:
     request_id: int
     requestor_address: int
     seed: int
+    minimum_block_number: int
     callback_address: int
     callback_fee_limit: int
-    minimum_block_number: int
     num_words: int
 
     def to_list(self) -> List[Any]:
@@ -113,8 +121,8 @@ class VRFCancelParams:
             self.request_id,
             self.requestor_address,
             self.seed,
+            self.minimum_block_number,
             self.callback_address,
             self.callback_fee_limit,
-            self.minimum_block_number,
             self.num_words,
         ]
