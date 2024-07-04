@@ -33,7 +33,6 @@ class APIRequestHandler(IRequestHandler):
             interval=Interval.ONE_MINUTE,
             aggregation=AggregationMode.MEDIAN,
             )
-            logger.info(f"SUCCESFULY RETRIEVED FUTURE ENTRIES : {entry_result}")
         else :
             entry_result: EntryResult = await self.client.get_entry(
                 pair=pair.__repr__(),
