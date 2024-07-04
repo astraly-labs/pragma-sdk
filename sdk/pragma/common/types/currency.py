@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 
 from pragma.common.utils import str_to_felt

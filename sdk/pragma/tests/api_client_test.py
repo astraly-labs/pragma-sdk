@@ -15,7 +15,7 @@ from pragma.onchain.client import PragmaOnChainClient
 from pragma.onchain.constants import RPC_URLS
 from pragma.offchain.client import PragmaAPIClient
 from pragma.offchain.exceptions import PragmaAPIError
-from pragma.tests.constants import MOCK_DIR
+from pragma.tests.constants import MOCK_DIR, SAMPLE_PAIRS
 from pragma.tests.fixtures.devnet import get_available_port
 
 JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675e0"
@@ -192,11 +192,9 @@ async def test_async_api_client_spot(forked_client):
             "dummy_key",
         )
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
-            if asset["type"] == "INDEX":
-                continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
+        for asset in SAMPLE_PAIRS:
+            quote_asset = asset.quote_currency.id
+            base_asset = asset.base_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_spot_data"]["url"]
                 + f"{quote_asset}/{base_asset}"
@@ -216,7 +214,7 @@ async def test_async_api_client_spot(forked_client):
                 payload=mock_data[quote_asset],
             )
             result = await api_client.get_entry(
-                f'{asset["pair"][0]}/{asset["pair"][1]}'
+                f'{asset.base_currency.id}/{asset.quote_currency.id}'
             )
             expected_result = [
                 config["expected_result"]
@@ -241,11 +239,11 @@ async def test_async_api_client_spot_404_error(forked_client):
             "dummy_key",
         )
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
+        for asset in SAMPLE_PAIRS:
             if asset["type"] == "INDEX":
                 continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
+            quote_asset = asset.base_currency.id
+            base_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_spot_data"]["url"]
                 + f"{quote_asset}/{base_asset}"
@@ -277,11 +275,9 @@ async def test_async_api_client_ohlc(forked_client):
             "dummy_key",
         )
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
-            if asset["type"] == "INDEX":
-                continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
+        for asset in SAMPLE_PAIRS:
+            quote_asset = asset.base_currency.id
+            base_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_ohlc_data"]["url"]
                 + f"{quote_asset}/{base_asset}"
@@ -302,7 +298,7 @@ async def test_async_api_client_ohlc(forked_client):
                 payload=mock_data[quote_asset],
             )
             result = await api_client.api_get_ohlc(
-                f'{asset["pair"][0]}/{asset["pair"][1]}'
+                f'{asset.base_currency.id}/{asset.quote_currency.id}'
             )
 
             expected_result = [
@@ -328,11 +324,11 @@ async def test_async_api_client_ohlc_404_error(forked_client):
             "dummy_key",
         )
         # Mocking the expected call for assets
-        for asset in SAMPLE_ASSETS:
+        for asset in SAMPLE_PAIRS:
             if asset["type"] == "INDEX":
                 continue
-            quote_asset = asset["pair"][0]
-            base_asset = asset["pair"][1]
+            quote_asset = asset.base_currency.id
+            base_asset = asset.quote_currency.id
             url = (
                 API_CLIENT_CONFIGS["get_ohlc_data"]["url"]
                 + f"{quote_asset}/{base_asset}"
@@ -340,7 +336,9 @@ async def test_async_api_client_ohlc_404_error(forked_client):
             mock.get(url, status=404)
             # Use pytest.raises to capture the exception
             with pytest.raises(PragmaAPIError) as exc_info:
-                await api_client.api_get_ohlc(f'{asset["pair"][0]}/{asset["pair"][1]}')
+                await api_client.api_get_ohlc(
+                    f'{asset.base_currency.id}/{asset.quote_currency.id}'
+                )
 
             # Assert the error message or other details if needed
             assert (
@@ -359,11 +357,11 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #     with aioresponses(passthrough=[forked_client.client.url]) as mock:
 #         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
 #         # Mocking the expected call for assets
-#         for asset in SAMPLE_ASSETS:
+#         for asset in SAMPLE_PAIRS:
 #   if asset["type"] == "INDEX":
 #     continue
-#             quote_asset = asset["pair"][0]
-#             base_asset = asset["pair"][1]
+#             quote_asset = asset.base_currency.id
+#             base_asset = asset.quote_currency.id
 #             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
 #             with open([config["mock_file"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility'][0], "r", encoding="utf-8") as filepath:
 #                 mock_data = json.load(filepath)
@@ -371,7 +369,7 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #                     url,
 #                     payload=mock_data[quote_asset],
 #             )
-#             result = await api_client.get_volatility(f'{asset["pair"][0]}/{asset["pair"][1]}')
+#             result = await api_client.get_volatility(f'{asset.base_currency.id}/{asset.quote_currency.id}')
 
 #             expected_result  = [config["expected_result"] for config in API_CLIENT_CONFIGS.values() if config['function'] == 'get_volatility']
 #             assert result == expected_result[0][quote_asset]
@@ -387,15 +385,15 @@ async def test_async_api_client_ohlc_404_error(forked_client):
 #     with aioresponses(passthrough=[forked_client.client.url]) as mock:
 #         api_client = PragmaAPIClient(ACCOUNT_ADDRESS, ACCOUNT_PRIVATE_KEY,'https://api.dev.pragma.build', 'dummy_key')
 #         # Mocking the expected call for assets
-#         for asset in SAMPLE_ASSETS:
+#         for asset in SAMPLE_PAIRS:
 # if asset["type"] == "INDEX":
 # continue
-#             quote_asset = asset["pair"][0]
-#             base_asset = asset["pair"][1]
+#             quote_asset = asset.base_currency.id
+#             base_asset = asset.quote_currency.id
 #             url = API_CLIENT_CONFIGS["get_volatility"]["url"] + f"{quote_asset}/{base_asset}"
 #             mock.get(
 #                     url,
 #                     status=404,
 #             )
-#             result = await api_client.get_volatility(f'{asset["pair"][0]}/{asset["pair"][1]}')
+#             result = await api_client.get_volatility(f'{asset.base_currency.id}/{asset.quote_currency.id}')
 #             assert result == Nones

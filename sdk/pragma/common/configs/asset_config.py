@@ -63,8 +63,8 @@ class AssetConfig(BaseModel):
             quote_currency=quote_asset.as_currency(),
         )
 
-    @classmethod
-    def get_coingecko_id_from_ticker(cls, ticker: str) -> str:
+    @staticmethod
+    def get_coingecko_id_from_ticker(ticker: str) -> str:
         """
         Return the coingecko id from a ticker.
         Raise UnsupportedAssetError if the ticker is not supported.
@@ -75,6 +75,23 @@ class AssetConfig(BaseModel):
 
         asset = try_get_asset_config_from_ticker(ticker)
         return asset.coingecko_id
+
+    @staticmethod
+    def try_get_pair_from_tickers(
+        base_ticker: str, quote_ticker: str
+    ) -> Optional[Pair]:
+        """
+        Return a Pair from two tickers.
+        Return None if the base and quote tickers are the same.
+
+        :param base_ticker: Base ticker
+        :param quote_ticker: Quote ticker
+        :return: Pair
+        """
+
+        base_asset = try_get_asset_config_from_ticker(base_ticker)
+        quote_asset = try_get_asset_config_from_ticker(quote_ticker)
+        return AssetConfig.get_pair_from_asset_configs(base_asset, quote_asset)
 
 
 def try_get_asset_config_from_ticker(ticker: str) -> AssetConfig:

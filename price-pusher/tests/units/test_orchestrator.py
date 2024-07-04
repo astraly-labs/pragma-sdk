@@ -3,12 +3,14 @@ import asyncio
 import logging
 from unittest.mock import AsyncMock, MagicMock
 
+from tests.constants import BTC_USD_PAIR
+
+from pragma.common.types.types import DataTypes
 from pragma.common.types.entry import Entry, SpotEntry, FutureEntry
-from pragma.common.assets import PragmaSpotAsset
+
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
-from price_pusher.utils.assets import asset_to_pair_id
 from price_pusher.orchestrator import Orchestrator
 
 
@@ -24,9 +26,9 @@ def mock_listener():
     listener.notification_event.wait = AsyncMock()
     listener.notification_event.is_set = MagicMock(side_effect=[True, False])
     listener.price_config = MagicMock()
-    listener.price_config.get_all_assets.return_value = [
-        {"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8}
-    ]
+    listener.price_config.get_all_assets.return_value = {
+        DataTypes.SPOT: BTC_USD_PAIR,
+    }
     listener.id = "listener_1"
     return listener
 
@@ -125,7 +127,9 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
     assert len(entries_to_push) == 1  # Ensure there's one entry pushed
 
     # Check the queue contains the correct entries
-    expected_asset_id = asset_to_pair_id(mock_listener.price_config.get_all_assets.return_value[0])
+    expected_asset_id = mock_listener.price_config.get_all_assets.return_value[DataTypes.SPOT][
+        0
+    ].__repr__()
     for entry in entries_to_push:
         assert entry.get_pair_id() == expected_asset_id
 
@@ -167,8 +171,8 @@ def test_callback_update_prices(orchestrator):
 
 
 def test_flush_entries_for_assets(orchestrator):
-    asset = PragmaSpotAsset(type="SPOT", pair=("BTC", "USD"), decimals=8)
-    pair_id = asset_to_pair_id(asset)
+    pair = BTC_USD_PAIR
+    pair_id = pair.__repr__()
 
     spot_entry = SpotEntry(
         pair_id="BTC/USD",
@@ -192,7 +196,7 @@ def test_flush_entries_for_assets(orchestrator):
         "FUTURE": {"source_2": future_entry},
     }
 
-    entries = orchestrator._flush_entries_for_assets([asset])
+    entries = orchestrator._flush_entries_for_assets([pair])
     assert spot_entry in entries
     assert future_entry in entries
     assert pair_id not in orchestrator.latest_prices
