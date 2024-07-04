@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Optional
 
 
 from pragma.common.utils import str_to_felt
@@ -17,8 +17,8 @@ class Currency:
         id_: str,
         decimals: DECIMALS,
         is_abstract_currency: bool,
-        starknet_address: ADDRESS = None,
-        ethereum_address: ADDRESS = None,
+        starknet_address: Optional[ADDRESS] = None,
+        ethereum_address: Optional[ADDRESS] = None,
     ):
         self.id = id_
 

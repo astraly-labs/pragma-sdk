@@ -1,6 +1,7 @@
 - pairs:
     spot:
       - BTC/USD
+      - ETH/USD
     future:
       - BTC/USD
   time_difference: 60

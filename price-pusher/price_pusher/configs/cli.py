@@ -4,11 +4,9 @@ import logging
 
 from logging import Logger
 from typing import Optional
-from pragma.publisher.client import (
-    PragmaOnChainClient,
-    PragmaAPIClient,
-    PragmaClient,
-)
+from pragma.onchain.client import PragmaOnChainClient
+from pragma.offchain.client import PragmaAPIClient
+from pragma.common.types.client import PragmaClient
 
 from price_pusher.type_aliases import Target, Network
 from price_pusher.utils.aws import fetch_aws_private_key

@@ -2,10 +2,10 @@ import logging
 import asyncio
 from typing import List
 from pragma.common.types.pair import Pair
-from pragma.publisher.client import FetcherClient
+from pragma.common.fetchers.fetcher_client import FetcherClient
+
 from concurrent.futures import ThreadPoolExecutor
-from pragma.publisher.fetchers import (
-    BinanceFetcher,
+from pragma.common.fetchers.fetchers import (
     BitstampFetcher,
     BybitFetcher,
     DefillamaFetcher,
@@ -14,8 +14,8 @@ from pragma.publisher.fetchers import (
     KucoinFetcher,
     OkxFetcher,
 )
-from pragma.publisher.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
-from pragma.publisher.types import FetcherInterfaceT
+from pragma.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
+from pragma.common.fetchers.interface import FetcherInterfaceT
 from price_pusher.configs.price_config import (
     PriceConfig,
     get_unique_spot_pairs_from_config_list,
@@ -51,7 +51,6 @@ async def add_all_fetchers(
         HuobiFetcher,
         KucoinFetcher,
         BybitFetcher,
-        BinanceFetcher,
     ]
     future_fetchers = [
         BinanceFutureFetcher,
