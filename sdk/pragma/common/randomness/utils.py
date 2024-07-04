@@ -5,7 +5,7 @@ from typing import List
 
 from pragma.common.types.types import ADDRESS
 
-from .randomness_utils import (
+from pragma.common.randomness.randomness_utils import (
     ecvrf_proof_to_hash,
     ecvrf_prove,
     ecvrf_verify,

@@ -1,4 +1,4 @@
-from pragma.common.types import Environment
+from pragma.common.types.types import Environment
 from typing import Dict
 
 PRAGMA_API_URLS: Dict[Environment, str] = {

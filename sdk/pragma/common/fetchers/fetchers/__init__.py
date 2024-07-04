@@ -1,18 +1,18 @@
-from .binance import BinanceFetcher
-from .bitstamp import BitstampFetcher
-from .bybit import BybitFetcher
-from .coinbase import CoinbaseFetcher
-from .defillama import DefillamaFetcher
-from .gecko import GeckoTerminalFetcher
-from .huobi import HuobiFetcher
-from .index import IndexFetcher
-from .indexcoop import IndexCoopFetcher
-from .kucoin import KucoinFetcher
-from .okx import OkxFetcher
-from .propeller import PropellerFetcher
-from .starknetamm import StarknetAMMFetcher
-from .mexc import MEXCFetcher
-from .gateio import GateioFetcher
+from pragma.common.fetchers.fetchers.binance import BinanceFetcher
+from pragma.common.fetchers.fetchers.bitstamp import BitstampFetcher
+from pragma.common.fetchers.fetchers.bybit import BybitFetcher
+from pragma.common.fetchers.fetchers.coinbase import CoinbaseFetcher
+from pragma.common.fetchers.fetchers.defillama import DefillamaFetcher
+from pragma.common.fetchers.fetchers.gecko import GeckoTerminalFetcher
+from pragma.common.fetchers.fetchers.huobi import HuobiFetcher
+from pragma.common.fetchers.fetchers.index import IndexFetcher
+from pragma.common.fetchers.fetchers.indexcoop import IndexCoopFetcher
+from pragma.common.fetchers.fetchers.kucoin import KucoinFetcher
+from pragma.common.fetchers.fetchers.okx import OkxFetcher
+from pragma.common.fetchers.fetchers.propeller import PropellerFetcher
+from pragma.common.fetchers.fetchers.starknetamm import StarknetAMMFetcher
+from pragma.common.fetchers.fetchers.mexc import MEXCFetcher
+from pragma.common.fetchers.fetchers.gateio import GateioFetcher
 
 __all__ = [
     "BinanceFetcher",

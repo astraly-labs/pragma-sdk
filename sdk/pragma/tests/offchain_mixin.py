@@ -8,7 +8,7 @@ from starknet_py.utils.typed_data import TypedData
 from pragma.onchain.client import PragmaOnChainClient
 from pragma.common.types.entry import SpotEntry
 from pragma.common.utils import str_to_felt
-from pragma.publisher.signer import build_publish_message
+from pragma.offchain.signer import build_publish_message
 
 PUBLISHER_NAME = "PRAGMA"
 

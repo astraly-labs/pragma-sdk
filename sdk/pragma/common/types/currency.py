@@ -2,6 +2,7 @@ from typing import List, Optional, Self
 
 from pragma.common.utils import str_to_felt
 from pragma.common.types.types import ADDRESS, DECIMALS
+from pragma.common.configs.asset_config import AssetConfig
 
 
 class Currency:
@@ -36,7 +37,7 @@ class Currency:
         self.ethereum_address = ethereum_address
 
     @classmethod
-    def from_asset_config(cls, config: "AssetConfig") -> Self:
+    def from_asset_config(cls, config: AssetConfig) -> Self:
         return cls(
             currency_id=config.ticker,
             decimals=config.decimals,
