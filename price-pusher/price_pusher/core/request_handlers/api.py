@@ -29,11 +29,11 @@ class APIRequestHandler(IRequestHandler):
         """
         if data_type is DataTypes.FUTURE:
             entry_result: EntryResult = await self.client.get_future_entry(
-            pair=pair.__repr__(),
-            interval=Interval.ONE_MINUTE,
-            aggregation=AggregationMode.MEDIAN,
+                pair=pair.__repr__(),
+                interval=Interval.ONE_MINUTE,
+                aggregation=AggregationMode.MEDIAN,
             )
-        else :
+        else:
             entry_result: EntryResult = await self.client.get_entry(
                 pair=pair.__repr__(),
                 interval=Interval.ONE_MINUTE,

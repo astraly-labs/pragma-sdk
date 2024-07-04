@@ -129,7 +129,10 @@ class Orchestrator:
         for data_type, pairs in pairs_per_type.items():
             for pair in pairs:
                 pair_name = f"{pair}"
-                if pair_name not in self.latest_prices or data_type not in self.latest_prices[pair_name]:
+                if (
+                    pair_name not in self.latest_prices
+                    or data_type not in self.latest_prices[pair_name]
+                ):
                     logger.warning(f"ORCHESTRATOR : {pair_name} not found, continuing ...")
                     continue
                 entries_to_push.extend(list(self.latest_prices[pair_name][data_type].values()))
