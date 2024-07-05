@@ -243,6 +243,67 @@ class PragmaAPIClient(PragmaClient):
             timestamp=response["timestamp"],
             decimals=response["decimals"],
         )
+    
+    async def get_future_entry(
+        self,
+        pair: str,
+        timestamp: int = None,
+        interval: Interval = None,
+        aggregation: AggregationMode = None,
+        routing: bool = None,
+        expiry: str = None,
+    ) -> "EntryResult":
+        """
+        Get data aggregated on the Pragma API.
+
+        :param pair: Pair to get data for
+        :param timestamp: Timestamp to get data for, defaults to now
+        :param interval: Interval on which data is aggregated, defaults to 2h
+        :param routing: If we want to route data for unexisting pair, defaults to False
+        :param aggregation: Aggregation method, defaults to TWAP
+
+        :return: [EntryResult] result data
+        """
+        base_asset, quote_asset = get_cur_from_pair(pair)
+        endpoint = f"/node/v1/data/{base_asset}/{quote_asset}"
+        url = f"{self.api_base_url}{endpoint}"
+        # Construct query parameters based on provided arguments
+        params = {
+            key: value
+            for key, value in {
+                "routing": routing,
+                "timestamp": timestamp,
+                "interval": interval.value if interval else None,
+                "aggregation": aggregation.value.lower() if aggregation else None,
+                "entry_type": "future",
+                "expiry" : expiry if len(expiry) != 0 else None,
+            }.items()
+            if value is not None
+        }
+
+        headers = {
+            "x-api-key": self.api_key,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Get Data successful")
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    raise PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
+
+        return EntryResult(
+            pair_id=response["pair_id"],
+            data=response["price"],
+            num_sources_aggregated=response["num_sources_aggregated"],
+            timestamp=response["timestamp"],
+            decimals=response["decimals"],
+        )
 
     async def get_volatility(self, pair: str, start: int, end: int):
         """
@@ -296,13 +357,14 @@ def get_endpoint_publish_offchain(data_type: DataTypes):
 
 class EntryResult:
     def __init__(
-        self, pair_id, data, num_sources_aggregated=0, timestamp=None, decimals=None
+        self, pair_id, data, num_sources_aggregated=0, timestamp=None, decimals=None, expiry=None
     ):
         self.pair_id = pair_id
         self.data = data
         self.num_sources_aggregated = num_sources_aggregated
         self.timestamp = timestamp
         self.decimals = decimals
+        self.expiry = expiry
 
     def __str__(self):
         return (
@@ -310,7 +372,8 @@ class EntryResult:
             "Data: {self.data}, "
             "Num Sources Aggregated: {self.num_sources_aggregated}, "
             "Timestamp: {self.timestamp}, "
-            "Decimals: {self.decimals}"
+            "Decimals: {self.decimals},"
+            "Expiry: {self.expiry}"
         )
 
     def assert_attributes_equal(self, expected_dict):
