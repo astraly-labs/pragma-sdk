@@ -4,7 +4,7 @@ from typing import Optional, Literal, Union, List, Any
 from pragma_sdk.common.types.asset import Asset
 from pydantic import HttpUrl
 
-from pydantic.dataclasses import dataclass
+from dataclasses import dataclass
 
 from pragma_sdk.common.types.types import Address, AggregationMode
 
