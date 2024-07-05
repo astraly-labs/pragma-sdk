@@ -67,7 +67,7 @@ test_ci_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun ai
 test_ci_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/api_client_test.py -s"
 
 test_ci_all_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/ -s"
-test_ci_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hope_handler_test.py -s"
+test_ci_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"
 test_ci_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/index_aggregation_test.py -s"
 
 circular_imports_check = "poetry run pytest tests/check_circular_imports.py"
