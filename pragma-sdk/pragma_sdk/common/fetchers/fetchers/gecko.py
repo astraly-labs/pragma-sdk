@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import Any, Dict, List, Optional
 
@@ -12,7 +11,9 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
 ASSET_MAPPING: Dict[str, Any] = {
@@ -178,7 +179,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
 
         timestamp = int(time.time())
 
-        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair.id)
+        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

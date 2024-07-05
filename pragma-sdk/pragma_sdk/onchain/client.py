@@ -8,7 +8,6 @@ from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.client import Client
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from starknet_py.net.models import StarknetChainId
-from starknet_py.contract import InvokeResult
 
 from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import CHAIN_IDS, CONTRACT_ADDRESSES

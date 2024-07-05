@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import List, Optional, Any
 
 from aiohttp import ClientSession
@@ -11,8 +10,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class HuobiFetcher(FetcherInterfaceT):
@@ -107,7 +107,7 @@ class HuobiFetcher(FetcherInterfaceT):
         timestamp = int(result["ts"] / 1000)
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(result["tick"]["vol"]) if hop_result is None else 0
-        logger.info("Fetched price %d for %s from Bybit", price, pair.id)
+        logger.info("Fetched price %d for %s from Bybit", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

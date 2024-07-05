@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import List, Optional, Any
 
@@ -12,8 +11,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class MEXCFetcher(FetcherInterfaceT):
@@ -110,7 +110,7 @@ class MEXCFetcher(FetcherInterfaceT):
         price_int = int(price * (10 ** pair.decimals()))
         volume = int(float(result["quoteVolume"])) if hop_result is None else 0
 
-        logger.info("Fetched price %d for %s from MEXC", price, pair.id)
+        logger.info("Fetched price %d for %s from MEXC", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

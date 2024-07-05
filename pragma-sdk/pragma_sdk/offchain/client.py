@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
 from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult

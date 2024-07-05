@@ -20,11 +20,11 @@ class Contract(StarknetContract):  # type: ignore[misc]
 
 async def _invoke(
     self: Contract,
+    *args: Any,
     execution_config: ExecutionConfig = ExecutionConfig(auto_estimate=True),
     callback: Optional[
         Callable[[SentTransactionResponse, str], Awaitable[None]]
     ] = None,
-    *args: Any,
     **kwargs: Any,
 ) -> InvokeResult:
     """

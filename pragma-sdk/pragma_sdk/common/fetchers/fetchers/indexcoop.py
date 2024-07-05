@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import time
 from typing import Any, List
 
@@ -14,8 +13,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import AssetQuantities
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 SUPPORTED_INDEXES = {
     "DPI": "0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b",
@@ -86,7 +86,7 @@ class IndexCoopFetcher(FetcherInterfaceT):
         price_int = int(price * (10**decimals))
         volume = int(float(result["volume24h"]) * (10**decimals))
 
-        logger.info("Fetched price %d for %s from IndexCoop", price, pair.id)
+        logger.info("Fetched price %d for %s from IndexCoop", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

@@ -1,11 +1,10 @@
 import time
-from typing import Awaitable, Callable, Coroutine, Dict, List, Optional
+from typing import Callable, Coroutine, Dict, List, Optional
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
-from starknet_py.net.client_models import SentTransactionResponse
 
 
 from pragma_sdk.onchain.types import Contract
@@ -140,7 +139,7 @@ class OracleMixin:
     def _log_transaction(
         self, invocation: InvokeResult, entry_count: int, data_type: DataTypes
     ):
-        logger.debug(str(invocation))
+        logger.debug(hex(invocation.hash))
         logger.info(
             f"Sent {entry_count} updated {data_type.name.lower()} entries with transaction {hex(invocation.hash)}"
         )
@@ -339,7 +338,7 @@ class OracleMixin:
                     max_fee=execution_config.max_fee,
                 )
                 index += execution_config.pagination
-                logger.debug(str(invocation))
+                logger.debug(hex(invocation.hash))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -393,7 +392,7 @@ class OracleMixin:
                     max_fee=execution_config.max_fee,
                 )
                 index += execution_config.pagination
-                logger.debug(str(invocation))
+                logger.debug(hex(invocation.hash))
                 logger.info(
                     "Set checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),

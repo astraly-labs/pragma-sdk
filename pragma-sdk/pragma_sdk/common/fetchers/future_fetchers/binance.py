@@ -1,7 +1,6 @@
 import json
-import logging
 from datetime import datetime, timezone
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Tuple
 
 from aiohttp import ClientSession
 
@@ -9,8 +8,9 @@ from pragma_sdk.common.types.entry import Entry, FutureEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class BinanceFutureFetcher(FetcherInterfaceT):

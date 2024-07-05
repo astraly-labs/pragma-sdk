@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import Any, List
 
@@ -10,7 +9,9 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
 class CoinbaseFetcher(FetcherInterfaceT):
@@ -46,7 +47,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
             price_int = int(price * (10 ** pair.decimals()))
             timestamp = int(time.time())
 
-            logger.info("Fetched price %d for %s from Coinbase", price, pair.id)
+            logger.info("Fetched price %d for %s from Coinbase", price, pair)
 
             return SpotEntry(
                 pair_id=pair.id,

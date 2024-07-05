@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import List, Optional, Any
 
@@ -13,7 +12,9 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 # TODO: add exception list
 EXCEPTION_LIST: List[Pair] = []
@@ -116,7 +117,7 @@ class BinanceFetcher(FetcherInterfaceT):
         timestamp = int(time.time())
         price_int = int(price * (10 ** pair.decimals()))
 
-        logger.info("Fetched price %d for %s from Binance", price, pair.id)
+        logger.info("Fetched price %d for %s from Binance", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

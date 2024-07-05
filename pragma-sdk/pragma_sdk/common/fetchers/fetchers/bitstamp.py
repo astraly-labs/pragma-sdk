@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import Any, List
 
 from aiohttp import ClientSession
@@ -8,8 +7,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class BitstampFetcher(FetcherInterfaceT):
@@ -43,7 +43,7 @@ class BitstampFetcher(FetcherInterfaceT):
         price = float(result["last"])
         price_int = int(price * (10 ** pair.decimals()))
 
-        logger.info("Fetched price %d for %s from Bitstamp", price, pair.id)
+        logger.info("Fetched price %d for %s from Bitstamp", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

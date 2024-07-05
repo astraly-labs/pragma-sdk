@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import time
 from typing import Any, Dict, List, Optional
 
@@ -11,8 +10,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.types.currency import Currency
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 SELL_AMOUNTS = [1, 10, 100, 1000]
 
@@ -133,7 +133,7 @@ class PropellerFetcher(FetcherInterfaceT):
 
         timestamp = int(time.time())
 
-        logger.info("Fetched price %d for %s from Propeller", price, pair.id)
+        logger.info("Fetched price %d for %s from Propeller", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

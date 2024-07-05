@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import Tuple
 from urllib.parse import urlparse
 
@@ -27,10 +26,12 @@ from tests.integration.constants import (
 from tests.integration.utils import ExtendedPragmaClient as PragmaClient
 from tests.integration.utils import convert_to_wei, read_contract, wait_for_acceptance
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
-@pytest_asyncio.fixture(scope="package")
+@pytest_asyncio.fixture(scope="module")
 async def declare_deploy_randomness(
     account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
@@ -109,7 +110,7 @@ async def declare_deploy_randomness(
     return declare_result, deploy_result, deploy_example_result, deploy_oracle_result
 
 
-@pytest_asyncio.fixture(scope="package")
+@pytest_asyncio.fixture(scope="module")
 async def randomness_contracts(
     declare_deploy_randomness,
 ) -> (Contract, Contract, Contract):
@@ -126,7 +127,7 @@ async def randomness_contracts(
     )
 
 
-@pytest_asyncio.fixture(scope="package", name="vrf_pragma_client")
+@pytest_asyncio.fixture(scope="module", name="vrf_pragma_client")
 async def vrf_pragma_client(
     randomness_contracts: (Contract, Contract, Contract),
     network,

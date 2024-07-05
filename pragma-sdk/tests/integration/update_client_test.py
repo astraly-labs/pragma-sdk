@@ -25,7 +25,7 @@ SOURCE_2 = "PRAGMA_2"
 SOURCE_3 = "SOURCE_3"
 
 
-@pytest_asyncio.fixture(scope="package")
+@pytest_asyncio.fixture(scope="module")
 @pytest.mark.parametrize(
     "network_config",
     [

@@ -3,7 +3,9 @@ import logging
 
 from typing import Callable, Optional, TypeVar, Any, Awaitable
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 T = TypeVar("T")
 
 

@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import List, Optional
 
@@ -11,7 +10,6 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_utils.logger import get_stream_logger
-
 
 logger = get_stream_logger()
 
@@ -74,9 +72,9 @@ class StarknetAMMFetcher(FetcherInterfaceT):
         entries = []
         for pair in self.pairs:
             if pair.to_tuple() in SUPPORTED_ASSETS:
-                entries.append(await self.fetch_pair(pair, session))
+                entries.append(self.fetch_pair(pair, session))
             else:
-                logger.debug("Skipping StarknetAMM for non supported pair: %s", pair)
+                logger.debug(f"Skipping StarknetAMM for non supported pair: {pair}")
 
         return list(await asyncio.gather(*entries, return_exceptions=True))  # type: ignore[call-overload]
 

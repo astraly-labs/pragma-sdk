@@ -23,7 +23,7 @@ from tests.integration.constants import (
 load_dotenv()
 
 
-@pytest_asyncio.fixture(scope="package")
+@pytest_asyncio.fixture(scope="module")
 async def address_and_private_key(
     pytestconfig,
 ) -> Tuple[str, str]:
@@ -42,7 +42,7 @@ async def address_and_private_key(
     return account_details[net]
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def account(
     address_and_private_key: Tuple[str, str], client: FullNodeClient
 ) -> Account:
@@ -60,7 +60,7 @@ def account(
     )
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def pre_deployed_account_with_validate_deploy(pytestconfig, network: str) -> Account:
     """
     Returns an Account pre-deployed on specified network. Used to deploy other accounts.

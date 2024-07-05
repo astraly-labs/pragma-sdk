@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import Any, List, Optional
 
 from aiohttp import ClientSession
@@ -9,8 +8,9 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class DefillamaFetcher(FetcherInterfaceT):
@@ -89,10 +89,10 @@ class DefillamaFetcher(FetcherInterfaceT):
         self, pair: Pair, result: Any, hop_result: Optional[Any] = None
     ) -> SpotEntry:
         base_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
-        quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
         timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
         decimals = pair.decimals()
         if hop_result is not None:
+            quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
             price_int = int((price / hop_price) * (10**decimals))
@@ -100,7 +100,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             price_int = int(price * (10**decimals))
 
-        logger.info("Fetched price %d for %s from Coingecko", price, pair.id)
+        logger.info("Fetched price %d for %s from Coingecko", price, pair)
 
         entry = SpotEntry(
             pair_id=pair.id,

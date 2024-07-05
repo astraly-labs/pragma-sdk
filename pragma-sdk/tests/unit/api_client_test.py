@@ -2,11 +2,11 @@
 
 import json
 import os
-import logging
 
 import pytest
 from aioresponses import aioresponses
 
+from pragma_utils.logger import get_stream_logger
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.offchain.exceptions import PragmaAPIError
 from tests.integration.constants import MOCK_DIR, SAMPLE_PAIRS
@@ -16,7 +16,8 @@ JEDISWAP_POOL = "0x4e021092841c1b01907f42e7058f97e5a22056e605dce08a22868606ad675
 ACCOUNT_ADDRESS = os.getenv("TESTNET_ACCOUNT_ADDRESS")
 ACCOUNT_PRIVATE_KEY = os.getenv("TESTNET_PRIVATE_KEY")
 
-logger = logging.getLogger(__name__)
+
+logger = get_stream_logger()
 
 
 API_CLIENT_CONFIGS = {

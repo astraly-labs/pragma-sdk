@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 from typing import Any, List
 
 from aiohttp import ClientSession
@@ -10,7 +9,9 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
 class ByBitFutureFetcher(FetcherInterfaceT):

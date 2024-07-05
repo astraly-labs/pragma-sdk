@@ -510,8 +510,8 @@ class RandomnessMixin:
         :param block_hash: The block hash.
         :return: The generated seed.
         """
-        return int(
-            event.request_id.to_bytes(8, sys.byteorder)
+        return (
+            event.request_id.to_bytes(8, sys.byteorder)  # type: ignore[return-value]
             + block_hash.to_bytes(32, sys.byteorder)
             + event.seed.to_bytes(32, sys.byteorder)
             + event.caller_address.to_bytes(32, sys.byteorder)

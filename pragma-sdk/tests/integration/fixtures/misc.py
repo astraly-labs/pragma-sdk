@@ -10,7 +10,7 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def network(pytestconfig, run_devnet: str) -> str:
     """
     Returns network address depending on the --net parameter.
