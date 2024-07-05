@@ -28,13 +28,15 @@ class APIRequestHandler(IRequestHandler):
         TODO: Currently only works for spot assets.
         """
         if data_type is DataTypes.FUTURE:
+            expiries = await self.client.get_expiries_list(pair)
+            entry = []
             entry_result: EntryResult = await self.client.get_future_entry(
                 pair=pair.__repr__(),
                 interval=Interval.ONE_MINUTE,
                 aggregation=AggregationMode.MEDIAN,
             )
 
-            entry = FutureEntry(
+            entry.append(FutureEntry(
                 pair_id=entry_result.pair_id,
                 price=int(entry_result.data, 16),
                 # PragmaAPI returns timestamp in millis, we convert to s
@@ -42,7 +44,27 @@ class APIRequestHandler(IRequestHandler):
                 source=PRAGMA_API_SOURCE_NAME,
                 publisher=PRAGMA_API_PUBLISHER_NAME,
                 expiry_timestamp=entry_result.expiry
-            )
+            ))
+
+            for expiry in expiries:
+                entry_result: EntryResult = await self.client.get_future_entry(
+                    pair=pair.__repr__(),
+                    interval=Interval.ONE_MINUTE,
+                    aggregation=AggregationMode.MEDIAN,
+                    expiry=expiry,
+                )
+
+                entry.append(FutureEntry(
+                    pair_id=entry_result.pair_id,
+                    price=int(entry_result.data, 16),
+                    # PragmaAPI returns timestamp in millis, we convert to s
+                    timestamp=entry_result.timestamp / 1000,
+                    source=PRAGMA_API_SOURCE_NAME,
+                    publisher=PRAGMA_API_PUBLISHER_NAME,
+                    expiry_timestamp=entry_result.expiry
+                ))
+            return entry
+
         else:
             entry_result: EntryResult = await self.client.get_entry(
                 pair=pair.__repr__(),
