@@ -1,11 +1,11 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence, Tuple
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.types.entry import FutureEntry
+from pragma_sdk.common.types.entry import Entry, FutureEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -18,7 +18,9 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     VOLUME_URL: str = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     SOURCE: str = "BINANCE"
 
-    async def _fetch_volume(self, pair: Pair, session: ClientSession) -> List:
+    async def _fetch_volume(
+        self, pair: Pair, session: ClientSession
+    ) -> List[Tuple[str, int]] | PublisherFetchError:
         url = f"{self.VOLUME_URL}"
         selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         volume_arr = []
@@ -28,15 +30,15 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             result = await resp.json(content_type="application/json")
             for element in result:
                 if selection in element["symbol"]:
-                    volume_arr.append((element["symbol"], element["quoteVolume"]))
+                    volume_arr.append((element["symbol"], int(element["quoteVolume"])))
             return volume_arr
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> FutureEntry | PublisherFetchError:
+    ) -> List[FutureEntry] | PublisherFetchError:
         filtered_data = []
         url = self.format_url()
-        selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
+        selection = pair.__repr__()
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Binance")
@@ -54,8 +56,10 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             volume_arr = await self._fetch_volume(pair, session)
             return self._construct(pair, filtered_data, volume_arr)
 
-    async def fetch(self, session: ClientSession):
-        entries = []
+    async def fetch(
+        self, session: ClientSession
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        entries: Sequence[FutureEntry | PublisherFetchError] = []
         for pair in self.pairs:
             future_entries = await self.fetch_pair(pair, session)
             if isinstance(future_entries, list):
@@ -64,16 +68,18 @@ class BinanceFutureFetcher(FetcherInterfaceT):
                 entries.append(future_entries)
         return entries
 
-    def format_url(self, pair: Optional[Pair] = None):
+    def format_url(self, pair: Optional[Pair] = None) -> str:
         return self.BASE_URL
 
-    def _retrieve_volume(self, pair: Pair, volume_arr):
+    def _retrieve_volume(self, pair: Pair, volume_arr) -> int:
         for list_pair, list_vol in volume_arr:
             if pair == list_pair:
                 return list_vol
         return 0
 
-    def _construct(self, pair: Pair, result: Any, volume_arr) -> List[FutureEntry]:
+    def _construct(
+        self, pair: Pair, result: Any, volume_arr: List[int]
+    ) -> List[FutureEntry]:
         result_arr = []
         decimals = pair.decimals()
         for data in result:

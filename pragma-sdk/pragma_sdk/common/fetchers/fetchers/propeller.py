@@ -2,12 +2,12 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
 
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.types.currency import Currency
@@ -37,9 +37,9 @@ ASSET_MAPPING: Dict[str, str] = {
 # The sell_amount is the amount of the sell_token to be sold
 # The buy_token is the token to be bought
 # The sell_token is the token to be sold
-def build_payload(sell_token: Currency, buy_token: Currency):
-    address_0 = ASSET_MAPPING.get(sell_token)
-    address_1 = ASSET_MAPPING.get(buy_token)
+def build_payload(sell_token: Currency, buy_token: Currency) -> Any:
+    address_0 = ASSET_MAPPING.get(sell_token.id)
+    address_1 = ASSET_MAPPING.get(buy_token.id)
     sell_amount = 10**sell_token.decimals * SELL_AMOUNTS[0]
     if address_0 is None or address_1 is None:
         raise PublisherFetchError(
@@ -98,20 +98,20 @@ class PropellerFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[SpotEntry | PublisherFetchError]:
+    ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
-    def format_url(self, pair: Optional[Pair] = None):
+    def format_url(self, pair: Optional[Pair] = None) -> str:
         url = self.BASE_URL
         return url
 
     def _construct(
         self,
         pair: Pair,
-        result,
+        result: Any,
     ) -> SpotEntry:
         mid_prices = []
 

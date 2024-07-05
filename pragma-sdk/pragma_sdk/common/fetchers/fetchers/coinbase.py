@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import time
-from typing import List
+from typing import Any, List
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -29,17 +29,17 @@ class CoinbaseFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[SpotEntry | PublisherFetchError]:
-        entries = []
-        for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        entries = [
+            asyncio.ensure_future(self.fetch_pair(pair, session)) for pair in self.pairs
+        ]
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         url = self.BASE_URL + pair.base_currency.id
         return url
 
-    def _construct(self, pair: Pair, result) -> SpotEntry | PublisherFetchError:
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry | PublisherFetchError:
         if pair.base_currency.id in result["data"]["rates"]:
             rate = float(result["data"]["rates"][pair.base_currency.id])
             price = 1 / rate

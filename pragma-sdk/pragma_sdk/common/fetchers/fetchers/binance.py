@@ -53,7 +53,7 @@ class BinanceFetcher(FetcherInterfaceT):
                 entries.append(
                     asyncio.ensure_future(self.fetch_pair(pair, session, usdt_price))
                 )
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}?symbol={pair.base_currency.id}{pair.quote_currency.id}"

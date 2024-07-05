@@ -1,13 +1,13 @@
 import asyncio
 import logging
 import time
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -15,7 +15,7 @@ from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 logger = logging.getLogger(__name__)
 
 
-ASSET_MAPPING: Dict[str, any] = {
+ASSET_MAPPING: Dict[str, Any] = {
     "LORDS": (
         "starknet-alpha",
         "0x124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49",
@@ -70,7 +70,9 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
     )
     SOURCE: str = "GECKOTERMINAL"
 
-    async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
+    async def fetch_pair(
+        self, pair: Pair, session: ClientSession
+    ) -> SpotEntry | PublisherFetchError:
         if pair.quote_currency.id != "USD":
             return await self.operate_usd_hop(pair, session)
         pool = ASSET_MAPPING.get(pair.base_currency.id)
@@ -95,18 +97,22 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
 
         return self._construct(pair, result)
 
-    async def fetch(self, session: ClientSession) -> List[SpotEntry]:
-        entries = []
-        for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+    async def fetch(
+        self, session: ClientSession
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        entries = [
+            asyncio.ensure_future(self.fetch_pair(pair, session)) for pair in self.pairs
+        ]
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         pool = ASSET_MAPPING[pair.base_currency.id]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
-    async def operate_usd_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
+    async def operate_usd_hop(
+        self, pair: Pair, session: ClientSession
+    ) -> SpotEntry | PublisherFetchError:
         pool_1 = ASSET_MAPPING.get(pair.base_currency.id)
         pool_2 = ASSET_MAPPING.get(pair.quote_currency.id)
         if pool_1 is None or pool_2 is None:
@@ -156,7 +162,9 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 )
         return self._construct(pair, result, hop_result)
 
-    def _construct(self, pair: Pair, result, hop_result=None) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, hop_result: Optional[Any] = None
+    ) -> SpotEntry:
         data = result["data"]["attributes"]
         price = float(data["price_usd"])
         decimals = pair.decimals()

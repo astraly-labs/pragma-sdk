@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
@@ -40,17 +40,19 @@ class KucoinFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[SpotEntry | PublisherFetchError]:
+    ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}?symbol={pair.base_currency.id}-{pair.quote_currency.id}"
         return url
 
-    async def operate_usdt_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
+    async def operate_usdt_hop(
+        self, pair: Pair, session: ClientSession
+    ) -> SpotEntry | PublisherFetchError:
         url_pair1 = self.format_url(
             Pair(
                 pair.base_currency,

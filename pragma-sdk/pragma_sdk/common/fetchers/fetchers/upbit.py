@@ -5,12 +5,13 @@ from typing import Any, List
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class UpbitFetcher(FetcherInterfaceT):
@@ -19,7 +20,7 @@ class UpbitFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> SpotEntry | PublisherFetchError:
+    ) -> Entry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -29,11 +30,11 @@ class UpbitFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[SpotEntry | PublisherFetchError]:
+    ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         url = (

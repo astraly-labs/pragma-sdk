@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import List
+from typing import Any, List
 
 import requests
 from aiohttp import ClientSession
@@ -10,7 +10,7 @@ from aiohttp import ClientSession
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import AssetQuantities
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -46,17 +46,17 @@ class IndexCoopFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[SpotEntry | PublisherFetchError]:
+    ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}/{pair.base_currency.id}/analytics"
         return url
 
-    def fetch_quantities(self, index_address) -> List[AssetQuantities]:
+    def fetch_quantities(self, index_address: str) -> List[AssetQuantities]:
         url = f"{self.BASE_URL}/components?chainId=1&isPerpToken=false&address={index_address}"
         response = requests.get(url)
         response.raise_for_status()
@@ -79,7 +79,7 @@ class IndexCoopFetcher(FetcherInterfaceT):
             for symbol, quantities in quantities.items()
         ]
 
-    def _construct(self, pair: Pair, result) -> SpotEntry:
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry:
         timestamp = int(time.time())
         price = result["navPrice"]
         decimals = pair.decimals()
