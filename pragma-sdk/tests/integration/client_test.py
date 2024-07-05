@@ -111,6 +111,7 @@ async def pragma_client(
         contract_addresses_config=ContractAddresses(
             publisher_registry_address=registry.address,
             oracle_proxy_addresss=oracle.address,
+            summary_stats_address=0x0,
         ),
         port=port,
     )

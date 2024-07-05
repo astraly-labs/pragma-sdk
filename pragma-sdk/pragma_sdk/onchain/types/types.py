@@ -1,14 +1,16 @@
 from enum import StrEnum, unique
 from collections import namedtuple
 from typing import Optional, Literal, Union, List, Any
+from pragma_sdk.common.types.asset import Asset
 from pydantic import HttpUrl
 
 from pydantic.dataclasses import dataclass
 
-from pragma_sdk.common.types.types import ADDRESS
+from pragma_sdk.common.types.types import ADDRESS, AggregationMode
 
 ContractAddresses = namedtuple(
-    "ContractAddresses", ["publisher_registry_address", "oracle_proxy_addresss"]
+    "ContractAddresses",
+    ["publisher_registry_address", "oracle_proxy_addresss", "summary_stats_address"],
 )
 
 Network = Union[
@@ -125,4 +127,54 @@ class VRFCancelParams:
             self.callback_address,
             self.callback_fee_limit,
             self.num_words,
+        ]
+
+
+@dataclass
+class MeanFeedParams:
+    asset: Asset
+    start: int
+    stop: int
+    aggregation_mode: AggregationMode
+
+    def to_list(self) -> List[Any]:
+        return [
+            self.asset.serialize(),
+            self.start,
+            self.stop,
+            self.aggregation_mode.serialize(),
+        ]
+
+
+@dataclass
+class VolatilityFeedParams:
+    asset: Asset
+    start_tick: int
+    end_tick: int
+    num_samples: int
+    aggregation_mode: AggregationMode
+
+    def to_list(self) -> List[Any]:
+        return [
+            self.asset.serialize(),
+            self.start_tick,
+            self.end_tick,
+            self.num_samples,
+            self.aggregation_mode.serialize(),
+        ]
+
+
+@dataclass
+class TwapFeedParams:
+    asset: Asset
+    aggregation_mode: AggregationMode
+    time: int
+    start_time: int
+
+    def to_list(self) -> List[Any]:
+        return [
+            self.asset.serialize(),
+            self.aggregation_mode.serialize(),
+            self.time,
+            self.start_time,
         ]
