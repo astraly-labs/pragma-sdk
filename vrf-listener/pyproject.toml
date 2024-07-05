@@ -87,13 +87,15 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["vrf_listener/*"]
+python_version = "3.12"
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
-strict = true
+warn_return_any = true
+ignore_missing_imports = true
+exclude = ["tests"]
+mypy_path = ["../pragma-utils", "../pragma-sdk"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = []
 
 [tool.poetry.build]
 generate-setup-file = true

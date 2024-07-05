@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Optional, Any
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
@@ -7,8 +7,8 @@ from starknet_py.net.client_models import SentTransactionResponse
 from pragma_sdk.common.types.types import ExecutionConfig
 
 
-class Contract(StarknetContract):
-    def __getattr__(self, attr):
+class Contract(StarknetContract):  # type: ignore[misc]
+    def __getattr__(self, attr: str) -> Any:
         if attr in self._functions:
             return self._functions[attr]
 
@@ -18,14 +18,14 @@ class Contract(StarknetContract):
         raise AttributeError("Invalid Attribute")
 
 
-async def invoke_(
-    self,
-    *args,
+async def _invoke(
+    self: Contract,
     execution_config: ExecutionConfig = ExecutionConfig(auto_estimate=True),
     callback: Optional[
         Callable[[SentTransactionResponse, str], Awaitable[None]]
     ] = None,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> InvokeResult:
     """
     Allows for a callback in the invocation of a contract method.
@@ -73,4 +73,4 @@ async def invoke_(
 
 
 # patch contract function to use new invoke function
-ContractFunction.invoke = invoke_
+ContractFunction.invoke = _invoke

@@ -1,5 +1,7 @@
 import random
 
+from typing import Optional
+
 from starknet_py.net.full_node_client import FullNodeClient
 
 from pragma_sdk.onchain.types.types import Network
@@ -27,8 +29,10 @@ def get_rpc_url(network: Network = "devnet", port: int = 5050) -> str:
             raise ValueError(f"Unsupported network: {network}")
 
 
-def get_full_node_client_from_network(network: Network, port: int = 5050):
+def get_full_node_client_from_network(network: Network, port: Optional[int] = None):
     """
     Create a new full node client for the passed network/port (rpc url).
     """
+    if port is None:
+        port = 5050
     return FullNodeClient(node_url=get_rpc_url(network, port=port))

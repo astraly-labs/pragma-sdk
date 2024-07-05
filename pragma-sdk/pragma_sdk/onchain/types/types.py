@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, List, Any
+from typing import Optional, Literal, List, Any, Dict
 from pragma_sdk.common.types.asset import Asset
 from pydantic import HttpUrl
 
@@ -32,7 +32,7 @@ class RequestStatus(StrEnum):
     OUT_OF_GAS = "OUT_OF_GAS"
     REFUNDED = "REFUNDED"
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, None]:
         return {self.value: None}
 
 
@@ -57,7 +57,7 @@ class VRFRequestParams:
     num_words: int = 1
     calldata: Optional[List[int]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.calldata is None:
             self.calldata = []
 
@@ -86,7 +86,7 @@ class VRFSubmitParams:
     calldata: Optional[List[int]] = None
     callback_fee: Optional[int] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.calldata is None:
             self.calldata = []
         if self.callback_fee is None:
@@ -191,7 +191,7 @@ class RandomnessRequest:
     num_words: int
     calldata: List[int]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Request(caller_address={self.caller_address},request_id={self.request_id},"
             f"minimum_block_number={self.minimum_block_number}"

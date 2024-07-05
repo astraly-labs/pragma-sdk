@@ -3,7 +3,7 @@ from typing import Optional, Dict
 
 from pydantic import model_validator
 from pydantic.dataclasses import dataclass
-from starknet_py.net.client_models import ResourceBounds  # type: ignore[import-untyped]
+from starknet_py.net.client_models import ResourceBounds
 
 
 Address = int
