@@ -18,6 +18,7 @@ packages = [{ include = "pragma_sdk" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
+pragma-utils = { path = "../pragma-utils", develop = true }
 "starknet.py" = "0.22.0"
 typer = "0.6.1"
 deprecated = "^1.2.14"

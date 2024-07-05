@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import pytest
 import requests
-from pragma_sdk.common.logger import get_stream_logger
+from pragma_utils.logger import get_stream_logger
 from pragma_sdk.onchain.constants import RPC_URLS
 from tests.integration.fixtures.devnet import get_available_port
 from pragma_sdk.onchain.client import PragmaOnChainClient

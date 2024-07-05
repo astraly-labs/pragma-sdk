@@ -8,7 +8,7 @@ from pragma_sdk.common.types.types import DataTypes
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from price_pusher.utils.retries import retry_async
+from pragma_utils.retries import retry_async
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import CHAIN_IDS, CONTRACT_ADDRESSES
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.common.types.entry import Entry
-from pragma_sdk.common.logger import get_stream_logger
+from pragma_utils.logger import get_stream_logger
 from pragma_sdk.onchain.mixins import (
     NonceMixin,
     OracleMixin,

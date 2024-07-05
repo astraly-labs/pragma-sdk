@@ -98,7 +98,7 @@ async def test_poll_prices_retry_success(price_poller, fetcher_client, caplog):
     fetcher_client.fetch = AsyncMock(side_effect=[Exception("Fetch failed"), [dummy_entry]])
 
     retry_async_mock = AsyncMock(return_value=[dummy_entry])
-    with patch("price_pusher.utils.retries.retry_async", new=retry_async_mock):
+    with patch("pragma_utils.retries.retry_async", new=retry_async_mock):
         await price_poller.poll_prices()
 
     assert fetcher_client.fetch.await_count == 2

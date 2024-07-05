@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "price-pusher"
+name = "pragma-utils"
 version = "0.0.1"
 authors = ["0xevolve <matthias@pragma.build>"]
-description = "Price pushing service for Pragma."
+description = "Utils functions shared accross Pragma python packages."
 readme = "README.md"
 homepage = "https://pragma.build"
 repository = "https://github.com/Astraly-Labs/pragma-sdk"
@@ -12,17 +12,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-include = ["price_pusher"]
-packages = [{ include = "price_pusher" }]
-
-[tool.poetry.scripts]
-scheduler = 'price_pusher.main:cli_entrypoint'
+include = ["pragma_utils"]
+packages = [{ include = "pragma_utils" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-pragma-sdk = { path = "../pragma-sdk", develop = true }
-pragma-utils = { path = "../pragma-utils", develop = true }
-click = "^8.1.0"
 pydantic = "^2.7.4"
 boto3 = "^1.28.61"
 moto = { extras = ["s3", "secretsmanager"], version = "^4.2.5" }
@@ -49,7 +43,7 @@ types-deprecated = "^1.2.9"
 format = "ruff format ."
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
-typecheck = "mypy price_pusher"
+typecheck = "mypy pragma_utils"
 
 [tool.ruff]
 exclude = [
@@ -90,7 +84,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["price_pusher/*"]
+files = ["pragma_utils/*"]
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
@@ -102,7 +96,7 @@ exclude = []
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["price-pusher"]
+source = ["pragma-utils"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]

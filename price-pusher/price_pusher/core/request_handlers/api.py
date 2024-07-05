@@ -1,11 +1,11 @@
 import logging
 from typing import Optional
 
-from pragma_sdk.common.types import DataTypes
+from pragma_sdk.common.types.types import DataTypes
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.offchain.client import PragmaAPIClient, EntryResult
-from pragma_sdk.common.types import AggregationMode
+from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.offchain.types import Interval
 
 from price_pusher.core.request_handlers.interface import IRequestHandler

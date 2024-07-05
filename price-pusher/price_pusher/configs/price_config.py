@@ -7,7 +7,8 @@ from typing_extensions import Annotated
 from pragma_sdk.common.configs.asset_config import (
     AssetConfig,
 )
-from pragma_sdk.common.types import DataTypes, Pair
+from pragma_sdk.common.types.types import DataTypes
+from pragma_sdk.common.types.pair import Pair
 
 
 class PairConfig(BaseModel):

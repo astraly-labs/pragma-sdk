@@ -7,7 +7,7 @@ from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 
 
-from price_pusher.utils.retries import retry_async
+from pragma_utils.retries import retry_async
 
 logger = logging.getLogger(__name__)
 

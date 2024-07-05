@@ -7,6 +7,9 @@ from typing import Optional, List
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
 
+from pragma_utils.logger import setup_logging
+from pragma_utils.cli import load_private_key_from_cli_arg
+
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.request_handlers import REQUEST_HANDLER_REGISTRY
@@ -15,7 +18,7 @@ from price_pusher.core.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import (
     PriceConfig,
 )
-from price_pusher.configs.cli import setup_logging, load_private_key, create_client
+from price_pusher.configs.cli import create_client
 from price_pusher.orchestrator import Orchestrator
 from price_pusher.type_aliases import Target, Network
 
@@ -161,7 +164,7 @@ def cli_entrypoint(
         raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
 
     setup_logging(logger, log_level)
-    private_key = load_private_key(private_key)
+    private_key = load_private_key_from_cli_arg(private_key)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
 
     # Make sure that the API base url does not ends with /

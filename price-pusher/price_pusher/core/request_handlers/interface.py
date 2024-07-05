@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 from abc import ABC, abstractmethod
 
-from pragma_sdk.common.types import DataTypes
+from pragma_sdk.common.types.types import DataTypes
 from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.client import PragmaClient

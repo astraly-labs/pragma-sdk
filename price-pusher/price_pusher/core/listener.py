@@ -14,7 +14,7 @@ from price_pusher.type_aliases import (
     LatestOrchestratorPairPrices,
     HumanReadableId,
 )
-from price_pusher.utils.readable_id import generate_human_readable_id
+from pragma_utils.readable_id import generate_human_readable_id
 from pragma_sdk.offchain.client import PragmaAPIError
 
 

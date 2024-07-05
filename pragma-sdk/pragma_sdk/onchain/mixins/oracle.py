@@ -9,7 +9,7 @@ from starknet_py.net.client import Client
 
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
-from pragma_sdk.common.logger import get_stream_logger
+from pragma_utils.logger import get_stream_logger
 
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
