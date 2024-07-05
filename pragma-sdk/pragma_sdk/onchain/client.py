@@ -1,6 +1,8 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
+from pragma_sdk.offchain.types import PublishEntriesAPIResult
+from pragma_sdk.onchain.types.types import NetworkName, PublishEntriesOnChainResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.client import Client
@@ -30,7 +32,7 @@ logger = get_stream_logger()
 logger.setLevel(logging.INFO)
 
 
-class PragmaOnChainClient(
+class PragmaOnChainClient(  # type: ignore[misc]
     PragmaClient,
     NonceMixin,
     OracleMixin,
@@ -39,6 +41,7 @@ class PragmaOnChainClient(
 ):
     """
     Client for interacting with Pragma on Starknet.
+
     :param network: Target network for the client.
         Can be a URL string, or one of
         ``"mainnet"``, ``"sepolia"`` or ``"devnet"``
@@ -64,7 +67,7 @@ class PragmaOnChainClient(
         account_contract_address: Optional[Address] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
-        chain_name: Optional[str] = None,
+        chain_name: Optional[NetworkName] = None,
         execution_config: Optional[ExecutionConfig] = None,
     ):
         full_node_client: FullNodeClient = get_full_node_client_from_network(
@@ -73,13 +76,13 @@ class PragmaOnChainClient(
         self.full_node_client = full_node_client
         self.client = full_node_client
 
-        if network.startswith("http") and chain_name is None:
+        if network.startswith("http") and chain_name is None:  # type: ignore[union-attr]
             raise ClientException(
                 f"Network provided is a URL: {network} but `chain_name` is not provided."
             )
 
         self.network = (
-            network if not (network.startswith("http") and chain_name) else chain_name
+            network if not (network.startswith("http") and chain_name) else chain_name  # type: ignore[union-attr]
         )
 
         if execution_config is not None:
@@ -93,14 +96,14 @@ class PragmaOnChainClient(
             )
 
         if not contract_addresses_config:
-            contract_addresses_config = CONTRACT_ADDRESSES[self.network]
+            contract_addresses_config = CONTRACT_ADDRESSES[self.network]  # type: ignore[index]
 
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 
     async def publish_entries(
         self, entries: List[Entry], execution_config: Optional[ExecutionConfig] = None
-    ) -> List[InvokeResult]:
+    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publish entries on-chain.
 
@@ -145,7 +148,7 @@ class PragmaOnChainClient(
             key_pair=KeyPair.from_private_key(1),
             chain=CHAIN_IDS[self.network],
         )
-        return await client.get_balance(token_address)
+        return await client.get_balance(token_address)  # type: ignore[no-any-return]
 
     def set_account(
         self,
@@ -185,7 +188,7 @@ class PragmaOnChainClient(
         Return the account address.
         """
 
-        return self.account.address
+        return self.account.address  # type: ignore[no-any-return]
 
     def init_stats_contract(
         self,

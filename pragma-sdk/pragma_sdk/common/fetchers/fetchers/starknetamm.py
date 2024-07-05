@@ -78,7 +78,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
             else:
                 logger.debug("Skipping StarknetAMM for non supported pair: %s", pair)
 
-        return list(await asyncio.gather(*entries, return_exceptions=True))
+        return list(await asyncio.gather(*entries, return_exceptions=True))  # type: ignore[call-overload]
 
     def _construct(self, pair: Pair, result: float) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))

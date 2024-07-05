@@ -36,11 +36,11 @@ class OkxFutureFetcher(FetcherInterfaceT):
     def format_expiry_timestamp_url(self, instrument_id: str) -> str:
         return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-    async def fetch_pair(
+    async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
     ) -> PublisherFetchError | List[Entry]:
         url = self.format_url(pair)
-        future_entries = []
+        future_entries: List[Entry] = []
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from OKX")
@@ -63,15 +63,16 @@ class OkxFutureFetcher(FetcherInterfaceT):
                     expiry_timestamp = await self.fetch_expiry_timestamp(
                         pair, result["data"][i]["instId"], session
                     )
-                    future_entries.append(
-                        self._construct(pair, result["data"][i], expiry_timestamp)
-                    )
+                    if not isinstance(expiry_timestamp, PublisherFetchError):
+                        future_entries.append(
+                            self._construct(pair, result["data"][i], expiry_timestamp)
+                        )
             return future_entries
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        entries = []
+        entries: List[Entry | PublisherFetchError | BaseException] = []
         for pair in self.pairs:
             future_entries = await self.fetch_pair(pair, session)
             if isinstance(future_entries, list):

@@ -1,26 +1,28 @@
 from enum import StrEnum, unique
 from collections import namedtuple
 from typing import Optional, Literal, List, Any, Dict
-from pragma_sdk.common.types.asset import Asset
 from pydantic import HttpUrl
-
 from dataclasses import dataclass
 
+from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.types import Address, AggregationMode
+
+from starknet_py.contract import InvokeResult
 
 ContractAddresses = namedtuple(
     "ContractAddresses",
     ["publisher_registry_address", "oracle_proxy_addresss", "summary_stats_address"],
 )
 
-Network = (
-    HttpUrl
-    | Literal[
-        "devnet",
-        "mainnet",
-        "sepolia",
-    ]
-)
+NetworkName = Literal[
+    "devnet",
+    "mainnet",
+    "sepolia",
+]
+
+Network = HttpUrl | NetworkName
+
+PublishEntriesOnChainResult = List[InvokeResult]
 
 
 @unique

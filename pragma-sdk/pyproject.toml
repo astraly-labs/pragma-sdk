@@ -72,6 +72,8 @@ test_all_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun 
 test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"
 test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/index_aggregation_test.py -s"
 
+test_all = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
+
 check_circular_imports = "poetry run python tests/check_circular_imports.py"
 
 

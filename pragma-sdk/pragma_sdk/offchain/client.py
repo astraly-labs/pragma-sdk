@@ -1,17 +1,18 @@
 import asyncio
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import aiohttp
+from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
-from pragma_sdk.common.types.types import AggregationMode, DataTypes
+from pragma_sdk.common.types.types import AggregationMode, DataTypes, ExecutionConfig
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
 from pragma_sdk.offchain.signer import OffchainSigner
-from pragma_sdk.offchain.types import Interval
+from pragma_sdk.offchain.types import Interval, PublishEntriesAPIResult
 
 from pragma_sdk.common.types.client import PragmaClient
 
@@ -58,9 +59,9 @@ class PragmaAPIClient(PragmaClient):
     async def get_ohlc(
         self,
         pair: str,
-        timestamp: int = None,
-        interval: Interval = None,
-        aggregation: AggregationMode = None,
+        timestamp: Optional[int] = None,
+        interval: Optional[Interval] = None,
+        aggregation: Optional[AggregationMode] = None,
     ) -> "EntryResult":
         """
         Retrieve OHLC data from the Pragma API.
@@ -98,9 +99,9 @@ class PragmaAPIClient(PragmaClient):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 url, headers=headers, params=path_params
-            ) as response:
-                status_code: int = response.status
-                response: Dict = await response.json()
+            ) as response_raw:
+                status_code: int = response_raw.status
+                response: Dict = await response_raw.json()
                 if status_code == 200:
                     print(f"Success: {response}")
                     print("Get Ohlc successful")
@@ -111,8 +112,8 @@ class PragmaAPIClient(PragmaClient):
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def publish_entries(
-        self, entries: List[Entry]
-    ) -> (Optional[Dict], Optional[Dict]):  # type: ignore
+        self, entries: List[Entry], _execution_config: Optional[ExecutionConfig] = None
+    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publishes spot and future entries to the Pragma API.
         This function accepts both type of entries - but they need to be sent through
@@ -123,8 +124,8 @@ class PragmaAPIClient(PragmaClient):
         """
         # We accept both types of entries - but they need to be sent through
         # different endpoints & signed differently, so we split them here.
-        spot_entries: list[SpotEntry] = []
-        future_entries: list[FutureEntry] = []
+        spot_entries: List[Entry] = []
+        future_entries: List[Entry] = []
 
         for entry in entries:
             if isinstance(entry, SpotEntry):
@@ -140,7 +141,7 @@ class PragmaAPIClient(PragmaClient):
         return spot_response, future_response
 
     async def _create_entries(
-        self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
+        self, entries: List[Entry], data_type: DataTypes = DataTypes.SPOT
     ) -> Optional[Dict]:
         """
         Publishes entries to the Pragma API & returns the http response.
@@ -152,7 +153,7 @@ class PragmaAPIClient(PragmaClient):
             raise PragmaAPIError("No offchain signer set")
 
         if len(entries) == 0:
-            return
+            return None
 
         assert all(isinstance(entry, type(entries[0])) for entry in entries)
 
@@ -175,9 +176,9 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=data) as response:
-                status_code: int = response.status
-                response: Dict = await response.json()
+            async with session.post(url, headers=headers, json=data) as response_raw:
+                status_code: int = response_raw.status
+                response: Dict = await response_raw.json()
                 if status_code == 200:
                     print(f"Success: {response}")
                     print("Publish successful")
@@ -189,10 +190,10 @@ class PragmaAPIClient(PragmaClient):
     async def get_entry(
         self,
         pair: str,
-        timestamp: int = None,
-        interval: Interval = None,
-        aggregation: AggregationMode = None,
-        routing: bool = None,
+        timestamp: Optional[int] = None,
+        interval: Optional[Interval] = None,
+        aggregation: Optional[AggregationMode] = None,
+        routing: Optional[bool] = None,
     ) -> "EntryResult":
         """
         Get data aggregated on the Pragma API.
@@ -225,9 +226,9 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                status_code: int = response.status
-                response: Dict = await response.json()
+            async with session.get(url, headers=headers, params=params) as response_raw:
+                status_code: int = response_raw.status
+                response: Dict = await response_raw.json()
                 if status_code == 200:
                     print(f"Success: {response}")
                     print("Get Data successful")
@@ -270,9 +271,9 @@ class PragmaAPIClient(PragmaClient):
         url = f"{self.api_base_url}{endpoint}"
         # Send GET request with headers
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                status_code: int = response.status
-                response: Dict = await response.json()
+            async with session.get(url, headers=headers, params=params) as response_raw:
+                status_code: int = response_raw.status
+                response: Dict = await response_raw.json()
                 if status_code == 200:
                     print(f"Success: {response}")
                     print("Get Volatility successful")
@@ -296,7 +297,12 @@ def get_endpoint_publish_offchain(data_type: DataTypes):
 
 class EntryResult:
     def __init__(
-        self, pair_id, data, num_sources_aggregated=0, timestamp=None, decimals=None
+        self,
+        pair_id: str,
+        data: Any,
+        num_sources_aggregated: int = 0,
+        timestamp: Optional[int] = None,
+        decimals: Optional[int] = None,
     ):
         self.pair_id = pair_id
         self.data = data

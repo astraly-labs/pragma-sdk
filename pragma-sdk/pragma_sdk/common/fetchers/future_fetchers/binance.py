@@ -33,7 +33,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
                     volume_arr.append((element["symbol"], int(element["quoteVolume"])))
             return volume_arr
 
-    async def fetch_pair(
+    async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
     ) -> List[FutureEntry] | PublisherFetchError:
         filtered_data = []
@@ -59,7 +59,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        entries: Sequence[FutureEntry | PublisherFetchError] = []
+        entries: List[Entry | PublisherFetchError | BaseException] = []
         for pair in self.pairs:
             future_entries = await self.fetch_pair(pair, session)
             if isinstance(future_entries, list):
@@ -71,14 +71,21 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     def format_url(self, pair: Optional[Pair] = None) -> str:
         return self.BASE_URL
 
-    def _retrieve_volume(self, pair: Pair, volume_arr) -> int:
+    def _retrieve_volume(
+        self, pair: Pair, volume_arr: List[Tuple[str, int]] | PublisherFetchError
+    ) -> int:
+        if isinstance(volume_arr, PublisherFetchError):
+            return 0
         for list_pair, list_vol in volume_arr:
             if pair == list_pair:
                 return list_vol
         return 0
 
     def _construct(
-        self, pair: Pair, result: Any, volume_arr: List[int]
+        self,
+        pair: Pair,
+        result: Any,
+        volume_arr: List[Tuple[str, int]] | PublisherFetchError,
     ) -> List[FutureEntry]:
         result_arr = []
         decimals = pair.decimals()

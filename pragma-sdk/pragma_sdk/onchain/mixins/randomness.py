@@ -6,6 +6,8 @@ from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import EstimatedFee, EventsChunk
+from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.account.account import Account
 
 from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import RANDOMNESS_REQUEST_EVENT_SELECTOR
@@ -28,7 +30,10 @@ logger = get_stream_logger()
 
 class RandomnessMixin:
     client: Client
-    randomness: Optional[Contract] = None
+    randomness: Contract
+    account: Optional[Account] = None
+    is_user_client: bool = False
+    full_node_client: FullNodeClient
 
     def init_randomness_contract(self, contract_address: Address):
         provider = self.account if self.account else self.client
@@ -226,7 +231,7 @@ class RandomnessMixin:
             caller_address, request_id
         )
 
-        return response
+        return response  # type: ignore[no-any-return]
 
     async def compute_premium_fee(self, caller_address: Address) -> int:
         """
@@ -240,7 +245,7 @@ class RandomnessMixin:
             caller_address
         )
 
-        return response
+        return response  # type: ignore[no-any-return]
 
     async def requestor_current_request_id(self, caller_address: Address) -> int:
         """
@@ -253,7 +258,7 @@ class RandomnessMixin:
             caller_address
         )
 
-        return response
+        return response  # type: ignore[no-any-return]
 
     async def get_pending_requests(
         self,
@@ -275,7 +280,7 @@ class RandomnessMixin:
             max_len,
         )
 
-        return response
+        return response  # type: ignore[no-any-return]
 
     async def cancel_random_request(
         self,
@@ -309,7 +314,7 @@ class RandomnessMixin:
         self,
         vrf_cancel_params: VRFCancelParams,
         execution_config: Optional[ExecutionConfig] = None,
-    ):
+    ) -> EstimatedFee:
         """
         Estimate the gas for the cancel_random_request operation.
 
@@ -333,7 +338,7 @@ class RandomnessMixin:
             max_fee=execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
-        return estimate_fee
+        return estimate_fee  # type: ignore[no-any-return]
 
     async def refund_operation(
         self,
@@ -447,14 +452,14 @@ class RandomnessMixin:
 
                 seed = self._build_request_seed(event, block_hash)
 
-                beta_string, pi_string, _ = create_randomness(sk, seed)
-                beta_string = int.from_bytes(beta_string, sys.byteorder)
+                beta_string, pi_string, _ = create_randomness(sk, seed)  # type: ignore[arg-type]
+                beta_string = int.from_bytes(beta_string, sys.byteorder)  # type: ignore[arg-type, assignment]
                 proof = [
-                    int.from_bytes(p, sys.byteorder)
+                    int.from_bytes(p, sys.byteorder)  # type: ignore[arg-type]
                     for p in [pi_string[:31], pi_string[31:62], pi_string[62:]]
                 ]
 
-                random_words = [beta_string]
+                random_words: List[int] = [beta_string]  # type: ignore[list-item]
 
                 vrf_submit_params = VRFSubmitParams(
                     request_id=event.request_id,
@@ -496,7 +501,7 @@ class RandomnessMixin:
         logger.info(f"Got {len(event_list.events)} events")
         return event_list
 
-    def _build_request_seed(self, event: RandomnessRequest, block_hash: int):
+    def _build_request_seed(self, event: RandomnessRequest, block_hash: int) -> int:
         """
         Build the request seed.
         The seed is the hash of the request id, the block hash, the event seed and the caller address.
@@ -505,7 +510,7 @@ class RandomnessMixin:
         :param block_hash: The block hash.
         :return: The generated seed.
         """
-        return (
+        return int(
             event.request_id.to_bytes(8, sys.byteorder)
             + block_hash.to_bytes(32, sys.byteorder)
             + event.seed.to_bytes(32, sys.byteorder)

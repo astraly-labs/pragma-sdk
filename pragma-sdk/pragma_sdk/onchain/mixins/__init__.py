@@ -5,9 +5,9 @@ from pragma_sdk.onchain.mixins.randomness import RandomnessMixin
 from pragma_sdk.onchain.mixins.summary import SummaryStatsMixin
 
 __all__ = [
-    NonceMixin,
-    OracleMixin,
-    PublisherRegistryMixin,
-    RandomnessMixin,
-    SummaryStatsMixin,
+    "NonceMixin",
+    "OracleMixin",
+    "PublisherRegistryMixin",
+    "RandomnessMixin",
+    "SummaryStatsMixin",
 ]

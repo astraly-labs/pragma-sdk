@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from starknet_py.net.signer.stark_curve_signer import StarkCurveSigner
 from starknet_py.utils.typed_data import TypedData
@@ -47,7 +47,7 @@ def build_publish_message(
         },
     }
     if data_type == DataTypes.FUTURE:
-        message["types"]["Entry"] = message["types"]["Entry"] + [
+        message["types"]["Entry"] += [  # type: ignore[index]
             {"name": "expiration_timestamp", "type": "felt"},
         ]
 
@@ -64,7 +64,7 @@ class OffchainSigner:
 
     def sign_publish_message(
         self, entries: List[Entry], data_type: Optional[DataTypes] = DataTypes.SPOT
-    ) -> (List[int], int):  # type: ignore
+    ) -> Tuple[List[int], int]:
         """
         Sign a publish message
 
