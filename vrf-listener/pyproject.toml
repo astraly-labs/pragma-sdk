@@ -47,6 +47,7 @@ format = "ruff format ."
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy vrf_listener"
+test_all = "pytest tests"
 
 [tool.ruff]
 exclude = [

@@ -48,6 +48,7 @@ format = "ruff format ."
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy price_pusher"
+test_all = "pytest tests"
 
 [tool.ruff]
 exclude = [

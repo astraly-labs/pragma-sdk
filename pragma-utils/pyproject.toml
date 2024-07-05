@@ -44,6 +44,7 @@ format = "ruff format ."
 lint = "ruff check ."
 lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy pragma_utils"
+test_all = "pytest tests"
 
 [tool.ruff]
 exclude = [
