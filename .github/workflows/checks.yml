@@ -84,14 +84,15 @@ jobs:
         run: |
           cd ${{ matrix.package }}
           poetry run poe test_all
-      - name: Generate coverage in XML
-        run: |
-          cd ${{ matrix.package }}
-          poetry run coverage xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # TODO: re-add this
+      # - name: Generate coverage in XML
+      #   run: |
+      #     cd ${{ matrix.package }}
+      #     poetry run coverage xml
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build_packages:
     needs: [lint-format-typecheck, tests]
