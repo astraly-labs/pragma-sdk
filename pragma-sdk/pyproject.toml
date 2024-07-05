@@ -137,10 +137,7 @@ explicit_package_bases = true
 show_error_codes = true
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = [
-  "tests/",
-  "pragma_sdk/common/randomness/randomness_utils"
-]
+exclude = ["tests/", "pragma_sdk/common/randomness/randomness_utils"]
 
 [tool.poetry.build]
 generate-setup-file = true

@@ -25,6 +25,9 @@ version_files = [
     "price-pusher/VERSION",
     "price-pusher/pyproject.toml:^version",
     "price-pusher/price_pusher/__init__.py:^__version",
+    "vrf-listener/VERSION",
+    "vrf-listener/pyproject.toml:^version",
+    "vrf-listener/vrf_listener/__init__.py:^__version",
 ]
 update_changelog_on_bump = true
 changelog_incremental = true
@@ -39,7 +42,62 @@ python = ">=3.10,<3.13"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.21.1"
-mypy = "0.910"
 ruff = "^0.4"
 dunamai = "^1.7.0"
 commitizen = "^2.20.3"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".github",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "scripts",
+    "pragma-oracle",
+]
+# Same as Black.
+line-length = 88
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+select = ["E4", "E7", "E9", "F"]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
