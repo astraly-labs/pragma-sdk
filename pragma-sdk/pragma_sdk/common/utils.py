@@ -15,9 +15,9 @@ F = TypeVar("F", bound=Callable[..., Any])
 def str_to_felt(text: str) -> int:
     """
     Convert a string to a felt.
+    WARNING : text is converting to uppercase
     """
     if text.upper() != text:
-        logger.warning("Converting lower to uppercase for str_to_felt: %s", text)
         text = text.upper()
     b_text = bytes(text, "utf-8")
     return int.from_bytes(b_text, "big")
