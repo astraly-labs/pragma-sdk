@@ -118,7 +118,7 @@ def ecvrf_proof_to_hash(pi_string):
 
 
 # Section 5.3. ECVRF Verifying
-def ecvrf_verify(y, pi_string, alpha_string):
+def ecvrf_verify(y, pi_string, alpha_string) -> (str, list):
     """
     Input:
         y - public key, an EC point as bytes
@@ -176,7 +176,7 @@ def ecvrf_verify(y, pi_string, alpha_string):
     return "INVALID", []
 
 
-def get_public_key(secret_key):
+def get_public_key(secret_key: str) -> str:
     """Calculate and return the public_key as an encoded point string (bytes)"""
     secret_int = _get_secret_scalar(secret_key)
     public_point = _scalar_multiply(p=BASE, e=secret_int)

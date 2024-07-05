@@ -42,30 +42,33 @@ class FetcherClient:
     __fetchers: List[FetcherInterfaceT] = []
 
     @property
-    def fetchers(self):
+    def fetchers(self) -> List[FetcherInterfaceT]:
         return self.__fetchers
 
     @fetchers.setter
-    def fetchers(self, value):
+    def fetchers(self, value: List[FetcherInterfaceT]) -> None:
         if len(value) > 0:
             self.__fetchers = value
         else:
             raise ValueError("Fetcher list cannot be empty")
 
-    def add_fetchers(self, fetchers: List[FetcherInterfaceT]):
+    def add_fetchers(self, fetchers: List[FetcherInterfaceT]) -> None:
         """
         Add fetchers to the supported fetchers list.
         """
         self.fetchers.extend(fetchers)
 
-    def add_fetcher(self, fetcher: FetcherInterfaceT):
+    def add_fetcher(self, fetcher: FetcherInterfaceT) -> None:
         """
         Add a single fetcher to the supported fetchers list.
         """
         self.fetchers.append(fetcher)
 
     async def fetch(
-        self, filter_exceptions=True, return_exceptions=True, timeout_duration=20
+        self,
+        filter_exceptions: bool = True,
+        return_exceptions: bool = True,
+        timeout_duration: int = 20,
     ) -> List[Union[Entry, Exception]]:
         """
         Fetch data from all fetchers asynchronously.
@@ -87,4 +90,4 @@ class FetcherClient:
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
             if filter_exceptions:
                 result = [subl for subl in result if not isinstance(subl, Exception)]
-            return [val for subl in result for val in subl]
+            return [val for subl in result for val in subl]  # type: ignore[union-attr]

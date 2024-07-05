@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 
 from aiohttp import ClientSession
 
@@ -17,7 +17,7 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 class FetcherInterfaceT(abc.ABC):
     pairs: List[Pair]
     publisher: str
-    headers: dict
+    headers: Dict[Any, Any]
     hop_handler: Optional[HopHandler] = None
 
     _client = None
@@ -26,7 +26,7 @@ class FetcherInterfaceT(abc.ABC):
         self,
         pairs: List[Pair],
         publisher: str,
-        api_key: str = None,
+        api_key: Optional[str] = None,
         network: Network = "mainnet",
     ):
         self.pairs = pairs
@@ -37,7 +37,7 @@ class FetcherInterfaceT(abc.ABC):
             self.headers["X-Api-Key"] = api_key
 
     @classmethod
-    def get_client(cls, network: Network = "mainnet"):
+    def get_client(cls, network: Network = "mainnet") -> PragmaOnChainClient:
         if cls._client is None:
             cls._client = PragmaOnChainClient(network=network)
         return cls._client
@@ -73,4 +73,4 @@ class FetcherInterfaceT(abc.ABC):
 
         usdt_str = str_to_felt(stable_asset + "/USD")
         usdt_entry = await self.client.get_spot(usdt_str)
-        return int(usdt_entry.price) / (10 ** int(usdt_entry.decimals))
+        return int(usdt_entry.price) / int(10 ** int(usdt_entry.decimals))

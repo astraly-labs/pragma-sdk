@@ -178,3 +178,21 @@ class TwapFeedParams:
             self.time,
             self.start_time,
         ]
+
+
+@dataclass(frozen=True)
+class RandomnessRequest:
+    request_id: int
+    caller_address: Address
+    seed: int
+    minimum_block_number: int
+    callback_address: Address
+    callback_fee_limit: int
+    num_words: int
+    calldata: List[int]
+
+    def __repr__(self):
+        return (
+            f"Request(caller_address={self.caller_address},request_id={self.request_id},"
+            f"minimum_block_number={self.minimum_block_number}"
+        )
