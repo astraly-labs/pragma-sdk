@@ -65,7 +65,6 @@ def test_standardize_decimals(sample_data):
     
     index_agg.standardize_decimals()
     
-    # Check if all entries are adjusted to the highest decimal (4)
     assert index_agg.spot_entries[0].price == 1000000
     assert index_agg.spot_entries[0].volume == 1000
     assert index_agg.spot_entries[1].price == 200000
