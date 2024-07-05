@@ -5,7 +5,6 @@ from pragma_sdk.common.fetchers.fetchers.coinbase import CoinbaseFetcher
 from pragma_sdk.common.fetchers.fetchers.defillama import DefillamaFetcher
 from pragma_sdk.common.fetchers.fetchers.gecko import GeckoTerminalFetcher
 from pragma_sdk.common.fetchers.fetchers.huobi import HuobiFetcher
-from pragma_sdk.common.fetchers.fetchers.index import IndexFetcher
 from pragma_sdk.common.fetchers.fetchers.indexcoop import IndexCoopFetcher
 from pragma_sdk.common.fetchers.fetchers.kucoin import KucoinFetcher
 from pragma_sdk.common.fetchers.fetchers.okx import OkxFetcher
@@ -22,7 +21,6 @@ __all__ = [
     "DefillamaFetcher",
     "GeckoTerminalFetcher",
     "HuobiFetcher",
-    "IndexFetcher",
     "IndexCoopFetcher",
     "KucoinFetcher",
     "OkxFetcher",
