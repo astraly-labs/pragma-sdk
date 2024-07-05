@@ -157,10 +157,7 @@ class PriceListener(IPriceListener):
             raise ValueError("Orchestrator must set the prices dictionnary.")
         if pair_id not in self.orchestrator_prices:
             return None
-        if asset_type == DataTypes.FUTURE:
-            entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
-        else:
-            entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
+        entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
         
         return max(entries, key=lambda entry: entry.get_timestamp(), default=None)
 
