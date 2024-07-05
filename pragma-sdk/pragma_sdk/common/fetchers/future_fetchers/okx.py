@@ -4,7 +4,7 @@ from typing import List
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.types.entry import FutureEntry
+from pragma_sdk.common.types.entry import FutureEntry, Entry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -17,7 +17,9 @@ class OkxFutureFetcher(FetcherInterfaceT):
     SOURCE: str = "OKX"
     TIMESTAMP_URL: str = "https://www.okx.com/api/v5/public/instruments"
 
-    async def fetch_expiry_timestamp(self, pair: Pair, instrument_id, session):
+    async def fetch_expiry_timestamp(
+        self, pair: Pair, instrument_id: str, session: ClientSession
+    ) -> int:
         url = self.format_expiry_timestamp_url(instrument_id)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -30,10 +32,10 @@ class OkxFutureFetcher(FetcherInterfaceT):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
             return result["data"][0]["expTime"]
 
-    def format_expiry_timestamp_url(self, instrument_id):
+    def format_expiry_timestamp_url(self, instrument_id: str) -> str:
         return f"{self.TIMESTAMP_URL}?instType=FUTURES&instId={instrument_id}"
 
-    async def fetch_pair(self, pair: Pair, session: ClientSession):
+    async def fetch_pair(self, pair: Pair, session: ClientSession) -> List[Entry]:
         url = self.format_url(pair)
         future_entries = []
         async with session.get(url) as resp:

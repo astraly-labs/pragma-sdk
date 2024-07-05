@@ -6,6 +6,7 @@ import aiohttp
 from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_sdk.common.exceptions import PublisherFetchError
 
 
 @add_sync_methods
@@ -69,7 +70,7 @@ class FetcherClient:
         filter_exceptions: bool = True,
         return_exceptions: bool = True,
         timeout_duration: int = 20,
-    ) -> List[Entry | Exception]:
+    ) -> List[Entry | PublisherFetchError | Exception]:
         """
         Fetch data from all fetchers asynchronously.
         Fetching is done in parallel for all fetchers.
@@ -89,5 +90,7 @@ class FetcherClient:
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
             if filter_exceptions:
-                result = [subl for subl in result if not isinstance(subl, Exception)]
-            return [val for subl in result for val in subl]  # type: ignore[union-attr]
+                result = [
+                    subl for subl in result if not isinstance(subl, BaseException)
+                ]
+            return [val for subl in result for val in subl]  # type: ignore[union-attr, misc]
