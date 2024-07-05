@@ -11,7 +11,7 @@ from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
-from pragma_sdk.common.fetchers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 
 logger = logging.getLogger(__name__)
 

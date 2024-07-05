@@ -2,7 +2,7 @@ import pytest
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.fetchers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from typing import List
 
-from pragma_sdk.common.fetchers.fetchers.index import AssetQuantities
+from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import AssetQuantities
 from pragma_sdk.common.types.entry import Pair, SpotEntry
 from pragma_sdk.common.configs.asset_config import (
     ALL_ASSETS_CONFIGS,

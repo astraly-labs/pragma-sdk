@@ -5,7 +5,7 @@ from typing import List
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.fetchers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError

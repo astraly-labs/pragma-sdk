@@ -11,7 +11,7 @@ from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import SpotEntry
-from pragma_sdk.common.index_aggregator import AssetQuantities
+from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import AssetQuantities
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 

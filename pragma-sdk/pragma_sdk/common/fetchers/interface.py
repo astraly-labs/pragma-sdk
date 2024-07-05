@@ -8,7 +8,7 @@ from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.onchain.types import Network
 from pragma_sdk.common.utils import add_sync_methods, str_to_felt
-from pragma_sdk.common.fetchers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.exceptions import PublisherFetchError
 
 
