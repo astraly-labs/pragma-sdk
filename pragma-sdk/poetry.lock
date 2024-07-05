@@ -2687,6 +2687,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.20240311"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-PyYAML-6.0.12.20240311.tar.gz", hash = "sha256:a9e0f0f88dc835739b0c1ca51ee90d04ca2a897a71af79de9aec5f38cb0a5342"},
+    {file = "types_PyYAML-6.0.12.20240311-py3-none-any.whl", hash = "sha256:b845b06a1c7e54b8e5b4c683043de0d9caf205e7434b3edc678ff2411979b8f6"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20240622"
 description = "Typing stubs for requests"
@@ -2970,4 +2981,4 @@ docs = ["enum-tools", "furo", "sphinx"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "6fce5f83f0c0f3f22de974797952abf585c98e79fcdfcc680d5e5bcce6f72575"
+content-hash = "0a7fadd022dee0d7b0316d7bcc4a1cc59df8185119757948c7251691e891de3d"

@@ -35,7 +35,6 @@ docs = ["sphinx", "enum-tools", "furo"]
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.21.1"
 ruff = "^0.4"
-mypy = "^1.10"
 coverage = "^7.2.1"
 pytest = "^7.2.2"
 pytest-asyncio = "^0.21.1"
@@ -51,6 +50,7 @@ boto3 = "^1.28.61"
 mypy = "^1.10"
 types-requests = "^2.26.0"
 types-deprecated = "^1.2.9"
+types-pyyaml = "^6.0.12.20240311"
 
 [tool.poe.tasks]
 lint = "ruff check ."
@@ -134,10 +134,7 @@ strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 exclude = [
   "tests/",
-  # TODO: Stop ignoring those two folders one by one & fix the mypy 
-  # https://github.com/astraly-labs/pragma-sdk/issues/116
-  "pragma_sdk/core",
-  "pragma_sdk/publisher",
+  "pragma_sdk/common/randomness/randomness_utils"
 ]
 
 [tool.poetry.build]

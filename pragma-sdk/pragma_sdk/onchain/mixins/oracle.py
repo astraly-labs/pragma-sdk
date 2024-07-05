@@ -13,7 +13,7 @@ from pragma_sdk.common.logger import get_stream_logger
 
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
-from pragma_sdk.common.types.types import DataTypes, ADDRESS, DECIMALS, ExecutionConfig
+from pragma_sdk.common.types.types import DataTypes, Address, Decimals, ExecutionConfig
 from pragma_sdk.common.types.pair import Pair
 
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
@@ -286,7 +286,7 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, asset: Asset, block_number="latest") -> DECIMALS:
+    async def get_decimals(self, asset: Asset, block_number="latest") -> Decimals:
         """
         Query on-chain the decimals for a given asset
 
@@ -403,7 +403,7 @@ class OracleMixin:
 
         return invocation
 
-    async def get_admin_address(self) -> ADDRESS:
+    async def get_admin_address(self) -> Address:
         """
         Return the admin address of the Oracle contract.
         """

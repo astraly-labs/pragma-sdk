@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 
 from pydantic.dataclasses import dataclass
 
-from pragma_sdk.common.types.types import ADDRESS, AggregationMode
+from pragma_sdk.common.types.types import Address, AggregationMode
 
 ContractAddresses = namedtuple(
     "ContractAddresses",
@@ -51,7 +51,7 @@ OracleResponse = namedtuple(
 @dataclass
 class VRFRequestParams:
     seed: int
-    callback_address: ADDRESS
+    callback_address: Address
     callback_fee_limit: int = 1000000
     publish_delay: int = 1
     num_words: int = 1

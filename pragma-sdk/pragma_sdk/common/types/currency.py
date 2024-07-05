@@ -1,24 +1,24 @@
-from typing import List, Optional, Self
+from typing import Tuple, Optional, Self, Dict, Union
 
 from pragma_sdk.common.utils import str_to_felt
-from pragma_sdk.common.types.types import ADDRESS, DECIMALS
+from pragma_sdk.common.types.types import Address, Decimals
 from pragma_sdk.common.configs.asset_config import AssetConfig
 
 
 class Currency:
     id: str
-    decimals: DECIMALS
+    decimals: Decimals
     is_abstract_currency: bool
-    starknet_address: ADDRESS
-    ethereum_address: ADDRESS
+    starknet_address: Address
+    ethereum_address: Address
 
     def __init__(
         self,
         currency_id: str,
-        decimals: DECIMALS,
+        decimals: Decimals,
         is_abstract_currency: bool,
-        starknet_address: Optional[ADDRESS] = None,
-        ethereum_address: Optional[ADDRESS] = None,
+        starknet_address: Optional[Address] = None,
+        ethereum_address: Optional[Address] = None,
     ):
         self.id = currency_id
 
@@ -41,19 +41,19 @@ class Currency:
         return cls(
             currency_id=config.ticker,
             decimals=config.decimals,
-            is_abstract_currency=config.abstract,
+            is_abstract_currency=config.abstract or False,
         )
 
-    def serialize(self) -> List[str]:
-        return [
+    def serialize(self) -> Tuple[str, int, bool, int, int]:
+        return (
             self.id,
             self.decimals,
             self.is_abstract_currency,
             self.starknet_address,
             self.ethereum_address,
-        ]
+        )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Union[int, str, bool]]:
         return {
             "id": self.id,
             "decimals": self.decimals,
@@ -62,7 +62,7 @@ class Currency:
             "ethereum_address": self.ethereum_address,
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Currency({str_to_felt(self.id)}, {self.decimals}, "
             f"{self.is_abstract_currency}, {self.starknet_address},"

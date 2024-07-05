@@ -1,12 +1,15 @@
 import inspect
 from functools import wraps
-from typing import List, TypeVar
+from typing import List, TypeVar, Any, Callable
 
 from asgiref.sync import async_to_sync
 
 from pragma_sdk.common.logger import get_stream_logger
 
 logger = get_stream_logger()
+
+T = TypeVar("T")
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def str_to_felt(text: str) -> int:
@@ -29,7 +32,7 @@ def felt_to_str(felt: int) -> str:
     return bytes_.decode("utf-8")
 
 
-def currency_pair_to_pair_id(base: str, quote: str):
+def currency_pair_to_pair_id(base: str, quote: str) -> str:
     """
     Return a pair id from base and quote currencies.
     e.g currency_pair_to_pair_id("btc", "usd") -> "BTC/USD"
@@ -53,14 +56,11 @@ def get_cur_from_pair(asset: str) -> List[str]:
     return asset.split("/")
 
 
-T = TypeVar("T")
-
-
-def make_sync(fn):
+def make_sync(fn: F) -> Callable[..., Any]:
     sync_fun = async_to_sync(fn)
 
     @wraps(fn)
-    def impl(*args, **kwargs):
+    def impl(*args: Any, **kwargs: Any) -> Any:
         return sync_fun(*args, **kwargs)
 
     return impl
@@ -97,6 +97,6 @@ def add_sync_methods(original_class: T) -> T:
     return original_class
 
 
-def _set_sync_method_docstring(original_class, sync_name: str):
+def _set_sync_method_docstring(original_class: Any, sync_name: str) -> None:
     sync_method = getattr(original_class, sync_name)
     sync_method.__doc__ = "Synchronous version of the method."

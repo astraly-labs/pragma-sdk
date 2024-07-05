@@ -21,7 +21,7 @@ from pragma_sdk.common.randomness.utils import (
     create_randomness,
     felt_to_secret_key,
 )
-from pragma_sdk.common.types.types import ADDRESS, ExecutionConfig
+from pragma_sdk.common.types.types import Address, ExecutionConfig
 from pragma_sdk.onchain.types import RequestStatus
 
 logger = get_stream_logger()
@@ -31,7 +31,7 @@ class RandomnessMixin:
     client: Client
     randomness: Optional[Contract] = None
 
-    def init_randomness_contract(self, contract_address: ADDRESS):
+    def init_randomness_contract(self, contract_address: Address):
         provider = self.account if self.account else self.client
         self.randomness = Contract(
             address=contract_address,
@@ -198,7 +198,7 @@ class RandomnessMixin:
 
     async def get_request_status(
         self,
-        caller_address: ADDRESS,
+        caller_address: Address,
         request_id: int,
     ) -> RequestStatus:
         """
@@ -214,7 +214,7 @@ class RandomnessMixin:
         )
         return RequestStatus(response.variant)
 
-    async def get_total_fees(self, caller_address: ADDRESS, request_id: int) -> int:
+    async def get_total_fees(self, caller_address: Address, request_id: int) -> int:
         """
         Query the total fees of a request given the caller address and request ID.
         Total fees correspond to the sum of the callback fee and the premium fee.
@@ -229,7 +229,7 @@ class RandomnessMixin:
 
         return response
 
-    async def compute_premium_fee(self, caller_address: ADDRESS) -> int:
+    async def compute_premium_fee(self, caller_address: Address) -> int:
         """
         Query the premium fee for a request given the caller address.
         see https://docs.pragma.build/Resources/Cairo%201/randomness/randomness#pricing
@@ -243,7 +243,7 @@ class RandomnessMixin:
 
         return response
 
-    async def requestor_current_request_id(self, caller_address: ADDRESS) -> int:
+    async def requestor_current_request_id(self, caller_address: Address) -> int:
         """
         Query the request id of the latest request made by the caller address.
 
@@ -258,7 +258,7 @@ class RandomnessMixin:
 
     async def get_pending_requests(
         self,
-        requestor_address: ADDRESS,
+        requestor_address: Address,
         offset: int = 0,
         max_len: int = 100,
     ) -> List[int]:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 
 from pydantic.dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
@@ -18,13 +18,13 @@ class Entry(abc.ABC):
     """
 
     @abc.abstractmethod
-    def to_tuple(self) -> Tuple: ...
+    def to_tuple(self) -> Tuple[Any]: ...
 
     @abc.abstractmethod
-    def serialize(self) -> Dict[str, str]: ...
+    def serialize(self) -> Dict[str, object]: ...
 
     @abc.abstractmethod
-    def offchain_serialize(self) -> Dict[str, str]: ...
+    def offchain_serialize(self) -> Dict[str, object]: ...
 
     @abc.abstractmethod
     def get_timestamp(self) -> int: ...
@@ -40,17 +40,13 @@ class Entry(abc.ABC):
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        serialized_entries = [
-            entry.serialize() for entry in entries if isinstance(entry, Entry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
+        serialized_entries = [entry.serialize() for entry in entries]
+        return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
 
     @staticmethod
     def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        serialized_entries = [
-            entry.offchain_serialize() for entry in entries if isinstance(entry, Entry)
-        ]
-        return list(filter(lambda item: item is not None, serialized_entries))
+        serialized_entries = [entry.offchain_serialize() for entry in entries]
+        return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
 
     @staticmethod
     def flatten_entries(entries: List[Entry]) -> List[int]:
@@ -87,7 +83,7 @@ class BaseEntry:
         self.source = source
         self.publisher = publisher
 
-    def __hash__(self) -> Tuple[str]:
+    def __hash__(self) -> int:
         return hash((self.timestamp, self.source, self.publisher))
 
 
@@ -108,7 +104,7 @@ class SpotEntry(Entry):
         timestamp: UnixTimestamp,
         source: Union[str, int],
         publisher: Union[str, int],
-        volume: Optional[Union[int, float]] = 0,
+        volume: Optional[Union[int, float]] = None,
     ) -> None:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -123,34 +119,38 @@ class SpotEntry(Entry):
         self.pair_id = pair_id
         self.price = price
 
+        if volume is None:
+            volume = 0
         if isinstance(volume, float):
             volume = int(volume)
         self.volume = volume
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, SpotEntry):
-            return (
-                self.pair_id == other.pair_id
-                and self.price == other.price
-                and self.base.timestamp == other.base.timestamp
-                and self.base.source == other.base.source
-                and self.base.publisher == other.base.publisher
-                and self.volume == other.volume
+            return all(
+                [
+                    self.pair_id == other.pair_id,
+                    self.price == other.price,
+                    self.base.timestamp == other.base.timestamp,
+                    self.base.source == other.base.source,
+                    self.base.publisher == other.base.publisher,
+                    self.volume == other.volume,
+                ]
             )
         # This supports comparing against entries that are returned by starknet.py,
         # which will be namedtuples.
-        if isinstance(other, Tuple) and len(other) == 4:
-            return (
-                self.pair_id == other.pair_id
-                and self.price == other.price
-                and self.base.timestamp == other.base.timestamp
-                and self.base.source == other.base.source
-                and self.base.publisher == other.base.publisher
-                and self.volume == other.volume
+        if isinstance(other, tuple) and len(other) == 4:
+            return all(
+                [
+                    self.pair_id == other[0],
+                    self.price == other[1],
+                    self.base == other[2],
+                    self.volume == other[3],
+                ]
             )
         return False
 
-    def to_tuple(self):
+    def to_tuple(self) -> Tuple[int, int, int, int, int, int]:  # type: ignore[explicit-override, override]
         return (
             self.base.timestamp,
             self.base.source,
@@ -160,7 +160,7 @@ class SpotEntry(Entry):
             self.volume,
         )
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> Dict[str, object]:
         return {
             "base": {
                 "timestamp": self.base.timestamp,
@@ -172,7 +172,7 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def offchain_serialize(self) -> Dict[str, str]:
+    def offchain_serialize(self) -> Dict[str, object]:
         return {
             "base": {
                 "timestamp": self.base.timestamp,
@@ -184,7 +184,7 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def set_publisher(self, publisher) -> "SpotEntry":
+    def set_publisher(self, publisher: int) -> "SpotEntry":
         self.base.publisher = publisher
         return self
 
@@ -224,7 +224,7 @@ class SpotEntry(Entry):
         )
 
     @staticmethod
-    def from_dict(entry_dict: Dict[str, str]) -> "SpotEntry":
+    def from_dict(entry_dict: Any) -> "SpotEntry":
         base = dict(entry_dict["base"])
         return SpotEntry(
             entry_dict["pair_id"],
@@ -235,7 +235,7 @@ class SpotEntry(Entry):
             volume=entry_dict["volume"],
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
             f"price={self.price}, timestamp={self.base.timestamp}, "
@@ -243,7 +243,7 @@ class SpotEntry(Entry):
             f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
         )
 
-    def __hash__(self) -> Tuple[str]:
+    def __hash__(self) -> int:
         return hash((self.base, self.pair_id, self.price, self.volume))
 
 
@@ -268,8 +268,8 @@ class FutureEntry(Entry):
         timestamp: int,
         source: Union[str, int],
         publisher: Union[str, int],
-        expiry_timestamp: Optional[int] = 0,
-        volume: Optional[Union[float, int]] = 0,
+        expiry_timestamp: Optional[int] = None,
+        volume: Optional[Union[float, int]] = None,
     ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -283,38 +283,44 @@ class FutureEntry(Entry):
         self.base = BaseEntry(timestamp, source, publisher)
         self.pair_id = pair_id
         self.price = price
+        if expiry_timestamp is None:
+            expiry_timestamp = 0
         self.expiry_timestamp = expiry_timestamp
 
+        if volume is None:
+            volume = 0
         if isinstance(volume, float):
             volume = int(volume)
         self.volume = volume
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, FutureEntry):
-            return (
-                self.pair_id == other.pair_id
-                and self.price == other.price
-                and self.base.timestamp == other.base.timestamp
-                and self.base.source == other.base.source
-                and self.base.publisher == other.base.publisher
-                and self.expiry_timestamp == other.expiry_timestamp
-                and self.volume == other.volume
+            return all(
+                [
+                    self.pair_id == other.pair_id,
+                    self.price == other.price,
+                    self.base.timestamp == other.base.timestamp,
+                    self.base.source == other.base.source,
+                    self.base.publisher == other.base.publisher,
+                    self.expiry_timestamp == other.expiry_timestamp,
+                    self.volume == other.volume,
+                ]
             )
         # This supports comparing against entries that are returned by starknet.py,
         # which will be namedtuples.
-        if isinstance(other, Tuple) and len(other) == 4:
-            return (
-                self.pair_id == other.pair_id
-                and self.price == other.price
-                and self.base.timestamp == other.base.timestamp
-                and self.base.source == other.base.source
-                and self.base.publisher == other.base.publisher
-                and self.expiry_timestamp == other.expiry_timestamp
-                and self.volume == other.volume
+        if isinstance(other, tuple) and len(other) == 5:
+            return all(
+                [
+                    self.pair_id == other[0],
+                    self.price == other[1],
+                    self.base == other[2],
+                    self.expiry_timestamp == other[3],
+                    self.volume == other[4],
+                ]
             )
         return False
 
-    def to_tuple(self) -> Tuple:
+    def to_tuple(self) -> Tuple[int, int, int, int, int, int, int]:  # type: ignore[explicit-override, override]
         return (
             self.base.timestamp,
             self.base.source,
@@ -325,7 +331,7 @@ class FutureEntry(Entry):
             self.volume,
         )
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self) -> Dict[str, object]:
         return {
             "base": {
                 "timestamp": self.base.timestamp,
@@ -338,7 +344,7 @@ class FutureEntry(Entry):
             "volume": self.volume,
         }
 
-    def offchain_serialize(self) -> Dict[str, str]:
+    def offchain_serialize(self) -> Dict[str, object]:
         serialized = {
             "base": {
                 "timestamp": self.base.timestamp,
@@ -352,7 +358,7 @@ class FutureEntry(Entry):
         }
         return serialized
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
             f"price={self.price}, "
@@ -363,7 +369,7 @@ class FutureEntry(Entry):
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
 
-    def __hash__(self) -> Tuple[str]:
+    def __hash__(self) -> int:
         return hash(
             (self.base, self.pair_id, self.price, self.expiry_timestamp, self.volume)
         )
@@ -381,7 +387,7 @@ class FutureEntry(Entry):
         return DataTypes.FUTURE
 
     @staticmethod
-    def from_dict(entry_dict: Dict[str, str]) -> "FutureEntry":
+    def from_dict(entry_dict: Any) -> "FutureEntry":
         base = dict(entry_dict["base"])
         return FutureEntry(
             entry_dict["pair_id"],

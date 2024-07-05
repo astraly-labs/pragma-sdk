@@ -4,7 +4,7 @@ from typing import List, Optional, Self
 
 from pydantic import BaseModel
 
-from pragma_sdk.common.types.types import DECIMALS
+from pragma_sdk.common.types.types import Decimals
 from pragma_sdk.common.exceptions import UnsupportedAssetError
 
 from pathlib import Path
@@ -16,13 +16,13 @@ SUPPORTED_ASSETS_FILE_PATH = (
 
 class AssetConfig(BaseModel):
     name: str
-    decimals: DECIMALS
+    decimals: Decimals
     ticker: str
     coingecko_id: Optional[str] = None
     abstract: Optional[bool] = False
 
     @classmethod
-    def from_yaml(cls, path: str) -> List[Self]:
+    def from_yaml(cls, path: Path) -> List[Self]:
         with open(path, "r") as file:
             assets_configs = yaml.safe_load(file)
         list_configs = [cls(**config) for config in assets_configs]
@@ -30,7 +30,7 @@ class AssetConfig(BaseModel):
         return list_configs
 
     @classmethod
-    def from_ticker(cls, ticker: str) -> Self:
+    def from_ticker(cls, ticker: str) -> "AssetConfig":
         """
         Return a AssetConfig from a ticker.
         Raise UnsupportedAssetError if the ticker is not supported.
@@ -57,6 +57,8 @@ class AssetConfig(BaseModel):
         """
 
         asset = AssetConfig.from_ticker(ticker)
+        if asset.coingecko_id is None:
+            raise ValueError(f"{ticker} does not have any coingecko id.")
         return asset.coingecko_id
 
 

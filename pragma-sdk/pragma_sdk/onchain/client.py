@@ -19,7 +19,7 @@ from pragma_sdk.onchain.mixins import (
     PublisherRegistryMixin,
     RandomnessMixin,
 )
-from pragma_sdk.common.types.types import ADDRESS
+from pragma_sdk.common.types.types import Address
 from pragma_sdk.common.exceptions import ClientException
 from pragma_sdk.common.types.types import ExecutionConfig
 from pragma_sdk.onchain.types import ContractAddresses, Network
@@ -52,7 +52,7 @@ class PragmaOnChainClient(
     """
 
     is_user_client: bool = False
-    account_contract_address: Optional[ADDRESS] = None
+    account_contract_address: Optional[Address] = None
     account: Account = None
     full_node_client: FullNodeClient = None
     client: Client = None
@@ -61,7 +61,7 @@ class PragmaOnChainClient(
         self,
         network: Network = "sepolia",
         account_private_key: Optional[int] = None,
-        account_contract_address: Optional[ADDRESS] = None,
+        account_contract_address: Optional[Address] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[str] = None,
@@ -151,7 +151,7 @@ class PragmaOnChainClient(
         self,
         chain_id: StarknetChainId,
         private_key: int,
-        account_contract_address: ADDRESS,
+        account_contract_address: Address,
     ):
         self._setup_account_client(chain_id, private_key, account_contract_address)
 
@@ -159,7 +159,7 @@ class PragmaOnChainClient(
         self,
         chain_id: StarknetChainId,
         private_key: Union[str, int],
-        account_contract_address: ADDRESS,
+        account_contract_address: Address,
     ):
         if isinstance(private_key, str):
             private_key = int(private_key, 16)
@@ -180,7 +180,7 @@ class PragmaOnChainClient(
         self.account_contract_address = account_contract_address
 
     @property
-    def account_address(self) -> ADDRESS:
+    def account_address(self) -> Address:
         """
         Return the account address.
         """
@@ -189,7 +189,7 @@ class PragmaOnChainClient(
 
     def init_stats_contract(
         self,
-        stats_contract_address: ADDRESS,
+        stats_contract_address: Address,
     ):
         """
         Initialize the Summary Stats contract.

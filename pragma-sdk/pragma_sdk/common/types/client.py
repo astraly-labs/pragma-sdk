@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from abc import ABC, abstractmethod
 
 from pragma_sdk.common.types.entry import Entry
@@ -11,7 +11,7 @@ class PragmaClient(ABC):
     @abstractmethod
     async def publish_entries(
         self, entries: List[Entry], execution_config: Optional[ExecutionConfig] = None
-    ) -> any:
+    ) -> Any:
         """
         Publish entries to some destination.
 

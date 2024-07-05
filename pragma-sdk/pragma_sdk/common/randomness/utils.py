@@ -3,7 +3,7 @@ import secrets
 import sys
 from typing import List
 
-from pragma_sdk.common.types.types import ADDRESS
+from pragma_sdk.common.types.types import Address
 
 from pragma_sdk.common.randomness.randomness_utils import (
     ecvrf_proof_to_hash,
@@ -16,10 +16,10 @@ from pragma_sdk.common.randomness.randomness_utils import (
 @dataclass(frozen=True)
 class RandomnessRequest:
     request_id: int
-    caller_address: ADDRESS
+    caller_address: Address
     seed: int
     minimum_block_number: int
-    callback_address: ADDRESS
+    callback_address: Address
     callback_fee_limit: int
     num_words: int
     calldata: List[int]
