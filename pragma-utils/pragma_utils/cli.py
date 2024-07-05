@@ -20,6 +20,6 @@ def load_private_key_from_cli_arg(private_key: str) -> str:
         return private_key.split("plain:", 1)[1]
     elif private_key.startswith("env:"):
         env_var_name = private_key.split("env:", 1)[1]
-        return os.getenv(env_var_name)
+        return os.environ[env_var_name]
     else:
         raise ValueError("Private key must be prefixed with either 'aws:', 'plain:', or 'env:'")

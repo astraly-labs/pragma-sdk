@@ -1,17 +1,17 @@
 import asyncio
 import logging
 
-from typing import Callable, Optional, TypeVar
+from typing import Callable, Optional, TypeVar, Any, Awaitable
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
 async def retry_async(
-    action: Callable[[], T],
+    action: Callable[[], Awaitable[T]],
     retries: int,
     delay_in_s: int,
-) -> Optional[T]:
+) -> Optional[Any]:
     """
     Retries an asynchronous action every `delay` seconds up to `retries` times.
 
