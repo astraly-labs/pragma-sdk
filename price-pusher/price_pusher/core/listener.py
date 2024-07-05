@@ -148,7 +148,7 @@ class PriceListener(IPriceListener):
                 self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: DataTypes, expiry: str = None
+        self, pair_id: str, asset_type: DataTypes
     ) -> Optional[Entry]:
         """
         Retrieves the latest registered entry from the orchestrator prices.
