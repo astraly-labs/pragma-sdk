@@ -123,7 +123,6 @@ class PriceListener(IPriceListener):
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-
         for entry in results:
             if isinstance(entry, Exception) or isinstance(entry, PragmaAPIError):
                 logger.error(f"Error fetching oracle price: {entry}")

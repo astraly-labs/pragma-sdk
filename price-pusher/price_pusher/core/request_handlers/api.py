@@ -33,6 +33,7 @@ class APIRequestHandler(IRequestHandler):
                 interval=Interval.ONE_MINUTE,
                 aggregation=AggregationMode.MEDIAN,
             )
+
             entry = FutureEntry(
                 pair_id=entry_result.pair_id,
                 price=int(entry_result.data, 16),
