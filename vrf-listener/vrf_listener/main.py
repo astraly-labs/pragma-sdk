@@ -19,8 +19,9 @@ async def main(
     admin_address: str,
     private_key: str,
     start_block: int,
-    update_time_interval: int,
+    check_requests_interval: int,
 ) -> None:
+    logger.info("🧩 Starting VRF listener...")
     client = PragmaOnChainClient(
         network=rpc_url,
         account_contract_address=admin_address,
@@ -29,13 +30,13 @@ async def main(
     )
     client.init_randomness_contract(vrf_address)
 
+    logger.info("👂 Listening for randomness requests!")
     while True:
-        logger.info("Checking for randomness requests...")
         try:
             await client.handle_random(private_key, start_block)
         except Exception as e:
-            logger.error("Error handling randomness requests: %s", e)
-        await asyncio.sleep(update_time_interval)
+            logger.error(f"⛔ Error while handling randomness request: {e}")
+        await asyncio.sleep(check_requests_interval)
 
 
 @click.command()
@@ -86,11 +87,12 @@ async def main(
     help="At which block to start listening for VRF requests. Defaults to 0.",
 )
 @click.option(
-    "-t" "--update-time-interval",
+    "-t",
+    "--check-requests-interval",
     type=click.INT,
     required=False,
     default=10,
-    help="Delay in seconds between VRF checks. Defaults to 10 seconds.",
+    help="Delay in seconds between checks for VRF requests. Defaults to 10 seconds.",
 )
 def cli_entrypoint(
     log_level: str,
@@ -100,7 +102,7 @@ def cli_entrypoint(
     admin_address: str,
     private_key: str,
     start_block: int,
-    update_time_interval: int,
+    check_requests_interval: int,
 ) -> None:
     """
     Click does not support async functions.
@@ -119,7 +121,7 @@ def cli_entrypoint(
             admin_address,
             private_key,
             start_block,
-            update_time_interval,
+            check_requests_interval,
         )
     )
 
