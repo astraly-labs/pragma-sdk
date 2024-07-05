@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Union
+from typing import List
 
 from aiohttp import ClientSession
 
@@ -65,7 +65,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[FutureEntry, PublisherFetchError]]:
+    ) -> List[FutureEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             future_entries = await self.fetch_pair(pair, session)

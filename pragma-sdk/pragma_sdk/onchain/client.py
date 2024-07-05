@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -158,7 +158,7 @@ class PragmaOnChainClient(
     def _setup_account_client(
         self,
         chain_id: StarknetChainId,
-        private_key: Union[str, int],
+        private_key: str | int,
         account_contract_address: Address,
     ):
         if isinstance(private_key, str):

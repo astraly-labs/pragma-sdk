@@ -43,12 +43,12 @@ class DefillamaFetcher(FetcherInterfaceT):
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         coingecko_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         url = self.BASE_URL.format(pair_id=coingecko_id)
         return url
 
-    async def operate_usd_hop(self, pair: Pair, session) -> SpotEntry:
+    async def operate_usd_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
         coingecko_id_1 = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         coingeck_id_2 = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
         if coingeck_id_2 is None:

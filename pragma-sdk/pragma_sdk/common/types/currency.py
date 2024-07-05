@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Self, Dict, Union
+from typing import Tuple, Optional, Self, Dict
 
 from pragma_sdk.common.utils import str_to_felt
 from pragma_sdk.common.types.types import Address, Decimals
@@ -53,7 +53,7 @@ class Currency:
             self.ethereum_address,
         )
 
-    def to_dict(self) -> Dict[str, Union[int, str, bool]]:
+    def to_dict(self) -> Dict[str, int | str | bool]:
         return {
             "id": self.id,
             "decimals": self.decimals,

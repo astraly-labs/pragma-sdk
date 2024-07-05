@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import List, Optional, Any
 
 from aiohttp import ClientSession
 
@@ -28,7 +28,7 @@ class BybitFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         url = self.format_url(new_pair)
         async with session.get(url) as resp:
@@ -41,7 +41,7 @@ class BybitFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         usdt_price = await self.get_stable_price("USDT")
         for pair in self.pairs:
@@ -50,11 +50,11 @@ class BybitFetcher(FetcherInterfaceT):
             )
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}symbol={pair.base_currency.id}{pair.quote_currency.id}"
         return url
 
-    async def operate_usdt_hop(self, pair: Pair, session) -> SpotEntry:
+    async def operate_usdt_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
         url_pair1 = self.format_url(
             Pair(
                 pair.base_currency,
@@ -90,7 +90,11 @@ class BybitFetcher(FetcherInterfaceT):
         return self._construct(pair=pair, result=pair2_usdt, hop_result=pair1_usdt)
 
     def _construct(
-        self, pair: Pair, result, hop_result=None, usdt_price=1
+        self,
+        pair: Pair,
+        result: Any,
+        hop_result: Optional[Any] = None,
+        usdt_price: float = 1,
     ) -> SpotEntry:
         bid = float(result["result"]["list"][0]["bid1Price"])
         ask = float(result["result"]["list"][0]["ask1Price"])

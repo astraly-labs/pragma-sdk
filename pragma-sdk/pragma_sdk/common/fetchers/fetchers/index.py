@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List, Union
+from typing import List
 
 from aiohttp import ClientSession
 
@@ -36,7 +36,7 @@ class IndexFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         spot_entries = []
         for pair_weight in self.pair_quantities:
             spot_entry = await self.fetcher.fetch_pair(pair_weight.pair, session)

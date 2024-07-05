@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Optional
 
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
@@ -102,7 +102,7 @@ class NonceMixin:
     async def get_nonce(
         self,
         include_pending=True,
-        block_number: Optional[Union[int, str, Literal["pending", "latest"]]] = None,
+        block_number: Optional[int | str | Literal["pending", "latest"]] = None,
     ) -> int:
         """
         Get the nonce of the account contract address.

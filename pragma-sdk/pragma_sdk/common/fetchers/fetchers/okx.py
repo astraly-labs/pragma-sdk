@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import List, Union
+from typing import List
 
 from aiohttp import ClientSession
 
@@ -26,7 +26,7 @@ class OkxFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price=1
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         url = self.format_url(new_pair)
 
@@ -51,7 +51,7 @@ class OkxFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         usdt_price = await self.get_stable_price("USDT")
         for pair in self.pairs:
@@ -60,7 +60,7 @@ class OkxFetcher(FetcherInterfaceT):
             )
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}?instId={pair.base_currency.id}-{pair.quote_currency.id}-SWAP"
         return url
 

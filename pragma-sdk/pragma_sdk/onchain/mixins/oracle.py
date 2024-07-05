@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
@@ -193,9 +193,9 @@ class OracleMixin:
 
     async def get_spot(
         self,
-        pair_id: Union[str, int],
+        pair_id: str | int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources: List[Union[str, int]] = None,
+        sources: List[str | int] = None,
         block_number="latest",
     ) -> OracleResponse:
         """
@@ -239,10 +239,10 @@ class OracleMixin:
 
     async def get_future(
         self,
-        pair_id: Union[str, int],
+        pair_id: str | int,
         expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources: List[Union[str, int]] = None,
+        sources: List[str | int] = None,
         block_number="latest",
     ) -> OracleResponse:
         """
@@ -349,7 +349,7 @@ class OracleMixin:
 
     async def set_checkpoints(
         self,
-        pair_ids: List[Union[str, int]],
+        pair_ids: List[str | int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:

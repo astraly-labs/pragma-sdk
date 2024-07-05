@@ -101,12 +101,12 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         pool = ASSET_MAPPING[pair.base_currency.id]
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
         return url
 
-    async def operate_usd_hop(self, pair: Pair, session) -> SpotEntry:
+    async def operate_usd_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
         pool_1 = ASSET_MAPPING.get(pair.base_currency.id)
         pool_2 = ASSET_MAPPING.get(pair.quote_currency.id)
         if pool_1 is None or pool_2 is None:

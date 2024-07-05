@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from aiohttp import ClientSession
 
@@ -64,7 +64,7 @@ class PropellerFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         url = self.format_url()
         try:
             payload = build_payload(pair.base_currency, pair.quote_currency)
@@ -98,7 +98,7 @@ class PropellerFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))

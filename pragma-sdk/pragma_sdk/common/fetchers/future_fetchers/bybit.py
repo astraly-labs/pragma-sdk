@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, List, Union
+from typing import Any, List
 
 from aiohttp import ClientSession
 
@@ -21,7 +21,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[FutureEntry, PublisherFetchError]:
+    ) -> FutureEntry | PublisherFetchError:
         url = self.format_url(pair)
 
         async with session.get(url) as resp:
@@ -45,13 +45,13 @@ class ByBitFutureFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[FutureEntry, PublisherFetchError]]:
+    ) -> List[FutureEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}{pair.base_currency.id}{pair.quote_currency.id}"
         return url
 

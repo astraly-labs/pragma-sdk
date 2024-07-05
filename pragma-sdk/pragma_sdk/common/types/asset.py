@@ -1,4 +1,4 @@
-from typing import Optional, Union, Dict, Tuple
+from typing import Optional, Dict, Tuple
 
 
 from pragma_sdk.common.types.types import DataTypes
@@ -13,7 +13,7 @@ class Asset:
     def __init__(
         self,
         data_type: DataTypes,
-        pair_id: Union[str, int],
+        pair_id: str | int,
         expiration_timestamp: Optional[int],
     ):
         if isinstance(pair_id, str):
@@ -27,7 +27,7 @@ class Asset:
         self.data_type = data_type
         self.expiration_timestamp = expiration_timestamp
 
-    def serialize(self) -> Dict[str, Union[int, Tuple[int, Optional[int]]]]:
+    def serialize(self) -> Dict[str, int | Tuple[int, Optional[int]]]:
         """
         Serialize method used to interact with Cairo contracts.
         """
@@ -37,7 +37,7 @@ class Asset:
             return {"FutureEntry": (self.pair_id, self.expiration_timestamp)}
         return {}
 
-    def to_dict(self) -> Dict[str, Union[int, Optional[int], str]]:
+    def to_dict(self) -> Dict[str, int | Optional[int], str]:
         return {
             "pair_id": self.pair_id,
             "expiration_timestamp": self.expiration_timestamp,

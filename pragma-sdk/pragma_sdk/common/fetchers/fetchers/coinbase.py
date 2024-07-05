@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import List
 
 from aiohttp import ClientSession
 
@@ -19,7 +19,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -29,17 +29,17 @@ class CoinbaseFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = self.BASE_URL + pair.base_currency.id
         return url
 
-    def _construct(self, pair: Pair, result) -> Union[SpotEntry, PublisherFetchError]:
+    def _construct(self, pair: Pair, result) -> SpotEntry | PublisherFetchError:
         if pair.base_currency.id in result["data"]["rates"]:
             rate = float(result["data"]["rates"][pair.base_currency.id])
             price = 1 / rate

@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from aiohttp import ClientSession
 
@@ -18,7 +18,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     VOLUME_URL: str = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     SOURCE: str = "BINANCE"
 
-    async def _fetch_volume(self, pair: Pair, session) -> List:
+    async def _fetch_volume(self, pair: Pair, session: ClientSession) -> List:
         url = f"{self.VOLUME_URL}"
         selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         volume_arr = []
@@ -33,7 +33,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[FutureEntry, PublisherFetchError]:
+    ) -> FutureEntry | PublisherFetchError:
         filtered_data = []
         url = self.format_url()
         selection = f"{pair.base_currency.id}{pair.quote_currency.id}"

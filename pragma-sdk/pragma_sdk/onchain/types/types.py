@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, Union, List, Any
+from typing import Optional, Literal, List, Any
 from pragma_sdk.common.types.asset import Asset
 from pydantic import HttpUrl
 
@@ -13,14 +13,14 @@ ContractAddresses = namedtuple(
     ["publisher_registry_address", "oracle_proxy_addresss", "summary_stats_address"],
 )
 
-Network = Union[
-    Literal[
+Network = (
+    HttpUrl
+    | Literal[
         "devnet",
         "mainnet",
         "sepolia",
-    ],
-    HttpUrl,
-]
+    ]
+)
 
 
 @unique

@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict, Union
+from typing import Tuple, Optional, Dict
 
 
 from pragma_sdk.common.utils import currency_pair_to_pair_id, str_to_felt
@@ -29,7 +29,7 @@ class Pair:
     def serialize(self) -> Tuple[int, Currency, Currency]:
         return (self.id, self.base_currency, self.quote_currency)
 
-    def to_dict(self) -> Dict[str, Union[int, str]]:
+    def to_dict(self) -> Dict[str, int | str]:
         return {
             "id": self.id,
             "base_currency_id": self.base_currency.id,

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Union
+from typing import List
 
 from aiohttp import ClientSession
 
@@ -46,7 +46,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
 
     async def off_fetch_ekubo_price(
         self, pair: Pair, session: ClientSession, timestamp=None
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair, timestamp)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -58,7 +58,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
 
     def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         return self.off_fetch_ekubo_price(pair, session)
 
     def format_url(self, pair: Pair, timestamp=None):

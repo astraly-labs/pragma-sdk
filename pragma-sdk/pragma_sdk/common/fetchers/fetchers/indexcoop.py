@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import List, Union
+from typing import List
 
 import requests
 from aiohttp import ClientSession
@@ -29,7 +29,7 @@ class IndexCoopFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             content_type = resp.headers.get("Content-Type", "")
@@ -46,13 +46,13 @@ class IndexCoopFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}/{pair.base_currency.id}/analytics"
         return url
 

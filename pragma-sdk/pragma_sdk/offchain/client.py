@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import aiohttp
 from requests import HTTPError
@@ -34,8 +34,8 @@ class PragmaAPIClient(PragmaClient):
 
     def __init__(
         self,
-        account_private_key: Optional[Union[str, int]],
-        account_contract_address: Optional[Union[str, int]],
+        account_private_key: Optional[str | int],
+        account_contract_address: Optional[str | int],
         api_base_url: str,
         api_key: str,
     ):

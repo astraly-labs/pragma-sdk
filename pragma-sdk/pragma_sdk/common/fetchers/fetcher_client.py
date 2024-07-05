@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Union
+from typing import List
 
 import aiohttp
 
@@ -69,7 +69,7 @@ class FetcherClient:
         filter_exceptions: bool = True,
         return_exceptions: bool = True,
         timeout_duration: int = 20,
-    ) -> List[Union[Entry, Exception]]:
+    ) -> List[Entry | Exception]:
         """
         Fetch data from all fetchers asynchronously.
         Fetching is done in parallel for all fetchers.

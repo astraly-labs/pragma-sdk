@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import Any, List, Union
+from typing import Any, List
 
 from aiohttp import ClientSession
 
@@ -19,7 +19,7 @@ class UpbitFetcher(FetcherInterfaceT):
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Union[SpotEntry, PublisherFetchError]:
+    ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -29,13 +29,13 @@ class UpbitFetcher(FetcherInterfaceT):
 
     async def fetch(
         self, session: ClientSession
-    ) -> List[Union[SpotEntry, PublisherFetchError]]:
+    ) -> List[SpotEntry | PublisherFetchError]:
         entries = []
         for pair in self.pairs:
             entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
         return await asyncio.gather(*entries, return_exceptions=True)
 
-    def format_url(self, pair: Pair):
+    def format_url(self, pair: Pair) -> str:
         url = (
             f"{self.BASE_URL}?markets={pair.base_currency.id}-{pair.quote_currency.id}"
         )

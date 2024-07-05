@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 
 from pydantic.dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Any
 
 from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
@@ -70,8 +70,8 @@ class BaseEntry:
     def __init__(
         self,
         timestamp: UnixTimestamp,
-        source: Union[str, int],
-        publisher: Union[str, int],
+        source: str | int,
+        publisher: str | int,
     ):
         if isinstance(publisher, str):
             publisher = str_to_felt(publisher)
@@ -99,12 +99,12 @@ class SpotEntry(Entry):
 
     def __init__(
         self,
-        pair_id: Union[str, int],
+        pair_id: str | int,
         price: int,
         timestamp: UnixTimestamp,
-        source: Union[str, int],
-        publisher: Union[str, int],
-        volume: Optional[Union[int, float]] = None,
+        source: str | int,
+        publisher: str | int,
+        volume: Optional[int | float] = None,
     ) -> None:
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
@@ -263,13 +263,13 @@ class FutureEntry(Entry):
 
     def __init__(
         self,
-        pair_id: Union[str, int],
+        pair_id: str | int,
         price: int,
         timestamp: int,
-        source: Union[str, int],
-        publisher: Union[str, int],
+        source: str | int,
+        publisher: str | int,
         expiry_timestamp: Optional[int] = None,
-        volume: Optional[Union[float, int]] = None,
+        volume: Optional[float | int] = None,
     ):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
