@@ -27,7 +27,7 @@ class Asset:
         self.data_type = data_type
         self.expiration_timestamp = expiration_timestamp
 
-    def serialize(self) -> Dict[str, int | Tuple[int, Optional[int]]]:
+    def serialize(self) -> Dict[str, int | Tuple[int, None]]:
         """
         Serialize method used to interact with Cairo contracts.
         """
@@ -37,7 +37,7 @@ class Asset:
             return {"FutureEntry": (self.pair_id, self.expiration_timestamp)}
         return {}
 
-    def to_dict(self) -> Dict[str, int | Optional[int], str]:
+    def to_dict(self) -> Dict[str, (int | str | None)]:
         return {
             "pair_id": self.pair_id,
             "expiration_timestamp": self.expiration_timestamp,

@@ -17,12 +17,11 @@ from pragma_sdk.onchain.types import (
     VRFSubmitParams,
 )
 from pragma_sdk.common.randomness.utils import (
-    RandomnessRequest,
     create_randomness,
     felt_to_secret_key,
 )
 from pragma_sdk.common.types.types import Address, ExecutionConfig
-from pragma_sdk.onchain.types import RequestStatus
+from pragma_sdk.onchain.types import RequestStatus, RandomnessRequest
 
 logger = get_stream_logger()
 

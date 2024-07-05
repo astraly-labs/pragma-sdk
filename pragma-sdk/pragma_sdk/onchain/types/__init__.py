@@ -9,6 +9,7 @@ from pragma_sdk.onchain.types.types import (
     VRFRequestParams,
     VRFSubmitParams,
     VRFCancelParams,
+    RandomnessRequest,
 )
 
 
@@ -22,4 +23,5 @@ __all__ = [
     "VRFRequestParams",
     "VRFSubmitParams",
     "VRFCancelParams",
+    "RandomnessRequest",
 ]
