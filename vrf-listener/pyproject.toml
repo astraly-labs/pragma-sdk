@@ -44,10 +44,10 @@ types-deprecated = "^1.2.9"
 
 [tool.poe.tasks]
 format = "ruff format ."
+format_check = "ruff format . --check"
 lint = "ruff check ."
-lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy vrf_listener"
-test_all = "pytest tests"
+test_all = "echo No tests yet"
 
 [tool.ruff]
 exclude = [
