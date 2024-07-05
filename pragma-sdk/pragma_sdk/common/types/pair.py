@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Self
+from typing import Tuple, Optional, Dict, Union
 
 
 from pragma_sdk.common.utils import currency_pair_to_pair_id, str_to_felt
@@ -23,32 +23,26 @@ class Pair:
         self.id = str_to_felt(
             currency_pair_to_pair_id(base_currency.id, quote_currency.id)
         )
-
-        if isinstance(base_currency, str):
-            base_currency = str_to_felt(base_currency)
         self.base_currency = base_currency
-
-        if isinstance(quote_currency, str):
-            quote_currency = str_to_felt(quote_currency)
         self.quote_currency = quote_currency
 
-    def serialize(self) -> List[str]:
-        return [self.id, self.base_currency, self.quote_currency]
+    def serialize(self) -> Tuple[int, Currency, Currency]:
+        return (self.id, self.base_currency, self.quote_currency)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Union[int, str]]:
         return {
             "id": self.id,
             "base_currency_id": self.base_currency.id,
             "quote_currency_id": self.quote_currency.id,
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.base_currency.id}/{self.quote_currency.id}"
 
     def to_tuple(self) -> Tuple[str, str]:
         return (self.base_currency.id, self.quote_currency.id)
 
-    def decimals(self):
+    def decimals(self) -> int:
         """
         Returns the decimals of the pair.
         Corresponds to the minimum of both currencies' decimals.
@@ -58,7 +52,7 @@ class Pair:
     @classmethod
     def from_asset_configs(
         cls, base_asset: AssetConfig, quote_asset: AssetConfig
-    ) -> Optional[Self]:
+    ) -> Optional["Pair"]:
         """
         Return a Pair from two AssetConfigs.
         Return None if the base and quote assets are the same.
@@ -77,7 +71,7 @@ class Pair:
         )
 
     @staticmethod
-    def from_tickers(base_ticker: str, quote_ticker: str) -> Optional[Self]:
+    def from_tickers(base_ticker: str, quote_ticker: str) -> Optional["Pair"]:
         """
         Return a Pair from two tickers.
         Return None if the base and quote tickers are the same.
