@@ -1,7 +1,7 @@
 abis
 ===========================
 
-.. automodule:: pragma.onchain.abis.abi
+.. automodule:: pragma_sdk.onchain.abis.abi
    :members:
    :undoc-members:
    :show-inheritance:

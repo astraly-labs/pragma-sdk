@@ -6,7 +6,7 @@ onchain mixins
 NonceMixin
 ----------------------------------
 
-.. automodule:: pragma.onchain.mixins.nonce
+.. automodule:: pragma_sdk.onchain.mixins.nonce
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ NonceMixin
 OracleMixin
 -----------------------------------
 
-.. automodule:: pragma.onchain.mixins.oracle
+.. automodule:: pragma_sdk.onchain.mixins.oracle
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ OracleMixin
 PublisherRegistryMixin
 ------------------------------------------------
 
-.. automodule:: pragma.onchain.mixins.publisher_registry
+.. automodule:: pragma_sdk.onchain.mixins.publisher_registry
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ PublisherRegistryMixin
 RandomnessMixin
 ---------------------------------------
 
-.. automodule:: pragma.onchain.mixins.randomness
+.. automodule:: pragma_sdk.onchain.mixins.randomness
    :members:
    :undoc-members:
    :show-inheritance:

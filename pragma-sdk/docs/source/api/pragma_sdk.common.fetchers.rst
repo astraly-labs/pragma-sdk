@@ -1,20 +1,10 @@
 fetchers
 ==============================
 
-
-
-.. toctree::
-   :maxdepth: 2
-
-   pragma.common.fetchers.fetchers
-   pragma.common.fetchers.future_fetchers
-
-
-
 FetcherClient
 ---------------------------------------------
 
-.. automodule:: pragma.common.fetchers.fetcher_client
+.. automodule:: pragma_sdk.common.fetchers.fetcher_client
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +12,15 @@ FetcherClient
 HopHandler
 ------------------------------------------
 
-.. automodule:: pragma.common.fetchers.hop_handler
+.. automodule:: pragma_sdk.common.fetchers.handlers.hop_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+IndexAggregation
+------------------------------------------
+
+.. automodule:: pragma_sdk.common.fetchers.handlers.index_aggregator_handler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +28,7 @@ HopHandler
 FetcherInterfaceT
 ---------------------------------------
 
-.. automodule:: pragma.common.fetchers.interface
+.. automodule:: pragma_sdk.common.fetchers.interface
    :members:
    :undoc-members:
    :show-inheritance:

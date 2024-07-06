@@ -4,7 +4,7 @@ common types
 
 Asset
 --------------------------------
-.. automodule:: pragma.common.types.asset
+.. automodule:: pragma_sdk.common.types.asset
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,7 +12,7 @@ Asset
 PragmaClient
 ---------------------------------
 
-.. automodule:: pragma.common.types.client
+.. automodule:: pragma_sdk.common.types.client
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,7 +20,7 @@ PragmaClient
 Currency
 -----------------------------------
 
-.. automodule:: pragma.common.types.currency
+.. automodule:: pragma_sdk.common.types.currency
    :members:
    :undoc-members:
    :show-inheritance:
@@ -28,7 +28,7 @@ Currency
 Entries
 --------------------------------
 
-.. automodule:: pragma.common.types.entry
+.. automodule:: pragma_sdk.common.types.entry
    :members:
    :undoc-members:
    :show-inheritance:
@@ -36,7 +36,7 @@ Entries
 Pair
 -------------------------------
 
-.. automodule:: pragma.common.types.pair
+.. automodule:: pragma_sdk.common.types.pair
    :members:
    :undoc-members:
    :show-inheritance:
@@ -44,7 +44,7 @@ Pair
 Other types
 --------------------------------
 
-.. automodule:: pragma.common.types.types
+.. automodule:: pragma_sdk.common.types.types
    :members:
    :undoc-members:
    :show-inheritance:

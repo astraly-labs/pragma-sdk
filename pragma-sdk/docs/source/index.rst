@@ -1,9 +1,19 @@
+.. figure:: _static/pragma-logo.png
+   :class: pragma-logo
 
-Welcome to the official Pragma SDK Documentation!
+
+.. rst-class:: description-cls
+
+Pragma SDK for Python
+
+
+.. rst-class:: get-started-cls
+
+:doc:`Get Started<quickstart>`
 
 .. toctree::
    :hidden:
 
    installation
-   new_account
+   quickstart
    api

@@ -1,4 +1,4 @@
-pragma
+pragma_sdk
 ==============
 
 
@@ -6,14 +6,14 @@ pragma
 .. toctree::
    :maxdepth: 4
 
-   pragma.common
-   pragma.offchain
-   pragma.onchain
+   pragma_sdk.common
+   pragma_sdk.offchain
+   pragma_sdk.onchain
 
 Module contents
 ---------------
 
-.. automodule:: pragma
+.. automodule:: pragma_sdk
    :members:
    :undoc-members:
    :show-inheritance:

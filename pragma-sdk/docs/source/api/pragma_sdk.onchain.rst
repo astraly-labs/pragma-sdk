@@ -1,18 +1,18 @@
-pragma.onchain
+pragma_sdk.onchain
 ======================
 
 .. toctree::
    :maxdepth: 2
 
-   pragma.onchain.abis
-   pragma.onchain.mixins
-   pragma.onchain.types
+   pragma_sdk.onchain.abis
+   pragma_sdk.onchain.mixins
+   pragma_sdk.onchain.types
 
 
 PragmaOnChainClient
 ----------------------------
 
-.. automodule:: pragma.onchain.client
+.. automodule:: pragma_sdk.onchain.client
    :members:
    :undoc-members:
    :show-inheritance:

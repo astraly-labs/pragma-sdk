@@ -3,6 +3,6 @@ API
 .. toctree::
    :maxdepth: 2
 
-   api/pragma.common
-   api/pragma.offchain
-   api/pragma.onchain
+   api/pragma_sdk.common
+   api/pragma_sdk.offchain
+   api/pragma_sdk.onchain

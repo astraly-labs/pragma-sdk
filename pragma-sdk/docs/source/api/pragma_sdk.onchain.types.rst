@@ -6,7 +6,7 @@ onchain types
 Contract
 ------------------------------------
 
-.. automodule:: pragma.onchain.types.contract
+.. automodule:: pragma_sdk.onchain.types.contract
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ Contract
 Other types
 ---------------------------------
 
-.. automodule:: pragma.onchain.types.types
+.. automodule:: pragma_sdk.onchain.types.types
    :members:
    :undoc-members:
    :show-inheritance:

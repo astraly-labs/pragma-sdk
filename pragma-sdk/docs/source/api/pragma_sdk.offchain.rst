@@ -1,4 +1,4 @@
-pragma.offchain
+pragma_sdk.offchain
 =======================
 
 
@@ -6,7 +6,7 @@ pragma.offchain
 PragmaAPIClient
 -----------------------------
 
-.. automodule:: pragma.offchain.client
+.. automodule:: pragma_sdk.offchain.client
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ PragmaAPIClient
 OffchainSigner
 -----------------------------
 
-.. automodule:: pragma.offchain.signer
+.. automodule:: pragma_sdk.offchain.signer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ OffchainSigner
 Interval
 ----------------------------
 
-.. automodule:: pragma.offchain.types
+.. automodule:: pragma_sdk.offchain.types
    :members:
    :undoc-members:
    :show-inheritance:

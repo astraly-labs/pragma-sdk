@@ -1,7 +1,7 @@
-pragma
+pragma_sdk
 ======
 
 .. toctree::
    :maxdepth: 4
 
-   pragma
+   pragma_sdk

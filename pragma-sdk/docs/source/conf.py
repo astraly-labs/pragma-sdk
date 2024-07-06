@@ -13,17 +13,20 @@
 #
 import os
 import sys
+from pallets_sphinx_themes import ProjectLink
+from pallets_sphinx_themes import get_version
 
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(1, os.path.abspath("./source"))
 sys.path.insert(2, os.path.abspath(".."))
-sys.path.insert(3, os.path.abspath("../pragma"))
+sys.path.insert(3, os.path.abspath("../pragma_sdk"))
 
 # -- Project information -----------------------------------------------------
 
 project = "pragma-sdk"
 copyright = "2024, Pragma Labs"
 author = "Pragma Labs"
+release, version = get_version("Click")
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,6 +40,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "pallets_sphinx_themes",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,5 +73,17 @@ html_favicon = "_static/favicon.ico"
 html_title = "🧩 SDK"
 html_short_title = "pragma-sdk-docs"
 html_permalinks_icon = "#"
+html_title = f"Pragma SDK Documentation ({version})"
 
 html_theme_options = {"light_logo": "pragma-logo.png", "dark_logo": "pragma-logo.png"}
+
+html_context = {
+    "project_links": [
+        ProjectLink("PyPI Releases", "https://pypi.org/project/pragma-sdk/"),
+        ProjectLink("Source Code", "https://github.com/astraly-labs/pragma-sdk/"),
+        ProjectLink(
+            "Issue Tracker", "https://github.com/astraly-labs/pragma-sdk/issues/"
+        ),
+        ProjectLink("Chat", "https://t.me/+Xri-uUMpWXI3ZmRk"),
+    ]
+}

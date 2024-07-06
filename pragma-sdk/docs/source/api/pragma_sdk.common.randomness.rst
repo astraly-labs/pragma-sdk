@@ -6,7 +6,7 @@ randomness
 randomness_utils
 -------------------------------------------------
 
-.. automodule:: pragma.common.randomness.randomness_utils
+.. automodule:: pragma_sdk.common.randomness.randomness_utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ randomness_utils
 utils
 -------------------------------------
 
-.. automodule:: pragma.common.randomness.utils
+.. automodule:: pragma_sdk.common.randomness.utils
    :members:
    :undoc-members:
    :show-inheritance:

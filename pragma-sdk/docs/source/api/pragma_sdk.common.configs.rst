@@ -6,7 +6,7 @@ configs
 AssetConfig
 ------------------------------------------
 
-.. automodule:: pragma.common.configs.asset_config
+.. automodule:: pragma_sdk.common.configs.asset_config
    :members:
    :undoc-members:
    :show-inheritance:
