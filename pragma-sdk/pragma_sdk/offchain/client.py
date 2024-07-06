@@ -1,6 +1,7 @@
 import asyncio
 import time
 from typing import Dict, List, Optional
+import logging
 
 import aiohttp
 from requests import HTTPError
@@ -12,10 +13,13 @@ from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
 from pragma_sdk.offchain.signer import OffchainSigner
 from pragma_sdk.offchain.types import Interval
+from pragma_sdk.common.types.pair import Pair
 
 from pragma_sdk.common.types.client import PragmaClient
 
 from pragma_sdk.offchain.exceptions import PragmaAPIError
+
+logger = logging.getLogger(__name__)
 
 
 @add_sync_methods
@@ -276,7 +280,7 @@ class PragmaAPIClient(PragmaClient):
                 "interval": interval.value if interval else None,
                 "aggregation": aggregation.value.lower() if aggregation else None,
                 "entry_type": "future",
-                "expiry" : expiry if len(expiry) != 0 else None,
+                "expiry" : expiry if expiry else None,
             }.items()
             if value is not None
         }
@@ -303,6 +307,7 @@ class PragmaAPIClient(PragmaClient):
             num_sources_aggregated=response["num_sources_aggregated"],
             timestamp=response["timestamp"],
             decimals=response["decimals"],
+            expiry=expiry
         )
 
     async def get_volatility(self, pair: str, start: int, end: int):
@@ -343,6 +348,41 @@ class PragmaAPIClient(PragmaClient):
                     raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
+    
+    async def get_expiries_list(self, pair: Pair):
+        """
+        Get volatility data for a pair in a given time range on the Pragma API.
+
+        :param pair: Pair to get data for
+        :param start: Start timestamp
+        :param end: End timestamp
+        """
+
+        base_asset, quote_asset = get_cur_from_pair(f"{pair}")
+
+        endpoint = f"/node/v1/data/{base_asset}/{quote_asset}/future_expiries"
+
+        headers = {
+            "x-api-key": self.api_key,
+        }
+
+        # Construct URL with parameters
+        url = f"{self.api_base_url}{endpoint}"
+        # Send GET request with headers
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                status_code: int = response.status
+                response: Dict = await response.json()
+                if status_code == 200:
+                    print(f"Success: {response}")
+                    print("Get expiry successful")
+                else:
+                    print(f"Status Code: {status_code}")
+                    print(f"Response Text: {response}")
+                    raise HTTPError(f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} ")
+                return response
+        
+                
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):

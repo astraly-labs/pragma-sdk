@@ -79,4 +79,4 @@ class APIRequestHandler(IRequestHandler):
                 source=PRAGMA_API_SOURCE_NAME,
                 publisher=PRAGMA_API_PUBLISHER_NAME,
             )
-        return entry
+            return entry

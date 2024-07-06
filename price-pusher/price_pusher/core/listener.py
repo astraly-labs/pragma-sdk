@@ -124,8 +124,9 @@ class PriceListener(IPriceListener):
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        print(f"results : {results}")
         results = [subl for subl in results if not isinstance(subl, BaseException)]
-        results = [val for subl in results for val in subl] 
+        results = [val for subl in results for val in (subl if isinstance(subl, (list, tuple)) else [subl])] 
 
         for entry in results:
             if isinstance(entry, Exception) or isinstance(entry, PragmaAPIError):
@@ -148,7 +149,7 @@ class PriceListener(IPriceListener):
                 self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: DataTypes
+        self, pair_id: str, asset_type: DataTypes, expiry: str = None
     ) -> Optional[Entry]:
         """
         Retrieves the latest registered entry from the orchestrator prices.
@@ -200,7 +201,8 @@ class PriceListener(IPriceListener):
 
                 # If not, check its deviation
                 for entry in orchestrator_entries.values():
-                    expiry = entry.expiry_timestamp if entry.expiry_timestamp == 0 else datetime.utcfromtimestamp(entry.expiry_timestamp / 1000).strftime('%Y-%m-%dT%H:%M:%S')
+                    if asset_type == DataTypes.FUTURE :
+                        expiry = entry.expiry_timestamp if entry.expiry_timestamp == 0 else datetime.utcfromtimestamp(entry.expiry_timestamp / 1000).strftime('%Y-%m-%dT%H:%M:%S')
                     oracle_entry_price = oracle_entry.price if asset_type == DataTypes.SPOT else oracle_entry[expiry].price
                     if self._new_price_is_deviating(pair_id, entry.price, oracle_entry_price):
                         return True
@@ -230,7 +232,7 @@ class PriceListener(IPriceListener):
         """
         max_time_elapsed = self.price_config.time_difference
         if newest_entry.get_asset_type() == DataTypes.SPOT:
-            oracle_entry_timestamp = oracle_entry.timestamp
+            oracle_entry_timestamp = oracle_entry.get_timestamp()
         else:
             latest_oracle_entry = max(oracle_entry.values(), key=lambda x: x.get_timestamp())
             oracle_entry_timestamp = latest_oracle_entry.get_timestamp()
