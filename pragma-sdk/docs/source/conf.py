@@ -26,7 +26,7 @@ sys.path.insert(3, os.path.abspath("../pragma_sdk"))
 project = "pragma-sdk"
 copyright = "2024, Pragma Labs"
 author = "Pragma Labs"
-release, version = get_version("Click")
+release, version = get_version("pragma-sdk")
 
 
 # -- General configuration ---------------------------------------------------

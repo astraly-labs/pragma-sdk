@@ -21,8 +21,13 @@ class FetcherClient:
     The client works by setting up fetchers that are provided the assets to fetch and the publisher name.
 
     ```python
-    bitstamp_fetcher = BitstampFetcher(ALL_ASSETS_CONFIGS, "publisher_test")
-    gateio_fetcher = GateIOFetcher(ALL_ASSETS_CONFIGS, "publisher_test")
+    pairs = [
+        Pair.from_tickers("BTC","USD"),
+        Pair.from_tickers("ETH","USD"),
+    ]
+
+    bitstamp_fetcher = BitstampFetcher(pairs, "publisher_test")
+    gateio_fetcher = GateIOFetcher(pairs, "publisher_test")
 
     fetchers = [
         bitstamp_fetcher,
