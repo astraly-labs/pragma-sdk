@@ -48,6 +48,9 @@
   ticker: 'WBTC'
   coingecko_id: 'wrapped-bitcoin'
 
-
+- name: 'Lido Staked Ethereum'
+  decimals: 8
+  ticker: 'WSTETH'
+  coingecko_id: 'wrapped-steth'
 
 

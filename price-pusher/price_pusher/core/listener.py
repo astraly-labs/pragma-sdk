@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import logging
 
 from abc import ABC, abstractmethod
@@ -124,6 +125,9 @@ class PriceListener(IPriceListener):
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        print(f"results : {results}")
+        results = [subl for subl in results if not isinstance(subl, BaseException)]
+        results = [val for subl in results for val in (subl if isinstance(subl, (list, tuple)) else [subl])] 
 
         for entry in results:
             if isinstance(entry, Exception) or isinstance(entry, PragmaAPIError):
@@ -134,14 +138,19 @@ class PriceListener(IPriceListener):
 
             pair_id = entry.get_pair_id().replace(",", "/")
             asset_type = entry.get_asset_type()
-
+    
             if pair_id not in self.oracle_prices:
                 self.oracle_prices[pair_id] = {}
+            if asset_type not in self.oracle_prices[pair_id]:
+                self.oracle_prices[pair_id][asset_type] = {}
 
-            self.oracle_prices[pair_id][asset_type] = entry
+            if asset_type == DataTypes.FUTURE:
+                self.oracle_prices[pair_id][asset_type][entry.expiry_timestamp] = entry
+            else:
+                self.oracle_prices[pair_id][asset_type] = entry
 
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: DataTypes
+        self, pair_id: str, asset_type: DataTypes, expiry: str = None
     ) -> Optional[Entry]:
         """
         Retrieves the latest registered entry from the orchestrator prices.
@@ -151,6 +160,7 @@ class PriceListener(IPriceListener):
         if pair_id not in self.orchestrator_prices:
             return None
         entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
+        
         return max(entries, key=lambda entry: entry.get_timestamp(), default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
@@ -173,6 +183,7 @@ class PriceListener(IPriceListener):
             )
             return True
 
+
         for pair_id, oracle_entries in self.oracle_prices.items():
             if pair_id not in self.orchestrator_prices:
                 continue
@@ -183,15 +194,18 @@ class PriceListener(IPriceListener):
                     )
                     return True
                 oracle_entry = oracle_entries[asset_type]
-
                 # First check if the oracle entry is outdated
                 newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
+                
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
                     return True
 
                 # If not, check its deviation
                 for entry in orchestrator_entries.values():
-                    if self._new_price_is_deviating(pair_id, entry.price, oracle_entry.price):
+                    if asset_type == DataTypes.FUTURE :
+                        expiry = entry.expiry_timestamp if entry.expiry_timestamp == 0 else datetime.utcfromtimestamp(entry.expiry_timestamp / 1000).strftime('%Y-%m-%dT%H:%M:%S')
+                    oracle_entry_price = oracle_entry.price if asset_type == DataTypes.SPOT else oracle_entry[expiry].price
+                    if self._new_price_is_deviating(pair_id, entry.price, oracle_entry_price):
                         return True
         return False
 
@@ -218,8 +232,13 @@ class PriceListener(IPriceListener):
         the orchestrator and the most recent entry for the oracle.
         """
         max_time_elapsed = self.price_config.time_difference
+        if newest_entry.get_asset_type() == DataTypes.SPOT:
+            oracle_entry_timestamp = oracle_entry.get_timestamp()
+        else:
+            latest_oracle_entry = max(oracle_entry.values(), key=lambda x: x.get_timestamp())
+            oracle_entry_timestamp = latest_oracle_entry.get_timestamp()
 
-        delta_t = newest_entry.get_timestamp() - oracle_entry.get_timestamp()
+        delta_t = newest_entry.get_timestamp() - oracle_entry_timestamp
         is_outdated = delta_t > max_time_elapsed
 
         if is_outdated:
