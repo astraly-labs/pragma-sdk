@@ -2,7 +2,8 @@ import asyncio
 import click
 import logging
 
-from typing import Optional
+from pydantic import HttpUrl
+from typing import Optional, Literal
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 async def main(
-    network: str,
-    rpc_url: Optional[str],
+    network: Literal["devnet", "mainnet", "sepolia"],
+    rpc_url: Optional[HttpUrl],
     vrf_address: str,
     admin_address: str,
     private_key: str,
@@ -23,17 +24,17 @@ async def main(
 ) -> None:
     logger.info("🧩 Starting VRF listener...")
     client = PragmaOnChainClient(
-        network=rpc_url,
-        account_contract_address=admin_address,
-        account_private_key=private_key,
+        network=rpc_url if rpc_url is not None else network,
+        account_contract_address=int(admin_address, 16),
+        account_private_key=int(private_key, 16),
         chain_name=network,
     )
-    client.init_randomness_contract(vrf_address)
+    client.init_randomness_contract(int(vrf_address, 16))
 
     logger.info("👂 Listening for randomness requests!")
     while True:
         try:
-            await client.handle_random(private_key, start_block)
+            await client.handle_random(int(private_key, 16), start_block)
         except Exception as e:
             logger.error(f"⛔ Error while handling randomness request: {e}")
         await asyncio.sleep(check_requests_interval)
@@ -96,8 +97,8 @@ async def main(
 )
 def cli_entrypoint(
     log_level: str,
-    network: str,
-    rpc_url: Optional[str],
+    network: Literal["devnet", "mainnet", "sepolia"],
+    rpc_url: Optional[HttpUrl],
     vrf_address: str,
     admin_address: str,
     private_key: str,
