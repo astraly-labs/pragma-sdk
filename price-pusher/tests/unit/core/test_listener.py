@@ -6,7 +6,9 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from price_pusher.core.listener import PriceListener
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
+from tests.constants import BTC_USD_PAIR
 from pragma_sdk.common.types.entry import Entry, SpotEntry
+from pragma_sdk.common.types.types import DataTypes
 
 
 @pytest.fixture
@@ -19,7 +21,7 @@ def mock_price_config():
     config = MagicMock(spec=PriceConfig)
     config.price_deviation = 0.1
     config.time_difference = 60
-    config.get_all_assets.return_value = [{"type": "SPOT", "pair": ("BTC", "USD"), "decimals": 8}]
+    config.get_all_assets.return_value = {DataTypes.SPOT: [BTC_USD_PAIR]}
     return config
 
 
@@ -70,12 +72,15 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
     mock_request_handler.fetch_latest_entry.return_value = mock_entry
     await price_listener._fetch_all_oracle_prices()
 
+    first_key = list(mock_price_config.get_all_assets.return_value.keys())[0]
+
     mock_request_handler.fetch_latest_entry.assert_called_once_with(
-        mock_price_config.get_all_assets.return_value[0]
+        first_key,
+        mock_price_config.get_all_assets.return_value[first_key][0],
     )
     assert "BTC/USD" in price_listener.oracle_prices
-    assert "SPOT" in price_listener.oracle_prices["BTC/USD"]
-    assert price_listener.oracle_prices["BTC/USD"]["SPOT"] == mock_entry
+    assert DataTypes.SPOT in price_listener.oracle_prices["BTC/USD"]
+    assert price_listener.oracle_prices["BTC/USD"][DataTypes.SPOT] == mock_entry
 
 
 def test_get_most_recent_orchestrator_entry(price_listener):
