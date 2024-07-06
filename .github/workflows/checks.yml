@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.12" ]
+        python-version: [ "3.12.4" ]
         package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener]
     steps:
       - uses: actions/checkout@v3
@@ -70,11 +70,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+      - uses: CfirTsabari/actions-pipx@v1
       - name: Install poetry
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry config installer.modern-installation false
+        run: pipx install poetry
       - name: Install dependencies
         run: |
           cd ${{ matrix.package }}
@@ -105,7 +103,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.12.4
       - uses: actions/checkout@v3
       - uses: CfirTsabari/actions-pipx@v1
       - name: Install poetry
@@ -158,7 +156,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.12.4
       - name: Install twine
         run: pip install --upgrade twine
       - name: Download all artifacts
@@ -190,7 +188,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.12.4
       - name: Install Commitizen
         run: pip install --upgrade Commitizen
       - name: Configure Git
