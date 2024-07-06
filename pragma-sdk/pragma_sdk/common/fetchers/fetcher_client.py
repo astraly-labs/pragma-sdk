@@ -1,5 +1,6 @@
 import asyncio
 from typing import List
+import logging
 
 import aiohttp
 
@@ -7,6 +8,8 @@ from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.exceptions import PublisherFetchError
+
+logger = logging.getLogger(__name__)
 
 
 @add_sync_methods

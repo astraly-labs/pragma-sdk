@@ -86,7 +86,7 @@ class IndexCoopFetcher(FetcherInterfaceT):
         price_int = int(price * (10**decimals))
         volume = int(float(result["volume24h"]) * (10**decimals))
 
-        logger.info("Fetched price %d for %s from IndexCoop", price, pair)
+        logger.debug("Fetched  price %d for %s from IndexCoop", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

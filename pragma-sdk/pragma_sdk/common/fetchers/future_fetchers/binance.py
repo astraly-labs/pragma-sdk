@@ -21,16 +21,20 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     async def _fetch_volume(
         self, pair: Pair, session: ClientSession
     ) -> List[Tuple[str, int]] | PublisherFetchError:
+        logger.info("Fetch volume 1")
         url = f"{self.VOLUME_URL}"
         selection = f"{pair.base_currency.id}{pair.quote_currency.id}"
         volume_arr = []
+        logger.info("Fetch volume 2")
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Binance")
+            logger.info("Fetch volume 3")
             result = await resp.json(content_type="application/json")
             for element in result:
                 if selection in element["symbol"]:
-                    volume_arr.append((element["symbol"], int(element["quoteVolume"])))
+                    volume_arr.append((element["symbol"], int(float(element["quoteVolume"]))))
+            logger.info("Fetch volume 4")
             return volume_arr
 
     async def fetch_pair(  # type: ignore[override]

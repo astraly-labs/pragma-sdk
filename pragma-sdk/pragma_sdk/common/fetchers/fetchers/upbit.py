@@ -48,7 +48,7 @@ class UpbitFetcher(FetcherInterfaceT):
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["trade_volume"])
 
-        logger.info("Fetched price %d for %s from Upbit", price, pair)
+        logger.debug("Fetched  price %d for %s from Upbit", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

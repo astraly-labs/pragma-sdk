@@ -13,6 +13,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     HuobiFetcher,
     KucoinFetcher,
     OkxFetcher,
+    BinanceFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
@@ -51,6 +52,7 @@ async def add_all_fetchers(
         HuobiFetcher,
         KucoinFetcher,
         BybitFetcher,
+        BinanceFetcher,
     ]
     future_fetchers = [
         BinanceFutureFetcher,

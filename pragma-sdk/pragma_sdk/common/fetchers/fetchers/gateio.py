@@ -110,7 +110,7 @@ class GateioFetcher(FetcherInterfaceT):
         volume = int(float(result[0]["quote_volume"])) if hop_result is None else 0
         price_int = int(price * (10 ** pair.decimals()))
 
-        logger.info("Fetched price %d for %s from Gate.io", price, pair)
+        logger.debug("Fetched  price %d for %s from Gate.io", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

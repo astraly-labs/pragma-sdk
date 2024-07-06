@@ -67,7 +67,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
         volume = float(data["volume24h"])
         expiry_timestamp = int(data["deliveryTime"])
 
-        logger.info("Fetched future for %s from BYBIT", (pair.id))
+        logger.debug("Fetched  future for %s from BYBIT", (pair.id))
 
         return FutureEntry(
             pair_id=pair.id,

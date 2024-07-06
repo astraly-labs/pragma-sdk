@@ -91,7 +91,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
         price_int = int(price * (10**decimals))
         volume = float(data["volCcy24h"])
 
-        logger.info("Fetched future for %s from OKX", pair.id)
+        logger.debug("Fetched  future for %s from OKX", pair.id)
 
         return FutureEntry(
             pair_id=pair.id,

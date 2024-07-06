@@ -110,7 +110,7 @@ class MEXCFetcher(FetcherInterfaceT):
         price_int = int(price * (10 ** pair.decimals()))
         volume = int(float(result["quoteVolume"])) if hop_result is None else 0
 
-        logger.info("Fetched price %d for %s from MEXC", price, pair)
+        logger.debug("Fetched  price %d for %s from MEXC", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,

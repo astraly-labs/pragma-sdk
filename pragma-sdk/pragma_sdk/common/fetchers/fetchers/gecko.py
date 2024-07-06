@@ -179,7 +179,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
 
         timestamp = int(time.time())
 
-        logger.info("Fetched price %d for %s from GeckoTerminal", price, pair)
+        logger.debug("Fetched  price %d for %s from GeckoTerminal", price, pair)
 
         return SpotEntry(
             pair_id=pair.id,
