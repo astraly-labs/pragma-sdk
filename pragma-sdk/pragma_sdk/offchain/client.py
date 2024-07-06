@@ -107,10 +107,10 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Get Ohlc successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info("Get Ohlc successful")
                 else:
-                    print(f"Status Code: {status_code}")
+                    logger.error(f"Status Code: {status_code}")
                     raise PragmaAPIError(f"Failed to get OHLC data for pair {pair}")
 
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
@@ -184,11 +184,11 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Publish successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info("Publish successful")
                     return response
-                print(f"Status Code: {status_code}")
-                print(f"Response Text: {response}")
+                logger.debug(f"Status Code: {status_code}")
+                logger.debug(f"Response Text: {response}")
                 raise PragmaAPIError("Unable to POST /v1/data")
 
     async def get_entry(
@@ -234,11 +234,11 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Get Data successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info(f"Get {base_asset}/{quote_asset} Data successful")
                 else:
-                    print(f"Status Code: {status_code}")
-                    print(f"Response Text: {response}")
+                    logger.debug(f"Status Code: {status_code}")
+                    logger.debug(f"Response Text: {response}")
                     raise PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
 
         return EntryResult(
@@ -295,11 +295,11 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response.status
                 response: Dict = await response.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Get Data successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info(f"Get {base_asset}/{quote_asset} future Data successful")
                 else:
-                    print(f"Status Code: {status_code}")
-                    print(f"Response Text: {response}")
+                    logger.debug(f"Status Code: {status_code}")
+                    logger.debug(f"Response Text: {response}")
                     raise PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
 
         return EntryResult(
@@ -341,11 +341,11 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Get Volatility successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info("Get Volatility successful")
                 else:
-                    print(f"Status Code: {status_code}")
-                    print(f"Response Text: {response}")
+                    logger.debug(f"Status Code: {status_code}")
+                    logger.debug(f"Response Text: {response}")
                     raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
@@ -375,11 +375,11 @@ class PragmaAPIClient(PragmaClient):
                 status_code: int = response.status
                 response: Dict = await response.json()
                 if status_code == 200:
-                    print(f"Success: {response}")
-                    print("Get expiry successful")
+                    logger.debug(f"Success: {response}")
+                    logger.info(f"Get {base_asset}/{quote_asset} expiry successful")
                 else:
-                    print(f"Status Code: {status_code}")
-                    print(f"Response Text: {response}")
+                    logger.debug(f"Status Code: {status_code}")
+                    logger.debug(f"Response Text: {response}")
                     raise HTTPError(f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} ")
                 return response
         

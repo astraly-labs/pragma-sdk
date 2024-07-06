@@ -125,7 +125,6 @@ class PriceListener(IPriceListener):
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        print(f"results : {results}")
         results = [subl for subl in results if not isinstance(subl, BaseException)]
         results = [val for subl in results for val in (subl if isinstance(subl, (list, tuple)) else [subl])] 
 
