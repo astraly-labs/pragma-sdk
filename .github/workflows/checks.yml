@@ -77,6 +77,18 @@ jobs:
         run: |
           cd ${{ matrix.package }}
           poetry install
+      - name: Install rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+
+      - name: Verify Rust and Cargo installation
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Install starknet-devnet
+        run: cargo install starknet-devnet
       # Add any package-specific setup steps here
       - name: Run tests
         run: |
