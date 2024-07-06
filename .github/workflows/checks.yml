@@ -87,6 +87,8 @@ jobs:
           rustc --version
           cargo --version
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install starknet-devnet
         run: cargo install starknet-devnet
       # Add any package-specific setup steps here
