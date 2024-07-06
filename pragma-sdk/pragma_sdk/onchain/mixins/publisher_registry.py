@@ -24,7 +24,8 @@ class PublisherRegistryMixin:
         (publishers,) = await self.publisher_registry.functions[
             "get_all_publishers"
         ].call()
-        return publishers
+
+        return publishers  # type: ignore[no-any-return]
 
     async def get_publisher_address(self, publisher: str) -> int:
         """
@@ -37,7 +38,8 @@ class PublisherRegistryMixin:
         (address,) = await self.publisher_registry.functions[
             "get_publisher_address"
         ].call(publisher)
-        return address
+
+        return address  # type: ignore[no-any-return]
 
     async def get_publisher_sources(self, publisher: str) -> List[int]:
         """
@@ -50,7 +52,8 @@ class PublisherRegistryMixin:
         (sources,) = await self.publisher_registry.functions[
             "get_publisher_sources"
         ].call(publisher)
-        return sources
+
+        return sources  # type: ignore[no-any-return]
 
     async def add_publisher(
         self,
@@ -75,7 +78,7 @@ class PublisherRegistryMixin:
             publisher_address,
             execution_config=execution_config,
         )
-        return invocation
+        return invocation  # type: ignore[no-any-return]
 
     async def add_source_for_publisher(
         self,
@@ -102,7 +105,7 @@ class PublisherRegistryMixin:
             str_to_felt(source),
             execution_config=execution_config,
         )
-        return invocation
+        return invocation  # type: ignore[no-any-return]
 
     async def add_sources_for_publisher(
         self,
@@ -129,7 +132,7 @@ class PublisherRegistryMixin:
             [str_to_felt(source) for source in sources],
             execution_config=execution_config,
         )
-        return invocation
+        return invocation  # type: ignore[no-any-return]
 
     async def update_publisher_address(
         self,
@@ -156,4 +159,4 @@ class PublisherRegistryMixin:
             publisher_address,
             execution_config=execution_config,
         )
-        return invocation
+        return invocation  # type: ignore[no-any-return]

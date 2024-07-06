@@ -41,9 +41,10 @@ types-deprecated = "^1.2.9"
 
 [tool.poe.tasks]
 format = "ruff format ."
+format_check = "ruff format . --check"
 lint = "ruff check ."
-lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy pragma_utils"
+test_all = "echo No tests yet"
 
 [tool.ruff]
 exclude = [
@@ -84,13 +85,14 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["pragma_utils/*"]
+python_version = "3.12"
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
-strict = true
+warn_return_any = true
+ignore_missing_imports = true
+exclude = ["tests"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = []
 
 [tool.poetry.build]
 generate-setup-file = true

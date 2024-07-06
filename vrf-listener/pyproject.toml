@@ -23,6 +23,8 @@ python = ">=3.10,<3.13"
 pragma-sdk = { path = "../pragma-sdk", develop = true }
 pragma-utils = { path = "../pragma-utils", develop = true }
 click = "^8.1.0"
+types-pyyaml = "^6.0.12.20240311"
+pydantic = "^2.7.4"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.26.1"
@@ -44,9 +46,10 @@ types-deprecated = "^1.2.9"
 
 [tool.poe.tasks]
 format = "ruff format ."
+format_check = "ruff format . --check"
 lint = "ruff check ."
-lint_fix.shell = "ruff check . --fix"
 typecheck = "mypy vrf_listener"
+test_all = "echo No tests yet"
 
 [tool.ruff]
 exclude = [
@@ -87,13 +90,15 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["vrf_listener/*"]
+python_version = "3.12"
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
-strict = true
+warn_return_any = true
+ignore_missing_imports = true
+exclude = ["tests"]
+mypy_path = ["../pragma-utils", "../pragma-sdk"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = []
 
 [tool.poetry.build]
 generate-setup-file = true

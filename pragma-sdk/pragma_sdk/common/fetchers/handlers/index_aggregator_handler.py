@@ -1,10 +1,11 @@
-import logging
 from typing import List
 
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.types.pair import Pair
 
-logger = logging.getLogger(__name__)
+from pragma_utils.logger import get_stream_logger
+
+logger = get_stream_logger()
 
 
 class AssetQuantities:

@@ -30,7 +30,7 @@ SOURCE_2 = "PRAGMA_2"
 SOURCE_3 = "SOURCE_3"
 
 
-@pytest_asyncio.fixture(scope="package")
+@pytest_asyncio.fixture(scope="module")
 async def declare_deploy_oracle(
     account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
@@ -86,13 +86,13 @@ async def declare_deploy_oracle(
     return declare_result, deploy_result, deploy_result_registry
 
 
-@pytest_asyncio.fixture(scope="package", name="contracts")
+@pytest_asyncio.fixture(scope="module", name="contracts")
 async def oracle_contract(declare_deploy_oracle) -> Tuple[Contract, Contract]:
     _, deploy_result, deploy_result_registry = declare_deploy_oracle
     return (deploy_result.deployed_contract, deploy_result_registry.deployed_contract)
 
 
-@pytest_asyncio.fixture(scope="package", name="pragma_client")
+@pytest_asyncio.fixture(scope="module", name="pragma_client")
 async def pragma_client(
     contracts: Tuple[Contract, Contract],
     network,

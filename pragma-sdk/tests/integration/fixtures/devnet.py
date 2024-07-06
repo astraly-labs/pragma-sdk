@@ -125,7 +125,7 @@ def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
     ]
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def run_devnet() -> Generator[str, None, None]:
     """
     Runs devnet instance once per module and returns it's address.
@@ -136,7 +136,7 @@ def run_devnet() -> Generator[str, None, None]:
     proc.kill()
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def fork_testnet_devnet() -> Generator[str, None, None]:
     """
     Runs devnet instance once per module and returns it's address.

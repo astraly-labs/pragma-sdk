@@ -10,7 +10,5 @@ SourceName = str
 LatestOrchestratorPairPrices = Dict[PairId, Dict[DataTypes, Dict[SourceName, Entry]]]
 LatestOraclePairPrices = Dict[PairId, Dict[DataTypes, Entry]]
 
-HumanReadableId = str
-
 Target = Literal["onchain", "offchain"]
 Network = Literal["mainnet", "sepolia"]

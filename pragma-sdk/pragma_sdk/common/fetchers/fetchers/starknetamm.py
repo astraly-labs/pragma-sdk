@@ -1,19 +1,17 @@
 import asyncio
-import logging
 import time
-from typing import List
+from typing import List, Optional
 
 from aiohttp import ClientSession
 
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = get_stream_logger()
 
 SUPPORTED_ASSETS = [
     ("ETH", "STRK"),
@@ -54,29 +52,31 @@ class StarknetAMMFetcher(FetcherInterfaceT):
             if resp.status == 200:
                 result_json = await resp.json()
                 return self._construct(pair, float(result_json["price"]))
-            return await self.operate_eth_hop(pair, session)
+            return PublisherFetchError(f"Failed to fetch data for {pair} from Starknet")
 
-    def fetch_pair(
+    async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> SpotEntry | PublisherFetchError:
-        return self.off_fetch_ekubo_price(pair, session)
+        return await self.off_fetch_ekubo_price(pair, session)
 
-    def format_url(self, pair: Pair, timestamp=None):
+    def format_url(self, pair: Pair, timestamp: Optional[int] = None) -> str:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         if timestamp:
             return f"{self.EKUBO_PUBLIC_API}/price/{pair.base_currency.id}/{new_pair}?atTime={timestamp}&period=3600"
 
         return f"{self.EKUBO_PUBLIC_API}/price/{pair.base_currency.id}/{new_pair}?period=3600"
 
-    async def fetch(self, session: ClientSession) -> List[SpotEntry]:
+    async def fetch(
+        self, session: ClientSession
+    ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
             if pair.to_tuple() in SUPPORTED_ASSETS:
-                entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
+                entries.append(self.fetch_pair(pair, session))
             else:
-                logger.debug("Skipping StarknetAMM for non supported pair: %s", pair)
+                logger.debug(f"Skipping StarknetAMM for non supported pair: {pair}")
 
-        return await asyncio.gather(*entries, return_exceptions=True)
+        return list(await asyncio.gather(*entries, return_exceptions=True))  # type: ignore[call-overload]
 
     def _construct(self, pair: Pair, result: float) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))

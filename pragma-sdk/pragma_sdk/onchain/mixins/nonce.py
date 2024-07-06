@@ -63,7 +63,7 @@ class NonceMixin:
         self,
         nonce: int,
         transaction_hash: int,
-    ):
+    ) -> None:
         """
         Callback function to track the nonce of a transaction.
         Will update the nonce_dict and pending_nonce attributes.
@@ -118,7 +118,8 @@ class NonceMixin:
             self.account_contract_address,
             block_number=block_number,
         )
-        return nonce
+
+        return int(nonce)
 
     async def get_status(
         self,

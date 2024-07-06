@@ -1,16 +1,16 @@
 import asyncio
-import logging
-from typing import List
+from typing import Any, List, Optional
 
 from aiohttp import ClientSession
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_utils.logger import get_stream_logger
 
-logger = logging.getLogger(__name__)
+logger = get_stream_logger()
 
 
 class DefillamaFetcher(FetcherInterfaceT):
@@ -19,7 +19,9 @@ class DefillamaFetcher(FetcherInterfaceT):
     )
     SOURCE: str = "DEFILLAMA"
 
-    async def fetch_pair(self, pair: Pair, session: ClientSession) -> SpotEntry:
+    async def fetch_pair(
+        self, pair: Pair, session: ClientSession
+    ) -> SpotEntry | PublisherFetchError:
         pair_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         if pair_id is None:
             return PublisherFetchError(
@@ -37,18 +39,22 @@ class DefillamaFetcher(FetcherInterfaceT):
                 return PublisherFetchError(f"No data found for {pair} from Defillama")
         return self._construct(pair, result)
 
-    async def fetch(self, session: ClientSession) -> List[SpotEntry]:
-        entries = []
-        for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
-        return await asyncio.gather(*entries, return_exceptions=True)
+    async def fetch(
+        self, session: ClientSession
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        entries = [
+            asyncio.ensure_future(self.fetch_pair(pair, session)) for pair in self.pairs
+        ]
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         coingecko_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         url = self.BASE_URL.format(pair_id=coingecko_id)
         return url
 
-    async def operate_usd_hop(self, pair: Pair, session: ClientSession) -> SpotEntry:
+    async def operate_usd_hop(
+        self, pair: Pair, session: ClientSession
+    ) -> SpotEntry | PublisherFetchError:
         coingecko_id_1 = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         coingeck_id_2 = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
         if coingeck_id_2 is None:
@@ -79,12 +85,14 @@ class DefillamaFetcher(FetcherInterfaceT):
                 )
         return self._construct(pair, result_base, result_quote)
 
-    def _construct(self, pair: Pair, result, hop_result=None) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, hop_result: Optional[Any] = None
+    ) -> SpotEntry:
         base_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
-        quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
         timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
         decimals = pair.decimals()
         if hop_result is not None:
+            quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
             price_int = int((price / hop_price) * (10**decimals))
@@ -92,7 +100,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             price_int = int(price * (10**decimals))
 
-        logger.info("Fetched price %d for %s from Coingecko", price, pair.id)
+        logger.info("Fetched price %d for %s from Coingecko", price, pair)
 
         entry = SpotEntry(
             pair_id=pair.id,

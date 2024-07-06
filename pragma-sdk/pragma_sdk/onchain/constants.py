@@ -4,7 +4,7 @@ from pragma_sdk.onchain.types import ContractAddresses, Network
 from starknet_py.net.models.chains import StarknetChainId
 
 
-CHAIN_IDS: Dict[Network, int] = {
+CHAIN_IDS: Dict[Network, StarknetChainId] = {
     "devnet": StarknetChainId.MAINNET,
     "mainnet": StarknetChainId.MAINNET,
     "sepolia": StarknetChainId.SEPOLIA,

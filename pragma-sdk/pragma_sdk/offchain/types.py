@@ -1,4 +1,7 @@
 from enum import StrEnum, unique
+from typing import Dict, Optional, Tuple
+
+PublishEntriesAPIResult = Tuple[Optional[Dict], Optional[Dict]]
 
 
 @unique

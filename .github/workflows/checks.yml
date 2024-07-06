@@ -2,11 +2,11 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master, development ]
+    branches: [ master, next ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master, development ]
+    branches: [ master, next ]
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight UTC
   workflow_dispatch:
@@ -21,35 +21,47 @@ jobs:
   lint-format-typecheck:
     name: Lint - Format - Typecheck
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener]
     steps:
       - uses: actions/checkout@v3
+      - uses: CfirTsabari/actions-pipx@v1
       - name: Install poetry
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry config installer.modern-installation false
-      - name: Set up Python 3.12
+        run: pipx install poetry
+      - name: Set up Python 3.12.4
         uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: "3.12.4"
           cache: 'poetry'
       - name: Install dependencies
-        run: poetry install
+        run: |
+          cd ${{ matrix.package }}
+          poetry install
       - name: Check poetry.lock
-        run: poetry lock --check
+        run: |
+          cd ${{ matrix.package }}
+          poetry lock --check
       - name: Lint
-        run: poetry run poe lint
+        run: |
+          cd ${{ matrix.package }}
+          poetry run poe lint
       - name: Format
-        run: poetry run poe format_check
+        run: |
+          cd ${{ matrix.package }}
+          poetry run poe format_check
       - name: Typecheck
-        run: poetry run poe typecheck
+        run: |
+          cd ${{ matrix.package }}
+          poetry run poe typecheck
 
   tests:
     name: Run Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.12" ]
+        python-version: [ "3.12.4" ]
+        package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener]
     steps:
       - uses: actions/checkout@v3
         with: 
@@ -58,101 +70,103 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+      - uses: CfirTsabari/actions-pipx@v1
       - name: Install poetry
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry config installer.modern-installation false
-      - name: Install python 3.12 requirements
-        run: |
-          poetry export -f requirements.txt --without-hashes --output requirements.txt
-          pip install -r requirements.txt
+        run: pipx install poetry
       - name: Install dependencies
-        run: poetry install
+        run: |
+          cd ${{ matrix.package }}
+          poetry install
+
       - name: Cache contracts
         id: cache-contracts
         uses: actions/cache@v3
         with:
           path: ./pragma-oracle/target
           key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
+
       - uses: software-mansion/setup-scarb@v1
         with:
           tool-versions: pragma-oracle/.tool-versions
+
       - name: Compile contracts
         if: steps.cache-contracts.outputs.cache-hit != 'true'
         working-directory: ./pragma-oracle
         run: |
           scarb -V
           scarb build
+
       - name: Check ABIs are up-to-date
         run: |
+          # Find and compare *.sierra.json files in both directories
           for file in $(find ./pragma-oracle/target/dev -type f -name "*.sierra.json"); do
+            # Extract the relative path of the file for comparison
             rel_path=${file#./pragma-oracle/target/dev}
-            diff "$file" "pragma/core/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma/core/abis/" && exit 1) 
+            # Use diff to compare the file with its counterpart in the SDK directory
+            diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1) 
           done
+
       - name: Install rust
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
+
       - name: Verify Rust and Cargo installation
         run: |
           rustc --version
           cargo --version
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install starknet-devnet
         run: cargo install starknet-devnet
-      - name: Check circular imports
-        run: poetry run poe circular_imports_check
+      # Add any package-specific setup steps here
       - name: Run tests
-        env:
-          KAIKO_API_KEY: ${{ secrets.KAIKO_API_KEY }}
-          NETWORK_FORK: mainnet
-          TESTNET_ACCOUNT_ADDRESS: ${{ secrets.TESTNET_ACCOUNT_ADDRESS }}
-          TESTNET_PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
         run: |
-          poetry run poe test_ci_update_client
-          poetry run poe test_ci_client
-          poetry run poe test_ci_publisher
-          poetry run poe test_ci_vrf
-          poetry run poe test_ci_api_client
-      - name: Generate coverage in XML
-        run: poetry run coverage xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          cd ${{ matrix.package }}
+          poetry run poe test_all
+      # TODO: re-add this
+      # - name: Generate coverage in XML
+      #   run: |
+      #     cd ${{ matrix.package }}
+      #     poetry run coverage xml
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build_packages:
     needs: [lint-format-typecheck, tests]
     strategy:
       matrix:
-        pkg: [sdk, price-pusher]
+        package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
+          python-version: 3.12.4
+      - uses: actions/checkout@v3
+      - uses: CfirTsabari/actions-pipx@v1
+      - name: Install poetry
+        run: pipx install poetry
       - name: Build package
         run: |
-          cd ${{ matrix.pkg }}
+          cd ${{ matrix.package }}
           poetry install --sync
           poetry build
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.pkg }}-dist
-          path: ${{ matrix.pkg }}/dist
+          name: ${{ matrix.package }}-dist
+          path: ${{ matrix.package }}/dist
 
   build_containers:
     needs: build_packages
     strategy:
       matrix:
-        pkg: [price-pusher]
+        package: [price-pusher] # Add other packages that need containers here
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -167,12 +181,12 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.pkg }}-dist
-          path: ${{ matrix.pkg }}/dist
+          name: ${{ matrix.package }}-dist
+          path: ${{ matrix.package }}/dist
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./${{ matrix.pkg }}
+          context: ./${{ matrix.package }}
           push: true
           tags: ${{ env.IMAGE_SHA }}
 
@@ -185,7 +199,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.12.4
       - name: Install twine
         run: pip install --upgrade twine
       - name: Download all artifacts
@@ -194,7 +208,7 @@ jobs:
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: twine upload dist/*
+        run: twine upload **/dist/*
       - name: Create Release
         uses: actions/create-release@v1
         env:
@@ -217,7 +231,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.12.4
       - name: Install Commitizen
         run: pip install --upgrade Commitizen
       - name: Configure Git

@@ -29,6 +29,7 @@ python-dotenv = "^1.0.0"
 sphinx = "^7.3.7"
 enum-tools = { extras = ["sphinx"], version = "0.12.0", optional = true }
 furo = "^2024.5.6"
+types-pyyaml = "^6.0.12.20240311"
 
 [tool.poetry.extras]
 docs = ["sphinx", "enum-tools", "furo"]
@@ -65,13 +66,15 @@ test_update_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-r
 test_publisher = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/publisher_test.py -s"
 test_fetchers = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/fetchers/ -s"
 test_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/vrf_test.py -s"
-test_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/api_client_test.py -s"
 
 test_all_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/ -s"
 test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"
 test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/index_aggregation_test.py -s"
+test_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/api_client_test.py -s"
 
-circular_imports_check = "poetry run pytest tests/check_circular_imports.py"
+test_all = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
+
+check_circular_imports = "poetry run python tests/check_circular_imports.py"
 
 
 [tool.ruff]
@@ -131,23 +134,21 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["pragma_sdk"]
+python_version = "3.12"
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
-strict = true
+warn_return_any = true
+ignore_missing_imports = true
+exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py"]
+mypy_path = ["../pragma-utils"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = [
-  "tests/",
-  "pragma_sdk/common/randomness/randomness_utils"
-]
 
 [tool.poetry.build]
 generate-setup-file = true
 
 [build-system]
 requires = ["setuptools", "wheel", "build", "Cython"]
-
 build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]

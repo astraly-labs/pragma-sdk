@@ -27,7 +27,7 @@ def mock_listener():
     listener.notification_event.is_set = MagicMock(side_effect=[True, False])
     listener.price_config = MagicMock()
     listener.price_config.get_all_assets.return_value = {
-        DataTypes.SPOT: BTC_USD_PAIR,
+        DataTypes.SPOT: [BTC_USD_PAIR],
     }
     listener.id = "listener_1"
     return listener
@@ -166,8 +166,8 @@ def test_callback_update_prices(orchestrator):
 
     assert "BTC/USD" in orchestrator.latest_prices
     assert "ETH/USD" in orchestrator.latest_prices
-    assert "SPOT" in orchestrator.latest_prices["BTC/USD"]
-    assert "FUTURE" in orchestrator.latest_prices["ETH/USD"]
+    assert DataTypes.SPOT in orchestrator.latest_prices["BTC/USD"]
+    assert DataTypes.FUTURE in orchestrator.latest_prices["ETH/USD"]
 
 
 def test_flush_entries_for_assets(orchestrator):
@@ -192,11 +192,14 @@ def test_flush_entries_for_assets(orchestrator):
     )
 
     orchestrator.latest_prices[pair_id] = {
-        "SPOT": {"source_1": spot_entry},
-        "FUTURE": {"source_2": future_entry},
+        DataTypes.SPOT: {"source_1": spot_entry},
+        DataTypes.FUTURE: {"source_2": future_entry},
     }
 
-    entries = orchestrator._flush_entries_for_assets([pair])
+    entries = orchestrator._flush_entries_for_assets(
+        {DataTypes.SPOT: [pair], DataTypes.FUTURE: [pair]}
+    )
     assert spot_entry in entries
     assert future_entry in entries
-    assert pair_id not in orchestrator.latest_prices
+    assert DataTypes.SPOT not in orchestrator.latest_prices[pair_id]
+    assert DataTypes.FUTURE not in orchestrator.latest_prices[pair_id]

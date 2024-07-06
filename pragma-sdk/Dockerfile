@@ -11,7 +11,7 @@ ENV PATH="${PATH}:/root/.local/bin"
 
 # Defaults
 WORKDIR /app/
-COPY ./sdk /app/
+COPY ./pragm-sdk /app/
 RUN poetry install
 
 FROM base as test

@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Optional
+from typing import Callable, Coroutine, Dict, List, Optional
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
@@ -27,6 +27,9 @@ class OracleMixin:
     client: Client
     account: Account
     execution_config: ExecutionConfig
+    oracle: Contract
+    is_user_client: bool = False
+    track_nonce: Callable[[object, int, int], Coroutine[None, None, None]]
 
     @deprecated
     async def publish_spot_entry(
@@ -76,8 +79,12 @@ class OracleMixin:
 
         invocations: List[InvokeResult] = []
 
-        spot_entries = [entry for entry in entries if isinstance(entry, SpotEntry)]
-        future_entries = [entry for entry in entries if isinstance(entry, FutureEntry)]
+        spot_entries: List[Entry] = [
+            entry for entry in entries if isinstance(entry, SpotEntry)
+        ]
+        future_entries: List[Entry] = [
+            entry for entry in entries if isinstance(entry, FutureEntry)
+        ]
 
         invocations.extend(
             await self._publish_entries(spot_entries, DataTypes.SPOT, execution_config)
@@ -132,7 +139,7 @@ class OracleMixin:
     def _log_transaction(
         self, invocation: InvokeResult, entry_count: int, data_type: DataTypes
     ):
-        logger.debug(str(invocation))
+        logger.debug(hex(invocation.hash))
         logger.info(
             f"Sent {entry_count} updated {data_type.name.lower()} entries with transaction {hex(invocation.hash)}"
         )
@@ -195,7 +202,7 @@ class OracleMixin:
         self,
         pair_id: str | int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources: List[str | int] = None,
+        sources: Optional[List[str | int]] = None,
         block_number="latest",
     ) -> OracleResponse:
         """
@@ -242,7 +249,7 @@ class OracleMixin:
         pair_id: str | int,
         expiry_timestamp: int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
-        sources: List[str | int] = None,
+        sources: Optional[List[str | int]] = None,
         block_number="latest",
     ) -> OracleResponse:
         """
@@ -299,7 +306,7 @@ class OracleMixin:
             block_number=block_number,
         )
 
-        return response
+        return response  # type: ignore[no-any-return]
 
     # TODO (#000): Fix future checkpoints
     async def set_future_checkpoints(
@@ -331,7 +338,7 @@ class OracleMixin:
                     max_fee=execution_config.max_fee,
                 )
                 index += execution_config.pagination
-                logger.debug(str(invocation))
+                logger.debug(hex(invocation.hash))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -385,7 +392,7 @@ class OracleMixin:
                     max_fee=execution_config.max_fee,
                 )
                 index += execution_config.pagination
-                logger.debug(str(invocation))
+                logger.debug(hex(invocation.hash))
                 logger.info(
                     "Set checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -409,7 +416,7 @@ class OracleMixin:
         """
 
         (response,) = await self.oracle.functions["get_admin_address"].call()
-        return response
+        return response  # type: ignore[no-any-return]
 
     async def update_oracle(
         self,

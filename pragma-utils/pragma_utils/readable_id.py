@@ -1,6 +1,6 @@
 import random
 
-from price_pusher.type_aliases import HumanReadableId
+HumanReadableId = str
 
 ADJECTIVES = [
     "brave",
