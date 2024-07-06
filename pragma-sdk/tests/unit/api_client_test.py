@@ -6,7 +6,7 @@ import os
 import pytest
 from aioresponses import aioresponses
 
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.offchain.exceptions import PragmaAPIError
 from tests.integration.constants import MOCK_DIR, SAMPLE_PAIRS

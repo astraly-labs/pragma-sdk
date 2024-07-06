@@ -9,7 +9,8 @@ from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.offchain.client import PragmaAPIClient
 
-from pragma_utils.logger import (setup_logging, get_stream_logger)
+from pragma_utils.logger import setup_logging
+from pragma_sdk.common.logging import get_stream_logger
 from pragma_utils.cli import load_private_key_from_cli_arg
 
 from price_pusher.core.poller import PricePoller

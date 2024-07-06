@@ -5,7 +5,7 @@ import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult
 from starknet_py.net.client_errors import ClientError
 
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.common.utils import str_to_felt
 from tests.integration.utils import get_deployments, read_contract

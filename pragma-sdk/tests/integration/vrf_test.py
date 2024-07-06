@@ -26,7 +26,7 @@ from tests.integration.constants import (
 from tests.integration.utils import ExtendedPragmaClient as PragmaClient
 from tests.integration.utils import convert_to_wei, read_contract, wait_for_acceptance
 
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 
 logger = get_stream_logger()
 

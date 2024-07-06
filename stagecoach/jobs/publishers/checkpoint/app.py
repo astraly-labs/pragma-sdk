@@ -5,7 +5,7 @@ import os
 import boto3
 
 from pragma_sdk.common.assets import get_asset_spec_for_pair_id_by_type
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 from pragma_sdk.common.utils import currency_pair_to_pair_id
 from pragma_sdk.onchain.client import PragmaOnChainClient
 

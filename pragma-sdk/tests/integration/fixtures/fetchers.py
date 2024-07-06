@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 from tests.integration.fetchers.fetcher_configs import (
     FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,

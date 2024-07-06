@@ -2,7 +2,7 @@ import asyncio
 
 from typing import Callable, Optional, TypeVar, Any, Awaitable
 
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 
 logger = get_stream_logger()
 T = TypeVar("T")

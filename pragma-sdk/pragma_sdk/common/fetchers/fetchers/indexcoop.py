@@ -13,7 +13,7 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import AssetQuantities
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 
 logger = get_stream_logger()
 

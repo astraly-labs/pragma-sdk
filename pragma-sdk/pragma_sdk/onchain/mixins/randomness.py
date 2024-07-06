@@ -12,7 +12,7 @@ from starknet_py.net.account.account import Account
 from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import RANDOMNESS_REQUEST_EVENT_SELECTOR
 from pragma_sdk.onchain.types import Contract
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 from pragma_sdk.onchain.types import (
     VRFCancelParams,
     VRFRequestParams,

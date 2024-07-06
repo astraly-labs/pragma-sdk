@@ -4,7 +4,7 @@ from typing import List, TypeVar, Any, Callable
 
 from asgiref.sync import async_to_sync
 
-from pragma_utils.logger import get_stream_logger
+from pragma_sdk.common.logging import get_stream_logger
 
 logger = get_stream_logger()
 
