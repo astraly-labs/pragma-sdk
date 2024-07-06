@@ -35,7 +35,7 @@ async def test_update_price_feeds_success(price_pusher, mock_client, caplog):
         for record in caplog.records
     )
     assert any(
-        "PUSHER ✅ successfully published 1 entries!" in record.message for record in caplog.records
+        "PUSHER ✅ Successfully published 1 entries!" in record.message for record in caplog.records
     )
 
 

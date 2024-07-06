@@ -51,10 +51,10 @@ class PricePoller(IPricePoller):
 
         try:
             new_entries = await self._fetch_action()
-            logger.info(f"POLLER successfully fetched {len(new_entries)} new entries!")
+            logger.info(f"🔄 POLLER: Successfully fetched {len(new_entries)} new entries!")
             self.update_prices_callback(new_entries)
         except Exception as e:
-            logger.error(f"POLLER exception is {e}")
+            logger.error(f"🔄 POLLER: exception is {e}")
             if not self._is_requesting_onchain:
                 raise e
             try:
@@ -62,7 +62,7 @@ class PricePoller(IPricePoller):
                 new_entries = await retry_async(self._fetch_action, retries=5, delay_in_s=5)
                 self.update_prices_callback(new_entries)
             except Exception as e:
-                raise ValueError(f"POLLERS retries for fetching new prices still failed: {e}")
+                raise ValueError(f"🔄 POLLERS: Retries for fetching new prices still failed: {e}")
 
     async def _fetch_action(self) -> None:
         """

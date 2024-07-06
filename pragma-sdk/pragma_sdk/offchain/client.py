@@ -108,7 +108,7 @@ class PragmaAPIClient(PragmaClient):
                 response: Dict = await response_raw.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
-                    logger.info("Get Ohlc successful")
+                    logger.info(f"Get {base_asset}/{quote_asset} Ohlc successful")
                 else:
                     logger.error(f"Status Code: {status_code}")
                     raise PragmaAPIError(f"Failed to get OHLC data for pair {pair}")
@@ -185,7 +185,7 @@ class PragmaAPIClient(PragmaClient):
                 response: Dict = await response_raw.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
-                    logger.info("Publish successful")
+                    logger.debug("Publish successful")
                     return response
                 logger.debug(f"Status Code: {status_code}")
                 logger.debug(f"Response Text: {response}")
@@ -235,7 +235,7 @@ class PragmaAPIClient(PragmaClient):
                 response: Dict = await response_raw.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
-                    logger.info(f"Get {base_asset}/{quote_asset} Data successful")
+                    logger.debug(f"Get {base_asset}/{quote_asset} Data successful")
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")
@@ -296,7 +296,7 @@ class PragmaAPIClient(PragmaClient):
                 response: Dict = await response.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
-                    logger.info(f"Get {base_asset}/{quote_asset} future Data successful")
+                    logger.debug(f"Get {base_asset}/{quote_asset} future Data successful")
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")
@@ -376,7 +376,7 @@ class PragmaAPIClient(PragmaClient):
                 response: Dict = await response.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
-                    logger.info(f"Get {base_asset}/{quote_asset} expiry successful")
+                    logger.debug(f"Get {base_asset}/{quote_asset} expiry successful")
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")

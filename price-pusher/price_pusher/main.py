@@ -9,7 +9,7 @@ from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.offchain.client import PragmaAPIClient
 
-from pragma_utils.logger import setup_logging
+from pragma_utils.logger import (setup_logging, get_stream_logger)
 from pragma_utils.cli import load_private_key_from_cli_arg
 
 from price_pusher.core.poller import PricePoller
@@ -66,7 +66,7 @@ async def main(
         pusher=pusher,
     )
 
-    logger.info("GO! Orchestration starting 🚀")
+    logger.info("🚀 Orchestration starting 🚀")
     await orchestrator.run_forever()
 
 
@@ -206,7 +206,8 @@ def cli_entrypoint(
     """
     if target == "offchain" and (not api_key or not api_base_url):
         raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
-
+    sdk_logger = get_stream_logger()
+    sdk_logger.setLevel(log_level)
     setup_logging(logger, log_level)
     private_key = load_private_key_from_cli_arg(private_key)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)

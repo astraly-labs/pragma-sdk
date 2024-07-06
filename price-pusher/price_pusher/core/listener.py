@@ -250,7 +250,7 @@ class PriceListener(IPriceListener):
         """
         Sends a notification.
         """
-        logger.info(f"🏓 LISTENER [{self.id}] sending notification to the Orchestrator!")
+        logger.info(f"🏓 LISTENER: [{self.id}] sending notification to the Orchestrator!")
         self.notification_event.set()
 
     def _log_listener_spawning(self) -> None:

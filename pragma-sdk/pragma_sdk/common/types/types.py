@@ -33,6 +33,9 @@ class DataTypes(StrEnum):
     SPOT = "Spot"
     FUTURE = "Future"
 
+    def __repr__(self):
+        return f"'{self.value}'"
+
 
 @dataclass(frozen=True)
 class ExecutionConfig:
