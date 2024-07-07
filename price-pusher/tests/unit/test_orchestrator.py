@@ -2,16 +2,22 @@ import pytest
 import asyncio
 import logging
 from unittest.mock import AsyncMock, MagicMock
-
-from tests.constants import BTC_USD_PAIR
+from datetime import datetime
 
 from pragma_sdk.common.types.types import DataTypes
-from pragma_sdk.common.types.entry import Entry, SpotEntry, FutureEntry
+from pragma_sdk.common.types.entry import (
+    Entry,
+    SpotEntry,
+    FutureEntry,
+    FUTURE_ENTRY_EXPIRIES_FORMAT,
+)
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.orchestrator import Orchestrator
+
+from tests.constants import BTC_USD_PAIR
 
 
 @pytest.fixture
@@ -191,9 +197,13 @@ def test_flush_entries_for_assets(orchestrator):
         expiry_timestamp=1234569999,
     )
 
+    expiry = datetime.utcfromtimestamp(future_entry.expiry_timestamp).strftime(
+        FUTURE_ENTRY_EXPIRIES_FORMAT
+    )
+
     orchestrator.latest_prices[pair_id] = {
         DataTypes.SPOT: {"source_1": spot_entry},
-        DataTypes.FUTURE: {"source_2": future_entry},
+        DataTypes.FUTURE: {"source_2": {expiry: future_entry}},
     }
 
     entries = orchestrator._flush_entries_for_assets(

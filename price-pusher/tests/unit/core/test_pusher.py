@@ -31,12 +31,9 @@ async def test_update_price_feeds_success(price_pusher, mock_client, caplog):
     mock_client.publish_entries.assert_called_once_with(entries)
 
     assert any(
-        "👷‍♂️ PUSHER processing 1 new assets to push..." in record.message
-        for record in caplog.records
+        "processing 1 new asset(s) to push..." in record.message for record in caplog.records
     )
-    assert any(
-        "PUSHER ✅ Successfully published 1 entries!" in record.message for record in caplog.records
-    )
+    assert any("published 1 entrie(s)" in record.message for record in caplog.records)
 
 
 @pytest.mark.asyncio
@@ -53,10 +50,8 @@ async def test_update_price_feeds_failure(price_pusher, mock_client, caplog):
     mock_client.publish_entries.assert_called_once_with(entries)
 
     assert any(
-        "👷‍♂️ PUSHER processing 1 new assets to push..." in record.message
-        for record in caplog.records
+        "processing 1 new asset(s) to push..." in record.message for record in caplog.records
     )
     assert any(
-        "PUSHER ⛔ could not publish entries : Test Exception" in record.message
-        for record in caplog.records
+        "could not publish entrie(s): Test Exception" in record.message for record in caplog.records
     )

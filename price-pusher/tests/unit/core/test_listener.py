@@ -55,7 +55,7 @@ async def test_run_forever(price_listener):
 
 
 def test_set_orchestrator_prices(price_listener):
-    orchestrator_prices = {"BTC/USD": {"SPOT": MagicMock(spec=Entry)}}
+    orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: MagicMock(spec=Entry)}}
     price_listener.set_orchestrator_prices(orchestrator_prices)
     assert price_listener.orchestrator_prices == orchestrator_prices
 
@@ -92,9 +92,9 @@ def test_get_most_recent_orchestrator_entry(price_listener):
         publisher="publisher_1",
     )
     mock_entry.base.timestamp = 1000
-    price_listener.orchestrator_prices = {"BTC/USD": {"SPOT": {"BINANCE": mock_entry}}}
+    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {"BINANCE": mock_entry}}}
 
-    result = price_listener._get_most_recent_orchestrator_entry("BTC/USD", "SPOT")
+    result = price_listener._get_latest_orchestrator_entry("BTC/USD", DataTypes.SPOT)
     assert result == mock_entry
 
 
@@ -115,10 +115,12 @@ async def test_oracle_needs_update_because_outdated(caplog, price_listener):
         source="AGGREGATION",
         publisher="ORACLE",
     )
-    price_listener.orchestrator_prices = {"BTC/USD": {"SPOT": {"BINANCE": orchestrator_entry}}}
-    price_listener.oracle_prices = {"BTC/USD": {"SPOT": oracle_entry}}
+    price_listener.orchestrator_prices = {
+        "BTC/USD": {DataTypes.SPOT: {"BINANCE": orchestrator_entry}}
+    }
+    price_listener.oracle_prices = {"BTC/USD": {DataTypes.SPOT: oracle_entry}}
     assert await price_listener._does_oracle_needs_update()
-    assert "is too old. " "Triggering an update!" in caplog.text
+    assert "is too old" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -138,8 +140,10 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
         source="AGGREGATION",
         publisher="ORACLE",
     )
-    price_listener.orchestrator_prices = {"BTC/USD": {"SPOT": {"BINANCE": orchestrator_entry}}}
-    price_listener.oracle_prices = {"BTC/USD": {"SPOT": oracle_entry}}
+    price_listener.orchestrator_prices = {
+        "BTC/USD": {DataTypes.SPOT: {"BINANCE": orchestrator_entry}}
+    }
+    price_listener.oracle_prices = {"BTC/USD": {DataTypes.SPOT: oracle_entry}}
     assert await price_listener._does_oracle_needs_update()
     assert "is deviating from the config bounds. Triggering an update!" in caplog.text
 

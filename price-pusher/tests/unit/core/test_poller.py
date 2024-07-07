@@ -62,7 +62,7 @@ async def test_poll_prices_success(price_poller, fetcher_client, caplog):
     fetcher_client.fetch.assert_awaited_once()
     mock_callback.assert_called_once_with([dummy_entry])
 
-    assert "POLLER successfully fetched 1 new entries!" in caplog.text
+    assert "🔄 POLLER: Successfully fetched 1 new entries!" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -122,7 +122,7 @@ async def test_poll_prices_retry_failure(price_poller, fetcher_client, caplog):
     with patch("price_pusher.core.poller.retry_async", new=retry_async):
         with pytest.raises(
             ValueError,
-            match="POLLERS retries for fetching new prices still failed: Retry failed",
+            match="🔄 POLLERS: Retries for fetching new prices still failed: Retry failed",
         ):
             await price_poller.poll_prices()
 
