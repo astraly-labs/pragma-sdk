@@ -1,6 +1,7 @@
 import logging
 from logging import Logger
 
+
 def setup_logging(logger: Logger, log_level: str) -> None:
     """
     Set up the logging configuration based on the provided log level.
