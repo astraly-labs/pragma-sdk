@@ -108,7 +108,7 @@ class PriceListener(IPriceListener):
             if await self._does_oracle_needs_update():
                 self._notify()
                 last_fetch_time = -1
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
@@ -263,7 +263,8 @@ class PriceListener(IPriceListener):
         Check if a new price is in the bounds allowed by the configuration.
         """
         max_deviation = self.price_config.price_deviation * oracle_price
-        is_deviating = abs(new_price - oracle_price) >= max_deviation
+        deviation = abs(new_price - oracle_price)
+        is_deviating = deviation >= max_deviation
         if is_deviating:
             # TODO: show current deviation
             logger.info(
@@ -287,7 +288,10 @@ class PriceListener(IPriceListener):
 
         if is_outdated:
             # TODO: show time diff
-            logger.info(f"🔔 Last oracle entry for {pair_id} is too old. " "Triggering an update!")
+            logger.info(
+                f"🔔 Last oracle entry for {pair_id} is too old (delta = {delta_t}). "
+                "Triggering an update!"
+            )
 
         return is_outdated
 
