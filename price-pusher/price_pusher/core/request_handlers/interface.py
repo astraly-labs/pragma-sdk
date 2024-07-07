@@ -1,6 +1,6 @@
 import logging
 
-from typing import Optional
+from typing import List
 from abc import ABC, abstractmethod
 
 from pragma_sdk.common.types.types import DataTypes
@@ -19,4 +19,4 @@ class IRequestHandler(ABC):
     client: PragmaClient
 
     @abstractmethod
-    async def fetch_latest_entry(self, data_type: DataTypes, pair: Pair) -> Optional[Entry]: ...
+    async def fetch_latest_entries(self, data_type: DataTypes, pair: Pair) -> List[Entry]: ...

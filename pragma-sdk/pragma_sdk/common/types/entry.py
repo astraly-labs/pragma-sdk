@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 
+from datetime import datetime
 from pydantic.dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
 
@@ -9,6 +10,9 @@ from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
 from pragma_sdk.onchain.types.types import OracleResponse
+
+
+FUTURE_ENTRY_EXPIRIES_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 
 class Entry(abc.ABC):
@@ -30,13 +34,16 @@ class Entry(abc.ABC):
     def get_timestamp(self) -> int: ...
 
     @abc.abstractmethod
+    def get_expiry(self) -> Optional[str]: ...
+
+    @abc.abstractmethod
     def get_pair_id(self) -> str: ...
 
     @abc.abstractmethod
     def get_source(self) -> str: ...
 
     @abc.abstractmethod
-    def get_asset_type(self) -> str: ...
+    def get_asset_type(self) -> DataTypes: ...
 
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
@@ -190,6 +197,9 @@ class SpotEntry(Entry):
 
     def get_timestamp(self) -> int:
         return self.base.timestamp
+
+    def get_expiry(self) -> Optional[str]:
+        return None
 
     def get_pair_id(self) -> str:
         return felt_to_str(self.pair_id)
@@ -376,6 +386,11 @@ class FutureEntry(Entry):
 
     def get_timestamp(self) -> UnixTimestamp:
         return self.base.timestamp
+
+    def get_expiry(self) -> Optional[str]:
+        return datetime.utcfromtimestamp(self.expiry_timestamp).strftime(
+            FUTURE_ENTRY_EXPIRIES_FORMAT
+        )
 
     def get_pair_id(self) -> str:
         return felt_to_str(self.pair_id)

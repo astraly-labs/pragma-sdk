@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 import logging
 
 from abc import ABC, abstractmethod
@@ -10,8 +9,8 @@ from pragma_utils.readable_id import generate_human_readable_id, HumanReadableId
 
 from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.types.types import DataTypes
-from pragma_sdk.offchain.client import PragmaAPIError
 
+from price_pusher.utils import exclude_none_and_exceptions, flatten_list
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.types import (
@@ -51,7 +50,7 @@ class IPriceListener(ABC):
 
     @abstractmethod
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: DataTypes
+        self, pair_id: str, data_type: DataTypes
     ) -> Optional[Entry]: ...
 
     @abstractmethod
@@ -120,36 +119,31 @@ class PriceListener(IPriceListener):
         Fetch the latest oracle prices for all assets in parallel.
         """
         tasks = [
-            self.request_handler.fetch_latest_entry(data_type, pair)
+            self.request_handler.fetch_latest_entries(data_type, pair)
             for data_type, pairs in self.price_config.get_all_assets().items()
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        results = [subl for subl in results if not isinstance(subl, BaseException)]
-        results = [val for subl in results for val in (subl if isinstance(subl, (list, tuple)) else [subl])] 
+        results = flatten_list(exclude_none_and_exceptions(results))
 
         for entry in results:
-            if isinstance(entry, Exception) or isinstance(entry, PragmaAPIError):
-                logger.error(f"Error fetching oracle price: {entry}")
-                continue
-            if entry is None:
-                continue
-
             pair_id = entry.get_pair_id().replace(",", "/")
-            asset_type = entry.get_asset_type()
-    
+            data_type = entry.get_asset_type()
+            expiry = entry.get_expiry()
+
             if pair_id not in self.oracle_prices:
                 self.oracle_prices[pair_id] = {}
-            if asset_type not in self.oracle_prices[pair_id]:
-                self.oracle_prices[pair_id][asset_type] = {}
+            if data_type not in self.oracle_prices[pair_id]:
+                self.oracle_prices[pair_id][data_type] = {}
 
-            if asset_type == DataTypes.FUTURE:
-                self.oracle_prices[pair_id][asset_type][entry.expiry_timestamp] = entry
-            else:
-                self.oracle_prices[pair_id][asset_type] = entry
+            match data_type:
+                case DataTypes.SPOT:
+                    self.oracle_prices[pair_id][data_type] = entry
+                case DataTypes.FUTURE:
+                    self.oracle_prices[pair_id][data_type][expiry] = entry
 
     def _get_most_recent_orchestrator_entry(
-        self, pair_id: str, asset_type: DataTypes, expiry: str = None
+        self, pair_id: str, data_type: DataTypes, expiry: str = None
     ) -> Optional[Entry]:
         """
         Retrieves the latest registered entry from the orchestrator prices.
@@ -158,8 +152,17 @@ class PriceListener(IPriceListener):
             raise ValueError("Orchestrator must set the prices dictionnary.")
         if pair_id not in self.orchestrator_prices:
             return None
-        entries = [entry for entry in self.orchestrator_prices[pair_id][asset_type].values()]
-        
+
+        match data_type:
+            case DataTypes.SPOT:
+                entries = [entry for entry in self.orchestrator_prices[pair_id][data_type].values()]
+
+            case DataTypes.FUTURE:
+                entries = []
+                for source in self.orchestrator_prices[pair_id][data_type]:
+                    if expiry in self.orchestrator_prices[pair_id][data_type][source]:
+                        entries.append(self.orchestrator_prices[pair_id][data_type][source][expiry])
+
         return max(entries, key=lambda entry: entry.get_timestamp(), default=None)
 
     async def _does_oracle_needs_update(self) -> bool:
@@ -182,28 +185,34 @@ class PriceListener(IPriceListener):
             )
             return True
 
-
         for pair_id, oracle_entries in self.oracle_prices.items():
             if pair_id not in self.orchestrator_prices:
                 continue
-            for asset_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
-                if asset_type not in oracle_entries:
+            for data_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
+                if data_type not in oracle_entries:
                     logging.warn(
                         f"LISTENER {self.id} miss prices in oracle entries. Sending notification."
                     )
                     return True
-                oracle_entry = oracle_entries[asset_type]
+
+                oracle_entry = oracle_entries[data_type]
+
                 # First check if the oracle entry is outdated
-                newest_entry = self._get_most_recent_orchestrator_entry(pair_id, asset_type)
-                
+                # TODO: incorrect :)
+                newest_entry = self._get_most_recent_orchestrator_entry(pair_id, data_type)
+
                 if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
                     return True
 
                 # If not, check its deviation
                 for entry in orchestrator_entries.values():
-                    if asset_type == DataTypes.FUTURE :
-                        expiry = entry.expiry_timestamp if entry.expiry_timestamp == 0 else datetime.utcfromtimestamp(entry.expiry_timestamp / 1000).strftime('%Y-%m-%dT%H:%M:%S')
-                    oracle_entry_price = oracle_entry.price if asset_type == DataTypes.SPOT else oracle_entry[expiry].price
+                    match data_type:
+                        case DataTypes.SPOT:
+                            oracle_entry_price = oracle_entry.price
+                        case DataTypes.FUTURE:
+                            expiry = entry.get_expiry()
+                            oracle_entry_price = oracle_entry[expiry].price
+
                     if self._new_price_is_deviating(pair_id, entry.price, oracle_entry_price):
                         return True
         return False

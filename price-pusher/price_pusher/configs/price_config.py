@@ -97,7 +97,7 @@ class PriceConfig(BaseModel):
         pair_dict_by_type[DataTypes.FUTURE] = self.get_unique_future_pairs()
         if len(pair_dict_by_type[DataTypes.FUTURE]) == 0:
             del pair_dict_by_type[DataTypes.FUTURE]
-        
+
         return pair_dict_by_type
 
 

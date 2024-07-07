@@ -128,31 +128,60 @@ class Orchestrator:
 
         for data_type, pairs in pairs_per_type.items():
             for pair in pairs:
-                pair_name = f"{pair}"
+                pair_id = str(pair)
                 if (
-                    pair_name not in self.latest_prices
-                    or data_type not in self.latest_prices[pair_name]
+                    pair_id not in self.latest_prices
+                    or data_type not in self.latest_prices[pair_id]
                 ):
-                    logger.warning(f"ORCHESTRATOR : {pair_name} not found, continuing ...")
+                    logger.warning(
+                        f"ORCHESTRATOR tried to flush {pair_id}:{data_type} but not found, ignoring..."
+                    )
                     continue
-                entries_to_push.extend(list(self.latest_prices[pair_name][data_type].values()))
-                del self.latest_prices[pair_name][data_type]
+
+                match data_type:
+                    case DataTypes.SPOT:
+                        entries_to_push.extend(
+                            list(self.latest_prices[pair_id][data_type].values())
+                        )
+
+                    case DataTypes.FUTURE:
+                        all_entries = []
+                        for source in self.latest_prices[pair_id][data_type]:
+                            all_entries.extend(
+                                list(self.latest_prices[pair_id][data_type][source].values())
+                            )
+                        entries_to_push.extend(all_entries)
+
+                del self.latest_prices[pair_id][data_type]
 
         return entries_to_push
 
     def callback_update_prices(self, entries: List[Entry]) -> None:
         """
         Function called by the poller whenever new prices are retrieved.
+
+        For spot price, we store the latest price for each source.
+        For future price, we store the latest price for each source for each expiry received.
         """
 
         for entry in entries:
             pair_id = entry.get_pair_id()
             source = entry.get_source()
-            entry_type = entry.get_asset_type()
+            data_type = entry.get_asset_type()
+            expiry = entry.get_expiry()
 
             if pair_id not in self.latest_prices:
                 self.latest_prices[pair_id] = {}
-            if entry_type not in self.latest_prices[pair_id]:
-                self.latest_prices[pair_id][entry_type] = {}
+            if data_type not in self.latest_prices[pair_id]:
+                self.latest_prices[pair_id][data_type] = {}
 
-            self.latest_prices[pair_id][entry_type][source] = entry
+            match data_type:
+                case DataTypes.SPOT:
+                    self.latest_prices[pair_id][data_type][source] = entry
+
+                case DataTypes.FUTURE:
+                    if source not in self.latest_prices[pair_id][data_type]:
+                        self.latest_prices[pair_id][data_type][source] = {}
+                    self.latest_prices[pair_id][data_type][source][expiry] = entry
+
+        print(self.latest_prices)

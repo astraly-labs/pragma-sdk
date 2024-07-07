@@ -36,6 +36,9 @@ class Pair:
             "quote_currency_id": self.quote_currency.id,
         }
 
+    def __str__(self) -> str:
+        return f"{self.base_currency.id}/{self.quote_currency.id}"
+
     def __repr__(self) -> str:
         return f"{self.base_currency.id}/{self.quote_currency.id}"
 

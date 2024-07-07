@@ -115,7 +115,7 @@ exclude = [
 # Same as Black.
 line-length = 88
 indent-width = 4
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.

@@ -69,12 +69,12 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
         source="source_1",
         publisher="publisher_1",
     )
-    mock_request_handler.fetch_latest_entry.return_value = mock_entry
+    mock_request_handler.fetch_latest_entries.return_value = mock_entry
     await price_listener._fetch_all_oracle_prices()
 
     first_key = list(mock_price_config.get_all_assets.return_value.keys())[0]
 
-    mock_request_handler.fetch_latest_entry.assert_called_once_with(
+    mock_request_handler.fetch_latest_entries.assert_called_once_with(
         first_key,
         mock_price_config.get_all_assets.return_value[first_key][0],
     )
