@@ -30,7 +30,9 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             result = await resp.json(content_type="application/json")
             for element in result:
                 if selection in element["symbol"]:
-                    volume_arr.append((element["symbol"], int(float(element["quoteVolume"]))))
+                    volume_arr.append(
+                        (element["symbol"], int(float(element["quoteVolume"])))
+                    )
             return volume_arr
 
     async def fetch_pair(  # type: ignore[override]

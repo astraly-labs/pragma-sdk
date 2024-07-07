@@ -10,7 +10,7 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
-from pragma_sdk.onchain.types import ContractAddresses
+from pragma_sdk.onchain.types import ContractAddresses, Network
 from pragma_sdk.common.types.entry import FutureEntry, SpotEntry
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.types import DataTypes, ExecutionConfig
@@ -95,7 +95,7 @@ async def oracle_contract(declare_deploy_oracle) -> Tuple[Contract, Contract]:
 @pytest_asyncio.fixture(scope="module", name="pragma_client")
 async def pragma_client(
     contracts: Tuple[Contract, Contract],
-    network,
+    network: Network,
     address_and_private_key: Tuple[str, str],
 ) -> PragmaOnChainClient:
     oracle, registry = contracts
@@ -359,7 +359,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
         [future_entry_1, future_entry_2],
         execution_config=ExecutionConfig(auto_estimate=True),
     )
-    await invocations[len(invocations) - 1].wait_for_acceptance()
+    await invocations[-1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
     assert res.price == 150
     assert res.num_sources_aggregated == 2

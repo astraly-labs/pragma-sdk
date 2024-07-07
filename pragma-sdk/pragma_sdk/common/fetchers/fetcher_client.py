@@ -97,9 +97,9 @@ class FetcherClient:
                 data = fetcher.fetch(session)
                 tasks.append(data)
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
-            result = [val for subl in result for val in subl]
+            result = [val for subl in result for val in subl]  # type: ignore[misc,union-attr]
             if filter_exceptions:
                 result = [
                     subl for subl in result if not isinstance(subl, BaseException)
                 ]
-            return result  # type: ignore[union-attr, misc]
+            return result  # type: ignore[union-attr, misc, return-value]

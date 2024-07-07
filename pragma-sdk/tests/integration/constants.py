@@ -1,4 +1,3 @@
-import os
 import time
 from pathlib import Path
 from typing import List
@@ -37,11 +36,6 @@ MOCK_DIR = repo_root / "pragma-sdk/tests/integration" / "mock"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
-
-print("Current Directory:", os.getcwd())
-print("SUBMODULE_DIR:", SUBMODULE_DIR)
-print("MOCK_DIR:", MOCK_DIR)
-print("CONTRACTS_COMPILED_DIR:", CONTRACTS_COMPILED_DIR)
 
 # -------------------------------- TESTNET -------------------------------------
 

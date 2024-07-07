@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 import logging
 
 import aiohttp
@@ -248,15 +248,15 @@ class PragmaAPIClient(PragmaClient):
             timestamp=response["timestamp"],
             decimals=response["decimals"],
         )
-    
+
     async def get_future_entry(
         self,
         pair: str,
-        timestamp: int = None,
-        interval: Interval = None,
-        aggregation: AggregationMode = None,
-        routing: bool = None,
-        expiry: str = None,
+        timestamp: Optional[int] = None,
+        interval: Optional[Interval] = None,
+        aggregation: Optional[AggregationMode] = None,
+        routing: Optional[bool] = None,
+        expiry: Optional[str] = None,
     ) -> "EntryResult":
         """
         Get data aggregated on the Pragma API.
@@ -281,7 +281,7 @@ class PragmaAPIClient(PragmaClient):
                 "interval": interval.value if interval else None,
                 "aggregation": aggregation.value.lower() if aggregation else None,
                 "entry_type": "future",
-                "expiry" : expiry if expiry else None,
+                "expiry": expiry if expiry else None,
             }.items()
             if value is not None
         }
@@ -293,22 +293,24 @@ class PragmaAPIClient(PragmaClient):
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, params=params) as response:
                 status_code: int = response.status
-                response: Dict = await response.json()
+                json_response: Dict = await response.json()
                 if status_code == 200:
-                    logger.debug(f"Success: {response}")
-                    logger.debug(f"Get {base_asset}/{quote_asset} future Data successful")
+                    logger.debug(f"Success: {json_response}")
+                    logger.debug(
+                        f"Get {base_asset}/{quote_asset} future Data successful"
+                    )
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")
                     raise PragmaAPIError(f"Unable to GET /v1/data for pair {pair}")
 
         return EntryResult(
-            pair_id=response["pair_id"],
-            data=response["price"],
-            num_sources_aggregated=response["num_sources_aggregated"],
-            timestamp=response["timestamp"],
-            decimals=response["decimals"],
-            expiry=expiry
+            pair_id=json_response["pair_id"],
+            data=json_response["price"],
+            num_sources_aggregated=json_response["num_sources_aggregated"],
+            timestamp=json_response["timestamp"],
+            decimals=json_response["decimals"],
+            expiry=expiry,
         )
 
     async def get_volatility(self, pair: str, start: int, end: int):
@@ -349,7 +351,7 @@ class PragmaAPIClient(PragmaClient):
                     raise HTTPError(f"Unable to GET /v1/volatility for pair {pair} ")
 
         return EntryResult(pair_id=response["pair_id"], data=response["volatility"])
-    
+
     async def get_expiries_list(self, pair: Pair):
         """
         Get volatility data for a pair in a given time range on the Pragma API.
@@ -373,17 +375,17 @@ class PragmaAPIClient(PragmaClient):
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 status_code: int = response.status
-                response: Dict = await response.json()
+                json_response: Dict = await response.json()
                 if status_code == 200:
-                    logger.debug(f"Success: {response}")
+                    logger.debug(f"Success: {json_response}")
                     logger.debug(f"Get {base_asset}/{quote_asset} expiry successful")
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")
-                    raise HTTPError(f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} ")
+                    raise HTTPError(
+                        f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} "
+                    )
                 return response
-        
-                
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):
@@ -400,11 +402,11 @@ class EntryResult:
     def __init__(
         self,
         pair_id: str,
-        data: any,
+        data: Any,
         num_sources_aggregated: int = 0,
         timestamp: Optional[int] = None,
         decimals: Optional[int] = None,
-        expiry: Optional[str] = None
+        expiry: Optional[str] = None,
     ):
         self.pair_id = pair_id
         self.data = data

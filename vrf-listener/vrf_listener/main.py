@@ -7,6 +7,7 @@ from typing import Optional, Literal
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
+from pragma_sdk.onchain.types import ContractAddresses
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
@@ -14,20 +15,26 @@ logger = logging.getLogger(__name__)
 
 
 async def main(
-    network: Literal["devnet", "mainnet", "sepolia"],
-    rpc_url: Optional[HttpUrl],
+    network: Literal["mainnet", "sepolia"],
+    oracle_address: str,
     vrf_address: str,
     admin_address: str,
     private_key: str,
     start_block: int,
     check_requests_interval: int,
+    rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     logger.info("🧩 Starting VRF listener...")
     client = PragmaOnChainClient(
-        network=rpc_url if rpc_url is not None else network,
+        network=network if rpc_url is None else rpc_url,
         account_contract_address=int(admin_address, 16),
         account_private_key=int(private_key, 16),
         chain_name=network,
+        contract_addresses_config=ContractAddresses(
+            publisher_registry_address=0x0,
+            oracle_proxy_addresss=int(oracle_address, 16),
+            summary_stats_address=0x0,
+        ),
     )
     client.init_randomness_contract(int(vrf_address, 16))
 
@@ -50,9 +57,9 @@ async def main(
 @click.option(
     "-n",
     "--network",
-    required=False,
+    required=True,
     default="sepolia",
-    type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
+    type=click.Choice(["sepolia", "mainnet", "devnet"], case_sensitive=False),
     help="Which network to listen. Defaults to SEPOLIA.",
 )
 @click.option(
@@ -60,6 +67,12 @@ async def main(
     type=click.STRING,
     required=False,
     help="RPC url used by the onchain client.",
+)
+@click.option(
+    "--oracle-address",
+    type=click.STRING,
+    required=True,
+    help="Address of the Pragma Oracle",
 )
 @click.option(
     "--vrf-address",
@@ -82,7 +95,7 @@ async def main(
 )
 @click.option(
     "-b" "--start-block",
-    type=click.INT,
+    type=click.IntRange(min=0),
     required=False,
     default=0,
     help="At which block to start listening for VRF requests. Defaults to 0.",
@@ -90,15 +103,16 @@ async def main(
 @click.option(
     "-t",
     "--check-requests-interval",
-    type=click.INT,
+    type=click.IntRange(min=0),
     required=False,
     default=10,
     help="Delay in seconds between checks for VRF requests. Defaults to 10 seconds.",
 )
 def cli_entrypoint(
     log_level: str,
-    network: Literal["devnet", "mainnet", "sepolia"],
+    network: Literal["mainnet", "sepolia"],
     rpc_url: Optional[HttpUrl],
+    oracle_address: str,
     vrf_address: str,
     admin_address: str,
     private_key: str,
@@ -113,16 +127,16 @@ def cli_entrypoint(
     """
     setup_logging(logger, log_level)
     private_key = load_private_key_from_cli_arg(private_key)
-
     asyncio.run(
         main(
-            network,
-            rpc_url,
-            vrf_address,
-            admin_address,
-            private_key,
-            start_block,
-            check_requests_interval,
+            network=network,
+            rpc_url=rpc_url,
+            oracle_address=oracle_address,
+            vrf_address=vrf_address,
+            admin_address=admin_address,
+            private_key=private_key,
+            start_block=start_block,
+            check_requests_interval=check_requests_interval,
         )
     )
 
