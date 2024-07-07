@@ -183,5 +183,3 @@ class Orchestrator:
                     if source not in self.latest_prices[pair_id][data_type]:
                         self.latest_prices[pair_id][data_type][source] = {}
                     self.latest_prices[pair_id][data_type][source][expiry] = entry
-
-        print(self.latest_prices)

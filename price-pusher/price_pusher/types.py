@@ -7,7 +7,8 @@ DurationInSeconds = int
 
 PairId = str
 SourceName = str
-FuturePrices = Dict[str, Entry]
+ExpiryTimestamp = str
+FuturePrices = Dict[ExpiryTimestamp, Entry]
 LatestOrchestratorPairPrices = Dict[
     PairId, Dict[DataTypes, Union[Dict[SourceName, Entry], Dict[SourceName, FuturePrices]]]
 ]

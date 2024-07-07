@@ -91,13 +91,10 @@ class PriceConfig(BaseModel):
             Dict from DataTypes to List of Pairs.
         """
         pair_dict_by_type = {}
-        pair_dict_by_type[DataTypes.SPOT] = self.get_unique_spot_pairs()
-        if len(pair_dict_by_type[DataTypes.SPOT]) == 0:
-            del pair_dict_by_type[DataTypes.SPOT]
-        pair_dict_by_type[DataTypes.FUTURE] = self.get_unique_future_pairs()
-        if len(pair_dict_by_type[DataTypes.FUTURE]) == 0:
-            del pair_dict_by_type[DataTypes.FUTURE]
-
+        if spot_pairs := self.get_unique_spot_pairs():
+            pair_dict_by_type[DataTypes.SPOT] = spot_pairs
+        if future_pairs := self.get_unique_future_pairs():
+            pair_dict_by_type[DataTypes.FUTURE] = future_pairs
         return pair_dict_by_type
 
 

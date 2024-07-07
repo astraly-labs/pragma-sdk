@@ -385,7 +385,7 @@ class PragmaAPIClient(PragmaClient):
                     raise HTTPError(
                         f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} "
                     )
-                return response
+                return json_response
 
 
 def get_endpoint_publish_offchain(data_type: DataTypes):

@@ -2,23 +2,21 @@ import asyncio
 import logging
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from pragma_utils.readable_id import generate_human_readable_id, HumanReadableId
 
 
-from pragma_sdk.common.types.entry import Entry
+from pragma_sdk.common.types.entry import Entry, SpotEntry, FutureEntry
 from pragma_sdk.common.types.types import DataTypes
 
 from price_pusher.utils import exclude_none_and_exceptions, flatten_list
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from price_pusher.types import (
-    DurationInSeconds,
-    LatestOrchestratorPairPrices,
-)
+from price_pusher.types import DurationInSeconds, LatestOrchestratorPairPrices, ExpiryTimestamp
 
 
+CONSECUTIVES_EMPTY_ERRORS_LIMIT = 10
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +35,8 @@ class IPriceListener(ABC):
     notification_event: asyncio.Event
     polling_frequency_in_s: DurationInSeconds
 
+    consecutive_empty_oracle_error: int
+
     @abstractmethod
     def set_orchestrator_prices(
         self, orchestrator_prices: LatestOrchestratorPairPrices
@@ -49,7 +49,7 @@ class IPriceListener(ABC):
     async def _fetch_all_oracle_prices(self) -> None: ...
 
     @abstractmethod
-    def _get_most_recent_orchestrator_entry(
+    def _get_latest_orchestrator_entry(
         self, pair_id: str, data_type: DataTypes
     ) -> Optional[Entry]: ...
 
@@ -87,6 +87,8 @@ class PriceListener(IPriceListener):
 
         self.notification_event = asyncio.Event()
         self.polling_frequency_in_s = polling_frequency_in_s
+
+        self.consecutive_empty_oracle_error = 0
 
         self._log_listener_spawning()
 
@@ -140,9 +142,14 @@ class PriceListener(IPriceListener):
                 case DataTypes.SPOT:
                     self.oracle_prices[pair_id][data_type] = entry
                 case DataTypes.FUTURE:
+                    if expiry is None:
+                        logger.error(
+                            f"Expiry none for future entry from Oracle: {pair_id}. Ignoring."
+                        )
+                        continue
                     self.oracle_prices[pair_id][data_type][expiry] = entry
 
-    def _get_most_recent_orchestrator_entry(
+    def _get_latest_orchestrator_entry(
         self, pair_id: str, data_type: DataTypes, expiry: str = None
     ) -> Optional[Entry]:
         """
@@ -183,38 +190,72 @@ class PriceListener(IPriceListener):
             logging.error(
                 f"LISTENER {self.id} have no oracle prices at all... Sending notification."
             )
+            self.consecutive_empty_oracle_error += 1
+            if self.consecutive_empty_oracle_error >= CONSECUTIVES_EMPTY_ERRORS_LIMIT:
+                raise ValueError(
+                    "⛔ Oracle entries are still empty after "
+                    f"{self.consecutive_empty_oracle_error} tries. "
+                    "Publishing does not seem to work?"
+                )
             return True
 
         for pair_id, oracle_entries in self.oracle_prices.items():
             if pair_id not in self.orchestrator_prices:
                 continue
+
             for data_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
                 if data_type not in oracle_entries:
                     logging.warn(
-                        f"LISTENER {self.id} miss prices in oracle entries. Sending notification."
+                        f"LISTENER {self.id} miss {data_type} prices in oracle entries. Sending notification."
                     )
                     return True
 
-                oracle_entry = oracle_entries[data_type]
+                # For Spot entries, oracle_entry will be an Entry
+                # For future entries, it will be a Dict[str, Entry] for each expiry.
+                oracle_entry: Union[SpotEntry, Dict[ExpiryTimestamp, FutureEntry]] = oracle_entries[
+                    data_type
+                ]
 
-                # First check if the oracle entry is outdated
-                # TODO: incorrect :)
-                newest_entry = self._get_most_recent_orchestrator_entry(pair_id, data_type)
+                # Check if entries are not outdated...
+                match data_type:
+                    case DataTypes.SPOT:
+                        newest_spot_entry = self._get_latest_orchestrator_entry(pair_id, data_type)
+                        if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_spot_entry):
+                            return True
+                    case DataTypes.FUTURE:
+                        if self._future_entries_are_outdated(pair_id, data_type, oracle_entry):
+                            return True
 
-                if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_entry):
-                    return True
-
-                # If not, check its deviation
+                # If they're not, we now check for the price deviation
                 for entry in orchestrator_entries.values():
                     match data_type:
                         case DataTypes.SPOT:
                             oracle_entry_price = oracle_entry.price
+                            if self._new_price_is_deviating(
+                                pair_id, entry.price, oracle_entry_price
+                            ):
+                                return True
                         case DataTypes.FUTURE:
-                            expiry = entry.get_expiry()
-                            oracle_entry_price = oracle_entry[expiry].price
+                            for expiry, _entry in entry.items():
+                                oracle_entry_price = oracle_entry[expiry].price
+                                if self._new_price_is_deviating(
+                                    pair_id, _entry.price, oracle_entry_price
+                                ):
+                                    return True
 
-                    if self._new_price_is_deviating(pair_id, entry.price, oracle_entry_price):
-                        return True
+        return False
+
+    def _future_entries_are_outdated(
+        self, pair_id: str, data_type: DataTypes, entries: Dict[ExpiryTimestamp, FutureEntry]
+    ) -> bool:
+        """
+        Compare each timestamp future price together & returns True if one of them is
+        outdated.
+        """
+        for expiry, oracle_entry in entries.items():
+            orchestrator_entry = self._get_latest_orchestrator_entry(pair_id, data_type, expiry)
+            if self._oracle_entry_is_outdated(pair_id, oracle_entry, orchestrator_entry):
+                return True
         return False
 
     def _new_price_is_deviating(self, pair_id: str, new_price: int, oracle_price: int) -> bool:
@@ -240,12 +281,7 @@ class PriceListener(IPriceListener):
         the orchestrator and the most recent entry for the oracle.
         """
         max_time_elapsed = self.price_config.time_difference
-        if newest_entry.get_asset_type() == DataTypes.SPOT:
-            oracle_entry_timestamp = oracle_entry.get_timestamp()
-        else:
-            latest_oracle_entry = max(oracle_entry.values(), key=lambda x: x.get_timestamp())
-            oracle_entry_timestamp = latest_oracle_entry.get_timestamp()
-
+        oracle_entry_timestamp = oracle_entry.get_timestamp()
         delta_t = newest_entry.get_timestamp() - oracle_entry_timestamp
         is_outdated = delta_t > max_time_elapsed
 

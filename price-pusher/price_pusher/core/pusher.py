@@ -27,7 +27,7 @@ class PricePusher(IPricePusher):
         try:
             response = await self.client.publish_entries(entries)  # TODO: add execution config
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entries!")
-            logger.debug(f"Response {response}")
+            logger.debug(f"Response from the API: {response}")
 
             return response
         except Exception as e:
