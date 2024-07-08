@@ -148,7 +148,7 @@ class OracleMixin:
         if sources is None:
             sources = []
         if isinstance(pair_id, str):
-            pair_id = str_to_felt(pair_id)
+            pair_id = str_to_felt(pair_id.upper())
         elif not isinstance(pair_id, int):
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
@@ -182,7 +182,7 @@ class OracleMixin:
         if sources is None:
             sources = []
         if isinstance(pair_id, str):
-            pair_id = str_to_felt(pair_id)
+            pair_id = str_to_felt(pair_id.upper())
         elif not isinstance(pair_id, int):
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
@@ -212,7 +212,7 @@ class OracleMixin:
         :return: OracleResponse
         """
         if isinstance(pair_id, str):
-            pair_id = str_to_felt(pair_id)
+            pair_id = str_to_felt(pair_id.upper())
         elif not isinstance(pair_id, int):
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
@@ -260,7 +260,7 @@ class OracleMixin:
         :return: OracleResponse
         """
         if isinstance(pair_id, str):
-            pair_id = str_to_felt(pair_id)
+            pair_id = str_to_felt(pair_id.upper())
         elif not isinstance(pair_id, int):
             raise TypeError(
                 "Pair ID must be string (will be converted to felt) or integer"
