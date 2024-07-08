@@ -199,12 +199,6 @@ def cli_entrypoint(
     api_base_url: Optional[str],
     api_key: Optional[str],
 ) -> None:
-    """
-    Click does not support async functions.
-    To make it work, we have to wrap the main function in this cli handler.
-
-    Also handles basic checks/conversions from the CLI args.
-    """
     if target == "offchain" and (not api_key or not api_base_url):
         raise click.UsageError("API key and API URL are required when destination is 'offchain'.")
     sdk_logger = get_stream_logger()

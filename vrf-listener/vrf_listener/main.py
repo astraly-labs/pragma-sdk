@@ -120,10 +120,7 @@ def cli_entrypoint(
     check_requests_interval: int,
 ) -> None:
     """
-    Click does not support async functions.
-    To make it work, we have to wrap the main function in this cli handler.
-
-    Also handles basic checks/conversions from the CLI args.
+    VRF Listener entry point.
     """
     setup_logging(logger, log_level)
     private_key = load_private_key_from_cli_arg(private_key)

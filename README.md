@@ -19,9 +19,10 @@ For more information, see the [project's repository](https://github.com/Astraly-
 
 ## Repository Structure
 
-- <a href="./sdk">Python SDK</a>
+- <a href="./pragma-sdk">Python SDK</a>
 - <a href="./price-pusher">Price Pusher</a>
-- <a href="./stagecoach/jobs/randomness/">VRF Service</a>
+- <a href="./vrf_listener">VRF Listener</a>
+- <a href="./pragma-utils">Pragma utils</a>
 
 
 ## Contributing
