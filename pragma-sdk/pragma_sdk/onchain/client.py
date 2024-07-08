@@ -58,6 +58,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     account: Account = None
     full_node_client: FullNodeClient = None
     client: Client = None
+    execution_config: ExecutionConfig
 
     def __init__(
         self,
@@ -86,6 +87,8 @@ class PragmaOnChainClient(  # type: ignore[misc]
 
         if execution_config is not None:
             self.execution_config = execution_config
+        else:
+            self.execution_config = ExecutionConfig(auto_estimate=True)
 
         if account_contract_address and account_private_key:
             self._setup_account_client(
@@ -101,7 +104,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         self._setup_contracts()
 
     async def publish_entries(
-        self, entries: List[Entry], execution_config: Optional[ExecutionConfig] = None
+        self, entries: List[Entry]
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publish entries on-chain.
@@ -109,8 +112,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :param entries: List of Entry objects
         :return: List of InvokeResult objects
         """
-        config = execution_config or self.execution_config
-        return await self.publish_many(entries, execution_config=config)
+        return await self.publish_many(entries, self.execution_config)
 
     def _setup_contracts(self):
         """

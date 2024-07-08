@@ -40,7 +40,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     ) -> List[FutureEntry] | PublisherFetchError:
         filtered_data = []
         url = self.format_url()
-        selection = pair.__repr__()
+        selection = str(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Binance")

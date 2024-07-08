@@ -1,17 +1,13 @@
 import asyncio
 
+from logging import Logger
 from typing import Callable, Optional, TypeVar, Any, Awaitable
 
-from pragma_sdk.common.logging import get_stream_logger
-
-logger = get_stream_logger()
 T = TypeVar("T")
 
 
 async def retry_async(
-    action: Callable[[], Awaitable[T]],
-    retries: int,
-    delay_in_s: int,
+    action: Callable[[], Awaitable[T]], retries: int, delay_in_s: int, logger: Logger
 ) -> Optional[Any]:
     """
     Retries an asynchronous action every `delay` seconds up to `retries` times.

@@ -59,7 +59,9 @@ class PricePoller(IPricePoller):
                 raise e
             try:
                 logger.warning("🤔 POLLER fetching prices failed. Retrying...")
-                new_entries = await retry_async(self._fetch_action, retries=5, delay_in_s=5)
+                new_entries = await retry_async(
+                    self._fetch_action, retries=5, delay_in_s=5, logger=logger
+                )
                 self.update_prices_callback(new_entries)
             except Exception as e:
                 raise ValueError(f"🔄 POLLERS: Retries for fetching new prices still failed: {e}")

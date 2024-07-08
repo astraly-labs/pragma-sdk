@@ -29,7 +29,7 @@ class SummaryStatsMixin:
         """
 
         (response,) = await self.summary_stats.functions["calculate_mean"].call(
-            mean_feed_params.to_list()
+            *mean_feed_params.to_list()
         )
 
         return tuple(response)
@@ -50,7 +50,7 @@ class SummaryStatsMixin:
         """
 
         (response,) = await self.summary_stats.functions["calculate_volatility"].call(
-            volatility_feed_params.to_list()
+            *volatility_feed_params.to_list()
         )
 
         return tuple(response)
@@ -72,7 +72,7 @@ class SummaryStatsMixin:
         """
 
         (response,) = await self.summary_stats.functions["calculate_volatility"].call(
-            volatility_feed_params.to_list()
+            *volatility_feed_params.to_list()
         )
 
         return tuple(response)

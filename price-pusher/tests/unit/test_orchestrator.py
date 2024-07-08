@@ -133,9 +133,9 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
     assert len(entries_to_push) == 1  # Ensure there's one entry pushed
 
     # Check the queue contains the correct entries
-    expected_asset_id = mock_listener.price_config.get_all_assets.return_value[DataTypes.SPOT][
-        0
-    ].__repr__()
+    expected_asset_id = str(
+        mock_listener.price_config.get_all_assets.return_value[DataTypes.SPOT][0]
+    )
     for entry in entries_to_push:
         assert entry.get_pair_id() == expected_asset_id
 
@@ -178,7 +178,7 @@ def test_callback_update_prices(orchestrator):
 
 def test_flush_entries_for_assets(orchestrator):
     pair = BTC_USD_PAIR
-    pair_id = pair.__repr__()
+    pair_id = str(pair)
 
     spot_entry = SpotEntry(
         pair_id="BTC/USD",

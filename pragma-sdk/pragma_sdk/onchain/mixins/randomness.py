@@ -34,6 +34,7 @@ class RandomnessMixin:
     account: Optional[Account] = None
     is_user_client: bool = False
     full_node_client: FullNodeClient
+    execution_config: ExecutionConfig
 
     def init_randomness_contract(self, contract_address: Address):
         provider = self.account if self.account else self.client
@@ -47,7 +48,6 @@ class RandomnessMixin:
     async def request_random(
         self,
         request_params: VRFRequestParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Request randomness from the VRF contract.
@@ -57,9 +57,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if request_params.calldata is None:
             request_params.calldata = []
 
@@ -71,14 +68,13 @@ class RandomnessMixin:
 
         invocation = await self.randomness.functions["request_random"].invoke(
             *request_params.to_list(),
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation
 
     async def estimate_gas_request_random_op(
         self,
         vrf_request_params: VRFRequestParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> EstimatedFee:
         """
         Estimate the gas for the request_random operation.
@@ -87,9 +83,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if vrf_request_params.calldata is None:
             vrf_request_params.calldata = []
 
@@ -100,7 +93,7 @@ class RandomnessMixin:
             )
         prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
             *vrf_request_params.to_list(),
-            max_fee=execution_config.max_fee,
+            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -108,7 +101,6 @@ class RandomnessMixin:
     async def submit_random(
         self,
         vrf_submit_params: VRFSubmitParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Submit randomness to the VRF contract.
@@ -121,9 +113,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by "
@@ -132,7 +121,7 @@ class RandomnessMixin:
 
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             *vrf_submit_params.to_list(),
-            max_fee=execution_config.max_fee,
+            max_fee=self.execution_config.max_fee,
         )
 
         try:
@@ -151,7 +140,7 @@ class RandomnessMixin:
                 vrf_submit_params.requestor_address,
                 vrf_submit_params.request_id,
                 RequestStatus.OUT_OF_GAS.serialize(),
-                execution_config=execution_config,
+                execution_config=self.execution_config,
             )
 
             # Refund gas
@@ -164,7 +153,7 @@ class RandomnessMixin:
 
         invocation = await self.randomness.functions["submit_random"].invoke(
             *vrf_submit_params.to_list(),
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         logger.info("Sumbitted random %s", invocation.hash)
 
@@ -173,7 +162,6 @@ class RandomnessMixin:
     async def estimate_gas_submit_random_op(
         self,
         vrf_submit_params: VRFSubmitParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> EstimatedFee:
         """
         Estimate the gas for the submit_random operation.
@@ -182,9 +170,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by "
@@ -195,7 +180,7 @@ class RandomnessMixin:
 
         prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             *vrf_submit_params.to_list(),
-            max_fee=execution_config.max_fee,
+            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -285,7 +270,6 @@ class RandomnessMixin:
     async def cancel_random_request(
         self,
         vrf_cancel_params: VRFCancelParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Cancel a random request given the request parameters.
@@ -295,9 +279,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. You may do this by "
@@ -306,14 +287,13 @@ class RandomnessMixin:
 
         invocation = await self.randomness.functions["cancel_random_request"].invoke(
             *vrf_cancel_params.to_list(),
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation
 
     async def estimate_gas_cancel_random_op(
         self,
         vrf_cancel_params: VRFCancelParams,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> EstimatedFee:
         """
         Estimate the gas for the cancel_random_request operation.
@@ -322,9 +302,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: The estimated gas for the operation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account.  You may do this by "
@@ -335,7 +312,7 @@ class RandomnessMixin:
             "cancel_random_request"
         ].prepare_invoke_v1(
             *vrf_cancel_params.to_list(),
-            max_fee=execution_config.max_fee,
+            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee  # type: ignore[no-any-return]
@@ -344,7 +321,6 @@ class RandomnessMixin:
         self,
         request_id: int,
         requestor_address: int,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Refund the remaining gas to the requestor address.
@@ -355,9 +331,6 @@ class RandomnessMixin:
         :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. You may do this by "
@@ -365,7 +338,7 @@ class RandomnessMixin:
             )
 
         invocation = await self.randomness.functions["refund_operation"].invoke(
-            requestor_address, request_id, execution_config=execution_config
+            requestor_address, request_id, execution_config=self.execution_config
         )
 
         return invocation

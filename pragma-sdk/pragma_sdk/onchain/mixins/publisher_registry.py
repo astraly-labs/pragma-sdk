@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
@@ -13,6 +13,7 @@ class PublisherRegistryMixin:
     client: Client
     account: Account
     publisher_registry: Contract
+    execution_config: ExecutionConfig
 
     async def get_all_publishers(self) -> List[int]:
         """
@@ -59,7 +60,6 @@ class PublisherRegistryMixin:
         self,
         publisher: str,
         publisher_address: int,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Add a publisher to the publisher registry.
@@ -70,13 +70,10 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         invocation = await self.publisher_registry.functions["add_publisher"].invoke(
             str_to_felt(publisher),
             publisher_address,
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation  # type: ignore[no-any-return]
 
@@ -84,7 +81,6 @@ class PublisherRegistryMixin:
         self,
         publisher: str,
         source: str,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Add a source for a publisher.
@@ -95,15 +91,12 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         invocation = await self.publisher_registry.functions[
             "add_source_for_publisher"
         ].invoke(
             str_to_felt(publisher),
             str_to_felt(source),
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation  # type: ignore[no-any-return]
 
@@ -111,7 +104,6 @@ class PublisherRegistryMixin:
         self,
         publisher: str,
         sources: List[str],
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Add multiple sources for a publisher.
@@ -122,15 +114,12 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         invocation = await self.publisher_registry.functions[
             "add_sources_for_publisher"
         ].invoke(
             str_to_felt(publisher),
             [str_to_felt(source) for source in sources],
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation  # type: ignore[no-any-return]
 
@@ -138,7 +127,6 @@ class PublisherRegistryMixin:
         self,
         publisher: str,
         publisher_address: int,
-        execution_config: Optional[ExecutionConfig] = None,
     ) -> InvokeResult:
         """
         Update the address of a publisher.
@@ -149,14 +137,11 @@ class PublisherRegistryMixin:
         :param execution_config: The execution config to use.
         :return: The invocation result.
         """
-        if execution_config is None:
-            execution_config = ExecutionConfig(auto_estimate=True)
-
         invocation = await self.publisher_registry.functions[
             "update_publisher_address"
         ].invoke(
             str_to_felt(publisher),
             publisher_address,
-            execution_config=execution_config,
+            execution_config=self.execution_config,
         )
         return invocation  # type: ignore[no-any-return]

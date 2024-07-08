@@ -1,8 +1,7 @@
-from typing import List, Optional, Union
+from typing import List, Union
 from abc import ABC, abstractmethod
 
 from pragma_sdk.common.types.entry import Entry
-from pragma_sdk.common.types.types import ExecutionConfig
 from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.offchain.types import PublishEntriesAPIResult
 from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
@@ -12,7 +11,7 @@ from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
 class PragmaClient(ABC):
     @abstractmethod
     async def publish_entries(
-        self, entries: List[Entry], execution_config: Optional[ExecutionConfig] = None
+        self, entries: List[Entry]
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publish entries to some destination.
