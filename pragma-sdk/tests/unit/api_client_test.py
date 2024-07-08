@@ -194,8 +194,6 @@ async def test_async_api_client_spot():
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "get_entry"
             ]
-            print(f" expected result = {expected_result}")
-            print(f" actual result = {expected_result[0][base_asset]}")
             assert result.assert_attributes_equal(expected_result[0][base_asset])
 
 
