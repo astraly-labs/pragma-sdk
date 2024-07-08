@@ -4,10 +4,10 @@ import os
 
 import boto3
 
-from pragma.core.assets import get_asset_spec_for_pair_id_by_type
-from pragma.core.logger import get_stream_logger
-from pragma.core.utils import currency_pair_to_pair_id
-from pragma.publisher.client import PragmaOnChainClient
+from pragma_sdk.common.assets import get_asset_spec_for_pair_id_by_type
+from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.utils import currency_pair_to_pair_id
+from pragma_sdk.onchain.client import PragmaOnChainClient
 
 logger = get_stream_logger()
 
