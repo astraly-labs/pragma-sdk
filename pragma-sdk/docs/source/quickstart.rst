@@ -47,7 +47,7 @@ Interact with pragma on-chain
 
 To interact with the Pragma on-chain, one can use the `PragmaOnChainClient<pragma_sdk.onchain.client.PragmaOnChainClient>`.
 The client covers most of the external endpoints of the Pragma on-chain contracts.
-Please refer to the complete `documentation <https://docs.pragma.build/Resources/Cairo%201/data-feeds/consuming-data>`
+Please refer to the complete `documentation <https://docs.pragma.build/Resources/Cairo%201/data-feeds/consuming-data>`_
 
 Here is an example :
 
@@ -92,7 +92,7 @@ Interact with pragma off-chain
 
 To interact with the Pragma off-chain, one can use the `PragmaOffChainClient<pragma_sdk.offchain.client.PragmaOffChainClient>`.
 The client covers most of the external endpoints of the Pragma off-chain API.
-Please refer to the complete `documentation <https://docs.pragma.build/Resources/PragmApi/overview>`
+Please refer to the complete `documentation <https://docs.pragma.build/Resources/PragmApi/overview>`_
 
 An API key is currently needed to interact with the off-chain API. You can get one by contacting us at `support@pragma.build`.
 
