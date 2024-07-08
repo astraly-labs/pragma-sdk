@@ -382,8 +382,8 @@ class PragmaAPIClient(PragmaClient):
                 else:
                     logger.debug(f"Status Code: {status_code}")
                     logger.debug(f"Response Text: {response}")
-                    raise PragmaAPIError(
-                        f"Unable to GET future_expiries for pair {pair}"
+                    raise HTTPError(
+                        f"Unable to GET /v1{base_asset}/{quote_asset}/future_expiries for pair {pair} "
                     )
                 return json_response
 
