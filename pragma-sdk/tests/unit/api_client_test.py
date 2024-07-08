@@ -327,7 +327,7 @@ async def test_async_api_client_future():
             url = (
                 API_CLIENT_CONFIGS["get_future_data"]["url"]
                 + f"{base_asset}/{quote_asset}"
-                + f"?entry_type=future"
+                + "?entry_type=future"
             )
             with open(
                 [
@@ -372,7 +372,7 @@ async def test_async_api_client_future_404_error():
             url = (
                 API_CLIENT_CONFIGS["get_future_data"]["url"]
                 + f"{base_asset}/{quote_asset}"
-                + f"?entry_type=future"
+                + "?entry_type=future"
             )
             mock.get(url, status=404)
             # Use pytest.raises to capture the exception
@@ -403,7 +403,7 @@ async def test_async_api_client_expiries_list():
             url = (
                 API_CLIENT_CONFIGS["get_expiries_list"]["url"]
                 + f"{base_asset}/{quote_asset}"
-                + f"/future_expiries"
+                + "/future_expiries"
             )
             with open(
                 [
@@ -429,7 +429,7 @@ async def test_async_api_client_expiries_list():
 
 
 @pytest.mark.asyncio
-async def test_async_api_client_future_404_error():
+async def test_async_api_client_expiries_list_404_error():
     # we only want to mock the external fetcher APIs and not the RPC
     with aioresponses() as mock:
         api_client = PragmaAPIClient(
@@ -445,7 +445,7 @@ async def test_async_api_client_future_404_error():
             url = (
                 API_CLIENT_CONFIGS["get_expiries_list"]["url"]
                 + f"{base_asset}/{quote_asset}"
-                + f"/future_expiries"
+                + "/future_expiries"
             )
             mock.get(url, status=404)
             # Use pytest.raises to capture the exception
