@@ -31,7 +31,7 @@ class PricePusher(IPricePusher):
         """
         logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
         try:
-            response = await self.client.publish_entries(entries)  # TODO: add execution config
+            response = await self.client.publish_entries(entries)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
             logger.debug(f"Response from the API: {response}")
 
