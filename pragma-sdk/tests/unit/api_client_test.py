@@ -42,6 +42,27 @@ API_CLIENT_CONFIGS = {
             },
         },
     },
+    "get_future_data": {
+        "function": "get_future_entry",
+        "url": "https://api.dev.pragma.build/node/v1/data/",
+        "mock_file": MOCK_DIR / "responses" / "api_client" / "get_future.json",
+        "expected_result": {
+            "BTC": {
+                "num_sources_aggregated": 8,
+                "pair_id": "BTC/USD",
+                "price": "0x52bd9a0154d",
+                "timestamp": 1720274400000,
+                "decimals": 8
+            },
+            "ETH": {
+                 "num_sources_aggregated": 8,
+                "pair_id": "ETH/USD",
+                "price": "0x45d8ad9ae4",
+                "timestamp": 1720274400000,
+                "decimals": 8
+            },
+        },
+    },
     "get_ohlc_data": {
         "function": "api_get_ohlc",
         "url": "https://api.dev.pragma.build/node/v1/aggregation/candlestick/",
@@ -173,6 +194,8 @@ async def test_async_api_client_spot():
                 for config in API_CLIENT_CONFIGS.values()
                 if config["function"] == "get_entry"
             ]
+            print(f" expected result = {expected_result}")
+            print(f" actual result = {expected_result[0][base_asset]}")
             assert result.assert_attributes_equal(expected_result[0][base_asset])
 
 
@@ -279,4 +302,79 @@ async def test_async_api_client_ohlc_404_error():
             assert (
                 str(exc_info.value)
                 == f"Failed to get OHLC data for pair {base_asset}/{quote_asset}"
+            )
+
+@pytest.mark.asyncio
+async def test_async_api_client_future():
+    # we only want to mock the external fetcher APIs and not the RPC
+    with aioresponses() as mock:
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
+        # Mocking the expected call for assets
+        for asset in SAMPLE_PAIRS:
+            base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
+            url = (
+                API_CLIENT_CONFIGS["get_future_data"]["url"]
+                + f"{base_asset}/{quote_asset}"
+                + f"?entry_type=future"
+            )
+            with open(
+                [
+                    config["mock_file"]
+                    for config in API_CLIENT_CONFIGS.values()
+                    if config["function"] == "get_future_entry"
+                ][0],
+                "r",
+                encoding="utf-8",
+            ) as filepath:
+                mock_data = json.load(filepath)
+            mock.get(
+                url,
+                payload=mock_data[base_asset],
+            )
+            result = await api_client.get_future_entry(
+                f"{asset.base_currency.id}/{asset.quote_currency.id}"
+            )
+            expected_result = [
+                config["expected_result"]
+                for config in API_CLIENT_CONFIGS.values()
+                if config["function"] == "get_future_entry"
+            ]
+
+            assert result.assert_attributes_equal(expected_result[0][base_asset])
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_future_404_error():
+    # we only want to mock the external fetcher APIs and not the RPC
+    with aioresponses() as mock:
+        api_client = PragmaAPIClient(
+            ACCOUNT_ADDRESS,
+            ACCOUNT_PRIVATE_KEY,
+            "https://api.dev.pragma.build",
+            "dummy_key",
+        )
+        # Mocking the expected call for assets
+        for asset in SAMPLE_PAIRS:
+            base_asset = asset.base_currency.id
+            quote_asset = asset.quote_currency.id
+            url = (
+                API_CLIENT_CONFIGS["get_future_data"]["url"]
+                + f"{base_asset}/{quote_asset}"
+                + f"?entry_type=future"
+            )
+            mock.get(url, status=404)
+            # Use pytest.raises to capture the exception
+            with pytest.raises(PragmaAPIError) as exc_info:
+                await api_client.get_future_entry(f"{base_asset}/{quote_asset}")
+
+            # Assert the error message or other details if needed
+            assert (
+                str(exc_info.value)
+                == f"Unable to GET /v1/data for pair {base_asset}/{quote_asset}"
             )
