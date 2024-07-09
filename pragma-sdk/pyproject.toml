@@ -34,7 +34,7 @@ docs = ["sphinx", "enum-tools", "furo", "pallets-sphinx-themes"]
 sphinx = "^7.3.7"
 furo = "^2024.5.6"
 pallets-sphinx-themes = "^2.1.3"
-enum-tools = { extras = ["sphinx"], version = "0.12.0"}
+enum-tools = { extras = ["sphinx"], version = "0.12.0" }
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.21.1"
@@ -74,8 +74,7 @@ test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rer
 test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/index_aggregation_test.py -s"
 test_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/api_client_test.py -s"
 
-# TODO(#000): Fix infinite loop in test_update_oracle 
-test_all = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s -k 'not test_update_oracle'"
+test_all = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
 
 check_circular_imports = "poetry run python tests/check_circular_imports.py"
 

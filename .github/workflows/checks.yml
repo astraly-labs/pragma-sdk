@@ -116,11 +116,18 @@ jobs:
 
       - name: Install starknet-devnet
         run: cargo install starknet-devnet
-      # Add any package-specific setup steps here
       - name: Run tests
-        run: |
+        run: | # TODO(#000): remove that when CI is fixed
           cd ${{ matrix.package }}
-          poetry run poe test_all
+          if [ "${{ matrix.package }}" = "pragma-sdk" ]; then
+            poetry run poe test_client
+            poetry run poe test_vrf
+            poetry run poe test_fetchers
+            poetry run poe test_publisher
+            poetry run poe test_all_unit
+          else
+            poetry run poe test_all
+          fi
       - name: Generate coverage in XML
         run: |
           cd ${{ matrix.package }}
