@@ -1,0 +1,16 @@
+{
+    "BTC": {
+        "num_sources_aggregated": 8,
+        "pair_id": "BTC/USD",
+        "price": "0x52bd9a0154d",
+        "timestamp": 1720274400000,
+        "decimals": 8
+    },
+    "ETH": {
+        "num_sources_aggregated": 8,
+        "pair_id": "ETH/USD",
+        "price": "0x45d8ad9ae4",
+        "timestamp": 1720274400000,
+        "decimals": 8
+    }
+}
