@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  price-pusher:
+    build:
+      context: .
+      dockerfile: ./price-pusher/Dockerfile
+    container_name: price-pusher
+    ports:
+      - "8000:8000"
