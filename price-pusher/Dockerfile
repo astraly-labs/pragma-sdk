@@ -32,5 +32,3 @@ COPY --from=builder /opt /opt
 VOLUME price-pusher/config /opt/price-pusher/config/
 WORKDIR /opt/price-pusher
 ENTRYPOINT ["/opt/price-pusher/.venv/bin/python3.12", "price_pusher/main.py"]
-
-#FROM gcr.io/distroless/python3-debian12 as final

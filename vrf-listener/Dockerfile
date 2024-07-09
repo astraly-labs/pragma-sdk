@@ -31,5 +31,3 @@ FROM base as final
 COPY --from=builder /opt /opt
 WORKDIR /opt/vrf-listener
 ENTRYPOINT ["/opt/vrf-listener/.venv/bin/python3.12", "vrf_listener/main.py"]
-
-#FROM gcr.io/distroless/python3-debian12 as final
