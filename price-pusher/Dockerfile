@@ -29,6 +29,7 @@ RUN poetry install
 
 FROM base as final
 COPY --from=builder /opt /opt
+VOLUME price-pusher/config /opt/price_pusher/config/
 WORKDIR /opt/price-pusher
 ENTRYPOINT ["/opt/price-pusher/.venv/bin/python3.12", "price_pusher/main.py"]
 
