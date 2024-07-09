@@ -16,7 +16,7 @@ include = ["vrf_listener"]
 packages = [{ include = "vrf_listener" }]
 
 [tool.poetry.scripts]
-scheduler = 'vrf_listener.main:cli_entrypoint'
+vrf-listener = 'vrf_listener.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
