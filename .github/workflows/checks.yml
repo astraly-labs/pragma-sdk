@@ -123,7 +123,6 @@ jobs:
             poetry run poe test_client
             poetry run poe test_vrf
             poetry run poe test_fetchers
-            poetry run poe test_publisher
             poetry run poe test_all_unit
           else
             poetry run poe test_all
