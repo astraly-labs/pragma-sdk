@@ -6,5 +6,9 @@ services:
       context: .
       dockerfile: ./price-pusher/Dockerfile
     container_name: price-pusher
-    ports:
-      - "8000:8000"
+
+  vrf-listener:
+    build:
+      context: .
+      dockerfile: ./vrf-listener/Dockerfile
+    container_name: vrf-listener

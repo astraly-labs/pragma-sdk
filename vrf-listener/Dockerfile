@@ -22,15 +22,14 @@ RUN apt-get update && \
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/
 COPY pragma-utils/ /opt/pragma-utils/
-COPY price-pusher/ /opt/price-pusher/
-WORKDIR /opt/price-pusher
+COPY vrf-listener/ /opt/vrf-listener/
+WORKDIR /opt/vrf-listener
 RUN poetry env use 3.12
 RUN poetry install
 
 FROM base as final
 COPY --from=builder /opt /opt
-VOLUME price-pusher/config /opt/price-pusher/config/
-WORKDIR /opt/price-pusher
-ENTRYPOINT ["/opt/price-pusher/.venv/bin/python3.12", "price_pusher/main.py"]
+WORKDIR /opt/vrf-listener
+ENTRYPOINT ["/opt/vrf-listener/.venv/bin/python3.12", "vrf_listener/main.py"]
 
 #FROM gcr.io/distroless/python3-debian12 as final
