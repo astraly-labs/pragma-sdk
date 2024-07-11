@@ -1,0 +1,19 @@
+---
+  name: Workflow - Release
+  
+  on:
+    workflow_dispatch:
+    release:
+      types: [published]
+  
+  env: 
+      PYTHON_VERSION: 3.12.4
+  
+  jobs:
+      python_package_publish:
+        name: Publish python package
+        uses: ./.github/workflows/publish.yml
+    
+      docker_release_build:
+        name: Build docker release
+        uses: ./.github/workflows/docker-build.yml
