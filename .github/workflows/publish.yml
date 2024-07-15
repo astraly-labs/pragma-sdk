@@ -4,7 +4,10 @@
   on:
     workflow_dispatch:
     workflow_call:
-        
+
+  env: 
+        PYTHON_VERSION: 3.12.4   
+    
   jobs:
     build_sdist:
       name: Build SDist
@@ -13,7 +16,7 @@
         - uses: actions/checkout@v4
         - uses: actions/setup-python@v5
           with:
-            python-version: $PYTHON_VERSION
+            python-version: ${{ env.PYTHON_VERSION }}
             cache: "poetry"
         - uses: CfirTsabari/actions-pipx@v1
         - name: Install poetry
