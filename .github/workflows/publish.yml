@@ -1,72 +1,45 @@
-name: Publish Pragma SDK
-on:
-  workflow_dispatch:
-  release:
-    types: [published]
-    
-jobs:
-  build_sdist:
-    name: Build SDist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install poetry
-        run: python -X utf8 -m pip install poetry
-
-      - name: Build SDist
-        run: poetry build -f sdist
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: dist/*.tar.gz
-
-  upload_pypi:
-    name: Upload package to PyPI
-    needs: [build_sdist]
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
-
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          skip-existing: true
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-  upload_docker:
-    name: Build and publish Docker image
-    needs: [upload_pypi]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: astralylabs
-          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
-
-      - name: Extract package version
-        run: |
-          export PRAGMA_PACKAGE_VERSION=$(grep 'version = "' ./pyproject.toml | grep -m 1 -e '[0-9][0-9a-zA-Z]*[-.a-z0-9]*' -o)
-          echo "PRAGMA_PACKAGE_VERSION=$PRAGMA_PACKAGE_VERSION" >> $GITHUB_ENV
-          echo $PRAGMA_PACKAGE_VERSION
-
-      - name: Build image
-        run: docker build . --target production --build-arg PRAGMA_PACKAGE_VERSION=$PRAGMA_PACKAGE_VERSION -t astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
-
-      - name: Push image
-        run: docker push astralylabs/pragma-client:${PRAGMA_PACKAGE_VERSION}
+---
+  name: Task - Publish Package
+  
+  on:
+    workflow_dispatch:
+    workflow_call:
         
+  jobs:
+    build_sdist:
+      name: Build SDist
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: $PYTHON_VERSION
+            cache: "poetry"
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
+  
+        - name: Build SDist
+          run: poetry build -f sdist
+  
+        - uses: actions/upload-artifact@v4
+          with:
+            name: sdist
+            path: dist
+  
+    upload_pypi:
+      name: Upload package to PyPI
+      needs: [build_sdist]
+      runs-on: ubuntu-latest
+  
+      steps:
+        - uses: actions/download-artifact@v4
+          with:
+            name: sdist
+            path: dist
+  
+        - uses: pypa/gh-action-pypi-publish@release/v1
+          with:
+            skip-existing: true
+            user: __token__
+            password: ${{ secrets.PYPI_API_TOKEN }}

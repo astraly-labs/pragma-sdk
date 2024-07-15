@@ -1,0 +1,85 @@
+---
+  name: Task - Build & Push Docker Image
+  
+  on:
+    workflow_dispatch:
+    workflow_call:
+  
+  env:
+    DOCKER_REGISTRY: ghcr.io/${{ github.repository }}
+
+  jobs:  
+    build_containers:
+      strategy:
+        matrix:
+          package: [price-pusher, vrf-listener]
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+        - name: Login to DockerHub
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Download artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: ${{ matrix.package }}-dist
+            path: ${{ matrix.package }}/dist
+
+        - name: Extract package version
+          run: |
+            export PACKAGE_VERSION=$(grep 'version = "' ./${{ matrix.package }}/pyproject.toml | grep -m 1 -e '[0-9][0-9a-zA-Z]*[-.a-z0-9]*' -o)
+            echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+            echo $PACKAGE_VERSION
+
+        - name: Build and push
+          uses: docker/build-push-action@v6
+          with:
+            context: .
+            file: ./${{ matrix.package }}/Dockerfile
+            push: true
+            tags: |
+              ${{ env.DOCKER_REGISTRY }}/${{ matrix.package }}:$PACKAGE_VERSION
+              ${{ env.DOCKER_REGISTRY}}/${{ matrix.package }}:latest
+            cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ matrix.package }}:cache
+            cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ matrix.package }}:cache,mode=max
+            outputs: type=image,name=${{ env.DOCKER_REGISTRY }}/${{ matrix.package }},push-by-digest=true,name-canonical=true,push=true
+  
+    bump_version:
+      needs: [build_containers]
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: $PYTHON_VERSION
+        - name: Install Commitizen
+          run: pip install --upgrade Commitizen
+        - name: Configure Git
+          run: |
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+        - name: Bump version
+          run: |
+            git fetch --tags
+            cz bump --retry || echo "probably nothing to do"
+        - name: Push changes
+          run: |
+            TAG=$(git tag --points-at HEAD)
+            if [[ $TAG ]]; then
+              echo "Version bumped to $TAG"
+              git push
+              git push --tags
+            else
+              echo "Version NOT bumped"
+            fi
+  
+        
