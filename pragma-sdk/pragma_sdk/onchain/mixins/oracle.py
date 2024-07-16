@@ -429,7 +429,6 @@ class OracleMixin:
     ) -> Checkpoint:
         if expiration_timestamp is not None and data_type == DataTypes.SPOT:
             raise ValueError("expiration_timestamp for SPOT should be None.")
-
         (response,) = await self.oracle.functions["get_latest_checkpoint"].call(
             Asset(data_type, pair_id, expiration_timestamp).serialize(),
             aggregation_mode.serialize(),
