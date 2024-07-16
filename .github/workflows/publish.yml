@@ -32,7 +32,7 @@
         - uses: actions/upload-artifact@v4
           with:
             name: dist
-            path: pragma-sdk/dist/
+            path: pragma-sdk/
             if-no-files-found: error
   
     pypi_test_publish:
@@ -45,14 +45,14 @@
         - uses: actions/download-artifact@v4
           with:
             name: dist
-            path: pragma-sdk/dist/dist/
+            path: pragma-sdk/
 
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
             skip-existing: true
             repository-url: https://test.pypi.org/legacy/
             password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-            packages-dir: pragma-sdk/dist/
+            packages-dir: pragma-sdk/
 
     pypi_publish:
       name: Upload package to PyPI
