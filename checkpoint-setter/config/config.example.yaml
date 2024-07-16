@@ -1,1 +1,6 @@
 spot:
+  - BTC/USD
+  - ETH/USD
+  
+future:
+  - BTC/USD:

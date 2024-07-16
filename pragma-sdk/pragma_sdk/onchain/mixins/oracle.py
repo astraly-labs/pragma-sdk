@@ -72,7 +72,6 @@ class OracleMixin:
     async def publish_many(
         self,
         entries: List[Entry],
-        execution_config: ExecutionConfig,
     ) -> List[InvokeResult]:
         if not entries:
             logger.warning("Skipping publishing as entries array is empty")
@@ -87,19 +86,15 @@ class OracleMixin:
             entry for entry in entries if isinstance(entry, FutureEntry)
         ]
 
+        invocations.extend(await self._publish_entries(spot_entries, DataTypes.SPOT))
         invocations.extend(
-            await self._publish_entries(spot_entries, DataTypes.SPOT, execution_config)
-        )
-        invocations.extend(
-            await self._publish_entries(
-                future_entries, DataTypes.FUTURE, execution_config
-            )
+            await self._publish_entries(future_entries, DataTypes.FUTURE)
         )
 
         return invocations
 
     async def _publish_entries(
-        self, entries: List[Entry], data_type: DataTypes, config: ExecutionConfig
+        self, entries: List[Entry], data_type: DataTypes
     ) -> List[InvokeResult]:
         invocations = []
         serialized_entries = (
@@ -111,29 +106,26 @@ class OracleMixin:
         if len(serialized_entries) == 0:
             return []
 
-        if config.pagination:
-            for i in range(0, len(serialized_entries), config.pagination):
-                entries_subset = serialized_entries[i : i + config.pagination]
-                invocation = await self._invoke_publish(
-                    entries_subset, data_type, config
-                )
+        pagination = self.execution_config.pagination
+        if pagination:
+            for i in range(0, len(serialized_entries), pagination):
+                entries_subset = serialized_entries[i : i + pagination]
+                invocation = await self._invoke_publish(entries_subset, data_type)
                 invocations.append(invocation)
                 self._log_transaction(invocation, len(entries_subset), data_type)
         else:
-            invocation = await self._invoke_publish(
-                serialized_entries, data_type, config
-            )
+            invocation = await self._invoke_publish(serialized_entries, data_type)
             invocations.append(invocation)
             self._log_transaction(invocation, len(serialized_entries), data_type)
 
         return invocations
 
     async def _invoke_publish(
-        self, entries: List[Dict], data_type: DataTypes, config: ExecutionConfig
+        self, entries: List[Dict], data_type: DataTypes
     ) -> InvokeResult:
         return await self.oracle.functions["publish_data_entries"].invoke(
             new_entries=[{data_type: entry} for entry in entries],
-            execution_config=config,
+            execution_config=self.execution_config,
             callback=self.track_nonce,
         )
 
@@ -328,7 +320,6 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-
         invocation = None
         if self.execution_config.pagination:
             index = 0
@@ -336,9 +327,11 @@ class OracleMixin:
                 pair_ids_subset = pair_ids[
                     index : index + self.execution_config.pagination
                 ]
-                invocation = await self.oracle.functions["set_checkpoints"].invoke(
-                    pair_ids_subset,
-                    expiry_timestamps,
+                invocation = await self.oracle.set_checkpoints.invoke(
+                    [
+                        Asset(DataTypes.FUTURE, pair_id, 0).serialize()
+                        for pair_id in pair_ids_subset
+                    ],
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
@@ -350,9 +343,11 @@ class OracleMixin:
                     hex(invocation.hash),
                 )
         else:
-            invocation = await self.oracle.functions["set_checkpoints"].invoke(
-                pair_ids,
-                expiry_timestamps,
+            invocation = await self.oracle.set_checkpoints.invoke(
+                [
+                    Asset(DataTypes.FUTURE, pair_id, 0).serialize()
+                    for pair_id in pair_ids
+                ],
                 aggregation_mode.serialize(),
                 max_fee=self.execution_config.max_fee,
             )
@@ -369,7 +364,6 @@ class OracleMixin:
 
         :param pair_ids: List of pair IDs
         :param aggregation_mode: AggregationMode
-        :param execution_config: ExecutionConfig
         :return: InvokeResult
         """
         if not self.is_user_client:
@@ -426,9 +420,14 @@ class OracleMixin:
             Asset(data_type, pair_id, expiration_timestamp).serialize(),
             aggregation_mode.serialize(),
         )
-        return response  # type: ignore[no-any-return]
+        return Checkpoint(  # type: ignore[no-any-return]
+            timestamp=response["timestamp"],
+            value=response["value"],
+            aggregation_mode=AggregationMode(response["aggregation_mode"].variant),
+            num_sources_aggregated=response["num_sources_aggregated"],
+        )
 
-    async def get_last_checkpint_before(
+    async def get_last_checkpoint_before(
         self,
         pair_id: str | int,
         data_type: DataTypes,
@@ -438,12 +437,17 @@ class OracleMixin:
     ) -> Checkpoint:
         if expiration_timestamp is not None and data_type == DataTypes.SPOT:
             raise ValueError("expiration_timestamp for SPOT should be None.")
-        (response,) = await self.oracle.functions["get_last_checkpint_before"].call(
+        (response,) = await self.oracle.functions["get_last_checkpoint_before"].call(
             Asset(data_type, pair_id, expiration_timestamp).serialize(),
             timestamp,
             aggregation_mode.serialize(),
         )
-        return response  # type: ignore[no-any-return]
+        return Checkpoint(  # type: ignore[no-any-return]
+            timestamp=response["timestamp"],
+            value=response["value"],
+            aggregation_mode=AggregationMode(response["aggregation_mode"].variant),
+            num_sources_aggregated=response["num_sources_aggregated"],
+        )
 
     async def get_admin_address(self) -> Address:
         """
@@ -461,7 +465,6 @@ class OracleMixin:
         Update the Oracle contract to a new implementation.
 
         :param implementation_hash: New implementation hash
-        :param execution_config: ExecutionConfig
         :return: InvokeResult
         """
         if not self.is_user_client:
