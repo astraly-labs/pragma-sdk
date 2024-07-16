@@ -307,7 +307,6 @@ class OracleMixin:
 
         return response  # type: ignore[no-any-return]
 
-    # TODO (#000): Fix future checkpoints
     async def set_future_checkpoints(
         self,
         pair_ids: List[int],
@@ -329,6 +328,7 @@ class OracleMixin:
                 ]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
+                        # TODO: assign expiry to the pair using zip(), currently 0 everywhere
                         Asset(DataTypes.FUTURE, pair_id, 0).serialize()
                         for pair_id in pair_ids_subset
                     ],
