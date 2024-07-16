@@ -3,7 +3,6 @@
   
   on:
     workflow_dispatch:
-    workflow_call:
 
   env: 
     PYTHON_VERSION: 3.12.4
@@ -39,7 +38,9 @@
       name: Upload package to Test PyPI
       needs: [build_sdist]
       runs-on: ubuntu-latest
-      environment: testpypi
+      environment: 
+        name: testpypi
+        url: https://test.pypi.org/p/pragma-sdk
       permissions:
         id-token: write
       steps:
