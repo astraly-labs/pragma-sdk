@@ -52,10 +52,11 @@
           with:
             repository-url: https://test.pypi.org/legacy/
             packages-dir: pragma-sdk/dist/
+            skip-existing: true
 
     pypi_publish:
       name: Upload package to PyPI
-      needs: [pypi_test_publish]
+      needs: [build_sdist, pypi_test_publish]
       runs-on: ubuntu-latest
       environment:
         name: pypi
@@ -71,3 +72,4 @@
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
             packages-dir: pragma-sdk/dist/
+            skip-existing: true
