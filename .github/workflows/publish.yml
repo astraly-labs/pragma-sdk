@@ -7,7 +7,10 @@
 
   env: 
     PYTHON_VERSION: 3.12.4   
-    
+
+  permissions:
+    id-token: write
+
   jobs:
     build_sdist:
       name: Build SDist
