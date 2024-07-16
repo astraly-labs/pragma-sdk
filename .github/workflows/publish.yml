@@ -10,11 +10,6 @@
   permissions:
     contents: read
 
-  defaults:
-    run:
-      shell: bash
-      working-directory: ./pragma-sdk/
-
   jobs:
     build_sdist:
       name: Build SDist
@@ -30,12 +25,14 @@
             cache: "poetry"
 
         - name: Build SDist
-          run: poetry build -f sdist
-  
+          run: |
+            cd pragma-sdk/
+            poetry build -f sdist
+
         - uses: actions/upload-artifact@v4
           with:
             name: dist
-            path: dist/*tar.gz
+            path: pragma-sdk/dist/
             if-no-files-found: error
   
     pypi_test_publish:
@@ -48,13 +45,14 @@
         - uses: actions/download-artifact@v4
           with:
             name: dist
-            path: dist/
+            path: pragma-sdk/dist/dist/
 
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
             skip-existing: true
             repository-url: https://test.pypi.org/legacy/
             password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+            packages-dir: pragma-sdk/dist/
 
     pypi_publish:
       name: Upload package to PyPI
