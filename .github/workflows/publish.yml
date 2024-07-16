@@ -11,35 +11,43 @@
   jobs:
     build_sdist:
       name: Build SDist
+      strategy:
+        matrix:
+          package: [pragma-sdk, price-pusher, vrf-listener]
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
         - uses: actions/setup-python@v5
           with:
             python-version: ${{ env.PYTHON_VERSION }}
             cache: "poetry"
-        - uses: CfirTsabari/actions-pipx@v1
-        - name: Install poetry
-          run: pipx install poetry
   
         - name: Build SDist
-          run: poetry build -f sdist
+          run: |
+            cd ${{ matrix.package }}
+            poetry build -f sdist
   
         - uses: actions/upload-artifact@v4
           with:
-            name: sdist
-            path: dist
+            name: ${{ matrix.package }}-sdist
+            path: ${{ matrix.package }}/dist
   
     upload_pypi:
       name: Upload package to PyPI
       needs: [build_sdist]
+      strategy:
+        matrix:
+          package: [pragma-sdk, price-pusher, vrf-listener]
       runs-on: ubuntu-latest
   
       steps:
         - uses: actions/download-artifact@v4
           with:
-            name: sdist
-            path: dist
+            name: ${{ matrix.package }}-sdist
+            path: ${{ matrix.package }}/dist
   
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
