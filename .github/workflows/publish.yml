@@ -52,6 +52,7 @@
           with:
             skip-existing: true
             repository-url: https://test.pypi.org/legacy/
+            password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
     pypi_publish:
       name: Upload package to PyPI
