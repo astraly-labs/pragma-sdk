@@ -36,7 +36,9 @@ class PairsConfig(BaseModel):
             quote_currency = AssetConfig.from_ticker(splitted[1])
             pair = Pair.from_asset_configs(base_currency, quote_currency)
             if pair is None:
-                raise ValueError("⛔ Could not create pair for {base_currency}/{quote_currency}")
+                raise ValueError(
+                    f"⛔ Could not create Pair object for {base_currency}/{quote_currency}"
+                )
             pairs.append(pair)
         return list(set(pairs))
 
