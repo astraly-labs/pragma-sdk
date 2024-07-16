@@ -9,7 +9,7 @@ from starknet_py.net.client import Client
 
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
-from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
@@ -19,7 +19,7 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
 from pragma_sdk.onchain.types import OracleResponse
 
-logger = get_stream_logger()
+logger = get_pragma_sdk_logger()
 
 
 class OracleMixin:

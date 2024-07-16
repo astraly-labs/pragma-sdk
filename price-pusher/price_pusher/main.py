@@ -7,7 +7,7 @@ from typing import Optional, List
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.common.types.types import ExecutionConfig
-from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
@@ -276,7 +276,7 @@ def cli_entrypoint(
             raise click.UsageError('⛔ "rpc_url" format is incorrect. It must start with http(...)')
 
     # Update the logger level of the pragma_sdk package
-    sdk_logger = get_stream_logger()
+    sdk_logger = get_pragma_sdk_logger()
     sdk_logger.setLevel(log_level)
 
     setup_logging(logger, log_level)

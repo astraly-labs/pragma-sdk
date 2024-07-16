@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "price-pusher"
+name = "checkpoint-setter"
 version = "0.0.1"
 authors = ["0xevolve <matthias@pragma.build>"]
-description = "Price pushing service for Pragma."
+description = "Checkpoints setter service for Pragma."
 readme = "README.md"
 homepage = "https://pragma.build"
 repository = "https://github.com/Astraly-Labs/pragma-sdk"
@@ -12,11 +12,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-include = ["price_pusher"]
-packages = [{ include = "price_pusher" }]
+include = ["checkpoint_setter"]
+packages = [{ include = "checkpoint_setter" }]
 
 [tool.poetry.scripts]
-scheduler = 'price_pusher.main:cli_entrypoint'
+scheduler = 'checkpoint_setter.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -48,8 +48,7 @@ types-pyyaml = "^6.0.12.20240311"
 format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
-# TODO: fix all errors and change this
-typecheck = "mypy price_pusher/types.py"
+typecheck = "mypy ."
 test = "pytest tests"
 
 [tool.ruff]
@@ -105,7 +104,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["price-pusher"]
+source = ["checkpoint-setter"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]

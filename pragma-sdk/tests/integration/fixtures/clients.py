@@ -12,9 +12,9 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from tests.integration.fixtures.devnet import get_available_port
 
-from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 
-logger = get_stream_logger()
+logger = get_pragma_sdk_logger()
 
 
 @pytest.fixture(
