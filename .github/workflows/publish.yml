@@ -54,6 +54,7 @@
             repository-url: https://test.pypi.org/legacy/
             password: ${{ secrets.TEST_PYPI_API_TOKEN }}
             packages-dir: pragma-sdk/dist/
+            verbose: true
 
     pypi_publish:
       name: Upload package to PyPI
