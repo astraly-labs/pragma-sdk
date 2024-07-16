@@ -6,14 +6,11 @@
     workflow_call:
 
   env: 
-        PYTHON_VERSION: 3.12.4   
+    PYTHON_VERSION: 3.12.4   
     
   jobs:
     build_sdist:
       name: Build SDist
-      strategy:
-        matrix:
-          package: [pragma-sdk, price-pusher, vrf-listener]
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
@@ -26,31 +23,28 @@
             cache: "poetry"
   
         - name: Build SDist
-          run: |
-            cd ${{ matrix.package }}
-            poetry build -f sdist
+          working-directory: pragma-sdk
+          run: poetry build -f sdist
   
         - uses: actions/upload-artifact@v4
           with:
-            name: ${{ matrix.package }}-sdist
-            path: ${{ matrix.package }}/dist
+            name: sdist
+            path: pragma-sdk/dist
   
     upload_pypi:
       name: Upload package to PyPI
       needs: [build_sdist]
-      strategy:
-        matrix:
-          package: [pragma-sdk, price-pusher, vrf-listener]
       runs-on: ubuntu-latest
   
       steps:
         - uses: actions/download-artifact@v4
           with:
-            name: ${{ matrix.package }}-sdist
-            path: ${{ matrix.package }}/dist
+            name: sdist
+            path: pragma-sdk/dist
   
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
             skip-existing: true
+            packages-dir: pragma-sdk/dist
             user: __token__
             password: ${{ secrets.PYPI_API_TOKEN }}
