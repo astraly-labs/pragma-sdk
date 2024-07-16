@@ -25,13 +25,15 @@
             cache: "poetry"
 
         - name: Build SDist
-          working-directory: ./pragma-sdk/
-          run: poetry build -f sdist
+          run: |
+            cd pragma-sdk/
+            poetry build -f sdist
+            mv dist/ ..
   
         - uses: actions/upload-artifact@v4
           with:
-            name: sdist
-            path: pragma-sdk/dist/
+            name: dist
+            path: dist/*tar.gz
             if-no-files-found: error
   
     pypi_test_publish:
@@ -46,17 +48,17 @@
       steps:
         - uses: actions/download-artifact@v4
           with:
-            name: sdist
-            path: pragma-sdk/dist/
+            name: dist
+            path: dist/
 
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
+            skip-existing: true
             repository-url: https://test.pypi.org/legacy/
-            packages-dir: pragma-sdk/dist/
 
     pypi_publish:
       name: Upload package to PyPI
-      needs: [pypi_test_publish]
+      needs: [build_sdist, pypi_test_publish]
       runs-on: ubuntu-latest
       environment:
         name: pypi
@@ -66,9 +68,9 @@
       steps:
         - uses: actions/download-artifact@v4
           with:
-            name: sdist
-            path: pragma-sdk/dist/
+            name: dist
+            path: dist/
 
         - uses: pypa/gh-action-pypi-publish@release/v1
           with:
-            packages-dir: pragma-sdk/dist/
+            skip-existing: true
