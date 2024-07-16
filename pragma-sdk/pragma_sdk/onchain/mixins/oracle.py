@@ -7,17 +7,21 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
 
-from pragma_sdk.onchain.types import Contract
-from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-
+from pragma_sdk.common.utils import felt_to_str, str_to_felt
+from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
-from pragma_sdk.common.types.types import DataTypes, Address, Decimals, ExecutionConfig
 from pragma_sdk.common.types.pair import Pair
+from pragma_sdk.common.types.types import (
+    DataTypes,
+    Address,
+    Decimals,
+    ExecutionConfig,
+    UnixTimestamp,
+)
 
-from pragma_sdk.common.utils import felt_to_str, str_to_felt
-from pragma_sdk.onchain.types import OracleResponse
+from pragma_sdk.onchain.types import OracleResponse, Checkpoint, Contract
 
 logger = get_pragma_sdk_logger()
 
@@ -36,7 +40,7 @@ class OracleMixin:
         self,
         pair_id: int,
         value: int,
-        timestamp: int,
+        timestamp: UnixTimestamp,
         source: int,
         publisher: int,
         volume: int = 0,
@@ -177,7 +181,11 @@ class OracleMixin:
 
     @deprecated
     async def get_future_entries(
-        self, pair_id, expiration_timestamp, sources=None, block_number="latest"
+        self,
+        pair_id: str | int,
+        expiration_timestamp: UnixTimestamp,
+        sources: Optional[List[str | int]] = None,
+        block_number: int | str = "latest",
     ) -> List[FutureEntry]:
         if sources is None:
             sources = []
@@ -200,7 +208,7 @@ class OracleMixin:
         pair_id: str | int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources: Optional[List[str | int]] = None,
-        block_number="latest",
+        block_number: int | str = "latest",
     ) -> OracleResponse:
         """
         Query the Oracle contract for the data of a spot asset.
@@ -244,10 +252,10 @@ class OracleMixin:
     async def get_future(
         self,
         pair_id: str | int,
-        expiry_timestamp: int,
+        expiry_timestamp: UnixTimestamp,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources: Optional[List[str | int]] = None,
-        block_number="latest",
+        block_number: str | int = "latest",
     ) -> OracleResponse:
         """
         Query the Oracle contract for the data of a future asset.
@@ -290,7 +298,9 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
-    async def get_decimals(self, asset: Asset, block_number="latest") -> Decimals:
+    async def get_decimals(
+        self, asset: Asset, block_number: str | int = "latest"
+    ) -> Decimals:
         """
         Query on-chain the decimals for a given asset
 
@@ -403,6 +413,38 @@ class OracleMixin:
 
         return invocation
 
+    async def get_latest_checkpoint(
+        self,
+        pair_id: str | int,
+        data_type: DataTypes,
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
+        expiration_timestamp: Optional[UnixTimestamp] = None,
+    ) -> Checkpoint:
+        if expiration_timestamp is not None and data_type == DataTypes.SPOT:
+            raise ValueError("expiration_timestamp for SPOT should be None.")
+        (response,) = await self.oracle.functions["get_latest_checkpoint"].call(
+            Asset(data_type, pair_id, expiration_timestamp).serialize(),
+            aggregation_mode.serialize(),
+        )
+        return response  # type: ignore[no-any-return]
+
+    async def get_last_checkpint_before(
+        self,
+        pair_id: str | int,
+        data_type: DataTypes,
+        timestamp: UnixTimestamp,
+        aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
+        expiration_timestamp: Optional[UnixTimestamp] = None,
+    ) -> Checkpoint:
+        if expiration_timestamp is not None and data_type == DataTypes.SPOT:
+            raise ValueError("expiration_timestamp for SPOT should be None.")
+        (response,) = await self.oracle.functions["get_last_checkpint_before"].call(
+            Asset(data_type, pair_id, expiration_timestamp).serialize(),
+            timestamp,
+            aggregation_mode.serialize(),
+        )
+        return response  # type: ignore[no-any-return]
+
     async def get_admin_address(self) -> Address:
         """
         Return the admin address of the Oracle contract.
@@ -436,7 +478,7 @@ class OracleMixin:
         return invocation
 
     async def get_time_since_last_published_spot(
-        self, pair: Pair, publisher: str, block_number="latest"
+        self, pair: Pair, publisher: str, block_number: str | int = "latest"
     ) -> int:
         """
         Get the time since the last published spot entry by a publisher for a given pair.

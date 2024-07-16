@@ -74,7 +74,6 @@ def forked_client(network_config: Dict[str, Any]) -> PragmaOnChainClient:
         network.upper(),
     ]
     if block_number is not None:
-        print(f"forking starknet at block {block_number}")
         command.extend(["--fork-block-number", str(block_number)])
 
     subprocess.Popen(command)
