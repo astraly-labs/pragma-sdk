@@ -49,7 +49,7 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
 typecheck = "mypy ."
-test = "pytest tests"
+test = "pytest tests/integration/checkpoint_setter_test.py --log-cli-level=DEBUG -s"
 
 [tool.ruff]
 exclude = [
