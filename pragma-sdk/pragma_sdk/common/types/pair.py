@@ -41,6 +41,9 @@ class Pair:
 
     def __repr__(self) -> str:
         return f"{self.base_currency.id}/{self.quote_currency.id}"
+    
+    def __hash__(self) -> int:
+        return hash((self.id, self.base_currency, self.quote_currency))
 
     def __hash__(self) -> int:
         return hash((self.id, self.base_currency, self.quote_currency))
