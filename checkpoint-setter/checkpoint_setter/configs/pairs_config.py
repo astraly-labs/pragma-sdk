@@ -1,45 +1,58 @@
-from typing import List, Optional
-
 import yaml
+from typing import List, Optional, Tuple
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from dataclasses import dataclass, field
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from pragma_sdk.common.configs.asset_config import (
-    AssetConfig,
-)
+from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.pair import Pair
+from pragma_sdk.common.utils import str_to_felt
+
+
+@dataclass(frozen=True)
+class SpotPairConfig:
+    pair: Pair
+
+
+@dataclass(frozen=True)
+class FuturePairConfig:
+    pair: Pair
+    expiry: datetime = field(default_factory=lambda: datetime.now(ZoneInfo("UTC")))
 
 
 class PairsConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    spot: Optional[List[Pair]] = None
-    future: Optional[List[Pair]] = None
+    spot: List[SpotPairConfig] = field(default_factory=list)
+    future: List[FuturePairConfig] = field(default_factory=list)
 
-    @field_validator("spot", mode="before")
-    def validate_spot(cls, value: Optional[List[str]]) -> Optional[List[Pair]]:
-        return cls.validate_pairs(value)
+    @field_validator("spot", "future", mode="before")
+    def validate_pairs(
+        cls, value: Optional[List[dict]], info
+    ) -> List[SpotPairConfig | FuturePairConfig]:
+        if not value:
+            return []
 
-    @field_validator("future", mode="before")
-    def validate_future(cls, value: Optional[List[str]]) -> Optional[List[Pair]]:
-        return cls.validate_pairs(value)
-
-    @staticmethod
-    def validate_pairs(raw_pairs: Optional[List[str]]) -> List:
-        pairs: List[Pair] = []
-        if raw_pairs is None:
-            return pairs
-        for raw_pair in raw_pairs:
-            raw_pair = raw_pair.replace(" ", "").upper()
-            splitted = raw_pair.split("/")
-            if len(splitted) != 2:
+        pairs = []
+        for raw_pair in value:
+            pair_str = raw_pair["pair"].replace(" ", "").upper()
+            base, quote = pair_str.split("/")
+            if len(base) == 0 or len(quote) == 0:
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
-            base_currency = AssetConfig.from_ticker(splitted[0])
-            quote_currency = AssetConfig.from_ticker(splitted[1])
+
+            base_currency = AssetConfig.from_ticker(base)
+            quote_currency = AssetConfig.from_ticker(quote)
             pair = Pair.from_asset_configs(base_currency, quote_currency)
+
             if pair is None:
-                raise ValueError(
-                    f"⛔ Could not create Pair object for {base_currency}/{quote_currency}"
-                )
-            pairs.append(pair)
+                raise ValueError(f"⛔ Could not create Pair object for {base}/{quote}")
+
+            if info.field_name == "future":
+                expiry = datetime.fromtimestamp(raw_pair.get("expiry", 0), tz=ZoneInfo("UTC"))
+                pairs.append(FuturePairConfig(pair=pair, expiry=expiry))
+            else:
+                pairs.append(SpotPairConfig(pair=pair))
+
         return list(set(pairs))
 
     @classmethod
@@ -48,12 +61,16 @@ class PairsConfig(BaseModel):
             pairs_config = yaml.safe_load(file)
         config = cls(**pairs_config)
 
-        spot_empty = config.spot is None or len(config.spot) == 0
-        future_empty = config.future is None or len(config.future) == 0
-
-        if spot_empty and future_empty:
+        if not config.spot and not config.future:
             raise ValueError(
-                "⛔ No pair found: you need to specify at least one "
-                "spot/future pair in the configuration file."
+                "⛔ No pair found: you need to specify at least one spot/future pair in the configuration file."
             )
         return config
+
+    def get_spot_ids(self) -> List[int]:
+        return [str_to_felt(str(pair_config.pair)) for pair_config in self.spot]
+
+    def get_future_ids_and_expiries(self) -> Tuple[List[int], List[int]]:
+        pair_ids = [str_to_felt(str(pair_config.pair)) for pair_config in self.future]
+        expiries = [int(pair_config.expiry.timestamp()) for pair_config in self.future]
+        return pair_ids, expiries
