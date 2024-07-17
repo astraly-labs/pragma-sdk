@@ -1,4 +1,4 @@
-# Checkpoint setter
+# Checkpointer
 
 Service used to automatically set checkpoints for a set of pairs.
 
@@ -31,7 +31,7 @@ For spot pairs, we simply list them, but for future ones, you need to add for wh
 To have more information on how to run the CLI, you can use the `--help` command:
 
 ```bash
-.venv ❯ python checkpoint_setter/main.py --help
+.venv ❯ python checkpointer/main.py --help
 
 Usage: main.py [OPTIONS]
 
@@ -68,5 +68,5 @@ Options:
 For example:
 
 ```sh
-python checkpoint_setter/main.py -c config/config.example.yaml --oracle-address $PRAGMA_ORACLE_ADDRESS --admin-address $PRAGMA_ADMIN_ACCOUNT -p plain:$MY_PRIVATE_KEY
+poetry run checkpointer -c config/config.example.yaml --oracle-address $PRAGMA_ORACLE_ADDRESS --admin-address $PRAGMA_ADMIN_ACCOUNT -p plain:$MY_PRIVATE_KEY
 ```

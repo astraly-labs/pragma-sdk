@@ -11,8 +11,8 @@ from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_utils.logger import setup_logging
 
-from checkpoint_setter.main import main
-from checkpoint_setter.configs.pairs_config import SpotPairConfig, FuturePairConfig, PairsConfig
+from checkpointer.main import main
+from checkpointer.configs.pairs_config import SpotPairConfig, FuturePairConfig, PairsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def spawn_main_in_parallel_thread(
 
 
 @pytest.mark.asyncio
-async def test_checkpoint_setter_spot(
+async def test_checkpointer_spot(
     pragma_client: PragmaOnChainClient,
     deploy_oracle_contracts: (Contract, Contract),
     address_and_private_key,
@@ -98,6 +98,7 @@ async def test_checkpoint_setter_spot(
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         "BTC/USD", DataTypes.SPOT, AggregationMode.MEDIAN
     )
+    logger.info(latest_checkpoint)
     assert latest_checkpoint.timestamp > 0
     assert latest_checkpoint.value == 4242424242
     assert latest_checkpoint.num_sources_aggregated == 1
@@ -106,7 +107,7 @@ async def test_checkpoint_setter_spot(
 
 
 @pytest.mark.asyncio
-async def test_checkpoint_setter_future(
+async def test_checkpointer_future(
     pragma_client: PragmaOnChainClient,
     deploy_oracle_contracts: (Contract, Contract),
     address_and_private_key,

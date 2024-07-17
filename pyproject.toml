@@ -28,6 +28,9 @@ version_files = [
   "vrf-listener/VERSION",
   "vrf-listener/pyproject.toml:^version",
   "vrf-listener/vrf_listener/__init__.py:^__version",
+  "checkpointer/VERSION",
+  "checkpointer/pyproject.toml:^version",
+  "checkpointer/checkpointer/__init__.py:^__version",
 ]
 update_changelog_on_bump = true
 changelog_incremental = true

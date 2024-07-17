@@ -1,11 +1,10 @@
 import yaml
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from dataclasses import dataclass, field
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.utils import str_to_felt
 
@@ -18,7 +17,7 @@ class SpotPairConfig:
 @dataclass(frozen=True)
 class FuturePairConfig:
     pair: Pair
-    expiry: datetime = field(default_factory=lambda: datetime.now(ZoneInfo("UTC")))
+    expiry: datetime = field(default_factory=lambda: datetime.fromtimestamp(0, ZoneInfo("UTC")))
 
 
 class PairsConfig(BaseModel):
@@ -33,17 +32,14 @@ class PairsConfig(BaseModel):
         if not value:
             return []
 
-        pairs = []
+        pairs: List[Union[SpotPairConfig, FuturePairConfig]] = []
         for raw_pair in value:
             pair_str = raw_pair["pair"].replace(" ", "").upper()
             base, quote = pair_str.split("/")
             if len(base) == 0 or len(quote) == 0:
                 raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
 
-            base_currency = AssetConfig.from_ticker(base)
-            quote_currency = AssetConfig.from_ticker(quote)
-            pair = Pair.from_asset_configs(base_currency, quote_currency)
-
+            pair = Pair.from_tickers(base, quote)
             if pair is None:
                 raise ValueError(f"⛔ Could not create Pair object for {base}/{quote}")
 

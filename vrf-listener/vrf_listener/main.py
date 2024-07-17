@@ -94,7 +94,8 @@ async def main(
     help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
 )
 @click.option(
-    "-b" "--start-block",
+    "-b",
+    "--start-block",
     type=click.IntRange(min=0),
     required=False,
     default=0,

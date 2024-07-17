@@ -4,9 +4,6 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
 
-from pragma_sdk.common.configs.asset_config import (
-    AssetConfig,
-)
 from pragma_sdk.common.types.types import DataTypes
 from pragma_sdk.common.types.pair import Pair
 
@@ -37,12 +34,8 @@ class PriceConfig(BaseModel):
         assets = []
         for pair in pairs:
             pair = pair.replace(" ", "").upper()
-            splitted = pair.split("/")
-            if len(splitted) != 2:
-                raise ValueError("Pair should be formatted as 'BASE/QUOTE'")
-            base_currency = AssetConfig.from_ticker(splitted[0])
-            quote_currency = AssetConfig.from_ticker(splitted[1])
-            assets.append(Pair.from_asset_configs(base_currency, quote_currency))
+            base, quote = pair.split("/")
+            assets.append(Pair.from_tickers(base, quote))
         return list(set(assets))
 
     @classmethod

@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Coroutine, Dict, List, Optional
+from typing import Callable, Coroutine, Dict, List, Optional, Sequence
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
@@ -308,8 +308,8 @@ class OracleMixin:
 
     async def set_future_checkpoints(
         self,
-        pair_ids: List[int],
-        expiry_timestamps: List[int],
+        pair_ids: Sequence[int],
+        expiry_timestamps: Sequence[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
     ) -> InvokeResult:
         if not self.is_user_client:
@@ -357,7 +357,7 @@ class OracleMixin:
 
     async def set_checkpoints(
         self,
-        pair_ids: List[str | int],
+        pair_ids: Sequence[str | int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
     ) -> InvokeResult:
         """

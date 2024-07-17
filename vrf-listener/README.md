@@ -40,8 +40,10 @@ Options:
   --help                          Show this message and exit.
 ```
 
-Example:
+For example:
 
 ```sh
-
+poetry run vrf_listener --oracle-address $PRAGMA_ORACLE_CONTRACT --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY
 ```
+
+Will start listening for VRF requests on Sepolia every 10 seconds since block 0.

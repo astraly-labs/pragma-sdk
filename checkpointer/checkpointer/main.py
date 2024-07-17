@@ -12,7 +12,7 @@ from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types import ContractAddresses
 
-from checkpoint_setter.configs.pairs_config import PairsConfig
+from checkpointer.configs.pairs_config import PairsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ async def main(
         ),
     )
     _log_handled_pairs(pairs_config, set_checkpoint_interval)
-    logger.info("🧩 Starting Checkpoint-Setter...")
+    logger.info("🧩 Starting Checkpointer...")
     try:
         while True:
             tasks = []
@@ -51,7 +51,7 @@ async def main(
             await asyncio.gather(*tasks)
             await asyncio.sleep(set_checkpoint_interval * SECONDS_IN_ONE_MINUTE)
     except asyncio.CancelledError:
-        logger.info("... Checkpoint setter stopped! 👋")
+        logger.info("... Checkpointer service stopped! 👋")
         return
 
 
@@ -64,6 +64,8 @@ async def _set_checkpoints(
         match pairs_type:
             case DataTypes.SPOT:
                 pair_ids = pairs_config.get_spot_ids()
+                logger.info("pair_ids:")
+                logger.info(pair_ids)
                 tx = await client.set_checkpoints(
                     pair_ids=pair_ids,
                     aggregation_mode=AggregationMode.MEDIAN,
@@ -158,7 +160,7 @@ def cli_entrypoint(
     set_checkpoint_interval: int,
 ) -> None:
     """
-    Checkpoints setter entry point.
+    Checkpointer entry point.
     """
     setup_logging(logger, log_level)
     private_key = load_private_key_from_cli_arg(private_key)

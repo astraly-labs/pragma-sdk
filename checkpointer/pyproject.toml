@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "checkpoint-setter"
+name = "checkpointer"
 version = "0.0.1"
 authors = ["0xevolve <matthias@pragma.build>"]
-description = "Checkpoints setter service for Pragma."
+description = "Checkpoints service for Pragma."
 readme = "README.md"
 homepage = "https://pragma.build"
 repository = "https://github.com/Astraly-Labs/pragma-sdk"
@@ -12,11 +12,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-include = ["checkpoint_setter"]
-packages = [{ include = "checkpoint_setter" }]
+include = ["checkpointer"]
+packages = [{ include = "checkpointer" }]
 
 [tool.poetry.scripts]
-scheduler = 'checkpoint_setter.main:cli_entrypoint'
+scheduler = 'checkpointer.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -49,7 +49,7 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
 typecheck = "mypy ."
-test = "pytest tests/integration/checkpoint_setter_test.py --log-cli-level=DEBUG -s"
+test = "pytest tests/integration/checkpointer_test.py --log-cli-level=DEBUG -s"
 
 [tool.ruff]
 exclude = [
@@ -104,7 +104,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["checkpoint-setter"]
+source = ["checkpointer"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
