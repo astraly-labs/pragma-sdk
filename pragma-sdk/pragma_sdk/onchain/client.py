@@ -112,7 +112,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :param entries: List of Entry objects
         :return: List of InvokeResult objects
         """
-        return await self.publish_many(entries, self.execution_config)
+        return await self.publish_many(entries)
 
     def _setup_contracts(self):
         """

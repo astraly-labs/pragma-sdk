@@ -8,10 +8,9 @@ from typing import Optional, Literal
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
-from pragma_sdk.common.types.types import AggregationMode
+from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types import ContractAddresses
-from pragma_sdk.common.utils import str_to_felt
 
 from checkpoint_setter.configs.pairs_config import PairsConfig
 
@@ -44,41 +43,42 @@ async def main(
     logger.info("🧩 Starting Checkpoint-Setter...")
     try:
         while True:
-            # Tasks needs to be created for each loops else it fails
-            tasks = [
-                _set_checkpoints(
-                    pragma_client, [str_to_felt(str(pair)) for pair in pairs], pair_type
-                )
-                for pair_type, pairs in pairs_config
-                if pairs
-            ]
+            tasks = []
+            if pairs_config.spot:
+                tasks.append(_set_checkpoints(pragma_client, pairs_config, DataTypes.SPOT))
+            if pairs_config.future:
+                tasks.append(_set_checkpoints(pragma_client, pairs_config, DataTypes.FUTURE))
             await asyncio.gather(*tasks)
             await asyncio.sleep(set_checkpoint_interval * SECONDS_IN_ONE_MINUTE)
     except asyncio.CancelledError:
-        logger.info("... Checkpoint setter stopped!")
-    except Exception as e:
-        logger.error(f"Unexpected error in checkpoint setter: {e}")
-        raise
+        logger.info("... Checkpoint setter stopped! 👋")
+        return
 
 
-async def _set_checkpoints(client, pairs, checkpoint_type) -> None:
+async def _set_checkpoints(
+    client: PragmaOnChainClient,
+    pairs_config: PairsConfig,
+    pairs_type: DataTypes,
+) -> None:
     try:
-        if checkpoint_type == "spot":
-            await client.set_checkpoints(
-                pair_ids=pairs,
-                aggregation_mode=AggregationMode.MEDIAN,
-            )
-        elif checkpoint_type == "future":
-            # TODO: custom expiry per pair, in config.
-            expiries = [0] * len(pairs)
-            await client.set_future_checkpoints(
-                pair_ids=pairs,
-                expiry_timestamps=expiries,
-                aggregation_mode=AggregationMode.MEDIAN,
-            )
-        logger.info(f"✅ Successfully set {checkpoint_type} checkpoints")
+        match pairs_type:
+            case DataTypes.SPOT:
+                pair_ids = pairs_config.get_spot_ids()
+                tx = await client.set_checkpoints(
+                    pair_ids=pair_ids,
+                    aggregation_mode=AggregationMode.MEDIAN,
+                )
+            case DataTypes.FUTURE:
+                pair_ids, expiries = pairs_config.get_future_ids_and_expiries()
+                tx = await client.set_future_checkpoints(
+                    pair_ids=pair_ids,
+                    expiry_timestamps=expiries,
+                    aggregation_mode=AggregationMode.MEDIAN,
+                )
+        await tx.wait_for_acceptance()
+        logger.info(f"✅ Successfully set {pairs_type} checkpoints")
     except Exception as e:
-        logger.error(f"⛔ Error while setting {checkpoint_type} checkpoint: {e}")
+        logger.error(f"⛔ Error while setting {pairs_type} checkpoint: {e}")
 
 
 def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) -> None:

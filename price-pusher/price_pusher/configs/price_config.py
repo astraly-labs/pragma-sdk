@@ -50,7 +50,6 @@ class PriceConfig(BaseModel):
         with open(path, "r") as file:
             price_configs = yaml.safe_load(file)
         list_configs = [cls(**config) for config in price_configs]
-        # TODO: verify that pairs are unique among groups
         return list_configs
 
     def get_all_assets(self) -> Dict[DataTypes, List[Pair]]:

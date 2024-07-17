@@ -319,6 +319,7 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
+        assert len(pair_ids) == len(expiry_timestamps)
         invocation = None
         if self.execution_config.pagination:
             index = 0
@@ -326,17 +327,30 @@ class OracleMixin:
                 pair_ids_subset = pair_ids[
                     index : index + self.execution_config.pagination
                 ]
+                expiries_subset = expiry_timestamps[
+                    index : index + self.execution_config.pagination
+                ]
+                logger.info(
+                    [
+                        Asset(DataTypes.FUTURE, pair_id, expiry).__dict__
+                        for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
+                    ]
+                )
+                logger.info(
+                    [
+                        Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
+                        for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
+                    ]
+                )
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
-                        # TODO: assign expiry to the pair using zip(), currently 0 everywhere
-                        Asset(DataTypes.FUTURE, pair_id, 0).serialize()
-                        for pair_id in pair_ids_subset
+                        Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
+                        for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
                     ],
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
                 index += self.execution_config.pagination
-                logger.debug(hex(invocation.hash))
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -345,8 +359,8 @@ class OracleMixin:
         else:
             invocation = await self.oracle.set_checkpoints.invoke(
                 [
-                    Asset(DataTypes.FUTURE, pair_id, 0).serialize()
-                    for pair_id in pair_ids
+                    Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
+                    for pair_id, expiry in zip(pair_ids, expiry_timestamps)
                 ],
                 aggregation_mode.serialize(),
                 max_fee=self.execution_config.max_fee,
@@ -389,9 +403,8 @@ class OracleMixin:
                     max_fee=self.execution_config.max_fee,
                 )
                 index += self.execution_config.pagination
-                logger.debug(hex(invocation.hash))
                 logger.info(
-                    "Set checkpoints for %d pair IDs with transaction %s",
+                    "Set spot checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
                     hex(invocation.hash),
                 )
