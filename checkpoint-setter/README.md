@@ -2,7 +2,7 @@
 
 Service used to automatically set checkpoints for a set of pairs.
 
-## Usage
+### Usage
 
 The service is ran through the CLI.
 
