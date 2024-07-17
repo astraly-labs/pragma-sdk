@@ -131,7 +131,7 @@ async def test_checkpoint_setter_future(
     tx = await pragma_client.add_source_for_publisher(PUBLISHER_NAME, "BYBIT")
     await tx.wait_for_acceptance()
 
-    # Publish one entry to BTC/USD
+    # Publish entries with different expiry to BTC/USD
     btc_entries = [
         FutureEntry(
             pair_id="BTC/USD",
