@@ -132,7 +132,6 @@ class OracleMixin:
     def _log_transaction(
         self, invocation: InvokeResult, entry_count: int, data_type: DataTypes
     ):
-        logger.debug(hex(invocation.hash))
         logger.info(
             f"Sent {entry_count} updated {data_type.name.lower()} entries with transaction {hex(invocation.hash)}"
         )
@@ -330,18 +329,6 @@ class OracleMixin:
                 expiries_subset = expiry_timestamps[
                     index : index + self.execution_config.pagination
                 ]
-                logger.info(
-                    [
-                        Asset(DataTypes.FUTURE, pair_id, expiry).__dict__
-                        for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
-                    ]
-                )
-                logger.info(
-                    [
-                        Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
-                        for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
-                    ]
-                )
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
