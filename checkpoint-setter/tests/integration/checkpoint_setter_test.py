@@ -175,7 +175,6 @@ async def test_checkpoint_setter_future(
         aggregation_mode=AggregationMode.MEDIAN,
         expiration_timestamp=0,
     )
-    logger.info(latest_checkpoint)
     assert latest_checkpoint.timestamp > 0
     assert latest_checkpoint.value == 4242424240
     assert latest_checkpoint.num_sources_aggregated == 1
@@ -186,7 +185,6 @@ async def test_checkpoint_setter_future(
         aggregation_mode=AggregationMode.MEDIAN,
         expiration_timestamp=1784261474,
     )
-    logger.info(latest_checkpoint)
     assert latest_checkpoint.timestamp > 0
     assert latest_checkpoint.value == 4242424241
     assert latest_checkpoint.num_sources_aggregated == 1
