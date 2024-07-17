@@ -17,6 +17,7 @@ spot:
 future:
   - pair: BTC/USD
     expiry: 102425525524
+    # You can have the same pair multiple time for different expiries
   - pair: BTC/USD
     expiry: 0
   - pair: ETH/USD
@@ -64,7 +65,7 @@ Options:
   -help                          Show this message and exit.
 ```
 
-Example:
+For example:
 
 ```sh
 python checkpoint_setter/main.py -c config/config.example.yaml --oracle-address $PRAGMA_ORACLE_ADDRESS --admin-address $PRAGMA_ADMIN_ACCOUNT -p plain:$MY_PRIVATE_KEY
