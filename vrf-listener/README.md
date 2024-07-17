@@ -34,9 +34,14 @@ Options:
   -b--start-block INTEGER RANGE   At which block to start listening for VRF
                                   requests. Defaults to 0.  [x>=0]
 
-  -t, --check-requests-interval INTEGER RANGE
-                                  Delay in seconds between checks for VRF
+  -t, --check-requests-interval   Delay in seconds between checks for VRF
                                   requests. Defaults to 10 seconds.  [x>=0]
 
   --help                          Show this message and exit.
+```
+
+Example:
+
+```sh
+
 ```

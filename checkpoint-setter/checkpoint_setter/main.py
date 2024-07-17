@@ -112,7 +112,7 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
     required=True,
     default="sepolia",
     type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
-    help="Which network to listen. Defaults to SEPOLIA.",
+    help="On which networks the checkpoints will be set. Defaults to SEPOLIA.",
 )
 @click.option(
     "--rpc-url",
@@ -130,7 +130,7 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
     "--admin-address",
     type=click.STRING,
     required=True,
-    help="Address of the Admin contract",
+    help="Address of the Admin contract for the Oracle.",
 )
 @click.option(
     "-p",
@@ -145,7 +145,7 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
     type=click.IntRange(min=0),
     required=False,
     default=60,
-    help="Delay in minutes between checks for VRF requests. Defaults to 60 minutes.",
+    help="Delay in minutes between each new checkpoints. Defaults to 60 minutes.",
 )
 def cli_entrypoint(
     config_file: str,
