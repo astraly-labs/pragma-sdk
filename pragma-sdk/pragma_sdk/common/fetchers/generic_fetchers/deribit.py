@@ -1,5 +1,5 @@
 import aiohttp
-import json
+import asyncio
 import time
 
 from typing import Optional, List, Dict, Any, Tuple
@@ -68,6 +68,17 @@ class OptionData:
     volume: float
     volume_usd: float
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.instrument_name,
+                self.base_currency,
+                self.creation_timestamp,
+                self.current_timestamp,
+                self.mark_price,
+            )
+        )
+
 
 class DeribitGenericFetcher(FetcherInterfaceT):
     """
@@ -87,6 +98,9 @@ class DeribitGenericFetcher(FetcherInterfaceT):
     ENDPOINT_OPTIONS: str = "get_book_summary_by_currency?currency="
     ENDPOINT_OPTIONS_SUFFIX: str = "&kind=option&expired=false"
 
+    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
+        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
+
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
@@ -96,12 +110,13 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         They'll be merged in a merkle tree, and we only return the merkle root
         using the GenericEntry type.
         """
-        options: Dict[str, List[OptionData]] = {}
+        currencies_options: Dict[str, List[OptionData]] = {}
+
         currencies = list(set([pair.base_currency for pair in self.pairs]))
         for currency in currencies:
-            options[currency.id] = await self._fetch_options(currency)
+            currencies_options[currency.id] = await self._fetch_options(currency)
 
-        merkle_tree = self.build_merkle_tree(options)
+        merkle_tree = self.build_merkle_tree(currencies_options)
 
         entry = GenericEntry(
             key=DERIBIT_MERKLE_FEED_KEY,
@@ -111,6 +126,22 @@ class DeribitGenericFetcher(FetcherInterfaceT):
             publisher=str_to_felt(self.publisher),
         )
         return [entry]
+
+    def build_merkle_tree(
+        self,
+        options: Dict[str, List[OptionData]],
+        hash_method: HashMethod = HashMethod.PEDERSEN,
+    ) -> MerkleTree:
+        leaves = []
+        for currency, option_data_list in options.items():
+            for option_data in option_data_list:
+                leaf = abs(hash(option_data)) % (
+                    2**251 - 1
+                )  # Use a prime number close to 2^251
+                leaves.append(leaf)
+        # Sort the leaves to ensure consistent tree construction
+        leaves.sort()
+        return MerkleTree(leaves, hash_method)
 
     async def _fetch_options(
         self,
@@ -193,23 +224,6 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         option_type = separate_string[3]
         return (strike_price, option_type)
 
-    def build_merkle_tree(
-        options: Dict[str, List[DeribitOptionResponse]],
-        hash_method: HashMethod = HashMethod.PEDERSEN,
-    ) -> MerkleTree:
-        leaves = []
-        for currency, option_responses in options.items():
-            for option in option_responses:
-                option_json = json.dumps(option.__dict__, sort_keys=True)
-                leaf = hash_method.hash_many(
-                    # TODO: update the encoding?
-                    [int.from_bytes(option_json.encode(), "big")]
-                )
-                leaves.append(leaf)
-        # Sort the leaves to ensure consistent tree construction
-        leaves.sort()
-        return MerkleTree(leaves, hash_method)
-
     def _assert_request_succeeded(self, response: Dict[str, Any]) -> None:
         if "result" not in response:
             if "error" in response:
@@ -222,5 +236,16 @@ class DeribitGenericFetcher(FetcherInterfaceT):
     ) -> List[Entry] | PublisherFetchError:
         raise NotImplementedError("fetch_pair not needed for Deribit Generic Fetcher.")
 
-    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
-        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
+
+async def fe(f):
+    async with aiohttp.ClientSession() as session:
+        d = await f.fetch(session)
+    entry = d[0]
+    print(entry)
+    print(entry.value)
+
+
+if __name__ == "__main__":
+    p = [Pair.from_tickers("BTC", "USD")]
+    f = DeribitGenericFetcher(pairs=p, publisher="ADEL")
+    asyncio.run(fe(f))
