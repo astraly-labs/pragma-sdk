@@ -1,5 +1,4 @@
 import aiohttp
-import asyncio
 import time
 import hashlib
 
