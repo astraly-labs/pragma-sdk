@@ -26,7 +26,7 @@ def spawn_main_in_parallel_thread(
     oracle_address: int,
     admin_address: int,
     private_key: str,
-    check_requests_interval: float = 1 / 60,  # 1 second, check_requests_interval is in minutes
+    check_requests_interval: float = 1,
 ) -> asyncio.Task:
     """
     Spawns the main function in a parallel thread and return the task.
@@ -127,9 +127,7 @@ async def test_checkpointer_future(
     # Register publisher
     tx = await pragma_client.add_publisher(PUBLISHER_NAME, caller_address)
     await tx.wait_for_acceptance()
-    tx = await pragma_client.add_source_for_publisher(PUBLISHER_NAME, "BINANCE")
-    await tx.wait_for_acceptance()
-    tx = await pragma_client.add_source_for_publisher(PUBLISHER_NAME, "BYBIT")
+    tx = await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, ["BINANCE", "BYBIT"])
     await tx.wait_for_acceptance()
 
     # Publish entries with different expiry to BTC/USD

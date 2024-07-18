@@ -16,8 +16,6 @@ from checkpointer.configs.pairs_config import PairsConfig
 
 logger = logging.getLogger(__name__)
 
-SECONDS_IN_ONE_MINUTE = 60
-
 
 async def main(
     pairs_config: PairsConfig,
@@ -49,7 +47,7 @@ async def main(
             if pairs_config.future:
                 tasks.append(_set_checkpoints(pragma_client, pairs_config, DataTypes.FUTURE))
             await asyncio.gather(*tasks)
-            await asyncio.sleep(set_checkpoint_interval * SECONDS_IN_ONE_MINUTE)
+            await asyncio.sleep(set_checkpoint_interval)
     except asyncio.CancelledError:
         logger.info("... Checkpointer service stopped! 👋")
         return
@@ -86,7 +84,7 @@ async def _set_checkpoints(
 def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) -> None:
     log_message = (
         "👇 New checkpoints will automatically be set every "
-        f"{set_checkpoint_interval} minutes for those pairs:"
+        f"{set_checkpoint_interval} seconds for those pairs:"
     )
     for pair_type, pairs in pairs_config:
         if pairs:
@@ -146,8 +144,8 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
     "--set-checkpoint-interval",
     type=click.IntRange(min=0),
     required=False,
-    default=60,
-    help="Delay in minutes between each new checkpoints. Defaults to 60 minutes.",
+    default=3600,
+    help="Delay in seconds between each new checkpoints. Defaults to 1 hour (3600s).",
 )
 def cli_entrypoint(
     config_file: str,
