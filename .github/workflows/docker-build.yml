@@ -13,7 +13,7 @@
     build_containers:
       strategy:
         matrix:
-          package: [price-pusher, vrf-listener]
+          package: [price-pusher, vrf-listener, checkpointer]
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4

@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, List, Any, Dict
+from typing import Optional, Literal, List, Any, Dict, Union
 from pydantic import HttpUrl
 from dataclasses import dataclass
 
@@ -11,7 +11,7 @@ from pragma_sdk.common.types.types import (
     Decimals,
     UnixTimestamp,
 )
-
+from starknet_py.net.client import Tag as BlockTag
 from starknet_py.contract import InvokeResult
 
 ContractAddresses = namedtuple(
@@ -28,6 +28,9 @@ NetworkName = Literal[
 Network = HttpUrl | NetworkName
 
 PublishEntriesOnChainResult = List[InvokeResult]
+
+BlockNumber = int
+BlockId = Union[BlockTag, BlockNumber]
 
 
 @unique

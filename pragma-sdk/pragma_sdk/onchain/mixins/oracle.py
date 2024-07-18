@@ -6,7 +6,6 @@ from starknet_py.contract import InvokeResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
-
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
@@ -21,7 +20,12 @@ from pragma_sdk.common.types.types import (
     UnixTimestamp,
 )
 
-from pragma_sdk.onchain.types import OracleResponse, Checkpoint, Contract
+from pragma_sdk.onchain.types import (
+    OracleResponse,
+    Checkpoint,
+    Contract,
+    BlockId,
+)
 
 logger = get_pragma_sdk_logger()
 
@@ -138,7 +142,10 @@ class OracleMixin:
 
     @deprecated
     async def get_spot_entries(
-        self, pair_id, sources=None, block_number="latest"
+        self,
+        pair_id,
+        sources=None,
+        block_id: Optional[BlockId] = "latest",
     ) -> List[SpotEntry]:
         if sources is None:
             sources = []
@@ -151,21 +158,25 @@ class OracleMixin:
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
             Asset(DataTypes.SPOT, pair_id, None).serialize(),
             sources,
-            block_number=block_number,
+            block_number=block_id,
         )
         entries = response[0]
         return [SpotEntry.from_dict(dict(entry.value)) for entry in entries]
 
-    async def get_all_sources(self, asset: Asset, block_number="latest") -> List[str]:
+    async def get_all_sources(
+        self,
+        asset: Asset,
+        block_id: Optional[BlockId] = "latest",
+    ) -> List[str]:
         """
         Query on-chain all sources used for a given asset.
 
         :param asset: Asset
-        :param block_number: Block number or Block Tag
+        :param block_id: Block number or Block Tag
         :return: List of sources
         """
         (response,) = await self.oracle.functions["get_all_sources"].call(
-            asset.serialize(), block_number=block_number
+            asset.serialize(), block_number=block_id
         )
 
         return [felt_to_str(source) for source in response]
@@ -176,7 +187,7 @@ class OracleMixin:
         pair_id: str | int,
         expiration_timestamp: UnixTimestamp,
         sources: Optional[List[str | int]] = None,
-        block_number: int | str = "latest",
+        block_id: Optional[BlockId] = "latest",
     ) -> List[FutureEntry]:
         if sources is None:
             sources = []
@@ -189,7 +200,7 @@ class OracleMixin:
         (response,) = await self.oracle.functions["get_data_entries_for_sources"].call(
             Asset(DataTypes.FUTURE, pair_id, expiration_timestamp).serialize(),
             sources,
-            block_number=block_number,
+            block_number=block_id,
         )
         entries = response[0]
         return [FutureEntry.from_dict(dict(entry.value)) for entry in entries]
@@ -199,7 +210,7 @@ class OracleMixin:
         pair_id: str | int,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources: Optional[List[str | int]] = None,
-        block_number: int | str = "latest",
+        block_id: Optional[BlockId] = "latest",
     ) -> OracleResponse:
         """
         Query the Oracle contract for the data of a spot asset.
@@ -207,7 +218,7 @@ class OracleMixin:
         :param pair_id: Pair ID
         :param aggregation_mode: AggregationMode
         :param sources: List of sources, if None will use all sources
-        :param block_number: Block number or Block Tag
+        :param block_id: Block number or Block Tag
         :return: OracleResponse
         """
         if isinstance(pair_id, str):
@@ -220,14 +231,14 @@ class OracleMixin:
             (response,) = await self.oracle.functions["get_data"].call(
                 Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
-                block_number=block_number,
+                block_number=block_id,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
                 Asset(DataTypes.SPOT, pair_id, None).serialize(),
                 aggregation_mode.serialize(),
                 sources,
-                block_number=block_number,
+                block_number=block_id,
             )
 
         response = dict(response)
@@ -246,7 +257,7 @@ class OracleMixin:
         expiry_timestamp: UnixTimestamp,
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
         sources: Optional[List[str | int]] = None,
-        block_number: str | int = "latest",
+        block_id: Optional[BlockId] = "latest",
     ) -> OracleResponse:
         """
         Query the Oracle contract for the data of a future asset.
@@ -255,7 +266,7 @@ class OracleMixin:
         :param expiry_timestamp: Expiry timestamp of the future contract
         :param aggregation_mode: AggregationMode
         :param sources: List of sources, if None will use all sources
-        :param block_number: Block number or Block Tag
+        :param block_id: Block number or Block Tag
         :return: OracleResponse
         """
         if isinstance(pair_id, str):
@@ -269,14 +280,14 @@ class OracleMixin:
             (response,) = await self.oracle.functions["get_data"].call(
                 Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
-                block_number=block_number,
+                block_number=block_id,
             )
         else:
             (response,) = await self.oracle.functions["get_data_for_sources"].call(
                 Asset(DataTypes.FUTURE, pair_id, expiry_timestamp).serialize(),
                 aggregation_mode.serialize(),
                 sources,
-                block_number=block_number,
+                block_number=block_id,
             )
 
         response = dict(response)
@@ -290,18 +301,20 @@ class OracleMixin:
         )
 
     async def get_decimals(
-        self, asset: Asset, block_number: str | int = "latest"
+        self,
+        asset: Asset,
+        block_id: Optional[BlockId] = "latest",
     ) -> Decimals:
         """
         Query on-chain the decimals for a given asset
 
         :param asset: Asset
-        :param block_number: Block number or Block Tag
+        :param block_id: Block number or Block Tag
         :return: Decimals
         """
         (response,) = await self.oracle.functions["get_decimals"].call(
             asset.serialize(),
-            block_number=block_number,
+            block_number=block_id,
         )
 
         return response  # type: ignore[no-any-return]
@@ -481,7 +494,10 @@ class OracleMixin:
         return invocation
 
     async def get_time_since_last_published_spot(
-        self, pair: Pair, publisher: str, block_number: str | int = "latest"
+        self,
+        pair: Pair,
+        publisher: str,
+        block_id: Optional[BlockId] = "latest",
     ) -> int:
         """
         Get the time since the last published spot entry by a publisher for a given pair.
@@ -489,10 +505,10 @@ class OracleMixin:
 
         :param pair: Pair
         :param publisher: Publisher name e.g "PRAGMA"
-        :param block_number: Block number or Block Tag
+        :param block_id: Block number or Block Tag
         :return: Time since last published entry
         """
-        all_entries = await self.get_spot_entries(pair.id, block_number=block_number)
+        all_entries = await self.get_spot_entries(pair.id, block_id=block_id)
 
         entries = [
             entry
