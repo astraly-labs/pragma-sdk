@@ -422,7 +422,7 @@ class FutureEntry(Entry):
         source_name: str,
     ) -> "FutureEntry":
         """
-        Builds a SpotEntry object from a PragmaAsset and an OracleResponse.
+        Builds the object from a PragmaAsset and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
         lastest oracle prices for comparisons with the latest prices of
         various APIs (binance etc).
@@ -435,4 +435,141 @@ class FutureEntry(Entry):
             source_name,
             oracle_response.expiration_timestamp,
             0,
+        )
+
+
+class GenericEntry(Entry):
+    """
+    Represents a Generic Entry.
+
+    Currently used this way:
+    instead of publishing all the future options for all availables instruments from Deribit,
+    we place them in all a Merkle tree & we only publish the merkle root through this Generic entry.
+    So key will be {?} and value the merkle root containing all the price feeds.
+    """
+
+    base: BaseEntry
+    key: int
+    value: int
+
+    def __init__(
+        self,
+        key: int,
+        value: int,
+        timestamp: int,
+        source: str | int,
+        publisher: str | int,
+    ):
+        self.key = key
+        self.value = value
+        self.base = BaseEntry(timestamp, source, publisher)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, GenericEntry):
+            return all(
+                [
+                    self.key == other.key,
+                    self.value == other.value,
+                    self.base.timestamp == other.base.timestamp,
+                    self.base.source == other.base.source,
+                    self.base.publisher == other.base.publisher,
+                ]
+            )
+        # This supports comparing against entries that are returned by starknet.py,
+        # which will be namedtuples.
+        if isinstance(other, tuple) and len(other) == 5:
+            return all(
+                [
+                    self.key == other[0],
+                    self.value == other[1],
+                    self.base == other[2],
+                ]
+            )
+        return False
+
+    def to_tuple(self) -> Tuple[int, int, int, int, int]:  # type: ignore[explicit-override, override]
+        return (
+            self.base.timestamp,
+            self.base.source,
+            self.base.publisher,
+            self.key,
+            self.value,
+        )
+
+    def serialize(self) -> Dict[str, object]:
+        return {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": self.base.source,
+                "publisher": self.base.publisher,
+            },
+            "key": self.key,
+            "value": self.value,
+        }
+
+    def offchain_serialize(self) -> Dict[str, object]:
+        serialized = {
+            "base": {
+                "timestamp": self.base.timestamp,
+                "source": felt_to_str(self.base.source),
+                "publisher": felt_to_str(self.base.publisher),
+            },
+            "key": felt_to_str(self.key),
+            "value": self.value,
+        }
+        return serialized
+
+    def __repr__(self) -> str:
+        return (
+            f'GenericEntry(key="{felt_to_str(self.key)}", '
+            f"value={self.value}, "
+            f"timestamp={self.base.timestamp}, "
+            f'source="{felt_to_str(self.base.source)}", '
+            f'publisher="{felt_to_str(self.base.publisher)}, '
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.base, self.key, self.value))
+
+    def get_timestamp(self) -> UnixTimestamp:
+        return self.base.timestamp
+
+    def get_expiry(self) -> Optional[str]:
+        return None
+
+    def get_pair_id(self) -> str:
+        return felt_to_str(self.key)
+
+    def get_source(self) -> str:
+        return felt_to_str(self.base.source)
+
+    def get_asset_type(self) -> DataTypes:
+        return DataTypes.FUTURE
+
+    @staticmethod
+    def from_dict(entry_dict: Any) -> "GenericEntry":
+        base = dict(entry_dict["base"])
+        return GenericEntry(
+            entry_dict["key"],
+            entry_dict["value"],
+            base["timestamp"],
+            base["source"],
+            base["publisher"],
+        )
+
+    @staticmethod
+    def from_oracle_response(
+        pair: Pair,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> "GenericEntry":
+        """
+        Builds the object from a PragmaAsset and an OracleResponse.
+        Method primarly used by our price pusher package when we're retrieving
+        lastest oracle prices for comparisons with the latest prices of
+        various APIs (binance etc).
+        """
+        raise NotImplementedError(
+            "😛 from_oracle_response does not exists for GenericEntry yet!"
         )

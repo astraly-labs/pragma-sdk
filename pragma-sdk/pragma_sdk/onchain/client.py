@@ -29,6 +29,7 @@ from pragma_sdk.onchain.mixins import (
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
+    MerkleFeedMixin,
 )
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 
@@ -45,6 +46,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
+    MerkleFeedMixin,
 ):
     """
     Client for interacting with Pragma on Starknet.

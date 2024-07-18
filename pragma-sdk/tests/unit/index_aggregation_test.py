@@ -5,7 +5,7 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.fetchers.handlers.index_aggregator_handler import (
     AssetQuantities,
-    IndexAggregation,
+    IndexAggregatorHandler,
 )
 
 
@@ -56,7 +56,7 @@ def sample_data():
 
 def test_index_aggregation_initialization(sample_data):
     spot_entries, pair_quantities = sample_data
-    index_agg = IndexAggregation(spot_entries, pair_quantities)
+    index_agg = IndexAggregatorHandler(spot_entries, pair_quantities)
 
     assert len(index_agg.spot_entries) == 3
     assert len(index_agg.pair_quantities) == 3
@@ -64,7 +64,7 @@ def test_index_aggregation_initialization(sample_data):
 
 def test_get_index_value(sample_data):
     spot_entries, pair_quantities = sample_data
-    index_agg = IndexAggregation(spot_entries, pair_quantities)
+    index_agg = IndexAggregatorHandler(spot_entries, pair_quantities)
 
     expected_value = 1000000 * 0.1 + 200000 * 0.2 + 30000 * 0.7
     assert index_agg.get_index_value() == expected_value
@@ -72,7 +72,7 @@ def test_get_index_value(sample_data):
 
 def test_standardize_decimals(sample_data):
     spot_entries, pair_quantities = sample_data
-    index_agg = IndexAggregation(spot_entries, pair_quantities)
+    index_agg = IndexAggregatorHandler(spot_entries, pair_quantities)
 
     index_agg.standardize_decimals()
 
@@ -106,5 +106,5 @@ def test_standardize_decimals(sample_data):
     ],
 )
 def test_get_index_value_parametrized(spot_entries, pair_quantities, expected):
-    index_agg = IndexAggregation(spot_entries, pair_quantities)
+    index_agg = IndexAggregatorHandler(spot_entries, pair_quantities)
     assert index_agg.get_index_value() == expected
