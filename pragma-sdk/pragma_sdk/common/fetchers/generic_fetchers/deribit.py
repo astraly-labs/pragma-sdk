@@ -1,9 +1,12 @@
 import aiohttp
+import json
 import time
 
 from typing import Optional, List, Dict, Any, Tuple
 from aiohttp import ClientSession
 from pydantic.dataclasses import dataclass
+from starknet_py.utils.merkle_tree import MerkleTree
+from starknet_py.hash.hash_method import HashMethod
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.exceptions import PublisherFetchError
@@ -98,14 +101,11 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         for currency in currencies:
             options[currency.id] = await self._fetch_options(currency)
 
-        # TODO: merkle tree when starknet py updated
-        # merkle_tree = self.build_merkle_tree(options)
+        merkle_tree = self.build_merkle_tree(options)
 
         entry = GenericEntry(
             key=DERIBIT_MERKLE_FEED_KEY,
-            # TODO: send the merkle root
-            # value=merkle_tree.merkle_root,
-            value=42,
+            value=merkle_tree.root_hash,
             timestamp=int(time.time()),
             source=str_to_felt(self.SOURCE),
             publisher=str_to_felt(self.publisher),
@@ -193,8 +193,22 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         option_type = separate_string[3]
         return (strike_price, option_type)
 
-    def build_merkle_tree(self, options: Dict[str, List[OptionData]]) -> Any:
-        return None
+    def build_merkle_tree(
+        options: Dict[str, List[DeribitOptionResponse]],
+        hash_method: HashMethod = HashMethod.PEDERSEN,
+    ) -> MerkleTree:
+        leaves = []
+        for currency, option_responses in options.items():
+            for option in option_responses:
+                option_json = json.dumps(option.__dict__, sort_keys=True)
+                leaf = hash_method.hash_many(
+                    # TODO: update the encoding?
+                    [int.from_bytes(option_json.encode(), "big")]
+                )
+                leaves.append(leaf)
+        # Sort the leaves to ensure consistent tree construction
+        leaves.sort()
+        return MerkleTree(leaves, hash_method)
 
     def _assert_request_succeeded(self, response: Dict[str, Any]) -> None:
         if "result" not in response:
