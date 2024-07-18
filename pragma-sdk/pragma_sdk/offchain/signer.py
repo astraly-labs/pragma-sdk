@@ -18,7 +18,7 @@ def build_publish_message(
     """
 
     message = {
-        # TODO: We want to update to `revision = 1` but that would require some changes
+        # TODO: We want to update `revision` to `1` but that would require some changes
         # in the `pragma-node` repository - where we check the signature.
         # See: https://github.com/astraly-labs/pragma-sdk/issues/151
         "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "0"},
