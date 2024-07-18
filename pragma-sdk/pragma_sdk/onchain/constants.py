@@ -1,7 +1,8 @@
 from typing import Dict, List
-
-from pragma_sdk.onchain.types import ContractAddresses, Network
 from starknet_py.net.models.chains import StarknetChainId
+
+from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.onchain.types import ContractAddresses, Network
 
 
 CHAIN_IDS: Dict[Network, StarknetChainId] = {
@@ -43,3 +44,5 @@ CONTRACT_ADDRESSES = {
 RANDOMNESS_REQUEST_EVENT_SELECTOR = (
     "0xe3e1c077138abb6d570b1a7ba425f5479b12f50a78a72be680167d4cf79c48"
 )
+
+DERIBIT_MERKLE_FEED_KEY = str_to_felt("DERIBIT_OPTIONS_DATA")

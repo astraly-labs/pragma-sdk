@@ -19,6 +19,7 @@ from pragma_sdk.onchain.mixins import (
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
+    MerkleFeedMixin,
 )
 from pragma_sdk.common.types.types import Address
 from pragma_sdk.common.exceptions import ClientException
@@ -37,6 +38,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
+    MerkleFeedMixin,
 ):
     """
     Client for interacting with Pragma on Starknet.

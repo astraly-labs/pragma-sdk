@@ -14,7 +14,7 @@ class AssetQuantities:
         self.quantities = quantities
 
 
-class IndexAggregation:
+class IndexAggregatorHandler:
     spot_entries: List[SpotEntry]
     pair_quantities: List[AssetQuantities]
 
