@@ -1,5 +1,4 @@
 import aiohttp
-import asyncio
 import time
 
 from typing import Optional, List, Dict, Any, Tuple
@@ -235,17 +234,3 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         self, pair: Pair, session: ClientSession
     ) -> List[Entry] | PublisherFetchError:
         raise NotImplementedError("fetch_pair not needed for Deribit Generic Fetcher.")
-
-
-async def fe(f):
-    async with aiohttp.ClientSession() as session:
-        d = await f.fetch(session)
-    entry = d[0]
-    print(entry)
-    print(entry.value)
-
-
-if __name__ == "__main__":
-    p = [Pair.from_tickers("BTC", "USD")]
-    f = DeribitGenericFetcher(pairs=p, publisher="ADEL")
-    asyncio.run(fe(f))
