@@ -26,6 +26,8 @@ logger = get_pragma_sdk_logger()
 class DeribitOptionResponse:
     """
     Represents the response returned by the Deribit API for options.
+    See:
+    https://docs.deribit.com/#public-get_book_summary_by_currency
     """
 
     mid_price: Optional[float]
