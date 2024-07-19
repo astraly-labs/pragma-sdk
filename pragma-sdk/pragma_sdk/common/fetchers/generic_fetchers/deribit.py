@@ -170,7 +170,9 @@ class DeribitGenericFetcher(FetcherInterfaceT):
 
         unique_currencies = list(set([pair.base_currency for pair in self.pairs]))
         for currency in unique_currencies:
-            currencies_options[currency.id] = await self._fetch_options(currency)
+            currencies_options[currency.id] = await self._fetch_options(
+                session, currency
+            )
 
         merkle_tree = self._build_merkle_tree(currencies_options)
 
@@ -185,28 +187,28 @@ class DeribitGenericFetcher(FetcherInterfaceT):
 
     async def _fetch_options(
         self,
+        session: ClientSession,
         currency: Currency,
     ) -> List[OptionData]:
         """
         Fetch all options from the Deribit API for a specific currency.
         """
+        url = self.format_url(currency)
         try:
-            url = self.format_url(currency)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    if response.status != 200:
-                        raise PublisherFetchError(
-                            f"API request failed with status code {response.status}"
-                        )
-                    data = await response.json()
-                    self._assert_request_succeeded(data)
-                    option_responses = [
-                        DeribitOptionResponse.from_dict(item) for item in data["result"]
-                    ]
-                    return [
-                        OptionData.from_deribit_response(response)
-                        for response in option_responses
-                    ]
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise PublisherFetchError(
+                        f"API request failed with status code {response.status}"
+                    )
+                data = await response.json()
+                self._assert_request_succeeded(data)
+                option_responses = [
+                    DeribitOptionResponse.from_dict(item) for item in data["result"]
+                ]
+                return [
+                    OptionData.from_deribit_response(response)
+                    for response in option_responses
+                ]
 
         except aiohttp.ClientError as e:
             raise PublisherFetchError(f"HTTP request failed: {str(e)}")
