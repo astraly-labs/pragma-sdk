@@ -128,7 +128,6 @@ class OptionData:
             (
                 self.instrument_name,
                 self.base_currency,
-                self.creation_timestamp,
                 self.current_timestamp,
                 self.mark_price,
             )
@@ -163,7 +162,7 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         For every unique base assets in the provided pairs list, fetch all the
         available instruments and their option data.
         They'll be merged in a merkle tree, and we only return the merkle root
-        using the GenericEntry type.
+        using the GenericEntry type (so we only return one Entry in the final list).
         """
         currencies_options: Dict[str, List[OptionData]] = {}
 
@@ -181,25 +180,6 @@ class DeribitGenericFetcher(FetcherInterfaceT):
             publisher=str_to_felt(self.publisher),
         )
         return [entry]
-
-    def _build_merkle_tree(
-        self,
-        options: Dict[str, List[OptionData]],
-        hash_method: HashMethod = HashMethod.PEDERSEN,
-    ) -> MerkleTree:
-        """
-        Builds and return a MerkleTree from all the available fetched options.
-        """
-        leaves = []
-        for currency, option_data_list in options.items():
-            for option_data in option_data_list:
-                leaf = abs(hash(option_data)) % (
-                    2**251 - 1  # Use a prime number close to 2^251
-                )
-                leaves.append(leaf)
-        # Sort the leaves to ensure consistent tree construction
-        leaves.sort()
-        return MerkleTree(leaves, hash_method)
 
     async def _fetch_options(
         self,
@@ -246,6 +226,25 @@ class DeribitGenericFetcher(FetcherInterfaceT):
                 raise PublisherFetchError(f"API Error: {response['error']}")
             else:
                 raise PublisherFetchError("Unexpected API response format")
+
+    def _build_merkle_tree(
+        self,
+        options: Dict[str, List[OptionData]],
+        hash_method: HashMethod = HashMethod.PEDERSEN,
+    ) -> MerkleTree:
+        """
+        Builds and return a MerkleTree from all the available fetched options.
+        """
+        leaves = []
+        for currency, option_data_list in options.items():
+            for option_data in option_data_list:
+                leaf = abs(hash(option_data)) % (
+                    2**251 - 1  # Use a prime number close to 2^251
+                )
+                leaves.append(leaf)
+        # Sort the leaves to ensure consistent tree construction
+        leaves.sort()
+        return MerkleTree(leaves, hash_method)
 
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
