@@ -1,5 +1,6 @@
 import aiohttp
 import time
+import hashlib
 
 from typing import Optional, List, Dict, Any, Tuple
 from aiohttp import ClientSession
@@ -126,14 +127,8 @@ class OptionData:
         )
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.instrument_name,
-                self.base_currency,
-                self.current_timestamp,
-                self.mark_price,
-            )
-        )
+        hash_input = f"{self.instrument_name}{self.base_currency}{self.current_timestamp}{self.mark_price}"
+        return int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
 
 
 class DeribitGenericFetcher(FetcherInterfaceT):
@@ -241,10 +236,9 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         leaves = []
         for currency, option_data_list in options.items():
             for option_data in option_data_list:
-                leaf = abs(hash(option_data)) % (2**251 - 1)
+                leaf = hash(option_data)
                 leaves.append(leaf)
-        # Sort the leaves to ensure consistent tree construction
-        leaves.sort()
+        leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)
 
     async def fetch_pair(  # type: ignore[override]
