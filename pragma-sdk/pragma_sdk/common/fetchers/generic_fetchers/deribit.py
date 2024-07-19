@@ -24,31 +24,75 @@ logger = get_pragma_sdk_logger()
 
 @dataclass
 class DeribitOptionResponse:
-    instrument_name: str
-    base_currency: str
+    """
+    Represents the response returned by the Deribit API for options.
+    """
+
+    mid_price: Optional[float]
+    estimated_delivery_price: float
+    volume_usd: float
+    quote_currency: str
     creation_timestamp: UnixTimestamp
-    mark_iv: float
-    mark_price: float
+    base_currency: str
+    underlying_index: str
     underlying_price: float
+    mark_iv: float
+    volume: float
+    interest_rate: float
+    price_change: Optional[float]
+    open_interest: float
     ask_price: Optional[float]
     bid_price: Optional[float]
-    volume: float
-    volume_usd: float
+    instrument_name: str
+    mark_price: float
+    last: Optional[float]
+    low: Optional[float]
+    high: Optional[float]
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DeribitOptionResponse":
+        """
+        Converts the complete Deribit JSON response into a DeribitOptionResponse type.
+        """
         return cls(
-            instrument_name=str(data["instrument_name"]),
-            base_currency=str(data["base_currency"]),
-            creation_timestamp=data["creation_timestamp"],
-            mark_iv=float(data["mark_iv"]),
-            mark_price=float(data["mark_price"]),
-            underlying_price=float(data["underlying_price"]),
-            ask_price=float(data["ask_price"]) if data["ask_price"] else None,
-            bid_price=float(data["bid_price"]) if data["bid_price"] else None,
-            volume=float(data["volume"]),
+            mid_price=float(data["mid_price"])
+            if data.get("mid_price") is not None
+            else None,
+            estimated_delivery_price=float(data["estimated_delivery_price"]),
             volume_usd=float(data["volume_usd"]),
+            quote_currency=str(data["quote_currency"]),
+            creation_timestamp=data["creation_timestamp"],
+            base_currency=str(data["base_currency"]),
+            underlying_index=str(data["underlying_index"]),
+            underlying_price=float(data["underlying_price"]),
+            mark_iv=float(data["mark_iv"]),
+            volume=float(data["volume"]),
+            interest_rate=float(data["interest_rate"]),
+            price_change=float(data["price_change"])
+            if data.get("price_change") is not None
+            else None,
+            open_interest=float(data["open_interest"]),
+            ask_price=float(data["ask_price"])
+            if data.get("ask_price") is not None
+            else None,
+            bid_price=float(data["bid_price"])
+            if data.get("bid_price") is not None
+            else None,
+            instrument_name=str(data["instrument_name"]),
+            mark_price=float(data["mark_price"]),
+            last=float(data["last"]) if data.get("last") is not None else None,
+            low=float(data["low"]) if data.get("low") is not None else None,
+            high=float(data["high"]) if data.get("high") is not None else None,
         )
+
+    def extract_strike_price_and_option_type(self) -> Tuple[float, str]:
+        """
+        Retrieve the strike price and the option type from the instrument name.
+        """
+        separate_string = self.instrument_name.split("-")
+        strike_price = float(separate_string[2])
+        option_type = separate_string[3]
+        return (strike_price, option_type)
 
 
 @dataclass
@@ -58,14 +102,26 @@ class OptionData:
     option_type: str
     creation_timestamp: UnixTimestamp
     current_timestamp: UnixTimestamp
-    mark_iv: float
     mark_price: float
-    underlying_price: float
     strike_price: float
-    ask_price: Optional[float]
-    bid_price: Optional[float]
     volume: float
     volume_usd: float
+
+    @classmethod
+    def from_deribit_response(cls, response: DeribitOptionResponse) -> "OptionData":
+        strike_price, option_type = response.extract_strike_price_and_option_type()
+        current_timestamp = int(time.time())
+        return cls(
+            instrument_name=response.instrument_name,
+            base_currency=response.base_currency,
+            option_type=option_type,
+            creation_timestamp=response.creation_timestamp,
+            current_timestamp=current_timestamp,
+            mark_price=response.mark_price * response.underlying_price,
+            strike_price=strike_price,
+            volume=response.volume,
+            volume_usd=response.volume_usd,
+        )
 
     def __hash__(self) -> int:
         return hash(
@@ -111,11 +167,11 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         """
         currencies_options: Dict[str, List[OptionData]] = {}
 
-        currencies = list(set([pair.base_currency for pair in self.pairs]))
-        for currency in currencies:
+        unique_currencies = list(set([pair.base_currency for pair in self.pairs]))
+        for currency in unique_currencies:
             currencies_options[currency.id] = await self._fetch_options(currency)
 
-        merkle_tree = self.build_merkle_tree(currencies_options)
+        merkle_tree = self._build_merkle_tree(currencies_options)
 
         entry = GenericEntry(
             key=DERIBIT_MERKLE_FEED_KEY,
@@ -126,17 +182,20 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         )
         return [entry]
 
-    def build_merkle_tree(
+    def _build_merkle_tree(
         self,
         options: Dict[str, List[OptionData]],
         hash_method: HashMethod = HashMethod.PEDERSEN,
     ) -> MerkleTree:
+        """
+        Builds and return a MerkleTree from all the available fetched options.
+        """
         leaves = []
         for currency, option_data_list in options.items():
             for option_data in option_data_list:
                 leaf = abs(hash(option_data)) % (
-                    2**251 - 1
-                )  # Use a prime number close to 2^251
+                    2**251 - 1  # Use a prime number close to 2^251
+                )
                 leaves.append(leaf)
         # Sort the leaves to ensure consistent tree construction
         leaves.sort()
@@ -151,7 +210,6 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         """
         try:
             url = self.format_url(currency)
-            current_timestamp = int(time.time())
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     if response.status != 200:
@@ -163,9 +221,10 @@ class DeribitGenericFetcher(FetcherInterfaceT):
                     option_responses = [
                         DeribitOptionResponse.from_dict(item) for item in data["result"]
                     ]
-                    return self._adapt_deribit_response(
-                        option_responses, current_timestamp
-                    )
+                    return [
+                        OptionData.from_deribit_response(response)
+                        for response in option_responses
+                    ]
 
         except aiohttp.ClientError as e:
             raise PublisherFetchError(f"HTTP request failed: {str(e)}")
@@ -177,53 +236,11 @@ class DeribitGenericFetcher(FetcherInterfaceT):
             logger.exception("Unexpected error occurred while fetching option data")
             raise PublisherFetchError(f"An unexpected error occurred: {str(e)}")
 
-    def _adapt_deribit_response(
-        self, responses: List[DeribitOptionResponse], current_timestamp: int
-    ) -> List[OptionData]:
-        """
-        Convert the list of options from Deribit to a list of our type OptionData.
-        """
-        processed_options = []
-        for response in responses:
-            try:
-                strike_price, option_type = self._retrieve_strike_price_and_option_type(
-                    response.instrument_name
-                )
-                option_data = OptionData(
-                    instrument_name=response.instrument_name,
-                    base_currency=response.base_currency,
-                    option_type=option_type,
-                    creation_timestamp=response.creation_timestamp,
-                    current_timestamp=current_timestamp,
-                    mark_iv=response.mark_iv,
-                    mark_price=response.mark_price * response.underlying_price,
-                    underlying_price=response.underlying_price,
-                    strike_price=strike_price,
-                    ask_price=response.ask_price * response.underlying_price
-                    if response.ask_price
-                    else None,
-                    bid_price=response.bid_price * response.underlying_price
-                    if response.bid_price
-                    else None,
-                    volume=response.volume,
-                    volume_usd=response.volume_usd,
-                )
-                processed_options.append(option_data)
-            except (KeyError, ValueError) as e:
-                raise PublisherFetchError(
-                    f"Error processing option data for {response.instrument_name}: {str(e)}"
-                )
-        return processed_options
-
-    def _retrieve_strike_price_and_option_type(
-        self, instrument_name: str
-    ) -> Tuple[float, str]:
-        separate_string = instrument_name.split("-")
-        strike_price = float(separate_string[2])
-        option_type = separate_string[3]
-        return (strike_price, option_type)
-
     def _assert_request_succeeded(self, response: Dict[str, Any]) -> None:
+        """
+        Raise a PublisherFetchError if the "result" field is not available from
+        Deribit response.
+        """
         if "result" not in response:
             if "error" in response:
                 raise PublisherFetchError(f"API Error: {response['error']}")
