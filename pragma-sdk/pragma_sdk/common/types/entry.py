@@ -445,7 +445,8 @@ class GenericEntry(Entry):
     Currently used this way:
     instead of publishing all the future options for all availables instruments from Deribit,
     we place them in all a Merkle tree & we only publish the merkle root through this Generic entry.
-    So key will be {?} and value the merkle root containing all the price feeds.
+    So the key will be DERIBIT_OPTIONS_DATA and the value the merkle root containing
+    all the price feeds.
     """
 
     base: BaseEntry
