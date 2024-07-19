@@ -215,7 +215,6 @@ class DeribitGenericFetcher(FetcherInterfaceT):
                 f"Deribit options request returned an unexpected data structure: {str(e)}"
             )
         except Exception as e:
-            logger.exception("Unexpected error occurred while fetching option data")
             raise PublisherFetchError(f"An unexpected error occurred: {str(e)}")
 
     def _assert_request_succeeded(self, response: Dict[str, Any]) -> None:
@@ -240,9 +239,7 @@ class DeribitGenericFetcher(FetcherInterfaceT):
         leaves = []
         for currency, option_data_list in options.items():
             for option_data in option_data_list:
-                leaf = abs(hash(option_data)) % (
-                    2**251 - 1  # Use a prime number close to 2^251
-                )
+                leaf = abs(hash(option_data)) % (2**251 - 1)
                 leaves.append(leaf)
         # Sort the leaves to ensure consistent tree construction
         leaves.sort()
