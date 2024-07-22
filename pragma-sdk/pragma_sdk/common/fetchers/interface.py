@@ -12,6 +12,7 @@ from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.exceptions import PublisherFetchError
 
 
+# TODO(akhercha): FetcherInterfaceT should take as parameter the client instead of creating it
 # Abstract base class for all fetchers
 @add_sync_methods
 class FetcherInterfaceT(abc.ABC):

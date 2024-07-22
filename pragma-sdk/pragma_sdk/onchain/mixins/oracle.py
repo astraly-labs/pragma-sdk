@@ -8,7 +8,7 @@ from starknet_py.net.client import Client
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
-from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
+from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.pair import Pair
@@ -73,15 +73,10 @@ class OracleMixin:
         )
         return invocation
 
-    async def publish_many(
-        self,
-        entries: List[Entry],
-    ) -> List[InvokeResult]:
+    async def publish_many(self, entries: List[Entry]) -> List[InvokeResult]:
         if not entries:
-            logger.warning("Skipping publishing as entries array is empty")
+            logger.warning("publish_many received no entries to publish. Skipping")
             return []
-
-        invocations: List[InvokeResult] = []
 
         spot_entries: List[Entry] = [
             entry for entry in entries if isinstance(entry, SpotEntry)
@@ -89,26 +84,34 @@ class OracleMixin:
         future_entries: List[Entry] = [
             entry for entry in entries if isinstance(entry, FutureEntry)
         ]
+        generic_entries: List[Entry] = [
+            entry for entry in entries if isinstance(entry, GenericEntry)
+        ]
 
+        invocations = []
         invocations.extend(await self._publish_entries(spot_entries, DataTypes.SPOT))
         invocations.extend(
             await self._publish_entries(future_entries, DataTypes.FUTURE)
         )
-
+        invocations.extend(
+            await self._publish_entries(generic_entries, DataTypes.GENERIC)
+        )
         return invocations
 
     async def _publish_entries(
         self, entries: List[Entry], data_type: DataTypes
     ) -> List[InvokeResult]:
-        invocations = []
-        serialized_entries = (
-            SpotEntry.serialize_entries(entries)
-            if data_type == DataTypes.SPOT
-            else FutureEntry.serialize_entries(entries)
-        )
-
-        if len(serialized_entries) == 0:
+        if len(entries) == 0:
             return []
+
+        invocations = []
+        match data_type:
+            case DataTypes.SPOT:
+                serialized_entries = SpotEntry.serialize_entries(entries)
+            case DataTypes.FUTURE:
+                serialized_entries = FutureEntry.serialize_entries(entries)
+            case DataTypes.GENERIC:
+                serialized_entries = GenericEntry.serialize_entries(entries)
 
         pagination = self.execution_config.pagination
         if pagination:
@@ -298,6 +301,38 @@ class OracleMixin:
             response["last_updated_timestamp"],
             response["num_sources_aggregated"],
             response["expiration_timestamp"],
+        )
+
+    async def get_generic(
+        self,
+        key: str | int,
+        block_id: Optional[BlockId] = "latest",
+    ) -> GenericEntry:
+        """
+        Query the Oracle contract for the data of a generic entry.
+
+        :param key: Key ID of the generic entry
+        :param block_id: Block number or Block Tag
+        :return: GenericEntry
+        """
+        if isinstance(key, str):
+            key = str_to_felt(key.upper())
+        elif not isinstance(key, int):
+            raise TypeError(
+                "Generic entry key must be string (will be converted to felt) or integer"
+            )
+        # TODO: get_generic_entry does not exist, yet?
+        (response,) = await self.oracle.functions["get_generic"].call(
+            key,
+            block_number=block_id,
+        )
+        response = dict(response)
+        return GenericEntry(
+            key=response["key"],
+            value=response["value"],
+            timestamp=response["timestamp"],
+            source=response["source"],
+            publisher=response["source"],
         )
 
     async def get_decimals(
