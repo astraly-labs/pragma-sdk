@@ -50,7 +50,7 @@ format_check = "ruff format . --check"
 lint = "ruff check ."
 # TODO: fix all errors and change this
 typecheck = "mypy price_pusher/types.py"
-test = "pytest tests"
+test = "coverage run -m pytest -v tests/ -s"
 
 [tool.ruff]
 exclude = [

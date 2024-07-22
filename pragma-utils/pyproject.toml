@@ -44,7 +44,7 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
 typecheck = "mypy pragma_utils"
-test = "echo No tests yet"
+test = "coverage run -m pytest -v tests/ -s"
 
 [tool.ruff]
 exclude = [
