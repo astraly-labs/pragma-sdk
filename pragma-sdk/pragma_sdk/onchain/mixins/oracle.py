@@ -315,6 +315,9 @@ class OracleMixin:
         TODO: The get_generic function does not exists on chain yet - thus this function
         is not runnable atm.
 
+        TODO: The get_generic function does not exists on chain yet - thus this function
+        is not runnable atm.
+
         :param key: Key ID of the generic entry
         :param block_id: Block number or Block Tag
         :return: GenericEntry
