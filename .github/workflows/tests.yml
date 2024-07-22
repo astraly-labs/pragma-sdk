@@ -59,14 +59,19 @@
               # Use diff to compare the file with its counterpart in the SDK directory
               diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1) 
             done
-  
-        - name: Install starknet-devnet
+        - name: Install rust
           run: |
-            wget https://github.com/0xSpaceShard/starknet-devnet-rs/releases/download/v0.1.2/starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
-            tar -xf starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
-            echo "$PWD/starknet-devnet" >> $GITHUB_PATH
-            rm starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
-        
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            source $HOME/.cargo/env
+    
+        - name: Verify Rust and Cargo installation
+          run: |
+            rustc --version
+            cargo --version
+    
+        - uses: Swatinem/rust-cache@v2
+        - name: Install starknet-devnet
+          run: cargo install starknet-devnet
         - name: Run tests
           run: |
             cd ${{ matrix.package }}
