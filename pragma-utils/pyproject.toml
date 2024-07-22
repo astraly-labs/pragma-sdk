@@ -98,7 +98,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["pragma-utils"]
+source = ["pragma_utils"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]

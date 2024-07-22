@@ -104,7 +104,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["vrf-listener"]
+source = ["vrf_listener"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]

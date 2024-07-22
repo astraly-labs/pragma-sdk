@@ -105,7 +105,7 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["price-pusher"]
+source = ["price_pusher"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
