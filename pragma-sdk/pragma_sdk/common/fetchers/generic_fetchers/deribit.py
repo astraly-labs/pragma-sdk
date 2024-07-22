@@ -19,6 +19,7 @@ from pragma_sdk.common.utils import str_to_felt
 
 from pragma_sdk.onchain.constants import DERIBIT_MERKLE_FEED_KEY
 from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.onchain.types import Network
 
 logger = get_pragma_sdk_logger()
 
@@ -131,7 +132,7 @@ class OptionData:
         return int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
 
 
-class DeribitGenericFetcher(FetcherInterfaceT):
+class DeribitOptionsFetcher(FetcherInterfaceT):
     """
     Deribit fetcher.
     Retrieves all the options data for all available instruments for a set of pairs.
@@ -144,10 +145,28 @@ class DeribitGenericFetcher(FetcherInterfaceT):
     headers: Dict[Any, Any]
     _client: PragmaOnChainClient
 
+    REQUIRED_PAIRS = {
+        Pair.from_tickers("BTC", "USD"),
+        Pair.from_tickers("ETH", "USD"),
+    }
+
     SOURCE: str = "DERIBIT"
     BASE_URL: str = "https://www.deribit.com/api/v2/public"
     ENDPOINT_OPTIONS: str = "get_book_summary_by_currency?currency="
     ENDPOINT_OPTIONS_SUFFIX: str = "&kind=option&expired=false"
+
+    def __init__(
+        self,
+        pairs: List[Pair],
+        publisher: str,
+        api_key: Optional[str] = None,
+        network: Network = "mainnet",
+    ):
+        super().__init__(pairs, publisher, api_key, network)
+        if set(self.pairs) != self.REQUIRED_PAIRS:
+            raise ValueError(
+                "Currently, DeribitOptionsFetcher must be used for BTC/USD and ETH/USD only."
+            )
 
     def format_url(self, currency: Currency) -> str:  # type: ignore[override]
         return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"

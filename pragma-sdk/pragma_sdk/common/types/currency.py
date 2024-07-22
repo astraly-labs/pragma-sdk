@@ -73,12 +73,14 @@ class Currency:
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, Currency):
             return False
-        return (
-            self.id == value.id
-            and self.decimals == value.decimals
-            and self.is_abstract_currency == value.is_abstract_currency
-            and self.starknet_address == value.starknet_address
-            and self.ethereum_address == value.ethereum_address
+        return all(
+            [
+                self.id == value.id,
+                self.decimals == value.decimals,
+                self.is_abstract_currency == value.is_abstract_currency,
+                self.starknet_address == value.starknet_address,
+                self.ethereum_address == value.ethereum_address,
+            ]
         )
 
     def __hash__(self) -> int:

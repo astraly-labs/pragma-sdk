@@ -545,7 +545,7 @@ class GenericEntry(Entry):
         return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
-        return DataTypes.FUTURE
+        return DataTypes.GENERIC
 
     @staticmethod
     def from_dict(entry_dict: Any) -> "GenericEntry":
