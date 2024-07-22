@@ -27,8 +27,8 @@ async def main(
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     pragma_client = PragmaOnChainClient(
-        network=network if rpc_url is None else rpc_url,
         chain_name=network,
+        network=network if rpc_url is None else rpc_url,
         account_contract_address=int(admin_address, 16),
         account_private_key=int(private_key, 16),
         contract_addresses_config=ContractAddresses(
