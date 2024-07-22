@@ -62,8 +62,6 @@ async def _set_checkpoints(
         match pairs_type:
             case DataTypes.SPOT:
                 pair_ids = pairs_config.get_spot_ids()
-                logger.info("pair_ids:")
-                logger.info(pair_ids)
                 tx = await client.set_checkpoints(
                     pair_ids=pair_ids,
                     aggregation_mode=AggregationMode.MEDIAN,
