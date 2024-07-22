@@ -65,7 +65,7 @@
           run: |
             wget https://github.com/0xSpaceShard/starknet-devnet-rs/releases/download/v0.1.2/starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
             tar -xf starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
+            echo "$PWD/starknet-devnet" >> $GITHUB_PATH
             rm starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
         
         - name: Run tests
