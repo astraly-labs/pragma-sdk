@@ -20,13 +20,13 @@
         - uses: actions/checkout@v3
           with:
             submodules: "true"
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
         - uses: actions/setup-python@v4
           with:
             python-version: ${{ env.PYTHON_VERSION }}
             cache: "poetry"
-        - uses: CfirTsabari/actions-pipx@v1
-        - name: Install poetry
-          run: pipx install poetry
         - name: Install dependencies
           run: |
             cd ${{ matrix.package }}
