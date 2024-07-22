@@ -311,17 +311,23 @@ class OracleMixin:
         """
         Query the Oracle contract for the data of a generic entry.
 
+        TODO: The get_generic function does not exists on chain yet - thus this function
+        is not runnable atm.
+
         :param key: Key ID of the generic entry
         :param block_id: Block number or Block Tag
         :return: GenericEntry
         """
+        raise NotImplementedError(
+            "⛔ The get_generic function does not exists onchain yet."
+        )
+
         if isinstance(key, str):
             key = str_to_felt(key.upper())
         elif not isinstance(key, int):
             raise TypeError(
                 "Generic entry key must be string (will be converted to felt) or integer"
             )
-        # TODO: get_generic_entry does not exist, yet?
         (response,) = await self.oracle.functions["get_generic"].call(
             key,
             block_number=block_id,
