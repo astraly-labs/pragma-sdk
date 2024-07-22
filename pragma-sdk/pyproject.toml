@@ -159,3 +159,6 @@ source = ["pragma_sdk"]
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
 skip_empty = true
+
+[tool.poetry-monorepo-dependency-plugin]
+enable = true
