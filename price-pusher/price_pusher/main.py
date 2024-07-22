@@ -136,6 +136,7 @@ def _create_client(
             auto_estimate=True,
         )
         return PragmaOnChainClient(
+            chain_name=network,
             network=network if rpc_url is None else rpc_url,
             account_contract_address=publisher_address,
             account_private_key=private_key,

@@ -26,10 +26,10 @@ async def main(
 ) -> None:
     logger.info("🧩 Starting VRF listener...")
     client = PragmaOnChainClient(
+        chain_name=network,
         network=network if rpc_url is None else rpc_url,
         account_contract_address=int(admin_address, 16),
         account_private_key=int(private_key, 16),
-        chain_name=network,
         contract_addresses_config=ContractAddresses(
             publisher_registry_address=0x0,
             oracle_proxy_addresss=int(oracle_address, 16),

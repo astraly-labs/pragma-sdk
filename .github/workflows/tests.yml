@@ -20,13 +20,13 @@
         - uses: actions/checkout@v3
           with:
             submodules: "true"
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
         - uses: actions/setup-python@v4
           with:
             python-version: ${{ env.PYTHON_VERSION }}
             cache: "poetry"
-        - uses: CfirTsabari/actions-pipx@v1
-        - name: Install poetry
-          run: pipx install poetry
         - name: Install dependencies
           run: |
             cd ${{ matrix.package }}
@@ -65,7 +65,7 @@
           run: |
             wget https://github.com/0xSpaceShard/starknet-devnet-rs/releases/download/v0.1.2/starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
             tar -xf starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
+            echo "$PWD/starknet-devnet" >> $GITHUB_PATH
             rm starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
         
         - name: Run tests
