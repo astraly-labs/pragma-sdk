@@ -171,6 +171,7 @@ async def vrf_pragma_client(
         address=FEE_TOKEN_ADDRESS,
         abi=get_erc20_abi(),
         provider=client.account,
+        cairo_version=0,
     )
     # Approve randomness contract to transfer fee tokens
     await erc20_contract.functions["approve"].invoke_v1(

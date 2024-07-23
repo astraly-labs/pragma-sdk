@@ -21,5 +21,10 @@ def load_private_key_from_cli_arg(private_key: str) -> str:
     elif private_key.startswith("env:"):
         env_var_name = private_key.split("env:", 1)[1]
         return os.environ[env_var_name]
+    elif private_key.startswith("keystore:"):
+        path = private_key.split("keystore:", 1)[1]
+        if not os.path.exists(path):
+            raise ValueError(f"Keystore file does not exist: {path}")
+        return path
     else:
         raise ValueError("Private key must be prefixed with either 'aws:', 'plain:', or 'env:'")

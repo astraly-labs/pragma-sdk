@@ -6,7 +6,7 @@ from typing import Optional, List
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
-from pragma_sdk.common.types.types import ExecutionConfig
+from pragma_sdk.onchain.types.types import ExecutionConfig
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.onchain.client import PragmaOnChainClient
@@ -196,7 +196,10 @@ def _create_client(
     "--private-key",
     type=click.STRING,
     required=True,
-    help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
+    help=(
+        "Private key of the signer. Format: aws:secret_name, plain:private_key, env:ENV_VAR_NAME "
+        "or keystore:PATH/TO/THE/KEYSTORE"
+    ),
 )
 @click.option(
     "--publisher-name",

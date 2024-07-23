@@ -1,8 +1,12 @@
+from typing import Optional, Literal, List, Any, Dict, Union
+from dataclasses import dataclass
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, List, Any, Dict, Union
-from pydantic import HttpUrl
-from dataclasses import dataclass
+
+from pydantic import HttpUrl, model_validator
+from starknet_py.net.client_models import ResourceBounds
+from starknet_py.net.client import Tag as BlockTag
+from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.types import (
@@ -11,8 +15,6 @@ from pragma_sdk.common.types.types import (
     Decimals,
     UnixTimestamp,
 )
-from starknet_py.net.client import Tag as BlockTag
-from starknet_py.contract import InvokeResult
 
 ContractAddresses = namedtuple(
     "ContractAddresses",
@@ -31,6 +33,20 @@ PublishEntriesOnChainResult = List[InvokeResult]
 
 BlockNumber = int
 BlockId = Union[BlockTag, BlockNumber]
+
+
+@dataclass(frozen=True)
+class ExecutionConfig:
+    pagination: int = 40
+    max_fee: int = int(1e18)
+    enable_strk_fees: bool = False
+    l1_resource_bounds: Optional[ResourceBounds] = None
+    auto_estimate: bool = False
+
+    @model_validator(mode="after")  # type: ignore[misc]
+    def post_root(self) -> None:
+        if self.auto_estimate == (self.l1_resource_bounds is not None):
+            raise ValueError("Either auto_estimate or l1_resource_bounds must be set")
 
 
 @unique

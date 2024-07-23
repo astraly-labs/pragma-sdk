@@ -16,7 +16,6 @@ from pragma_sdk.common.types.types import (
     DataTypes,
     Address,
     Decimals,
-    ExecutionConfig,
     UnixTimestamp,
 )
 
@@ -25,6 +24,7 @@ from pragma_sdk.onchain.types import (
     Checkpoint,
     Contract,
     BlockId,
+    ExecutionConfig,
 )
 
 logger = get_pragma_sdk_logger()
