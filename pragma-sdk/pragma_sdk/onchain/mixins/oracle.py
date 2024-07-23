@@ -392,7 +392,6 @@ class OracleMixin:
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        assert len(pair_ids) == len(expiry_timestamps)
         invocation = None
 
         pagination = self.execution_config.pagination
