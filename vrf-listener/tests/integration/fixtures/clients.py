@@ -68,6 +68,7 @@ async def declare_deploy_randomness(
     compiled_oracle_mock_contract_casm = read_contract(
         "pragma_MockOracle.casm.json", directory=None
     )
+
     # Declare Randomness
     declare_result = await Contract.declare_v2(
         account=account,
