@@ -346,7 +346,6 @@ class RandomnessMixin:
     async def handle_random(
         self,
         private_key: int,
-        min_block: int = 0,
         ignore_request_threshold: int = 3,
     ):
         """
@@ -354,13 +353,12 @@ class RandomnessMixin:
         Will submit randomness for requests that are not too old and have not been handled yet.
 
         :param private_key: The private key of the account that will sign the randomness.
-        :param min_block: The minimum block number to consider for randomness requests.
         :param ignore_request_threshold: The number of blocks we ignore requests that are older than.
         """
 
         block_number = await self.full_node_client.get_block_number()
 
-        min_block = max(min_block, block_number - ignore_request_threshold)
+        min_block = max(block_number - ignore_request_threshold, 0)
         logger.info(f"Handle random job running with min_block: {min_block}")
 
         sk = felt_to_secret_key(private_key)
