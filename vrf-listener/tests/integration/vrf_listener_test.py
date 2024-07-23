@@ -18,11 +18,9 @@ logger = logging.getLogger(__name__)
 
 def spawn_main_in_parallel_thread(
     network,
-    oracle_address: int,
     vrf_address: int,
     admin_address: int,
     private_key: str,
-    start_block: int = 0,
     check_requests_interval: int = 1,
 ) -> asyncio.Task:
     """
@@ -34,11 +32,9 @@ def spawn_main_in_parallel_thread(
         main(
             network="devnet",
             rpc_url=f"http://localhost:{port}",
-            oracle_address=hex(oracle_address),
             vrf_address=hex(vrf_address),
             admin_address=hex(admin_address),
             private_key=private_key,
-            start_block=start_block,
             check_requests_interval=check_requests_interval,
         )
     )
@@ -60,7 +56,6 @@ async def test_vrf_listener(
 
     main_task = spawn_main_in_parallel_thread(
         network=network,
-        oracle_address=oracle.address,
         vrf_address=randomness.address,
         admin_address=caller_address,
         private_key=private_key,
@@ -81,7 +76,7 @@ async def test_vrf_listener(
         )
         await invocation.wait_for_acceptance()
 
-    # ... and check that theu're all fullfilled by the VRF listener
+    # ... and check that they're all fullfilled by the VRF listener
     for id_to_check in range(0, last_request_id):
         status = await vrf_pragma_client.get_request_status(caller_address, id_to_check)
         assert status == RequestStatus.FULFILLED
@@ -104,7 +99,6 @@ async def test_vrf_listener_miss_with_large_interval(
 
     main_task = spawn_main_in_parallel_thread(
         network=network,
-        oracle_address=oracle.address,
         vrf_address=randomness.address,
         admin_address=caller_address,
         private_key=private_key,
@@ -152,12 +146,9 @@ async def test_vrf_listener_miss_with_large_block(
 
     main_task = spawn_main_in_parallel_thread(
         network=network,
-        oracle_address=oracle.address,
         vrf_address=randomness.address,
         admin_address=caller_address,
         private_key=private_key,
-        # Future block number
-        start_block=0xFFFFFFFFFFFFFFFF,
     )
 
     await asyncio.sleep(5)

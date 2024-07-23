@@ -16,11 +16,9 @@ logger = logging.getLogger(__name__)
 
 async def main(
     network: Literal["mainnet", "sepolia"],
-    oracle_address: str,
     vrf_address: str,
     admin_address: str,
     private_key: str,
-    start_block: int,
     check_requests_interval: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
@@ -30,18 +28,13 @@ async def main(
         network=network if rpc_url is None else rpc_url,
         account_contract_address=int(admin_address, 16),
         account_private_key=int(private_key, 16),
-        contract_addresses_config=ContractAddresses(
-            publisher_registry_address=0x0,
-            oracle_proxy_addresss=int(oracle_address, 16),
-            summary_stats_address=0x0,
-        ),
     )
     client.init_randomness_contract(int(vrf_address, 16))
 
     logger.info("👂 Listening for randomness requests!")
     while True:
         try:
-            await client.handle_random(int(private_key, 16), start_block)
+            await client.handle_random(int(private_key, 16))
         except Exception as e:
             logger.error(f"⛔ Error while handling randomness request: {e}")
         await asyncio.sleep(check_requests_interval)
@@ -69,12 +62,6 @@ async def main(
     help="RPC url used by the onchain client.",
 )
 @click.option(
-    "--oracle-address",
-    type=click.STRING,
-    required=True,
-    help="Address of the Pragma Oracle",
-)
-@click.option(
     "--vrf-address",
     type=click.STRING,
     required=True,
@@ -94,14 +81,6 @@ async def main(
     help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
 )
 @click.option(
-    "-b",
-    "--start-block",
-    type=click.IntRange(min=0),
-    required=False,
-    default=0,
-    help="At which block to start listening for VRF requests. Defaults to 0.",
-)
-@click.option(
     "-t",
     "--check-requests-interval",
     type=click.IntRange(min=0),
@@ -113,11 +92,9 @@ def cli_entrypoint(
     log_level: str,
     network: Literal["mainnet", "sepolia"],
     rpc_url: Optional[HttpUrl],
-    oracle_address: str,
     vrf_address: str,
     admin_address: str,
     private_key: str,
-    start_block: int,
     check_requests_interval: int,
 ) -> None:
     """
@@ -129,11 +106,9 @@ def cli_entrypoint(
         main(
             network=network,
             rpc_url=rpc_url,
-            oracle_address=oracle_address,
             vrf_address=vrf_address,
             admin_address=admin_address,
             private_key=private_key,
-            start_block=start_block,
             check_requests_interval=check_requests_interval,
         )
     )

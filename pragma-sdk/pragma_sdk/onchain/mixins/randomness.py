@@ -346,7 +346,6 @@ class RandomnessMixin:
     async def handle_random(
         self,
         private_key: int,
-        min_block: int = 0,
         ignore_request_threshold: int = 3,
     ):
         """
@@ -360,7 +359,7 @@ class RandomnessMixin:
 
         block_number = await self.full_node_client.get_block_number()
 
-        min_block = max(min_block, block_number - ignore_request_threshold)
+        min_block = block_number - ignore_request_threshold
         logger.info(f"Handle random job running with min_block: {min_block}")
 
         sk = felt_to_secret_key(private_key)
