@@ -1,3 +1,15 @@
+## v2.0.0rc2 (2024-07-23)
+
+### Feat
+
+- Private key with keystores (#161)
+
+## v2.0.0-rc1 (2024-07-23)
+
+### Fix
+
+- vrf listener remove args + add sphinx docs config (#162)
+
 ## v2.0.0rc1 (2024-07-23)
 
 ### Feat
