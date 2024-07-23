@@ -28,6 +28,11 @@ async def main(
         network=network if rpc_url is None else rpc_url,
         account_contract_address=int(admin_address, 16),
         account_private_key=int(private_key, 16),
+        contract_addresses_config=ContractAddresses(
+            publisher_registry_address=0x0,
+            oracle_proxy_addresss=0x0,
+            summary_stats_address=0x0,
+        ),
     )
     client.init_randomness_contract(int(vrf_address, 16))
 
