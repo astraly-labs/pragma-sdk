@@ -136,8 +136,11 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
     type=click.STRING,
     required=True,
     help=(
-        "Private key of the signer. Format: aws:secret_name, plain:private_key, env:ENV_VAR_NAME "
-        "or keystore:PATH/TO/THE/KEYSTORE"
+        "Private key of the signer. Format: "
+        "aws:secret_name, "
+        "plain:private_key, "
+        "env:ENV_VAR_NAME, "
+        "or keystore:PATH/TO/THE/KEYSTORE:PASSWORD"
     ),
 )
 @click.option(

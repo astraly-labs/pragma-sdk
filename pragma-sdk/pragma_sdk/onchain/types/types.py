@@ -1,4 +1,4 @@
-from typing import Optional, Literal, List, Any, Dict, Union
+from typing import Optional, Literal, List, Any, Dict, Union, Tuple
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from collections import namedtuple
@@ -15,6 +15,11 @@ from pragma_sdk.common.types.types import (
     Decimals,
     UnixTimestamp,
 )
+
+# Contains the Path to the keystore & the password to decrypt the filer
+KeyStoreCredentials = Tuple[str, str]
+
+PrivateKey = int | str | KeyStoreCredentials
 
 ContractAddresses = namedtuple(
     "ContractAddresses",

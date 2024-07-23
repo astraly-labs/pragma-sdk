@@ -15,6 +15,8 @@ from pragma_sdk.onchain.types.types import (
     RandomnessRequest,
     NetworkName,
     PublishEntriesOnChainResult,
+    KeyStoreCredentials,
+    PrivateKey,
 )
 
 
@@ -34,4 +36,6 @@ __all__ = [
     "RandomnessRequest",
     "NetworkName",
     "PublishEntriesOnChainResult",
+    "KeyStoreCredentials",
+    "PrivateKey",
 ]

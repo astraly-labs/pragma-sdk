@@ -7,8 +7,6 @@ from starknet_py.net.client import Client
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from starknet_py.net.models import StarknetChainId
 
-from pragma_utils.io import is_file
-
 from pragma_sdk.common.exceptions import ClientException
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.entry import Entry
@@ -18,6 +16,7 @@ from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import CHAIN_IDS, CONTRACT_ADDRESSES
 from pragma_sdk.onchain.types import (
+    PrivateKey,
     Contract,
     NetworkName,
     ContractAddresses,
@@ -72,7 +71,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     def __init__(
         self,
         network: Network = "sepolia",
-        account_private_key: Optional[int | str] = None,
+        account_private_key: Optional[PrivateKey] = None,
         account_contract_address: Optional[Address] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
@@ -160,19 +159,20 @@ class PragmaOnChainClient(  # type: ignore[misc]
         )
         return await client.get_balance(token_address)  # type: ignore[no-any-return]
 
-    def _process_secret_key(self, private_key: str | int) -> KeyPair:
-        """Convert a Private Key to a KeyPair."""
+    def _process_secret_key(self, private_key: PrivateKey) -> KeyPair:
+        """Converts a Private Key to a KeyPair."""
         if isinstance(private_key, int):
             return KeyPair.from_private_key(private_key)
-        elif is_file(private_key):
-            return KeyPair.from_keystore(private_key)
+        elif isinstance(private_key, tuple):
+            path, password = private_key
+            return KeyPair.from_keystore(path, password)
         elif isinstance(private_key, str):
             return KeyPair.from_private_key(int(private_key, 16))
 
     def _setup_account_client(
         self,
         chain_id: StarknetChainId,
-        private_key: str | int,
+        private_key: PrivateKey,
         account_contract_address: Address,
     ):
         self.signer = StarkCurveSigner(
