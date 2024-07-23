@@ -1,12 +1,11 @@
 import aiohttp
 import time
-import hashlib
 
 from typing import Optional, List, Dict, Any, Tuple
 from aiohttp import ClientSession
 from pydantic.dataclasses import dataclass
-from starknet_py.utils.merkle_tree import MerkleTree
 from starknet_py.hash.hash_method import HashMethod
+from starknet_py.hash.utils import compute_hash_on_elements
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.exceptions import PublisherFetchError
@@ -14,6 +13,8 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.types import UnixTimestamp
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.entry import Entry, GenericEntry
+from pragma_sdk.common.types.merkle_tree import MerkleTree
+
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.utils import str_to_felt
 
@@ -128,8 +129,17 @@ class OptionData:
         )
 
     def __hash__(self) -> int:
-        hash_input = f"{self.instrument_name}{self.base_currency}{self.current_timestamp}{self.mark_price}"
-        return int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
+        """Computes the Pedersen hash of the OptionData."""
+        instrument_name_felt = str_to_felt(self.instrument_name)
+        base_currency_felt = str_to_felt(self.base_currency)
+        return compute_hash_on_elements(  # type: ignore[no-any-return]
+            [
+                instrument_name_felt,
+                base_currency_felt,
+                self.current_timestamp,
+                int(self.mark_price),
+            ]
+        )
 
 
 class DeribitOptionsFetcher(FetcherInterfaceT):
