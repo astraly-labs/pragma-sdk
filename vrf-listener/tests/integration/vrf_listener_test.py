@@ -123,9 +123,9 @@ async def test_vrf_listener_miss_with_large_interval(
     await invocation.wait_for_acceptance()
 
     # ... and check that its status is still pending
-    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
-    assert pending_reqs == [last_request_id]
     status = await vrf_pragma_client.get_request_status(caller_address, last_request_id)
     assert status == RequestStatus.RECEIVED
+    pending_reqs = await vrf_pragma_client.get_pending_requests(caller_address)
+    assert pending_reqs == [last_request_id]
 
     main_task.cancel()
