@@ -188,6 +188,8 @@ class PragmaOnChainClient(  # type: ignore[misc]
         self.client = self.account.client
         self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
+        if isinstance(account_contract_address, str):
+            account_contract_address = int(account_contract_address, 16)
         self.account_contract_address = account_contract_address
 
     @property
