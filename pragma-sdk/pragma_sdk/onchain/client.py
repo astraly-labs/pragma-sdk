@@ -173,7 +173,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         self,
         chain_id: StarknetChainId,
         private_key: PrivateKey,
-        account_contract_address: Address,
+        account_contract_address: int | str,
     ):
         self.signer = StarkCurveSigner(
             account_contract_address,
