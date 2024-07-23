@@ -3,7 +3,7 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal
+from typing import Optional, Literal, Tuple
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
@@ -22,15 +22,15 @@ async def main(
     network: Literal["mainnet", "sepolia"],
     oracle_address: str,
     admin_address: str,
-    private_key: str,
+    private_key: str | Tuple[str, str],
     set_checkpoint_interval: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     pragma_client = PragmaOnChainClient(
         chain_name=network,
         network=network if rpc_url is None else rpc_url,
-        account_contract_address=int(admin_address, 16),
-        account_private_key=int(private_key, 16),
+        account_contract_address=admin_address,
+        account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
             publisher_registry_address=0x0,
             oracle_proxy_addresss=int(oracle_address, 16),
@@ -133,9 +133,16 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
 @click.option(
     "-p",
     "--private-key",
+    "raw_private_key",
     type=click.STRING,
     required=True,
-    help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
+    help=(
+        "Private key of the signer. Format: "
+        "aws:secret_name, "
+        "plain:private_key, "
+        "env:ENV_VAR_NAME, "
+        "or keystore:PATH/TO/THE/KEYSTORE:PASSWORD"
+    ),
 )
 @click.option(
     "-t",
@@ -152,14 +159,14 @@ def cli_entrypoint(
     rpc_url: Optional[HttpUrl],
     oracle_address: str,
     admin_address: str,
-    private_key: str,
+    raw_private_key: str,
     set_checkpoint_interval: int,
 ) -> None:
     """
     Checkpointer entry point.
     """
     setup_logging(logger, log_level)
-    private_key = load_private_key_from_cli_arg(private_key)
+    private_key = load_private_key_from_cli_arg(raw_private_key)
     pairs_config = PairsConfig.from_yaml(config_file)
     asyncio.run(
         main(

@@ -26,8 +26,8 @@ async def main(
     client = PragmaOnChainClient(
         chain_name=network,
         network=network if rpc_url is None else rpc_url,
-        account_contract_address=int(admin_address, 16),
-        account_private_key=int(private_key, 16),
+        account_contract_address=admin_address,
+        account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
             publisher_registry_address=0x0,
             oracle_proxy_addresss=0x0,
@@ -81,9 +81,15 @@ async def main(
 @click.option(
     "-p",
     "--private-key",
+    "raw_private_key",
     type=click.STRING,
     required=True,
-    help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
+    help=(
+        "Private key of the signer. Format: "
+        "aws:secret_name, "
+        "plain:private_key, "
+        "or env:ENV_VAR_NAME"
+    ),
 )
 @click.option(
     "-t",
@@ -99,14 +105,16 @@ def cli_entrypoint(
     rpc_url: Optional[HttpUrl],
     vrf_address: str,
     admin_address: str,
-    private_key: str,
+    raw_private_key: str,
     check_requests_interval: int,
 ) -> None:
     """
     VRF Listener entry point.
     """
     setup_logging(logger, log_level)
-    private_key = load_private_key_from_cli_arg(private_key)
+    private_key = load_private_key_from_cli_arg(raw_private_key)
+    if isinstance(private_key, tuple):
+        raise ValueError("⛔ KeyStores aren't supported as private key for the vrf-listener!")
     asyncio.run(
         main(
             network=network,
