@@ -353,7 +353,6 @@ class RandomnessMixin:
         Will submit randomness for requests that are not too old and have not been handled yet.
 
         :param private_key: The private key of the account that will sign the randomness.
-        :param min_block: The minimum block number to consider for randomness requests.
         :param ignore_request_threshold: The number of blocks we ignore requests that are older than.
         """
 
