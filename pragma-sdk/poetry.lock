@@ -1923,24 +1923,6 @@ files = [
 ]
 
 [[package]]
-name = "pragma-utils"
-version = "0.0.1"
-description = "Utils functions shared accross Pragma python packages."
-optional = false
-python-versions = ">=3.10,<3.13"
-files = []
-develop = true
-
-[package.dependencies]
-boto3 = "^1.28.61"
-moto = {version = "^4.2.5", extras = ["s3", "secretsmanager"]}
-pydantic = "^2.7.4"
-
-[package.source]
-type = "directory"
-url = "../pragma-utils"
-
-[[package]]
 name = "py-partiql-parser"
 version = "0.5.0"
 description = "Pure Python PartiQL Parser"
@@ -3257,4 +3239,4 @@ docs = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "6d72036f97d3d67ccdae3247accebdf8c4cad74844912697b781e183172be5a9"
+content-hash = "ed6e551c63b5851e9488f073bc3ed62afd1e8e82227a2d5ecd21cb30e52e977e"

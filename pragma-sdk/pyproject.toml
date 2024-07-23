@@ -18,7 +18,6 @@ packages = [{ include = "pragma_sdk" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-pragma-utils = { path = "../pragma-utils", develop = true }
 "starknet.py" = "0.23.0"
 typer = "0.6.1"
 deprecated = "^1.2.14"
@@ -142,7 +141,6 @@ show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
 exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py"]
-mypy_path = ["../pragma-utils"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.poetry.build]
