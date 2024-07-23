@@ -72,7 +72,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         self,
         network: Network = "sepolia",
         account_private_key: Optional[PrivateKey] = None,
-        account_contract_address: Optional[Address] = None,
+        account_contract_address: Optional[int | str] = None,
         contract_addresses_config: Optional[ContractAddresses] = None,
         port: Optional[int] = None,
         chain_name: Optional[NetworkName] = None,
