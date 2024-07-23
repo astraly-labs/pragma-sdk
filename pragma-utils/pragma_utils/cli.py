@@ -4,6 +4,7 @@ from typing import Union, Tuple
 
 from pragma_utils.aws import fetch_aws_private_key
 
+
 def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str]]:
     """
     Load the private key either from AWS, environment variable, from the provided plain value, or return keystore info.
@@ -12,7 +13,7 @@ def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str
         private_key: The private key string, prefixed with 'aws:', 'plain:', 'env:', or 'keystore:'.
 
     Returns:
-        Union[str, Tuple[str, str]]: 
+        Union[str, Tuple[str, str]]:
         - For 'aws:', 'plain:', 'env:': returns the loaded private key as a string.
         - For 'keystore:': returns a tuple of (path, password).
 
@@ -35,4 +36,6 @@ def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str
         except ValueError:
             raise ValueError("Keystore format should be 'keystore:PATH:PASSWORD'")
     else:
-        raise ValueError("Private key must be prefixed with either 'aws:', 'plain:', 'env:', or 'keystore:'")
+        raise ValueError(
+            "Private key must be prefixed with either 'aws:', 'plain:', 'env:', or 'keystore:'"
+        )

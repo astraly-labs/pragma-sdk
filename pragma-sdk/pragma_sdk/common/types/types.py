@@ -1,7 +1,7 @@
 from enum import StrEnum, unique
 from typing import Dict
 
-Address = int
+Address = int | str
 HexStr = str
 Decimals = int
 UnixTimestamp = int

@@ -1,8 +1,8 @@
 from pragma_sdk.onchain.types.contract import Contract
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 
 from pragma_sdk.onchain.types.types import (
     ContractAddresses,
-    ExecutionConfig,
     BlockNumber,
     BlockId,
     Network,
