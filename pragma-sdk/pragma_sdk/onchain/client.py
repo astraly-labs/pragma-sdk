@@ -13,7 +13,7 @@ from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import CHAIN_IDS, CONTRACT_ADDRESSES
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.common.types.entry import Entry
-from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.onchain.mixins import (
     NonceMixin,
     OracleMixin,
@@ -27,7 +27,7 @@ from pragma_sdk.onchain.types import ContractAddresses, Network
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 from pragma_sdk.common.types.client import PragmaClient
 
-logger = get_stream_logger()
+logger = get_pragma_sdk_logger()
 logger.setLevel(logging.INFO)
 
 
@@ -112,7 +112,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :param entries: List of Entry objects
         :return: List of InvokeResult objects
         """
-        return await self.publish_many(entries, self.execution_config)
+        return await self.publish_many(entries)
 
     def _setup_contracts(self):
         """

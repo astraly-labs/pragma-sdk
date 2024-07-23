@@ -1,12 +1,17 @@
 from enum import StrEnum, unique
 from collections import namedtuple
-from typing import Optional, Literal, List, Any, Dict
+from typing import Optional, Literal, List, Any, Dict, Union
 from pydantic import HttpUrl
 from dataclasses import dataclass
 
 from pragma_sdk.common.types.asset import Asset
-from pragma_sdk.common.types.types import Address, AggregationMode
-
+from pragma_sdk.common.types.types import (
+    Address,
+    AggregationMode,
+    Decimals,
+    UnixTimestamp,
+)
+from starknet_py.net.client import Tag as BlockTag
 from starknet_py.contract import InvokeResult
 
 ContractAddresses = namedtuple(
@@ -24,6 +29,9 @@ Network = HttpUrl | NetworkName
 
 PublishEntriesOnChainResult = List[InvokeResult]
 
+BlockNumber = int
+BlockId = Union[BlockTag, BlockNumber]
+
 
 @unique
 class RequestStatus(StrEnum):
@@ -38,16 +46,21 @@ class RequestStatus(StrEnum):
         return {self.value: None}
 
 
-OracleResponse = namedtuple(
-    "OracleResponse",
-    [
-        "price",
-        "decimals",
-        "last_updated_timestamp",
-        "num_sources_aggregated",
-        "expiration_timestamp",
-    ],
-)
+@dataclass(frozen=True)
+class OracleResponse:
+    price: int
+    decimals: Decimals
+    last_updated_timestamp: UnixTimestamp
+    num_sources_aggregated: int
+    expiration_timestamp: Optional[UnixTimestamp]
+
+
+@dataclass(frozen=True)
+class Checkpoint:
+    timestamp: UnixTimestamp
+    value: int
+    aggregation_mode: AggregationMode
+    num_sources_aggregated: int
 
 
 @dataclass

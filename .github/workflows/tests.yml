@@ -14,7 +14,7 @@
       runs-on: ubuntu-latest
       strategy:
         matrix:
-          package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener]
+          package: [pragma-utils, pragma-sdk, price-pusher, vrf-listener, checkpointer]
         fail-fast: false
       steps:
         - uses: actions/checkout@v3
@@ -79,9 +79,9 @@
               poetry run poe test_client
               poetry run poe test_vrf
               poetry run poe test_fetchers
-              poetry run poe test_all_unit
+              poetry run poe test_unit
             else
-              poetry run poe test_all
+              poetry run poe test
             fi
         - name: Generate coverage in XML
           run: |

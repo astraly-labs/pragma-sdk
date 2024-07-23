@@ -20,9 +20,9 @@ from tests.integration.constants import (
 from tests.integration.utils import ExtendedPragmaClient
 from tests.integration.utils import read_contract
 
-from pragma_sdk.common.logging import get_stream_logger
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 
-logger = get_stream_logger()
+logger = get_pragma_sdk_logger()
 
 
 @pytest.fixture(

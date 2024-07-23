@@ -79,3 +79,14 @@ class Currency:
             and self.starknet_address == value.starknet_address
             and self.ethereum_address == value.ethereum_address
         )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.id,
+                self.decimals,
+                self.is_abstract_currency,
+                self.starknet_address,
+                self.ethereum_address,
+            )
+        )

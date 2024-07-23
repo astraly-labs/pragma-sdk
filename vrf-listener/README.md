@@ -34,9 +34,16 @@ Options:
   -b--start-block INTEGER RANGE   At which block to start listening for VRF
                                   requests. Defaults to 0.  [x>=0]
 
-  -t, --check-requests-interval INTEGER RANGE
-                                  Delay in seconds between checks for VRF
+  -t, --check-requests-interval   Delay in seconds between checks for VRF
                                   requests. Defaults to 10 seconds.  [x>=0]
 
   --help                          Show this message and exit.
 ```
+
+For example:
+
+```sh
+poetry run vrf_listener --oracle-address $PRAGMA_ORACLE_CONTRACT --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY
+```
+
+Will start listening for VRF requests on Sepolia every 10 seconds since block 0.

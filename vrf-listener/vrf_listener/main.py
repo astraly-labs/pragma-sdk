@@ -59,7 +59,7 @@ async def main(
     "--network",
     required=True,
     default="sepolia",
-    type=click.Choice(["sepolia", "mainnet", "devnet"], case_sensitive=False),
+    type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
     help="Which network to listen. Defaults to SEPOLIA.",
 )
 @click.option(
@@ -94,7 +94,8 @@ async def main(
     help="Secret key of the signer. Format: aws:secret_name, plain:secret_key, or env:ENV_VAR_NAME",
 )
 @click.option(
-    "-b" "--start-block",
+    "-b",
+    "--start-block",
     type=click.IntRange(min=0),
     required=False,
     default=0,
