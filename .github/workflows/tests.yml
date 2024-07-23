@@ -74,6 +74,8 @@
           run: cargo install starknet-devnet
         - name: Run tests
           run: |
+            # TODO: The tests loop forever if we don't run them one by one for some packages.
+            # See: https://github.com/astraly-labs/pragma-sdk/issues/153
             cd ${{ matrix.package }}
             if [ "${{ matrix.package }}" = "pragma-sdk" ]; then
               poetry run poe test_client

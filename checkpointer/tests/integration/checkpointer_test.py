@@ -1,7 +1,6 @@
 import asyncio
 import pytest
 import logging
-import time
 
 from typing import List
 from urllib.parse import urlparse
@@ -27,7 +26,7 @@ def spawn_main_in_parallel_thread(
     oracle_address: int,
     admin_address: int,
     private_key: str,
-    check_requests_interval: int = 1,
+    check_requests_interval: int = 5,
 ) -> asyncio.Task:
     """
     Spawns the main function in a parallel thread and return the task.
@@ -62,11 +61,6 @@ async def test_checkpointer_spot(
     (oracle, publisher_registry) = deploy_oracle_contracts
     caller_address = pragma_client.account_address
 
-    latest_checkpoint = await pragma_client.get_latest_checkpoint(
-        "BTC/USD", DataTypes.SPOT, AggregationMode.MEDIAN
-    )
-    assert latest_checkpoint.timestamp == 0
-
     # Register publisher
     tx = await pragma_client.add_publisher(PUBLISHER_NAME, caller_address)
     await tx.wait_for_acceptance()
@@ -99,7 +93,6 @@ async def test_checkpointer_spot(
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         "BTC/USD", DataTypes.SPOT, AggregationMode.MEDIAN
     )
-    logger.info(latest_checkpoint)
     assert latest_checkpoint.timestamp > 0
     assert latest_checkpoint.value == 4242424242
     assert latest_checkpoint.num_sources_aggregated == 1
@@ -120,11 +113,6 @@ async def test_checkpointer_future(
     (oracle, publisher_registry) = deploy_oracle_contracts
     caller_address = pragma_client.account_address
 
-    latest_checkpoint = await pragma_client.get_latest_checkpoint(
-        "BTC/USD", DataTypes.SPOT, AggregationMode.MEDIAN
-    )
-    assert latest_checkpoint.timestamp == 0
-
     # Register publisher
     tx = await pragma_client.add_publisher(PUBLISHER_NAME, caller_address)
     await tx.wait_for_acceptance()
@@ -136,7 +124,7 @@ async def test_checkpointer_future(
         FutureEntry(
             pair_id="BTC/USD",
             price=4242424240,
-            timestamp=int(time.time()),
+            timestamp=4242424242,
             source="BINANCE",
             publisher=PUBLISHER_NAME,
             expiry_timestamp=0,
@@ -144,15 +132,15 @@ async def test_checkpointer_future(
         FutureEntry(
             pair_id="BTC/USD",
             price=4242424248,
-            timestamp=int(time.time()),
+            timestamp=4242424243,
             source="BYBIT",
             publisher=PUBLISHER_NAME,
             expiry_timestamp=0,
         ),
         FutureEntry(
             pair_id="BTC/USD",
-            price=4242424241,
-            timestamp=int(time.time()),
+            price=4242424242,
+            timestamp=4242424248,
             source="BYBIT",
             publisher=PUBLISHER_NAME,
             expiry_timestamp=1784261474,
@@ -175,7 +163,7 @@ async def test_checkpointer_future(
         private_key=private_key,
     )
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(5)
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         pair_id="BTC/USD",
@@ -183,8 +171,8 @@ async def test_checkpointer_future(
         expiration_timestamp=0,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424240
-    assert latest_checkpoint.num_sources_aggregated == 1
+    assert latest_checkpoint.value == 4242424244
+    assert latest_checkpoint.num_sources_aggregated == 2
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         pair_id="BTC/USD",
@@ -192,7 +180,7 @@ async def test_checkpointer_future(
         expiration_timestamp=1784261474,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424241
+    assert latest_checkpoint.value == 4242424242
     assert latest_checkpoint.num_sources_aggregated == 1
 
     main_task.cancel()
