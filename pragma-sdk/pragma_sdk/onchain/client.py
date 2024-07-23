@@ -49,16 +49,23 @@ class PragmaOnChainClient(  # type: ignore[misc]
     """
     Client for interacting with Pragma on Starknet.
 
-    :param network: Target network for the client.
-        Can be a URL string, or one of
-        ``"mainnet"``, ``"sepolia"`` or ``"devnet"``
-    :param account_private_key: Optional private key for requests.  Not necessary if not making network updates
-    :param account_contract_address: Optional account contract address.  Not necessary if not making network updates
+    :param network: Target network for the client. Can be a URL string, or one of
+                    ``"mainnet"``, ``"sepolia"`` or ``"devnet"``
+    :param account_private_key: Optional private key for requests. Not necessary if not making
+                                network updates.
+                                Can be either an hexadecimal string 0x prefixed, an integer or
+                                a KeyStore type.
+                                The KeyStore is a tuple of two string [str, str], which are
+                                ["path/to/the/keystore", "password_to_unlock_the_keystore"].
+    :param account_contract_address: Optional account contract address.  Not necessary if not
+                                     making network updates.
+                                     Can either be an integer or an hexadecimal string 0x prefixed.
     :param contract_addresses_config: Optional Contract Addresses for Pragma contracts.
-        Will default to the provided network but must be set if using non standard contracts.
+                                      Will default to the provided network but must be set if using
+                                      non standard contracts.
     :param port: Optional port to interact with local node. Will default to 5050.
     :param chain_name: A str-representation of the chain if a URL string is given for `network`.
-        Must be one of ``"mainnet"``, ``"sepolia"`` or ``"devnet"``.
+                       Must be one of ``"mainnet"``, ``"sepolia"`` or ``"devnet"``.
     """
 
     is_user_client: bool = False
