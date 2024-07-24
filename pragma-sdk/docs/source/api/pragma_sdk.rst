@@ -1,6 +1,7 @@
-pragma_sdk
-==============
+.. _pragma_sdk_package:
 
+pragma_sdk package
+==================
 
 
 .. toctree::
