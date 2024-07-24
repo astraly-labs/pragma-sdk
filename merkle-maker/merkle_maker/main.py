@@ -27,7 +27,7 @@ async def main(
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     logger.info("🧩 Starting the Merkle Maker...")
-    _client = PragmaOnChainClient(
+    client = PragmaOnChainClient(
         chain_name=network,
         network=network if rpc_url is None else rpc_url,
         account_contract_address=publisher_address,
@@ -44,9 +44,26 @@ async def main(
     )
     fetcher_client.add_fetcher(deribit_fetcher)
 
-    entries = await fetcher_client.fetch()
-    print("🎣 Fetched merkle root:")
-    print(entries[0].value)
+    while True:
+        current_block = await client.full_node_client.get_block_number()
+        logger.info(f"Current block: {current_block}")
+
+        logger.info("🔍 Fetching the deribit options...")
+        entries = await fetcher_client.fetch()
+        logger.info("🎣 Fetched merkle root:")
+        logger.info(entries[0].value)
+
+        # TODO here: store to Redis
+
+        next_block = current_block + block_interval
+        logger.info(f"Waiting for block {next_block}...")
+
+        while True:
+            await asyncio.sleep(3)
+            new_block = await client.full_node_client.get_block_number()
+            if new_block >= next_block:
+                logger.info(f"... reached block {new_block}!\n")
+                break
 
 
 @click.command()
