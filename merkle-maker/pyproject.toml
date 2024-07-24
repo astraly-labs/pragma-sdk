@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "pragma-utils"
+name = "merkle-maker"
 version = "2.0.0rc3"
 authors = ["0xevolve <matthias@pragma.build>"]
-description = "Utils functions shared accross Pragma python packages."
+description = "Service used to publish Merkle Feeds on chain."
 readme = "README.md"
 homepage = "https://pragma.build"
 repository = "https://github.com/Astraly-Labs/pragma-sdk"
@@ -12,14 +12,19 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-include = ["pragma_utils"]
-packages = [{ include = "pragma_utils" }]
+include = ["merkle_maker"]
+packages = [{ include = "merkle_maker" }]
+
+[tool.poetry.scripts]
+merkle_maker = 'merkle_maker.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.10,<3.13"
+pragma-sdk = { path = "../pragma-sdk", develop = true }
+pragma-utils = { path = "../pragma-utils", develop = true }
+click = "^8.1.0"
 pydantic = "^2.7.4"
-boto3 = "^1.28.61"
-moto = { extras = ["s3", "secretsmanager"], version = "^4.2.5" }
+redis = "^5.0.7"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.26.1"
@@ -38,12 +43,13 @@ pytest-rerunfailures = "^12.0"
 mypy = "^1.10"
 types-requests = "^2.26.0"
 types-deprecated = "^1.2.9"
+types-pyyaml = "^6.0.12.20240311"
 
 [tool.poe.tasks]
 format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
-typecheck = "mypy pragma_utils"
+typecheck = "mypy merkle_maker"
 test = "coverage run -m pytest -v tests/ -s"
 
 [tool.ruff]
@@ -92,13 +98,14 @@ show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
 exclude = ["tests"]
+mypy_path = ["../pragma-utils", "../pragma-sdk"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.poetry.build]
 generate-setup-file = true
 
 [tool.coverage.run]
-source = ["pragma_utils"]
+source = ["merkle_maker"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]

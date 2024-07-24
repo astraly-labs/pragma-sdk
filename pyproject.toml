@@ -22,6 +22,9 @@ version_files = [
   "pragma-sdk/VERSION",
   "pragma-sdk/pyproject.toml:^version",
   "pragma-sdk/pragma_sdk/__init__.py:^__version",
+  "pragma-utils/VERSION",
+  "pragma-utils/pyproject.toml:^version",
+  "pragma-utils/pragma_utils/__init__.py:^__version",
   "price-pusher/VERSION",
   "price-pusher/pyproject.toml:^version",
   "price-pusher/price_pusher/__init__.py:^__version",
@@ -31,6 +34,9 @@ version_files = [
   "checkpointer/VERSION",
   "checkpointer/pyproject.toml:^version",
   "checkpointer/checkpointer/__init__.py:^__version",
+  "merkle-maker/VERSION",
+  "merkle-maker/pyproject.toml:^version",
+  "merkle-maker/merkle_maker/__init__.py:^__version",
 ]
 update_changelog_on_bump = true
 changelog_incremental = true
