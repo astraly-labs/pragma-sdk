@@ -5,6 +5,10 @@ import logging
 from pydantic import HttpUrl
 from typing import Optional, Literal, Tuple
 
+from pragma_sdk.common.types.pair import Pair
+from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
+from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
+
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from pragma_utils.logger import setup_logging
@@ -16,6 +20,7 @@ logger = logging.getLogger(__name__)
 async def main(
     network: Literal["mainnet", "sepolia"],
     redis_host: str,
+    publisher_name: str,
     publisher_address: str,
     private_key: str | Tuple[str, str],
     block_interval: int,
@@ -28,6 +33,20 @@ async def main(
         account_contract_address=publisher_address,
         account_private_key=private_key,
     )
+
+    fetcher_client = FetcherClient()
+    deribit_fetcher = DeribitOptionsFetcher(
+        pairs=[
+            Pair.from_tickers("BTC", "USD"),
+            Pair.from_tickers("ETH", "USD"),
+        ],
+        publisher=publisher_name,
+    )
+    fetcher_client.add_fetcher(deribit_fetcher)
+
+    entries = await fetcher_client.fetch()
+    print("🎣 Fetched merkle root:")
+    print(entries[0].value)
 
 
 @click.command()
@@ -57,6 +76,12 @@ async def main(
     type=click.STRING,
     required=False,
     help="RPC url used by the onchain client.",
+)
+@click.option(
+    "--publisher-name",
+    type=click.STRING,
+    required=True,
+    help="Name of the publisher of the Merkle Feed.",
 )
 @click.option(
     "--publisher-address",
@@ -91,6 +116,7 @@ def cli_entrypoint(
     network: Literal["mainnet", "sepolia"],
     redis_host: str,
     rpc_url: Optional[HttpUrl],
+    publisher_name: str,
     publisher_address: str,
     raw_private_key: str,
     block_interval: int,
@@ -105,6 +131,7 @@ def cli_entrypoint(
             network=network,
             redis_host=redis_host,
             rpc_url=rpc_url,
+            publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
             private_key=private_key,
             block_interval=block_interval,
