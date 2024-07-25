@@ -3,7 +3,7 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Never
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
@@ -28,7 +28,7 @@ async def main(
     block_interval: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
-    logger.info("🧩 Starting the Merkle Maker...")
+    logger.info("🔨 Setting up clients and Redis connection...")
     pragma_client = PragmaOnChainClient(
         chain_name=network,
         network=network if rpc_url is None else rpc_url,
@@ -42,13 +42,29 @@ async def main(
     fetcher_client = FetcherClient()
     deribit_fetcher = DeribitOptionsFetcher(
         pairs=[
-            Pair.from_tickers("BTC", "USD"),
-            Pair.from_tickers("ETH", "USD"),
+            Pair.from_tickers("BTC", "USD"),  # type: ignore[list-item]
+            Pair.from_tickers("ETH", "USD"),  # type: ignore[list-item]
         ],
         publisher=publisher_name,
     )
     fetcher_client.add_fetcher(deribit_fetcher)
 
+    logger.info("🧩 Starting the Merkle Maker...")
+    await _publish_merkle_feeds_forever(
+        pragma_client=pragma_client,
+        fetcher_client=fetcher_client,
+        redis_manager=redis_manager,
+        block_interval=block_interval,
+    )
+
+
+async def _publish_merkle_feeds_forever(
+    pragma_client: PragmaOnChainClient,
+    fetcher_client: FetcherClient,
+    redis_manager: RedisManager,
+    block_interval: int,
+) -> Never:
+    deribit_fetcher: DeribitOptionsFetcher = fetcher_client.fetchers[0]  # type: ignore[assignment]
     while True:
         current_block = await pragma_client.get_block_number()
         logger.info(f"Current block: {current_block}")
@@ -56,22 +72,17 @@ async def main(
         logger.info("🔍 Fetching the deribit options...")
         entries = await fetcher_client.fetch()
 
-        logger.info("🎣 Fetched merkle root:")
-        logger.info(entries[0].value)
-
         # TODO: move this block in another thread so we loose 0 time on this?
-        logger.info("📢 Storing the options in Redis...")
-        redis_manager.store_options(
-            "latest_deribit_options",
-            deribit_fetcher.get_last_fetched_options(),
-        )
+        logger.info("📢 Storing the merkle tree & options in Redis...")
+        redis_manager.store_latest_data(deribit_fetcher.get_latest_data())
         logger.info("... done!")
 
         logger.info("📢 Publishing the merkle root onchain...")
         try:
-            await pragma_client.publish_entries(entries)
+            await pragma_client.publish_entries(entries)  # type: ignore[arg-type]
             logger.info("... done!")
         except Exception:
+            # TODO: remove this part when the contract has been updated
             logger.warning("Could not publish! Contract not yet updated.")
 
         next_block = current_block + block_interval
