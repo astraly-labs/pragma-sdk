@@ -41,7 +41,7 @@ bump_message = "bump: $current_version → $new_version"
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma/core/abis' ';'"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.11,<3.13"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.21.1"

@@ -16,7 +16,7 @@ include = ["pragma_utils"]
 packages = [{ include = "pragma_utils" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.11,<3.13"
 pydantic = "^2.7.4"
 boto3 = "^1.28.61"
 moto = { extras = ["s3", "secretsmanager"], version = "^4.2.5" }
