@@ -168,6 +168,10 @@ class PragmaOnChainClient(  # type: ignore[misc]
         )
         return await client.get_balance(token_address)  # type: ignore[no-any-return]
 
+    async def get_block_number(self) -> int:
+        """Returns the current block number."""
+        return await self.full_node_client.get_block_number()
+
     def _process_secret_key(self, private_key: PrivateKey) -> KeyPair:
         """Converts a Private Key to a KeyPair."""
         if isinstance(private_key, int):

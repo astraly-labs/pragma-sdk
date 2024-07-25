@@ -187,7 +187,8 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             currencies_options[currency.id] = await self._fetch_options(
                 session, currency
             )
-
+        self._currencies_options = currencies_options
+        
         merkle_tree = self._build_merkle_tree(currencies_options)
 
         entry = GenericEntry(
@@ -198,6 +199,9 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             publisher=str_to_felt(self.publisher),
         )
         return [entry]
+
+    def get_currencies_options(self) -> Dict[str, List[OptionData]]:
+        return self._currencies_options
 
     async def _fetch_options(
         self,

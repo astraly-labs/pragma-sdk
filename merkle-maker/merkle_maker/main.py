@@ -50,7 +50,7 @@ async def main(
     fetcher_client.add_fetcher(deribit_fetcher)
 
     while True:
-        current_block = await pragma_client.full_node_client.get_block_number()
+        current_block = await pragma_client.get_block_number()
         logger.info(f"Current block: {current_block}")
 
         logger.info("🔍 Fetching the deribit options...")
@@ -58,6 +58,8 @@ async def main(
 
         logger.info("🎣 Fetched merkle root:")
         logger.info(entries[0].value)
+
+        logger.info(deribit_fetcher.get_currencies_options())
 
         # TODO: remove this Redis test & store the options
         # TODO: move this block in another thread so we loose 0 time on this
@@ -75,7 +77,7 @@ async def main(
 
         while True:
             await asyncio.sleep(3)
-            new_block = await pragma_client.full_node_client.get_block_number()
+            new_block = await pragma_client.get_block_number()
             if new_block >= next_block:
                 logger.info(f"... reached block {new_block}!\n")
                 break
