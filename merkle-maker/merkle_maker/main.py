@@ -59,16 +59,20 @@ async def main(
         logger.info("🎣 Fetched merkle root:")
         logger.info(entries[0].value)
 
-        # TODO: move this block in another thread so we loose 0 time on this
+        # TODO: move this block in another thread so we loose 0 time on this?
+        logger.info("📢 Storing the options in Redis...")
         redis_manager.store_options(
-            "latest_deribit_options", deribit_fetcher.get_last_fetched_options()
+            "latest_deribit_options",
+            deribit_fetcher.get_last_fetched_options(),
         )
-        logger.debug("🕵🏼‍♀️ Checking value stored in redis")
-        stored = redis_manager.get("deribit_options")
-        logger.debug(stored)
+        logger.info("... done!")
 
-        # TODO: publish the generic_entry onchain using pragma_client
-        # pragma_client.publish_entries(entries)
+        logger.info("📢 Publishing the merkle root onchain...")
+        try:
+            await pragma_client.publish_entries(entries)
+            logger.info("... done!")
+        except Exception:
+            logger.warning("Could not publish! Contract not yet updated.")
 
         next_block = current_block + block_interval
         logger.info(f"Waiting for block {next_block}...")
