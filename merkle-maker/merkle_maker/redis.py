@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Optional
 
 from redis import Redis
 from starknet_py.hash.hash_method import HashMethod
