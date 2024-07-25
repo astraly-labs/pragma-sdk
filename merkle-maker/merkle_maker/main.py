@@ -18,6 +18,8 @@ from merkle_maker.redis import RedisManager
 
 logger = logging.getLogger(__name__)
 
+TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 2
+
 
 async def main(
     network: Literal["mainnet", "sepolia"],
@@ -64,6 +66,11 @@ async def _publish_merkle_feeds_forever(
     redis_manager: RedisManager,
     block_interval: int,
 ) -> Never:
+    """
+    Publish a new Merkle Feed on chain every [block_interval] block(s) forever.
+    We store the merkle tree and the options used to generate the merkle root
+    to a Redis database that will get consumed by our Rust service.
+    """
     deribit_fetcher: DeribitOptionsFetcher = fetcher_client.fetchers[0]  # type: ignore[assignment]
     while True:
         current_block = await pragma_client.get_block_number()
@@ -73,11 +80,11 @@ async def _publish_merkle_feeds_forever(
         entries = await fetcher_client.fetch()
 
         # TODO: move this block in another thread so we loose 0 time on this?
-        logger.info("📢 Storing the merkle tree & options in Redis...")
+        logger.info("🏭 Storing the merkle tree & options in Redis...")
         redis_manager.store_latest_data(deribit_fetcher.get_latest_data())
         logger.info("... done!")
 
-        logger.info("📢 Publishing the merkle root onchain...")
+        logger.info("🎣 Publishing the merkle root onchain...")
         try:
             await pragma_client.publish_entries(entries)  # type: ignore[arg-type]
             logger.info("... done!")
@@ -86,13 +93,13 @@ async def _publish_merkle_feeds_forever(
             logger.warning("Could not publish! Contract not yet updated.")
 
         next_block = current_block + block_interval
-        logger.info(f"Waiting for block {next_block}...")
+        logger.info(f"⏳ Waiting for block {next_block}...")
 
         while True:
-            await asyncio.sleep(3)
+            await asyncio.sleep(TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING)
             new_block = await pragma_client.get_block_number()
             if new_block >= next_block:
-                logger.info(f"... reached block {new_block}!\n")
+                logger.info(f"⌛ ... reached block {new_block}!\n")
                 break
 
 
