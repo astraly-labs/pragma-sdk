@@ -142,6 +142,9 @@ class OptionData:
         )
 
 
+CurrenciesOptions = Dict[str, List[OptionData]]
+
+
 class DeribitOptionsFetcher(FetcherInterfaceT):
     """
     Deribit fetcher.
@@ -154,6 +157,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
     pairs: List[Pair]
     headers: Dict[Any, Any]
     _client: PragmaOnChainClient
+    _currencies_options: Optional[CurrenciesOptions] = None
 
     REQUIRED_PAIRS = {
         Pair.from_tickers("BTC", "USD"),
@@ -173,10 +177,15 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         network: Network = "mainnet",
     ):
         super().__init__(pairs, publisher, api_key, network)
+        self._currencies_options = None
         if set(self.pairs) != self.REQUIRED_PAIRS:
             raise ValueError(
                 "Currently, DeribitOptionsFetcher must be used for BTC/USD and ETH/USD only."
             )
+
+    def get_last_fetched_options(self):
+        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
+        return self._currencies_options
 
     def format_url(self, currency: Currency) -> str:  # type: ignore[override]
         return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
@@ -190,7 +199,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         They'll be merged in a merkle tree, and we only return the merkle root
         using the GenericEntry type (so we only return one Entry in the final list).
         """
-        currencies_options: Dict[str, List[OptionData]] = {}
+        currencies_options: CurrenciesOptions = {}
 
         unique_currencies = list(set([pair.base_currency for pair in self.pairs]))
         for currency in unique_currencies:
@@ -199,6 +208,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             )
 
         merkle_tree = self._build_merkle_tree(currencies_options)
+        self._currencies_options = currencies_options
 
         entry = GenericEntry(
             key=DERIBIT_MERKLE_FEED_KEY,
