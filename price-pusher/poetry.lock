@@ -1501,7 +1501,7 @@ files = [
 
 [[package]]
 name = "pragma-sdk"
-version = "2.0.0rc3"
+version = "2.0.0rc4"
 description = "Core package for rollup-native Pragma Oracle"
 optional = false
 python-versions = ">=3.11,<3.13"
