@@ -73,6 +73,8 @@ async def _publish_merkle_feeds_forever(
     """
     deribit_fetcher: DeribitOptionsFetcher = fetcher_client.fetchers[0]  # type: ignore[assignment]
     while True:
+        # TODO: In case of a restart, check if a merkle feed already exists for the
+        # current block.
         current_block = await pragma_client.get_block_number()
         logger.info(f"Current block: {current_block}")
 
