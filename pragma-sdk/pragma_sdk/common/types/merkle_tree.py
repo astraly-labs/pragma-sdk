@@ -41,3 +41,11 @@ class MerkleTree(StarknetPyMT):
                 target = self.hash_method.hash(sibling_hash, target)
 
         return target == self.root_hash
+
+    def as_dict(self) -> dict:
+        return {
+            "leaves": self.leaves,
+            "levels": self.levels,
+            "root_hash": self.root_hash,
+            "hash_method": self.hash_method.name,
+        }

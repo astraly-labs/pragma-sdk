@@ -117,6 +117,14 @@ class OptionData:
             mark_price=response.mark_price * response.underlying_price,
         )
 
+    def as_dict(self) -> dict:
+        return {
+            "instrument_name": self.instrument_name,
+            "base_currency": self.base_currency,
+            "current_timestamp": self.current_timestamp,
+            "mark_price": self.mark_price,
+        }
+
     def __hash__(self) -> int:
         """Computes the Pedersen hash of the OptionData."""
         instrument_name_felt = str_to_felt(self.instrument_name)
