@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pragma-sdk"
-version = "2.0.0.rc-0"
+version = "2.0.0rc2"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Core package for rollup-native Pragma Oracle"
 readme = "README.md"
@@ -18,7 +18,6 @@ packages = [{ include = "pragma_sdk" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-pragma-utils = { path = "../pragma-utils", develop = true }
 "starknet.py" = "0.23.0"
 typer = "0.6.1"
 deprecated = "^1.2.14"
@@ -62,6 +61,8 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 typecheck = "mypy pragma_sdk"
 
+check_circular_imports = "poetry run python tests/check_circular_imports.py"
+
 test_integration = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/ -s"
 test_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/client_test.py -s"
 test_update_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/update_client_test.py -s"
@@ -75,9 +76,6 @@ test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --on
 test_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/api_client_test.py -s"
 
 test = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
-
-check_circular_imports = "poetry run python tests/check_circular_imports.py"
-
 
 [tool.ruff]
 exclude = [
@@ -143,7 +141,6 @@ show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
 exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py"]
-mypy_path = ["../pragma-utils"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.poetry.build]
@@ -159,3 +156,6 @@ source = ["pragma_sdk"]
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
 skip_empty = true
+
+[tool.poetry-monorepo-dependency-plugin]
+enable = true

@@ -16,10 +16,10 @@ from pragma_sdk.common.types.types import (
     DataTypes,
     Address,
     Decimals,
-    ExecutionConfig,
     UnixTimestamp,
 )
 
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.types import (
     OracleResponse,
     Checkpoint,
@@ -366,23 +366,21 @@ class OracleMixin:
         expiry_timestamps: Sequence[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
     ) -> InvokeResult:
+        assert len(pair_ids) == len(expiry_timestamps)
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        assert len(pair_ids) == len(expiry_timestamps)
         invocation = None
-        if self.execution_config.pagination:
+
+        pagination = self.execution_config.pagination
+        if pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[
-                    index : index + self.execution_config.pagination
-                ]
-                expiries_subset = expiry_timestamps[
-                    index : index + self.execution_config.pagination
-                ]
+                pair_ids_subset = pair_ids[index : index + pagination]
+                expiries_subset = expiry_timestamps[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
@@ -391,7 +389,7 @@ class OracleMixin:
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
-                index += self.execution_config.pagination
+                index += pagination
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -429,12 +427,11 @@ class OracleMixin:
             )
 
         invocation = None
-        if self.execution_config.pagination:
+        pagination = self.execution_config.pagination
+        if pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[
-                    index : index + self.execution_config.pagination
-                ]
+                pair_ids_subset = pair_ids[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.SPOT, pair_id, None).serialize()
@@ -443,7 +440,7 @@ class OracleMixin:
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
-                index += self.execution_config.pagination
+                index += pagination
                 logger.info(
                     "Set spot checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),

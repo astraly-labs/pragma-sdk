@@ -1,0 +1,33 @@
+---
+  name: Task - Publish Package to Test PyPi
+  
+  on:
+    push:
+      branches:
+        - master
+
+  env: 
+    PYTHON_VERSION: 3.12.4
+  
+  defaults: 
+    run:
+      working-directory: pragma-sdk
+
+  jobs:
+    test_pypi_publish:
+      name: Upload package to Test PyPI
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
+        - uses: actions/setup-python@v5
+          with:
+            python-version: ${{ env.PYTHON_VERSION }}
+            cache: "poetry"
+        - run: pipx inject poetry poetry-monorepo-dependency-plugin
+        - run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
+        - run: poetry config pypi-token.test-pypi ${{ secrets.TEST_PYPI_API_TOKEN }}
+        - run: poetry build -f sdist
+        - run: poetry publish -r test-pypi --skip-existing

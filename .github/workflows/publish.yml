@@ -1,48 +1,27 @@
 ---
-  name: Task - Publish Package
+  name: Task - Publish Package to Pypi
   
   on:
-    workflow_dispatch:
     workflow_call:
 
-  env: 
-        PYTHON_VERSION: 3.12.4   
-    
+  defaults:
+    run:
+      working-directory: pragma-sdk
+
   jobs:
-    build_sdist:
-      name: Build SDist
+    pypi_publish:
+      name: Upload package to PyPI
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
+        - uses: CfirTsabari/actions-pipx@v1
+        - name: Install poetry
+          run: pipx install poetry
         - uses: actions/setup-python@v5
           with:
             python-version: ${{ env.PYTHON_VERSION }}
             cache: "poetry"
-        - uses: CfirTsabari/actions-pipx@v1
-        - name: Install poetry
-          run: pipx install poetry
-  
-        - name: Build SDist
-          run: poetry build -f sdist
-  
-        - uses: actions/upload-artifact@v4
-          with:
-            name: sdist
-            path: dist
-  
-    upload_pypi:
-      name: Upload package to PyPI
-      needs: [build_sdist]
-      runs-on: ubuntu-latest
-  
-      steps:
-        - uses: actions/download-artifact@v4
-          with:
-            name: sdist
-            path: dist
-  
-        - uses: pypa/gh-action-pypi-publish@release/v1
-          with:
-            skip-existing: true
-            user: __token__
-            password: ${{ secrets.PYPI_API_TOKEN }}
+        - run: pipx inject poetry poetry-monorepo-dependency-plugin
+        - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_KEY }}"
+        - run: poetry build -f sdist
+        - run: poetry publish --skip-existing

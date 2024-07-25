@@ -1,4 +1,5 @@
 from pragma_sdk.onchain.types.contract import Contract
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 
 from pragma_sdk.onchain.types.types import (
     ContractAddresses,
@@ -12,11 +13,16 @@ from pragma_sdk.onchain.types.types import (
     VRFSubmitParams,
     VRFCancelParams,
     RandomnessRequest,
+    NetworkName,
+    PublishEntriesOnChainResult,
+    KeyStoreCredentials,
+    PrivateKey,
 )
 
 
 __all__ = [
     "Contract",
+    "ExecutionConfig",
     "BlockNumber",
     "BlockId",
     "ContractAddresses",
@@ -28,4 +34,8 @@ __all__ = [
     "VRFSubmitParams",
     "VRFCancelParams",
     "RandomnessRequest",
+    "NetworkName",
+    "PublishEntriesOnChainResult",
+    "KeyStoreCredentials",
+    "PrivateKey",
 ]

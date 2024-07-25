@@ -1,6 +1,6 @@
 # Checkpointer
 
-Service used to automatically set checkpoints for a set of pairs.
+Service used to automatically create checkpoints periodically for a set of pairs.
 
 ### Usage
 

@@ -156,6 +156,7 @@ async def vrf_pragma_client(
         address=FEE_TOKEN_ADDRESS,
         abi=get_erc20_abi(),
         provider=client.account,
+        cairo_version=0,
     )
     # Approve randomness contract to transfer fee tokens
     await erc20_contract.functions["approve"].invoke_v1(
@@ -597,6 +598,7 @@ async def test_delayed_randomness_request(
         address=FEE_TOKEN_ADDRESS,
         abi=get_erc20_abi(),
         provider=vrf_pragma_client.account,
+        cairo_version=0,
     )
     block_number_1 = await vrf_pragma_client.full_node_client.get_block_number()
     await wait_for_acceptance(

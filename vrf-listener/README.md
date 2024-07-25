@@ -21,8 +21,6 @@ Options:
 
   --rpc-url TEXT                  RPC url used by the onchain client.
 
-  --oracle-address TEXT           Address of the Pragma Oracle  [required]
-
   --vrf-address TEXT              Address of the VRF contract  [required]
 
   --admin-address TEXT            Address of the Admin contract  [required]
@@ -43,7 +41,7 @@ Options:
 For example:
 
 ```sh
-poetry run vrf_listener --oracle-address $PRAGMA_ORACLE_CONTRACT --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY
+poetry run vrf_listener --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY
 ```
 
 Will start listening for VRF requests on Sepolia every 10 seconds since block 0.

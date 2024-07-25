@@ -68,6 +68,7 @@ async def declare_deploy_randomness(
     compiled_oracle_mock_contract_casm = read_contract(
         "pragma_MockOracle.casm.json", directory=None
     )
+
     # Declare Randomness
     declare_result = await Contract.declare_v2(
         account=account,
@@ -171,6 +172,7 @@ async def vrf_pragma_client(
         address=FEE_TOKEN_ADDRESS,
         abi=get_erc20_abi(),
         provider=client.account,
+        cairo_version=0,
     )
     # Approve randomness contract to transfer fee tokens
     await erc20_contract.functions["approve"].invoke_v1(
