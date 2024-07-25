@@ -134,6 +134,12 @@ class OptionData:
 CurrenciesOptions = Dict[str, List[OptionData]]
 
 
+@dataclass
+class LatestData:
+    merkle_tree: MerkleTree
+    options: CurrenciesOptions
+
+
 class DeribitOptionsFetcher(FetcherInterfaceT):
     """
     Deribit fetcher.
@@ -146,7 +152,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
     pairs: List[Pair]
     headers: Dict[Any, Any]
     _client: PragmaOnChainClient
-    _currencies_options: Optional[CurrenciesOptions] = None
+    _latest_data: Optional[LatestData] = None
 
     REQUIRED_PAIRS = {
         Pair.from_tickers("BTC", "USD"),
@@ -166,7 +172,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         network: Network = "mainnet",
     ):
         super().__init__(pairs, publisher, api_key, network)
-        self._currencies_options = None
+        self._latest_data = None
         if set(self.pairs) != self.REQUIRED_PAIRS:
             raise ValueError(
                 "Currently, DeribitOptionsFetcher must be used for BTC/USD and ETH/USD only."
@@ -189,8 +195,8 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                 session, currency
             )
 
-        merkle_tree = self._build_merkle_tree(currencies_options)
-        self._currencies_options = currencies_options
+        merkle_tree: MerkleTree = self._build_merkle_tree(currencies_options)
+        self._set_latest_data(merkle_tree, currencies_options)
 
         entry = GenericEntry(
             key=DERIBIT_MERKLE_FEED_KEY,
@@ -262,9 +268,24 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)
 
-    def get_last_fetched_options(self):
-        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
-        return self._currencies_options
+    def _set_latest_data(self, mt: MerkleTree, options: CurrenciesOptions):
+        self._latest_data = LatestData(merkle_tree=mt, options=options)
+
+    def get_latest_data(self) -> Optional[LatestData]:
+        """Return the latest data fetched."""
+        return self._latest_data
+
+    def get_last_built_merkle_tree(self) -> Optional[MerkleTree]:
+        """Returns the last built merkle tree used to generate the GenericEntry value."""
+        if self._latest_data is None:
+            return None
+        return self._latest_data.merkle_tree
+
+    def get_last_fetched_options(self) -> Optional[CurrenciesOptions]:
+        """Return the last fetched options u sed to generate the GenericEntry and the Merkle tree."""
+        if self._latest_data is None:
+            return None
+        return self._latest_data.options
 
     def format_url(self, currency: Currency) -> str:  # type: ignore[override]
         return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
