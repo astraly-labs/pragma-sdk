@@ -183,13 +183,6 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                 "Currently, DeribitOptionsFetcher must be used for BTC/USD and ETH/USD only."
             )
 
-    def get_last_fetched_options(self):
-        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
-        return self._currencies_options
-
-    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
-        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
-
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
@@ -206,7 +199,6 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             currencies_options[currency.id] = await self._fetch_options(
                 session, currency
             )
-        self._currencies_options = currencies_options
         
         merkle_tree = self._build_merkle_tree(currencies_options)
         self._currencies_options = currencies_options
@@ -219,9 +211,6 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             publisher=str_to_felt(self.publisher),
         )
         return [entry]
-
-    def get_currencies_options(self) -> Dict[str, List[OptionData]]:
-        return self._currencies_options
 
     async def _fetch_options(
         self,
@@ -283,6 +272,13 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                 leaves.append(leaf)
         leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)
+
+    def get_last_fetched_options(self):
+        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
+        return self._currencies_options
+
+    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
+        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
 
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession

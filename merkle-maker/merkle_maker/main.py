@@ -7,7 +7,7 @@ from typing import Optional, Literal, Tuple
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit import DeribitOptionsFetcher
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
@@ -59,14 +59,12 @@ async def main(
         logger.info("🎣 Fetched merkle root:")
         logger.info(entries[0].value)
 
-        logger.info(deribit_fetcher.get_currencies_options())
-
-        # TODO: remove this Redis test & store the options
         # TODO: move this block in another thread so we loose 0 time on this
-        logger.debug("🥡 Stored into redis 42")
-        redis_manager.store("something_something", "42")
+        redis_manager.store_options(
+            "latest_deribit_options", deribit_fetcher.get_last_fetched_options()
+        )
         logger.debug("🕵🏼‍♀️ Checking value stored in redis")
-        stored = redis_manager.get("something_something")
+        stored = redis_manager.get("deribit_options")
         logger.debug(stored)
 
         # TODO: publish the generic_entry onchain using pragma_client
