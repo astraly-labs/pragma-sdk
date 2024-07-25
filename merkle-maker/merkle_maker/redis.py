@@ -45,12 +45,3 @@ class RedisManager:
         return MerkleTree(
             leaves=response[0]["leaves"], hash_method=HashMethod(response[0]["hash_method"].lower())
         )
-
-    def _deserialize_option(self, option_str: bytes) -> Dict[str, Any]:
-        values = option_str.decode().split(",")
-        return {
-            "instrument_name": values[0],
-            "base_currency": values[1],
-            "current_timestamp": int(values[2]),
-            "mark_price": float(values[3]),
-        }
