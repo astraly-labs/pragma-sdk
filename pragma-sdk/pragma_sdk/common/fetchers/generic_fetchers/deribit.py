@@ -104,28 +104,17 @@ class DeribitOptionResponse:
 class OptionData:
     instrument_name: str
     base_currency: str
-    option_type: str
-    creation_timestamp: UnixTimestamp
     current_timestamp: UnixTimestamp
     mark_price: float
-    strike_price: float
-    volume: float
-    volume_usd: float
 
     @classmethod
     def from_deribit_response(cls, response: DeribitOptionResponse) -> "OptionData":
-        strike_price, option_type = response.extract_strike_price_and_option_type()
         current_timestamp = int(time.time())
         return cls(
             instrument_name=response.instrument_name,
             base_currency=response.base_currency,
-            option_type=option_type,
-            creation_timestamp=response.creation_timestamp,
             current_timestamp=current_timestamp,
             mark_price=response.mark_price * response.underlying_price,
-            strike_price=strike_price,
-            volume=response.volume,
-            volume_usd=response.volume_usd,
         )
 
     def __hash__(self) -> int:
@@ -182,13 +171,6 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             raise ValueError(
                 "Currently, DeribitOptionsFetcher must be used for BTC/USD and ETH/USD only."
             )
-
-    def get_last_fetched_options(self):
-        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
-        return self._currencies_options
-
-    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
-        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
 
     async def fetch(
         self, session: ClientSession
@@ -279,6 +261,13 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                 leaves.append(leaf)
         leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)
+
+    def get_last_fetched_options(self):
+        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
+        return self._currencies_options
+
+    def format_url(self, currency: Currency) -> str:  # type: ignore[override]
+        return f"{self.BASE_URL}/{self.ENDPOINT_OPTIONS}{currency.id}{self.ENDPOINT_OPTIONS_SUFFIX}"
 
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
