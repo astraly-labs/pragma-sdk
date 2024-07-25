@@ -188,7 +188,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             currencies_options[currency.id] = await self._fetch_options(
                 session, currency
             )
-        
+
         merkle_tree = self._build_merkle_tree(currencies_options)
         self._currencies_options = currencies_options
 
