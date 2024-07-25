@@ -14,6 +14,8 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
+from merkle_maker.redis import RedisManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,12 +29,15 @@ async def main(
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     logger.info("🧩 Starting the Merkle Maker...")
-    client = PragmaOnChainClient(
+    pragma_client = PragmaOnChainClient(
         chain_name=network,
         network=network if rpc_url is None else rpc_url,
         account_contract_address=publisher_address,
         account_private_key=private_key,
     )
+
+    redis_host, redis_port = redis_host.split(":")
+    redis_manager = RedisManager(host=redis_host, port=redis_port)
 
     fetcher_client = FetcherClient()
     deribit_fetcher = DeribitOptionsFetcher(
@@ -45,22 +50,32 @@ async def main(
     fetcher_client.add_fetcher(deribit_fetcher)
 
     while True:
-        current_block = await client.full_node_client.get_block_number()
+        current_block = await pragma_client.full_node_client.get_block_number()
         logger.info(f"Current block: {current_block}")
 
         logger.info("🔍 Fetching the deribit options...")
         entries = await fetcher_client.fetch()
+
         logger.info("🎣 Fetched merkle root:")
         logger.info(entries[0].value)
 
-        # TODO here: store to Redis
+        # TODO: remove this Redis test & store the options
+        # TODO: move this block in another thread so we loose 0 time on this
+        logger.debug("🥡 Stored into redis 42")
+        redis_manager.store("something_something", "42")
+        logger.debug("🕵🏼‍♀️ Checking value stored in redis")
+        stored = redis_manager.get("something_something")
+        logger.debug(stored)
+
+        # TODO: publish the generic_entry onchain using pragma_client
+        # pragma_client.publish_entries(entries)
 
         next_block = current_block + block_interval
         logger.info(f"Waiting for block {next_block}...")
 
         while True:
             await asyncio.sleep(3)
-            new_block = await client.full_node_client.get_block_number()
+            new_block = await pragma_client.full_node_client.get_block_number()
             if new_block >= next_block:
                 logger.info(f"... reached block {new_block}!\n")
                 break
@@ -70,7 +85,10 @@ async def main(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        case_sensitive=False,
+    ),
     help="Logging level.",
 )
 @click.option(
@@ -78,7 +96,10 @@ async def main(
     "--network",
     required=True,
     default="sepolia",
-    type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
+    type=click.Choice(
+        ["sepolia", "mainnet"],
+        case_sensitive=False,
+    ),
     help="On which networks the checkpoints will be set.",
 )
 @click.option(
@@ -86,7 +107,7 @@ async def main(
     type=click.STRING,
     required=False,
     default="localhost:6379",
-    help="Host where the Redis service is live.",
+    help="Host where the Redis service is live. Format is HOST:PORT, example: localhost:6379",
 )
 @click.option(
     "--rpc-url",
@@ -126,7 +147,7 @@ async def main(
     type=click.IntRange(min=1),
     required=False,
     default=1,
-    help="Delay in block between each new Merkle Feed.",
+    help="Delay in block between each new Merkle Feed is published.",
 )
 def cli_entrypoint(
     log_level: str,

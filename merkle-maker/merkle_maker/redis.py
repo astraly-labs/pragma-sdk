@@ -11,4 +11,4 @@ class RedisManager:
         self.client.set(key, value)
 
     def get(self, key: str):
-        self.client.get(key)
+        return self.client.get(key)
