@@ -17,7 +17,7 @@ exclude = ["tests/*", "tests/**/*_test.py"]
 packages = [{ include = "pragma_sdk" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.11,<3.13"
 "starknet.py" = "0.23.0"
 typer = "0.6.1"
 deprecated = "^1.2.14"
