@@ -347,7 +347,7 @@ class OracleMixin:
             value=entry["value"],
             timestamp=entry["base"]["timestamp"],
             source=entry["base"]["source"],
-            publisher=entry["base"]["source"],
+            publisher=entry["base"]["publisher"],
         )
 
     async def get_decimals(

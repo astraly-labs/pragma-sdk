@@ -13,7 +13,7 @@ from starknet_py.transaction_errors import TransactionRevertedError
 from pragma_sdk.common.types.entry import FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.types import DataTypes
-from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.common.utils import str_to_felt, felt_to_str
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types import ContractAddresses, Network
@@ -405,8 +405,8 @@ async def test_client_oracle_mixin_generic(pragma_client: PragmaOnChainClient):
     assert res.key == DERIBIT_MERKLE_FEED_KEY
     assert res.value == 424242
     assert res.base.timestamp == timestamp
-    assert res.base.source == str_to_felt(SOURCE_1)
-    assert res.base.publisher == str_to_felt(publisher_name)
+    assert felt_to_str(res.base.source) == SOURCE_1
+    assert felt_to_str(res.base.publisher) == publisher_name
 
 
 def test_client_with_http_network():
