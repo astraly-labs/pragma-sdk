@@ -77,15 +77,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
 
         merkle_tree: MerkleTree = self._build_merkle_tree(currencies_options)
         self._set_latest_data(merkle_tree, currencies_options)
-
-        entry = GenericEntry(
-            key=DERIBIT_MERKLE_FEED_KEY,
-            value=merkle_tree.root_hash,
-            timestamp=int(time.time()),
-            source=str_to_felt(self.SOURCE),
-            publisher=str_to_felt(self.publisher),
-        )
-        return [entry]
+        return self._construct(merkle_tree)  # type: ignore[return-value]
 
     async def _fetch_options(
         self,
@@ -147,6 +139,16 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                 leaves.append(leaf)
         leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)
+
+    def _construct(self, merkle_tree: MerkleTree) -> List[GenericEntry]:
+        entry = GenericEntry(
+            key=DERIBIT_MERKLE_FEED_KEY,
+            value=merkle_tree.root_hash,
+            timestamp=int(time.time()),
+            source=str_to_felt(self.SOURCE),
+            publisher=str_to_felt(self.publisher),
+        )
+        return [entry]
 
     def _set_latest_data(self, mt: MerkleTree, options: CurrenciesOptions):
         self._latest_data = LatestData(merkle_tree=mt, options=options)

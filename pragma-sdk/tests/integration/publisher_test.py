@@ -2,7 +2,7 @@ import pytest
 from dotenv import load_dotenv
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
-from pragma_sdk.common.types.entry import FutureEntry, SpotEntry
+from pragma_sdk.common.types.entry import FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.fetchers import (
     BinanceFetcher,
@@ -73,7 +73,9 @@ async def test_publisher_client_all_assets(pragma_client: PragmaOnChainClient):
     # Assert that we don't have any exceptions in the response
     assert all(
         [
-            isinstance(entry, SpotEntry) or isinstance(entry, FutureEntry)
+            isinstance(entry, SpotEntry)
+            or isinstance(entry, FutureEntry)
+            or isinstance(entry, GenericEntry)
             for entry in data
         ]
     )
