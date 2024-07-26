@@ -22,12 +22,8 @@ RUN apt-get update && \
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/
 COPY pragma-utils/ /opt/pragma-utils/
-COPY price-pusher/ /opt/price-pusher/
-WORKDIR /opt/price-pusher
+COPY checkpointer/ /opt/checkpointer/
+WORKDIR /opt/checkpointer
 RUN poetry env use 3.12
 RUN poetry install
-
-FROM base as final
-COPY --from=builder /opt /opt
-WORKDIR /opt/price-pusher
-ENTRYPOINT /opt/price-pusher/.venv/bin/python3.12 price_pusher/main.py -c config/config.yaml -t ${TARGET} -n ${NETWORK} -p ${PRIVATE_KEY} --publisher-name ${PUBLISHER_NAME} --publisher-address ${PUBLISHER_ADDRESS} --rpc-url ${RPC_URL}
+ENTRYPOINT poetry run checkpointer -c config/config.yaml -n ${NETWORK} --oracle-address ${ORACLE_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL}
