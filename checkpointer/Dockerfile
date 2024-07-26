@@ -31,4 +31,4 @@ FROM base as final
 COPY --from=builder /opt /opt
 VOLUME checkpointer/config /opt/checkpointer/config/
 WORKDIR /opt/checkpointer
-ENTRYPOINT ["/opt/checkpointer/.venv/bin/python3.12", "price_pusher/main.py"]
+ENTRYPOINT ["/opt/checkpointer/.venv/bin/python3.12", "checkpointer/main.py"]
