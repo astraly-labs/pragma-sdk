@@ -290,7 +290,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         return self._latest_data.merkle_tree
 
     def get_latest_fetched_options(self) -> Optional[CurrenciesOptions]:
-        """Return the last fetched options u sed to generate the GenericEntry and the Merkle tree."""
+        """Return the last fetched options used to generate the GenericEntry and the Merkle tree."""
         if self._latest_data is None:
             return None
         return self._latest_data.options
