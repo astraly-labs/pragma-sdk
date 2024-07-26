@@ -22,7 +22,6 @@ from pragma_sdk.common.fetchers.future_fetchers import (
     BinanceFutureFetcher,
     ByBitFutureFetcher,
 )
-from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
 from tests.integration.constants import SAMPLE_PAIRS
 
 ALL_SPOT_FETCHERS = [
@@ -39,9 +38,8 @@ ALL_SPOT_FETCHERS = [
     OkxFetcher,
 ]
 ALL_FUTURE_FETCHERS = [OkxFutureFetcher, ByBitFutureFetcher, BinanceFutureFetcher]
-ALL_GENERIC_FETHERS = [DeribitOptionsFetcher]
 
-ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS + ALL_GENERIC_FETHERS
+ALL_FETCHERS = ALL_SPOT_FETCHERS + ALL_FUTURE_FETCHERS
 
 
 load_dotenv()
