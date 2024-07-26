@@ -76,7 +76,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             )
 
         merkle_tree: MerkleTree = self._build_merkle_tree(currencies_options)
-        self._set_latest_data(merkle_tree, currencies_options)
+        self.latest_data = LatestData(merkle_tree, currencies_options)
         return self._construct(merkle_tree)  # type: ignore[return-value]
 
     async def _fetch_options(
@@ -150,12 +150,13 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         )
         return [entry]
 
-    def _set_latest_data(self, mt: MerkleTree, options: CurrenciesOptions):
-        self._latest_data = LatestData(merkle_tree=mt, options=options)
-
-    def get_latest_data(self) -> Optional[LatestData]:
-        """Return the latest data fetched."""
+    @property
+    def latest_data(self) -> Optional[LatestData]:
         return self._latest_data
+
+    @latest_data.setter
+    def latest_data(self, latest_data: LatestData):
+        self._latest_data = latest_data
 
     def get_latest_built_merkle_tree(self) -> Optional[MerkleTree]:
         """Returns the last built merkle tree used to generate the GenericEntry value."""
