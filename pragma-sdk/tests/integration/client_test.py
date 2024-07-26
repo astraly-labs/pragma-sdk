@@ -405,8 +405,8 @@ async def test_client_oracle_mixin_generic(pragma_client: PragmaOnChainClient):
     assert res.key == DERIBIT_MERKLE_FEED_KEY
     assert res.value == 424242
     assert res.base.timestamp == timestamp
-    assert res.base.source == SOURCE_1
-    assert res.base.publisher == publisher_name
+    assert res.base.source == str_to_felt(SOURCE_1)
+    assert res.base.publisher == str_to_felt(publisher_name)
 
 
 def test_client_with_http_network():
