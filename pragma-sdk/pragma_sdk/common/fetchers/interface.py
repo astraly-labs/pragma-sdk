@@ -12,6 +12,7 @@ from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.exceptions import PublisherFetchError
 
 
+# TODO(akhercha): FetcherInterfaceT should take as parameter the client instead of creating it
 # Abstract base class for all fetchers
 @add_sync_methods
 class FetcherInterfaceT(abc.ABC):
@@ -45,27 +46,25 @@ class FetcherInterfaceT(abc.ABC):
     @abc.abstractmethod
     async def fetch(
         self, session: ClientSession
-    ) -> List[Entry | PublisherFetchError | BaseException]: ...
-
-    """
-    Fetches the data from the fetcher and returns a list of Entry objects
-    """
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        """
+        Fetches the data from the fetcher and returns a list of Entry objects.
+        """
+        ...
 
     @abc.abstractmethod
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
-    ) -> Entry | PublisherFetchError: ...
-
-    """
-    Fetches the data for a specific pair from the fetcher and returns a SpotEntry object
-    """
+    ) -> Entry | PublisherFetchError:
+        """
+        Fetches the data for a specific pair from the fetcher and returns a SpotEntry object.
+        """
+        ...
 
     @abc.abstractmethod
-    def format_url(self, pair: Pair) -> str: ...
-
-    """
-    Formats the URL for the fetcher, used in `fetch_pair` to get the data
-    """
+    def format_url(self, pair: Pair) -> str:
+        """Formats the URL for the fetcher, used in `fetch_pair` to get the data."""
+        ...
 
     async def get_stable_price(self, stable_asset: str) -> float:
         """

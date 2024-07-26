@@ -11,6 +11,7 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 
 logger = logging.getLogger(__name__)
 
+
 # You can fetch your data using any strategy or libraries you want
 def fetch_entries(pairs: List[Pair], *args, **kwargs) -> List[Entry]:
     entries: List[Entry] = []

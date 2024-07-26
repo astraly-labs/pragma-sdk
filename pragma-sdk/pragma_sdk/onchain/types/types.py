@@ -2,7 +2,6 @@ from typing import Optional, Literal, List, Any, Dict, Union, Tuple
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from collections import namedtuple
-
 from pydantic import HttpUrl
 from starknet_py.net.client import Tag as BlockTag
 from starknet_py.contract import InvokeResult

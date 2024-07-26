@@ -1,20 +1,24 @@
 import time
+import pytest
+import pytest_asyncio
+
 from typing import Tuple
 from urllib.parse import urlparse
 
-import pytest
-import pytest_asyncio
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
 from starknet_py.net.client_errors import ClientError
 from starknet_py.transaction_errors import TransactionRevertedError
 
-from pragma_sdk.onchain.client import PragmaOnChainClient
-from pragma_sdk.onchain.types import ContractAddresses, Network
-from pragma_sdk.common.types.entry import FutureEntry, SpotEntry
+from pragma_sdk.common.types.entry import FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.types import DataTypes
-from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.common.utils import str_to_felt, felt_to_str
+
+from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.onchain.types import ContractAddresses, Network
+from pragma_sdk.onchain.constants import DERIBIT_MERKLE_FEED_KEY
+
 from tests.integration.constants import CURRENCIES, USD_PAIRS
 from tests.integration.utils import read_contract, wait_for_acceptance
 
@@ -375,6 +379,34 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
         err_msg = "Unknown Starknet error"
         if err_msg not in err.message:
             raise err
+
+
+@pytest.mark.asyncio
+async def test_client_oracle_mixin_generic(pragma_client: PragmaOnChainClient):
+    # Checks
+    publisher_name = "PRAGMA"
+    publishers = await pragma_client.get_all_publishers()
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
+
+    timestamp = int(time.time())
+    generic_entry = GenericEntry(
+        DERIBIT_MERKLE_FEED_KEY,
+        424242,
+        timestamp,
+        SOURCE_1,
+        publisher_name,
+    )
+
+    invocations = await pragma_client.publish_many([generic_entry])
+    await invocations[len(invocations) - 1].wait_for_acceptance()
+
+    # Get GENERIC
+    res = await pragma_client.get_generic(DERIBIT_MERKLE_FEED_KEY)
+    assert res.key == DERIBIT_MERKLE_FEED_KEY
+    assert res.value == 424242
+    assert res.base.timestamp == timestamp
+    assert felt_to_str(res.base.source) == SOURCE_1
+    assert felt_to_str(res.base.publisher) == publisher_name
 
 
 def test_client_with_http_network():

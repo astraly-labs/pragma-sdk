@@ -8,7 +8,7 @@ from starknet_py.net.client import Client
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
-from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
+from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
 from pragma_sdk.common.types.pair import Pair
@@ -19,12 +19,12 @@ from pragma_sdk.common.types.types import (
     UnixTimestamp,
 )
 
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.types import (
     OracleResponse,
     Checkpoint,
     Contract,
     BlockId,
-    ExecutionConfig,
 )
 
 logger = get_pragma_sdk_logger()
@@ -73,15 +73,10 @@ class OracleMixin:
         )
         return invocation
 
-    async def publish_many(
-        self,
-        entries: List[Entry],
-    ) -> List[InvokeResult]:
+    async def publish_many(self, entries: List[Entry]) -> List[InvokeResult]:
         if not entries:
-            logger.warning("Skipping publishing as entries array is empty")
+            logger.warning("publish_many received no entries to publish. Skipping")
             return []
-
-        invocations: List[InvokeResult] = []
 
         spot_entries: List[Entry] = [
             entry for entry in entries if isinstance(entry, SpotEntry)
@@ -89,26 +84,34 @@ class OracleMixin:
         future_entries: List[Entry] = [
             entry for entry in entries if isinstance(entry, FutureEntry)
         ]
+        generic_entries: List[Entry] = [
+            entry for entry in entries if isinstance(entry, GenericEntry)
+        ]
 
+        invocations = []
         invocations.extend(await self._publish_entries(spot_entries, DataTypes.SPOT))
         invocations.extend(
             await self._publish_entries(future_entries, DataTypes.FUTURE)
         )
-
+        invocations.extend(
+            await self._publish_entries(generic_entries, DataTypes.GENERIC)
+        )
         return invocations
 
     async def _publish_entries(
         self, entries: List[Entry], data_type: DataTypes
     ) -> List[InvokeResult]:
-        invocations = []
-        serialized_entries = (
-            SpotEntry.serialize_entries(entries)
-            if data_type == DataTypes.SPOT
-            else FutureEntry.serialize_entries(entries)
-        )
-
-        if len(serialized_entries) == 0:
+        if len(entries) == 0:
             return []
+
+        invocations = []
+        match data_type:
+            case DataTypes.SPOT:
+                serialized_entries = SpotEntry.serialize_entries(entries)
+            case DataTypes.FUTURE:
+                serialized_entries = FutureEntry.serialize_entries(entries)
+            case DataTypes.GENERIC:
+                serialized_entries = GenericEntry.serialize_entries(entries)
 
         pagination = self.execution_config.pagination
         if pagination:
@@ -300,6 +303,53 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
+    async def get_generic(
+        self,
+        key: str | int,
+        sources: Optional[List[str | int]] = None,
+        block_id: Optional[BlockId] = "latest",
+    ) -> GenericEntry:
+        """
+        Query the Oracle contract to retrieve the
+
+        :param key: Key ID of the generic entry
+        :param block_id: Block number or Block Tag
+        :return: GenericEntry
+        """
+        if isinstance(key, str):
+            key = str_to_felt(key.upper())
+        elif not isinstance(key, int):
+            raise TypeError(
+                "Generic entry key must be string (will be converted to felt) or integer"
+            )
+
+        if sources is None:
+            (response,) = await self.oracle.functions["get_data_entries"].call(
+                Asset(DataTypes.GENERIC, key, None).serialize(),
+                block_number=block_id,
+            )
+        else:
+            (response,) = await self.oracle.functions[
+                "get_data_entries_for_sources"
+            ].call(
+                Asset(DataTypes.GENERIC, key, None).serialize(),
+                sources,
+                block_number=block_id,
+            )
+
+        # NOTE: We only return the latest entry because there shouldn't more
+        # than one entry with the same key.
+        response = response[-1].as_dict()
+        entry = dict(response["value"])
+
+        return GenericEntry(
+            key=entry["key"],
+            value=entry["value"],
+            timestamp=entry["base"]["timestamp"],
+            source=entry["base"]["source"],
+            publisher=entry["base"]["publisher"],
+        )
+
     async def get_decimals(
         self,
         asset: Asset,
@@ -325,23 +375,21 @@ class OracleMixin:
         expiry_timestamps: Sequence[int],
         aggregation_mode: AggregationMode = AggregationMode.MEDIAN,
     ) -> InvokeResult:
+        assert len(pair_ids) == len(expiry_timestamps)
         if not self.is_user_client:
             raise AttributeError(
                 "Must set account. "
                 "You may do this by invoking "
                 "self._setup_account_client(private_key, account_contract_address)"
             )
-        assert len(pair_ids) == len(expiry_timestamps)
         invocation = None
-        if self.execution_config.pagination:
+
+        pagination = self.execution_config.pagination
+        if pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[
-                    index : index + self.execution_config.pagination
-                ]
-                expiries_subset = expiry_timestamps[
-                    index : index + self.execution_config.pagination
-                ]
+                pair_ids_subset = pair_ids[index : index + pagination]
+                expiries_subset = expiry_timestamps[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.FUTURE, pair_id, expiry).serialize()
@@ -350,7 +398,7 @@ class OracleMixin:
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
-                index += self.execution_config.pagination
+                index += pagination
                 logger.info(
                     "Set future checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -388,12 +436,11 @@ class OracleMixin:
             )
 
         invocation = None
-        if self.execution_config.pagination:
+        pagination = self.execution_config.pagination
+        if pagination:
             index = 0
             while index < len(pair_ids):
-                pair_ids_subset = pair_ids[
-                    index : index + self.execution_config.pagination
-                ]
+                pair_ids_subset = pair_ids[index : index + pagination]
                 invocation = await self.oracle.set_checkpoints.invoke(
                     [
                         Asset(DataTypes.SPOT, pair_id, None).serialize()
@@ -402,7 +449,7 @@ class OracleMixin:
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
-                index += self.execution_config.pagination
+                index += pagination
                 logger.info(
                     "Set spot checkpoints for %d pair IDs with transaction %s",
                     len(pair_ids_subset),
@@ -429,7 +476,6 @@ class OracleMixin:
     ) -> Checkpoint:
         if expiration_timestamp is not None and data_type == DataTypes.SPOT:
             raise ValueError("expiration_timestamp for SPOT should be None.")
-
         (response,) = await self.oracle.functions["get_latest_checkpoint"].call(
             Asset(data_type, pair_id, expiration_timestamp).serialize(),
             aggregation_mode.serialize(),

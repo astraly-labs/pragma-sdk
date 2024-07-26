@@ -27,6 +27,7 @@ class AggregationMode(StrEnum):
 class DataTypes(StrEnum):
     SPOT = "Spot"
     FUTURE = "Future"
+    GENERIC = "Generic"
 
     def __repr__(self):
         return f"'{self.value}'"
