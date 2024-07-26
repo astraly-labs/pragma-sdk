@@ -8,7 +8,7 @@ from pragma_sdk.onchain.types import ContractAddresses, Network
 CHAIN_IDS: Dict[Network, StarknetChainId] = {
     "devnet": StarknetChainId.MAINNET,
     "mainnet": StarknetChainId.MAINNET,
-    "sepolia": StarknetChainId.SEPOLIA,
+    "sepolia": 1802203764,
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}

@@ -224,6 +224,9 @@ class SpotEntry(Entry):
         various APIs (binance etc).
         """
 
+        if oracle_response.last_updated_timestamp == 0:
+            return None
+
         return SpotEntry(
             pair.id,
             oracle_response.price,

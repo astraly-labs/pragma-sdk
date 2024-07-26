@@ -4,6 +4,7 @@ import logging
 
 from typing import Optional, List, Tuple
 
+from pragma_sdk.onchain.types import ContractAddresses
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.onchain.types.execution_config import ExecutionConfig
@@ -141,6 +142,11 @@ def _create_client(
             account_contract_address=publisher_address,
             account_private_key=private_key,
             execution_config=execution_config,
+            contract_addresses_config=ContractAddresses(
+                publisher_registry_address=int("0x10e485f222190318cea1f729fc9d427b96ec4a29d533de5cdd725e13aef223b", 16),
+                oracle_proxy_addresss=int("0x3a99b4b9f711002f1976b3973f4b2031fe6056518615ff0f4e6dd829f972764", 16),
+                summary_stats_address=0x0
+            )
         )
     elif target == "offchain":
         if not api_key:

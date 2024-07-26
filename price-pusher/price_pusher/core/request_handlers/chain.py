@@ -37,14 +37,15 @@ class ChainRequestHandler(IRequestHandler):
             match data_type:
                 case DataTypes.SPOT:
                     oracle_response = await self.client.get_spot(pair_id)
-                    entries.append(
-                        SpotEntry.from_oracle_response(
-                            pair,
-                            oracle_response,
-                            PRAGMA_ONCHAIN_SOURCE_NAME,
-                            PRAGMA_ONCHAIN_PUBLISHER_NAME,
-                        )
+                    logger.info(f"Fetched: {oracle_response}")
+                    entry = SpotEntry.from_oracle_response(
+                        pair,
+                        oracle_response,
+                        PRAGMA_ONCHAIN_SOURCE_NAME,
+                        PRAGMA_ONCHAIN_PUBLISHER_NAME,
                     )
+                    if entry is not None:
+                        entries.append(entry)
                 case DataTypes.FUTURE:
                     # TODO: We only fetch the perp entry for now
                     oracle_response = await self.client.get_future(pair_id, 0)
@@ -62,7 +63,8 @@ class ChainRequestHandler(IRequestHandler):
 
         try:
             return await fetch_action()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed: {e}")
             try:
                 logger.warning(f"🤔 Fetching price for {pair_id} failed. Retrying...")
                 return await retry_async(fetch_action, retries=5, delay_in_s=5, logger=logger)

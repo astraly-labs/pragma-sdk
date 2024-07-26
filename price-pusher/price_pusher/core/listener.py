@@ -104,11 +104,12 @@ class PriceListener(IPriceListener):
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
                 await self._fetch_all_oracle_prices()
+                logger.info(self.oracle_prices)
                 last_fetch_time = current_time
             if await self._does_oracle_needs_update():
                 self._notify()
                 last_fetch_time = -1
-            await asyncio.sleep(1)
+            await asyncio.sleep(10)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
