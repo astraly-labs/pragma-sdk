@@ -1,5 +1,5 @@
 # Dockerfile for publisher
-FROM python:3.12-slim-buster AS base
+FROM python:3.12-slim-bookworm AS base
 
 # Needed for fastecdsa
 RUN apt-get update && apt-get install -y gcc python-dev libgmp3-dev curl && apt-get clean
@@ -11,7 +11,7 @@ ENV PATH="${PATH}:/root/.local/bin"
 
 # Defaults
 WORKDIR /app/
-COPY ./pragm-sdk /app/
+COPY ./pragma-sdk /app/
 RUN poetry install
 
 FROM base as test
