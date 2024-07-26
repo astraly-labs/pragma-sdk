@@ -18,7 +18,7 @@ from merkle_maker.redis import RedisManager
 
 logger = logging.getLogger(__name__)
 
-TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 2
+TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
 
 
 async def main(
@@ -81,11 +81,6 @@ async def _publish_merkle_feeds_forever(
         logger.info("🔍 Fetching the deribit options...")
         entries = await fetcher_client.fetch()
 
-        # TODO: move this block in another thread so we loose 0 time on this?
-        logger.info("🏭 Storing the merkle tree & options in Redis...")
-        redis_manager.store_latest_data(deribit_fetcher.get_latest_data())
-        logger.info("... done!")
-
         logger.info("🎣 Publishing the merkle root onchain...")
         try:
             await pragma_client.publish_entries(entries)  # type: ignore[arg-type]
@@ -93,6 +88,12 @@ async def _publish_merkle_feeds_forever(
         except Exception:
             # TODO: remove this part when the contract has been updated
             logger.warning("Could not publish! Contract not yet updated.")
+
+        # TODO: move this block in another thread so we loose 0 time on this?
+        # NOTE: it is VERY fast though so probably not needed
+        logger.info("🏭 Storing the merkle tree & options in Redis...")
+        redis_manager.store_latest_data(deribit_fetcher.get_latest_data())
+        logger.info("... done!")
 
         next_block = current_block + block_interval
         logger.info(f"⏳ Waiting for block {next_block}...")
