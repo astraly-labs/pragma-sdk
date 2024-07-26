@@ -1,3 +1,9 @@
+## v2.0.0rc4 (2024-07-25)
+
+### Fix
+
+- Changes minimal python version to 3.11 (#165)
+
 ## v2.0.0rc3 (2024-07-24)
 
 ### Fix
