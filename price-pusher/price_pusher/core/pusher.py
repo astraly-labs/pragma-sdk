@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 from typing import List, Optional, Dict
 
 from pragma_sdk.common.types.client import PragmaClient
@@ -32,7 +31,7 @@ class PricePusher(IPricePusher):
         logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
         try:
             response = await self.client.publish_entries(entries)
-            response[-1].wait_for_acceptance(check_interval=1)
+            await response[-1].wait_for_acceptance(check_interval=1)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
             return response
         except Exception as e:
