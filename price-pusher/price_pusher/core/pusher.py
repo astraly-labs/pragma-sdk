@@ -32,7 +32,7 @@ class PricePusher(IPricePusher):
         logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
         try:
             response = await self.client.publish_entries(entries)
-            await response[0].wait_for_acceptance(check_interval=1)
+            response[-1].wait_for_acceptance(check_interval=1)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
             return response
         except Exception as e:
