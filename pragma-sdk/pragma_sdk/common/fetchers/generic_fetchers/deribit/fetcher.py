@@ -3,14 +3,15 @@ import time
 
 from typing import Optional, List, Dict, Any
 from aiohttp import ClientSession
+
 from starknet_py.hash.hash_method import HashMethod
+from starknet_py.utils.merkle_tree import MerkleTree
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.entry import Entry, GenericEntry
-from pragma_sdk.common.types.merkle_tree import MerkleTree
 
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.utils import str_to_felt
