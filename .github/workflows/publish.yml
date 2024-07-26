@@ -8,6 +8,9 @@
     run:
       working-directory: pragma-sdk
 
+  env:
+    PYTHON_VERSION: 3.12.4
+
   jobs:
     pypi_publish:
       name: Upload package to PyPI
