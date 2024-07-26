@@ -283,7 +283,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         """Return the latest data fetched."""
         return self._latest_data
 
-    def get_last_built_merkle_tree(self) -> Optional[MerkleTree]:
+    def get_latest_built_merkle_tree(self) -> Optional[MerkleTree]:
         """Returns the last built merkle tree used to generate the GenericEntry value."""
         if self._latest_data is None:
             return None
