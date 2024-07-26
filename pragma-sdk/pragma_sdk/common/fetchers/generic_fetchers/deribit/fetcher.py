@@ -14,7 +14,6 @@ from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.entry import Entry, GenericEntry
 
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
-from pragma_sdk.common.utils import str_to_felt
 
 from pragma_sdk.onchain.constants import DERIBIT_MERKLE_FEED_KEY
 from pragma_sdk.onchain.client import PragmaOnChainClient
@@ -146,8 +145,8 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
             key=DERIBIT_MERKLE_FEED_KEY,
             value=merkle_tree.root_hash,
             timestamp=int(time.time()),
-            source=str_to_felt(self.SOURCE),
-            publisher=str_to_felt(self.publisher),
+            source=self.SOURCE,
+            publisher=self.publisher,
         )
         return [entry]
 

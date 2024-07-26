@@ -455,12 +455,19 @@ class GenericEntry(Entry):
 
     def __init__(
         self,
-        key: int,
+        key: str | int,
         value: int,
         timestamp: int,
         source: str | int,
         publisher: str | int,
     ):
+        if isinstance(key, str):
+            key = str_to_felt(key)
+        if isinstance(publisher, str):
+            publisher = str_to_felt(publisher)
+        if isinstance(source, str):
+            source = str_to_felt(source)
+
         self.key = key
         self.value = value
         self.base = BaseEntry(timestamp, source, publisher)

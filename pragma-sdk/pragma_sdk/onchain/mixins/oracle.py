@@ -306,39 +306,48 @@ class OracleMixin:
     async def get_generic(
         self,
         key: str | int,
+        sources: Optional[List[str | int]] = None,
         block_id: Optional[BlockId] = "latest",
     ) -> GenericEntry:
         """
-        Query the Oracle contract for the data of a generic entry.
-
-        TODO: The get_generic function does not exists on chain yet - thus this function
-        is not runnable atm.
+        Query the Oracle contract to retrieve the
 
         :param key: Key ID of the generic entry
         :param block_id: Block number or Block Tag
         :return: GenericEntry
         """
-        raise NotImplementedError(
-            "⛔ The get_generic function does not exists onchain yet."
-        )
-
         if isinstance(key, str):
             key = str_to_felt(key.upper())
         elif not isinstance(key, int):
             raise TypeError(
                 "Generic entry key must be string (will be converted to felt) or integer"
             )
-        (response,) = await self.oracle.functions["get_generic"].call(
-            key,
-            block_number=block_id,
-        )
-        response = dict(response)
+
+        if sources is None:
+            (response,) = await self.oracle.functions["get_data_entries"].call(
+                Asset(DataTypes.GENERIC, key, None).serialize(),
+                block_number=block_id,
+            )
+        else:
+            (response,) = await self.oracle.functions[
+                "get_data_entries_for_sources"
+            ].call(
+                Asset(DataTypes.GENERIC, key, None).serialize(),
+                sources,
+                block_number=block_id,
+            )
+
+        # NOTE: We only return the latest entry because there shouldn't more
+        # than one entry with the same key.
+        response = response[-1].as_dict()
+        entry = dict(response["value"])
+
         return GenericEntry(
-            key=response["key"],
-            value=response["value"],
-            timestamp=response["timestamp"],
-            source=response["source"],
-            publisher=response["source"],
+            key=entry["key"],
+            value=entry["value"],
+            timestamp=entry["base"]["timestamp"],
+            source=entry["base"]["source"],
+            publisher=entry["base"]["source"],
         )
 
     async def get_decimals(
