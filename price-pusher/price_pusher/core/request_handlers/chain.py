@@ -36,7 +36,7 @@ class ChainRequestHandler(IRequestHandler):
             entries = []
             match data_type:
                 case DataTypes.SPOT:
-                    oracle_response = await self.client.get_spot(pair_id)
+                    oracle_response = await self.client.get_spot(pair_id, block_id="pending")
                     logger.info(f"Fetched: {oracle_response}")
                     entry = SpotEntry.from_oracle_response(
                         pair,
@@ -48,7 +48,7 @@ class ChainRequestHandler(IRequestHandler):
                         entries.append(entry)
                 case DataTypes.FUTURE:
                     # TODO: We only fetch the perp entry for now
-                    oracle_response = await self.client.get_future(pair_id, 0)
+                    oracle_response = await self.client.get_future(pair_id, 0,  block_id="pending")
                     entries.append(
                         FutureEntry.from_oracle_response(
                             pair,

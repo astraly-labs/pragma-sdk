@@ -109,7 +109,7 @@ class PriceListener(IPriceListener):
             if await self._does_oracle_needs_update():
                 self._notify()
                 last_fetch_time = -1
-            await asyncio.sleep(10)
+            await asyncio.sleep(1)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
