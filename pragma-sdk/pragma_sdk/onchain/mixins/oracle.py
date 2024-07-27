@@ -322,10 +322,6 @@ class OracleMixin:
         :param block_id: Block number or Block Tag
         :return: GenericEntry
         """
-        raise NotImplementedError(
-            "⛔ The get_generic function does not exists onchain yet."
-        )
-
         if isinstance(key, str):
             key = str_to_felt(key.upper())
         elif not isinstance(key, int):
