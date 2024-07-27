@@ -25,7 +25,7 @@ pragma-sdk = { path = "../pragma-sdk", develop = true }
 pragma-utils = { path = "../pragma-utils", develop = true }
 click = "^8.1.0"
 pydantic = "^2.7.4"
-redis = "^5.0.7"
+redis = {extras = ["hiredis"], version = "^5.0.7"}
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.26.1"
