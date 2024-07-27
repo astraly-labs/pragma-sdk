@@ -5,6 +5,8 @@ from typing import List, Optional, Dict
 from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.common.types.entry import Entry
 
+from pragma_sdk.onchain.client import PragmaOnChainClient
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,10 @@ class PricePusher(IPricePusher):
         self.client = client
         self.consecutive_push_error = 0
 
+    @property
+    def is_publishing_on_chain(self) -> bool:
+        return isinstance(self.client, PragmaOnChainClient)
+
     async def update_price_feeds(self, entries: List[Entry]) -> Optional[Dict]:
         """
         Push the entries passed as parameter with the internal pragma client.
@@ -32,9 +38,10 @@ class PricePusher(IPricePusher):
         logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
         try:
             response = await self.client.publish_entries(entries)
+            logger.debug(f"Response: {response}")
+            if self.is_publishing_on_chain:
+                await response[-1].wait_for_acceptance(check_interval=1)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
-            logger.debug(f"Response from the API: {response}")
-
             return response
         except Exception as e:
             logger.error(f"🏋️ PUSHER: ⛔ could not publish entrie(s): {e}")
