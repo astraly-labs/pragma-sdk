@@ -44,7 +44,7 @@ async def test_update_price_feeds_success(caplog):
         for record in caplog.records
     )
     assert price_pusher.consecutive_push_error == 0
-    assert price_pusher.is_publishing_on_chain == False
+    assert not price_pusher.is_publishing_on_chain
 
 
 @pytest.mark.asyncio
