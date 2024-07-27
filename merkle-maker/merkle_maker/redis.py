@@ -10,6 +10,8 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     OptionData,
 )
 
+from merkle_maker.serializers import merkle_tree_to_dict
+
 
 class RedisManager:
     client: Redis
@@ -17,16 +19,15 @@ class RedisManager:
     def __init__(self, host: str, port: str):
         self.client = Redis(host=host, port=port)
 
-    def store_latest_data(self, latest_data: Optional[LatestData]) -> None:
+    def store_latest_data(self, latest_data: Optional[LatestData]) -> bool:
         if latest_data is None:
-            return
-        last_merkle_tree = latest_data.merkle_tree.as_dict()
-        self.client.json().set("last_merkle_tree", "$", last_merkle_tree)
-        last_options = {
-            currency: [option.as_dict() for option in options]
-            for currency, options in latest_data.options.items()
-        }
-        self.client.json().set("last_options", "$", last_options)
+            return False
+        return all(
+            [
+                self._store_latest_merkle_tree(latest_data.merkle_tree),
+                self._store_latest_options(latest_data.options),
+            ]
+        )
 
     def get_options(self) -> Optional[CurrenciesOptions]:
         response = self.client.json().get("last_options", "$")
@@ -43,5 +44,23 @@ class RedisManager:
         if len(response) == 0:
             return None
         return MerkleTree(
-            leaves=response[0]["leaves"], hash_method=HashMethod(response[0]["hash_method"].lower())
+            leaves=response[0]["leaves"],
+            hash_method=HashMethod(response[0]["hash_method"].lower()),
         )
+
+    def _store_latest_merkle_tree(self, merkle_tree: MerkleTree) -> bool:
+        last_merkle_tree = merkle_tree_to_dict(merkle_tree)
+        res = self.client.json().set("last_merkle_tree", "$", last_merkle_tree)
+        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
+        # see: https://redis.io/docs/latest/develop/data-types/json/
+        return bool(res)
+
+    def _store_latest_options(self, options: CurrenciesOptions) -> bool:
+        last_options = {
+            currency: [option.as_dict() for option in options]
+            for currency, options in options.items()
+        }
+        res = self.client.json().set("last_options", "$", last_options)
+        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
+        # see: https://redis.io/docs/latest/develop/data-types/json/
+        return bool(res)

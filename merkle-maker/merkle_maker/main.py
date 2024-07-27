@@ -52,7 +52,7 @@ async def main(
     )
     fetcher_client.add_fetcher(deribit_fetcher)
 
-    logger.info("🧩 Starting the Merkle Maker...")
+    logger.info("🧩 Starting the Merkle Maker...\n")
     await _publish_merkle_feeds_forever(
         pragma_client=pragma_client,
         fetcher_client=fetcher_client,
@@ -90,11 +90,10 @@ async def _publish_merkle_feeds_forever(
             # TODO: remove this part when the contract has been updated
             logger.warning("Could not publish! Contract not yet updated.")
 
-        # TODO: move this block in another thread so we loose 0 time on this?
         # NOTE: it is VERY fast though so probably not needed
         logger.info("🏭 Storing the merkle tree & options in Redis...")
-        redis_manager.store_latest_data(deribit_fetcher.get_latest_data())
-        logger.info("... done!")
+        redis_manager.store_latest_data(deribit_fetcher.latest_data)
+        logger.info(f"✅ Block {current_block} done!\n")
 
         next_block = current_block + block_interval
         logger.info(f"⏳ Waiting for block {next_block}...")

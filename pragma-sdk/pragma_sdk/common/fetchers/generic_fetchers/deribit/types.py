@@ -1,12 +1,12 @@
 import time
 
 from typing import Optional, List, Dict, Any, Tuple
+
 from pydantic.dataclasses import dataclass
+from starknet_py.utils.merkle_tree import MerkleTree
 from starknet_py.hash.utils import compute_hash_on_elements
 
 from pragma_sdk.common.types.types import UnixTimestamp
-from pragma_sdk.common.types.merkle_tree import MerkleTree
-
 from pragma_sdk.common.utils import str_to_felt
 
 
