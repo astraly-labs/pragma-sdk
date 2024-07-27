@@ -1,0 +1,9 @@
+spot:
+  - pair: BTC/USD
+  - pair: ETH/USD
+
+future:
+  - pair: BTC/USD
+    expiry: 0
+  - pair: ETH/USD
+    expiry: 0

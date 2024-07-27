@@ -18,6 +18,11 @@
   ticker: 'USDT'
   coingecko_id: 'tether-usd'
 
+- name: 'Dai'
+  decimals: 18
+  ticker: 'DAI'
+  coingecko_id: 'dai'
+
 - name: 'Circle USD'
   decimals: 6
   ticker: 'USDC'
@@ -48,7 +53,27 @@
   ticker: 'WBTC'
   coingecko_id: 'wrapped-bitcoin'
 
-- name: 'Lido Staked Ethereum'
-  decimals: 8
+- name: 'Wrapped Lido Staked Ether'
+  decimals: 18
   ticker: 'WSTETH'
   coingecko_id: 'wrapped-steth'
+
+- name: 'Lido Staked Ether'
+  decimals: 18
+  ticker: 'STETH'
+  coingecko_id: 'staked-ether'
+
+- name: 'Nostra'
+  decimals: 18
+  ticker: 'NSTR'
+  coingecko_id: 'nostra'
+
+- name: 'Lords'
+  decimals: 18
+  ticker: 'LORDS'
+  coingecko_id: 'lords'
+
+- name: 'ZkLend'
+  decimals: 18
+  ticker: 'ZEND'
+  coingecko_id: 'zklend-2'
