@@ -39,14 +39,15 @@ async def main(
         account_private_key=private_key,
     )
 
+    # TODO(akhercha): see with Hithem & handle production mode
     redis_host, redis_port = redis_host.split(":")
     redis_manager = RedisManager(host=redis_host, port=redis_port)
 
     fetcher_client = FetcherClient()
     deribit_fetcher = DeribitOptionsFetcher(
         pairs=[
-            Pair.from_tickers("BTC", "USD"),  # type: ignore[list-item]
-            Pair.from_tickers("ETH", "USD"),  # type: ignore[list-item]
+            Pair.from_tickers("BTC", "USD"),
+            Pair.from_tickers("ETH", "USD"),
         ],
         publisher=publisher_name,
     )

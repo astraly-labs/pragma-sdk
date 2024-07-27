@@ -113,8 +113,11 @@ USD_ASSET_CONFIG = AssetConfig.from_ticker("USD")
 
 CURRENCIES = [Currency.from_asset_config(asset) for asset in ALL_ASSETS_CONFIGS]
 USD_PAIRS: List[Pair] = filter(
-    lambda x: x is not None,
-    [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS_CONFIGS],
+    [
+        Pair.from_asset_configs(asset, USD_ASSET_CONFIG)
+        for asset in ALL_ASSETS_CONFIGS
+        if asset != USD_ASSET_CONFIG
+    ],
 )
 
 # ETH/USD, BTC/USD
