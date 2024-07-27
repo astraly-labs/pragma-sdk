@@ -27,6 +27,10 @@ class PricePusher(IPricePusher):
         self.client = client
         self.consecutive_push_error = 0
 
+    @property
+    def is_publishing_on_chain(self) -> bool:
+        return isinstance(self.client, PragmaOnChainClient)
+
     async def update_price_feeds(self, entries: List[Entry]) -> Optional[Dict]:
         """
         Push the entries passed as parameter with the internal pragma client.
@@ -35,7 +39,7 @@ class PricePusher(IPricePusher):
         try:
             response = await self.client.publish_entries(entries)
             logger.debug(f"Response: {response}")
-            if isinstance(self.client, PragmaOnChainClient):
+            if self.is_publishing_on_chain:
                 await response[-1].wait_for_acceptance(check_interval=1)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
             return response
