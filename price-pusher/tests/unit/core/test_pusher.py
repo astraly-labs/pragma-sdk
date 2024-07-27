@@ -24,22 +24,16 @@ async def test_update_price_feeds_success(caplog):
     caplog.set_level(logging.INFO)
 
     mock_client = AsyncMock()
-
     mock_entry = MagicMock()
-    mock_entry.wait_for_acceptance = AsyncMock(return_value=True)
-
     mock_response = [mock_entry]
     mock_client.publish_entries.return_value = mock_response
 
     price_pusher = PricePusher(mock_client)
-
     entries: List[MagicMock] = [mock_entry]
-
     response = await price_pusher.update_price_feeds(entries)
 
     assert response == mock_response
     mock_client.publish_entries.assert_called_once_with(entries)
-    mock_entry.wait_for_acceptance.assert_called_once_with(check_interval=1)
 
     assert any(
         f"processing {len(entries)} new asset(s) to push..." in record.message

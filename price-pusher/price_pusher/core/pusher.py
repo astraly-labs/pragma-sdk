@@ -5,6 +5,8 @@ from typing import List, Optional, Dict
 from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.common.types.entry import Entry
 
+from pragma_sdk.onchain.client import PragmaOnChainClient
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,8 @@ class PricePusher(IPricePusher):
         try:
             response = await self.client.publish_entries(entries)
             logger.debug(f"Response: {response}")
-            await response[-1].wait_for_acceptance(check_interval=1)
+            if isinstance(self.client, PragmaOnChainClient):
+                await response[-1].wait_for_acceptance(check_interval=1)
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
             return response
         except Exception as e:
