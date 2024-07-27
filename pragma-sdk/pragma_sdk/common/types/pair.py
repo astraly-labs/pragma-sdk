@@ -50,14 +50,6 @@ class Pair:
             return False
         return self.id == other.id
 
-    def __hash__(self) -> int:
-        return hash((self.id, self.base_currency, self.quote_currency))
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Pair):
-            return False
-        return self.id == other.id
-
     def to_tuple(self) -> Tuple[str, str]:
         return (self.base_currency.id, self.quote_currency.id)
 
