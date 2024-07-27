@@ -93,7 +93,9 @@ async def _publish_merkle_feeds_forever(
 
         # NOTE: it is VERY fast though so probably not needed
         logger.info("🏭 Storing the merkle tree & options in Redis...")
-        redis_manager.store_latest_data(deribit_fetcher.latest_data)
+        success_store = redis_manager.store_latest_data(deribit_fetcher.latest_data)
+        if not success_store:
+            raise RuntimeError("Could not store the latest data to the Redis instance.")
         logger.info(f"✅ Block {current_block} done!\n")
 
         next_block = current_block + block_interval
