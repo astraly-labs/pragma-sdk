@@ -31,7 +31,7 @@ class RedisManager:
 
     def get_options(self) -> Optional[CurrenciesOptions]:
         response = self.client.json().get("last_options", "$")
-        if len(response) == 0:
+        if response is None or len(response) == 0:
             return None
         options = {
             currency: [OptionData(**option) for option in options]
@@ -41,7 +41,7 @@ class RedisManager:
 
     def get_merkle_tree(self) -> Optional[MerkleTree]:
         response = self.client.json().get("last_merkle_tree", "$")
-        if len(response) == 0:
+        if response is None or len(response) == 0:
             return None
         return MerkleTree(
             leaves=response[0]["leaves"],
