@@ -3,12 +3,13 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal, Tuple, Never
+from typing import Optional, Literal, Never
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers.deribit import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
 
+from pragma_sdk.onchain.types.types import PrivateKey
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from pragma_utils.logger import setup_logging
@@ -26,7 +27,7 @@ async def main(
     redis_host: str,
     publisher_name: str,
     publisher_address: str,
-    private_key: str | Tuple[str, str],
+    private_key: PrivateKey,
     block_interval: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:

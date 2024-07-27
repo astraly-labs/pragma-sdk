@@ -2,9 +2,9 @@ from typing import Optional
 
 from redis import Redis
 from starknet_py.hash.hash_method import HashMethod
+from starknet_py.utils.merkle_tree import MerkleTree
 
-from pragma_sdk.common.types.merkle_tree import MerkleTree
-from pragma_sdk.common.fetchers.generic_fetchers.deribit import (
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     LatestData,
     CurrenciesOptions,
     OptionData,
