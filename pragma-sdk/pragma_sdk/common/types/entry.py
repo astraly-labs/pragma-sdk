@@ -46,6 +46,14 @@ class Entry(abc.ABC):
     def get_asset_type(self) -> DataTypes: ...
 
     @staticmethod
+    def from_oracle_response(
+        pair: Pair,
+        oracle_response: OracleResponse,
+        publisher_name: str,
+        source_name: str,
+    ) -> Optional["Entry"]: ...
+
+    @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [entry.serialize() for entry in entries]
         return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
@@ -216,13 +224,15 @@ class SpotEntry(Entry):
         oracle_response: OracleResponse,
         publisher_name: str,
         source_name: str,
-    ) -> "SpotEntry":
+    ) -> Optional["SpotEntry"]:
         """
         Builds a SpotEntry object from a Pair and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
         lastest oracle prices for comparisons with the latest prices of
         various APIs (binance etc).
         """
+        if oracle_response.last_updated_timestamp == 0:
+            return None
 
         return SpotEntry(
             pair.id,
@@ -420,13 +430,16 @@ class FutureEntry(Entry):
         oracle_response: OracleResponse,
         publisher_name: str,
         source_name: str,
-    ) -> "FutureEntry":
+    ) -> Optional["FutureEntry"]:
         """
         Builds the object from a PragmaAsset and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
         lastest oracle prices for comparisons with the latest prices of
         various APIs (binance etc).
         """
+        if oracle_response.last_updated_timestamp == 0:
+            return None
+
         return FutureEntry(
             pair.id,
             oracle_response.price,
@@ -571,7 +584,7 @@ class GenericEntry(Entry):
         oracle_response: OracleResponse,
         publisher_name: str,
         source_name: str,
-    ) -> "GenericEntry":
+    ) -> Optional["GenericEntry"]:
         """
         Builds the object from a PragmaAsset and an OracleResponse.
         Method primarly used by our price pusher package when we're retrieving
