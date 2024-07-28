@@ -40,6 +40,7 @@ async def main(
     )
 
     # TODO(akhercha): see with Hithem & handle production mode
+    # https://redis.io/docs/latest/develop/connect/clients/python/
     redis_host, redis_port = redis_host.split(":")
     redis_manager = RedisManager(host=redis_host, port=redis_port)
 
