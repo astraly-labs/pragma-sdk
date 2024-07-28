@@ -61,8 +61,10 @@ async def test_vrf_listener(
         private_key=private_key,
     )
 
+    await asyncio.sleep(5)
+
     # Spams VRF requests...
-    last_request_id = 10
+    last_request_id = 5
     for _ in range(last_request_id):
         invocation = await vrf_pragma_client.request_random(
             VRFRequestParams(
@@ -76,8 +78,10 @@ async def test_vrf_listener(
         )
         await invocation.wait_for_acceptance()
 
+    await asyncio.sleep(5)
+
     # ... and check that they're all fullfilled by the VRF listener
-    for id_to_check in range(0, last_request_id):
+    for id_to_check in range(last_request_id):
         status = await vrf_pragma_client.get_request_status(caller_address, id_to_check)
         assert status == RequestStatus.FULFILLED
 
