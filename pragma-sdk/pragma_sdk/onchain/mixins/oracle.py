@@ -139,7 +139,7 @@ class OracleMixin:
     def _log_transaction(
         self, invocation: InvokeResult, entry_count: int, data_type: DataTypes
     ):
-        logger.info(
+        logger.debug(
             f"Sent {entry_count} updated {data_type.name.lower()} entries with transaction {hex(invocation.hash)}"
         )
 
