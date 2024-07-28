@@ -263,14 +263,17 @@ class PriceListener(IPriceListener):
         """
         Check if a new price is in the bounds allowed by the configuration.
         """
+        # Sometimes, prices like DAI returns 0... Triggering always an update for nothing.
+        if new_price == 0:
+            return False
         max_deviation = self.price_config.price_deviation * oracle_price
         deviation = abs(new_price - oracle_price)
         is_deviating = deviation >= max_deviation
         if is_deviating:
-            # TODO: show current deviation
             logger.info(
                 f"🔔 Newest price for {pair_id} is deviating from the "
-                "config bounds. Triggering an update!"
+                f"config bounds (deviation = {deviation}%). "
+                "Triggering an update!"
             )
         return is_deviating
 
@@ -288,7 +291,6 @@ class PriceListener(IPriceListener):
         is_outdated = delta_t > max_time_elapsed
 
         if is_outdated:
-            # TODO: show time diff
             logger.info(
                 f"🔔 Last oracle entry for {pair_id} is too old (delta = {delta_t}). "
                 "Triggering an update!"
