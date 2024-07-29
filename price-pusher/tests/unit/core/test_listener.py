@@ -145,7 +145,7 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
     }
     price_listener.oracle_prices = {"BTC/USD": {DataTypes.SPOT: oracle_entry}}
     assert await price_listener._does_oracle_needs_update()
-    assert "is deviating from the config bounds. Triggering an update!" in caplog.text
+    assert "is deviating from the config bounds" in caplog.text
 
 
 def test_new_price_is_deviating(price_listener):

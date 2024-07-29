@@ -47,7 +47,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
             price_int = int(price * (10 ** pair.decimals()))
             timestamp = int(time.time())
 
-            logger.debug("Fetched price %d for %s from Coinbase", price, pair)
+            logger.debug("Fetched price %d for %s from Coinbase", price_int, pair)
 
             return SpotEntry(
                 pair_id=pair.id,

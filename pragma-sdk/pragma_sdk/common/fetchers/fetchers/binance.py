@@ -117,7 +117,7 @@ class BinanceFetcher(FetcherInterfaceT):
         timestamp = int(time.time())
         price_int = int(price * (10 ** pair.decimals()))
 
-        logger.debug("Fetched price %d for %s from Binance", price, pair)
+        logger.debug("Fetched price %d for %s from Binance", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,
