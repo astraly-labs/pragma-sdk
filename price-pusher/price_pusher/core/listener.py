@@ -101,6 +101,7 @@ class PriceListener(IPriceListener):
         """
         last_fetch_time = -1
         while True:
+            await self._wait_until_notification_is_handled()
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
                 await self._fetch_all_oracle_prices()
@@ -108,6 +109,20 @@ class PriceListener(IPriceListener):
             if await self._does_oracle_needs_update():
                 self._notify()
                 last_fetch_time = -1
+            await asyncio.sleep(1)
+
+    def _wait_until_notification_is_handled(self) -> None:
+        """
+        Pauses the listener checks until the notification is handled.
+        This means for our case that we wait until the pusher price
+        update is actually done - so we can here fetch for new prices
+        and compare them with the latest available from the poller.
+
+        If we don't do this, the listener will spam notification
+        the pusher with new entries even though there are some entries
+        on their way to be pushed with the new data.
+        """
+        while self.notification_event.is_set():
             await asyncio.sleep(1)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
@@ -266,10 +281,9 @@ class PriceListener(IPriceListener):
         deviation = abs(new_price - oracle_price)
         is_deviating = deviation >= max_deviation
         if is_deviating:
-            # TODO: show current deviation
             logger.info(
                 f"🔔 Newest price for {pair_id} is deviating from the "
-                "config bounds. Triggering an update!"
+                f"config bounds (deviation = {deviation}). Triggering an update!"
             )
         return is_deviating
 

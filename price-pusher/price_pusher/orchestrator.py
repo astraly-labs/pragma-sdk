@@ -108,6 +108,8 @@ class Orchestrator:
             entries_to_push = self._flush_entries_for_assets(assets_to_push)
             if len(entries_to_push) > 0:
                 await self.push_queue.put(entries_to_push)
+                # Wait for the task to be completed before clearing the notification
+                await self.push_queue.join()
             listener.notification_event.clear()
 
     async def _pusher_service(self) -> None:
