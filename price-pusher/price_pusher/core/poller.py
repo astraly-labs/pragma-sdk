@@ -51,6 +51,7 @@ class PricePoller(IPricePoller):
 
         try:
             new_entries = await self._fetch_action()
+            new_entries = self._filter_zeros_from_entries(new_entries)
             logger.info(f"🔄 POLLER: Successfully fetched {len(new_entries)} new entries!")
             self.update_prices_callback(new_entries)
         except Exception as e:
@@ -74,3 +75,10 @@ class PricePoller(IPricePoller):
             filter_exceptions=True, return_exceptions=False, timeout_duration=20
         )
         return new_entries
+
+    def _filter_zeros_from_entries(self, entries: List[Entry]) -> List[Entry]:
+        """
+        Some fetchers sometimes bug and return 0 as the price for an Entry.
+        We use this function to filter them out.
+        """
+        return [entry for entry in entries if entry.price > 0]

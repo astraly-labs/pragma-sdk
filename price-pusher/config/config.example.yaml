@@ -2,15 +2,15 @@
     spot:
       - BTC/USD
       - ETH/USD
-    future:
       - BTC/USD
-  time_difference: 60
-  price_deviation: 0.5
+      - DAI/USD
+      - ZEND/USD
+  time_difference: 120
+  price_deviation: 0.0025
 
 - pairs:
-    spot:
-      - WSTETH/USD
-      - USDC/USD
-      - USDT/USD
-  time_difference: 60
-  price_deviation: 0.1
+    future:
+      - BTC/USD
+      - ETH/USD
+  time_difference: 600
+  price_deviation: 0.05
