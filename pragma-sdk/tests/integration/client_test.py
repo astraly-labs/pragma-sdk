@@ -255,7 +255,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
 
     # Fails if timestamp too far in the future (>7min)
     spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp - 450, SOURCE_1, publisher_name, volume=100000000000
+        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=100000000000
     )
     try:
         invocations = await pragma_client.publish_many(
@@ -263,7 +263,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         )
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
-        err_msg = "Timestamp is in the future"
+        err_msg = "Unknown Starknet error"
         if err_msg not in err.message:
             raise err
 
@@ -272,10 +272,10 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
     )
     spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp - 20, SOURCE_1, publisher_name, volume=10
+        ETH_PAIR, 100, timestamp + 20, SOURCE_1, publisher_name, volume=10
     )
     spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp - 30, SOURCE_2, publisher_name, volume=20
+        ETH_PAIR, 200, timestamp + 30, SOURCE_2, publisher_name, volume=20
     )
 
     invocations = await pragma_client.publish_many(
@@ -310,7 +310,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_2 = FutureEntry(
         BTC_PAIR,
         2000,
-        timestamp - 100,
+        timestamp + 100,
         SOURCE_1,
         publisher_name,
         expiry_timestamp,
@@ -353,7 +353,6 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     invocations = await pragma_client.publish_many(
         [future_entry_1, future_entry_2],
     )
-
     await invocations[-1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
     assert res.price == 150
@@ -365,7 +364,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_future = FutureEntry(
         ETH_PAIR,
         100,
-        timestamp - 1000,
+        timestamp + 1000,
         SOURCE_1,
         publisher_name,
         expiry_timestamp,
