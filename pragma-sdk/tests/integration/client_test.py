@@ -263,7 +263,6 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         )
         invocations[-1].wait_for_acceptance()
     except TransactionRevertedError as err:
-        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Timestamp is in the future"
         if err_msg not in err.message:
             raise err
@@ -377,7 +376,6 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
         )
         await invocations[-1].wait_for_acceptance()
     except TransactionRevertedError as err:
-        # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Timestamp is in the future"
         if err_msg not in err.message:
             raise err
