@@ -245,13 +245,14 @@ class PriceListener(IPriceListener):
 
                         # 2. Check if the oracle entry is deviating too much from new sources
                         for oracle_expiry, o_entry in oracle_entry.items():
-                            orchestrator_median_price = statistics.median(
-                                [
-                                    e.price
-                                    for expiry, e in orchestrator_entries.items()
-                                    if expiry == oracle_expiry
-                                ]
-                            )
+                            future_prices = []
+
+                            for dict_future_entry in orchestrator_entries.values():
+                                for expiry, future_entry in dict_future_entry.items():
+                                    if expiry == oracle_expiry:
+                                        future_prices.append(future_entry.price)
+
+                            orchestrator_median_price = statistics.median(future_prices)
                             if self._new_price_is_deviating(
                                 pair_id, orchestrator_median_price, o_entry.price
                             ):
