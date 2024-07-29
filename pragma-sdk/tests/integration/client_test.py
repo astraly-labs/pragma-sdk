@@ -343,7 +343,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_2 = FutureEntry(
         ETH_PAIR,
         200,
-        timestamp - 10,
+        timestamp + 10,
         SOURCE_2,
         publisher_name,
         expiry_timestamp,
@@ -353,6 +353,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     invocations = await pragma_client.publish_many(
         [future_entry_1, future_entry_2],
     )
+
     await invocations[-1].wait_for_acceptance()
     res = await pragma_client.get_future(ETH_PAIR, expiry_timestamp)
     assert res.price == 150
