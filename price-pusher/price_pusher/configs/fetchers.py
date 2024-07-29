@@ -4,7 +4,6 @@ from typing import Dict, List
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
 from pragma_sdk.common.fetchers.fetchers import (
-    BitstampFetcher,
     BybitFetcher,
     DefillamaFetcher,
     GeckoTerminalFetcher,
@@ -18,7 +17,6 @@ from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByB
 
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
-    BitstampFetcher,
     DefillamaFetcher,
     OkxFetcher,
     GeckoTerminalFetcher,
