@@ -310,7 +310,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_2 = FutureEntry(
         BTC_PAIR,
         2000,
-        timestamp + 100,
+        timestamp - 100,
         SOURCE_1,
         publisher_name,
         expiry_timestamp,
@@ -343,7 +343,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_2 = FutureEntry(
         ETH_PAIR,
         200,
-        timestamp + 10,
+        timestamp - 10,
         SOURCE_2,
         publisher_name,
         expiry_timestamp,
@@ -364,7 +364,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
     future_entry_future = FutureEntry(
         ETH_PAIR,
         100,
-        timestamp + 1000,
+        timestamp - 1000,
         SOURCE_1,
         publisher_name,
         expiry_timestamp,
