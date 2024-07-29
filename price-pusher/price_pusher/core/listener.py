@@ -101,6 +101,11 @@ class PriceListener(IPriceListener):
         """
         last_fetch_time = -1
         while True:
+            # Check if the notification event is clear
+            while self.notification_event.is_set():
+                # If not clear, wait for a second and recheck
+                await asyncio.sleep(1)
+
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
                 await self._fetch_all_oracle_prices()
@@ -262,17 +267,13 @@ class PriceListener(IPriceListener):
         """
         Check if a new price is in the bounds allowed by the configuration.
         """
-        # Sometimes, prices like DAI returns 0... Triggering always an update for nothing.
-        logger.debug(f"{pair_id}: {new_price} VS {oracle_price}")
-        if new_price == 0:
-            return False
         max_deviation = self.price_config.price_deviation * oracle_price
         deviation = abs(new_price - oracle_price)
         is_deviating = deviation >= max_deviation
         if is_deviating:
             logger.info(
                 f"🔔 Newest price for {pair_id} is deviating from the "
-                f"config bounds (deviation = {deviation}%). "
+                f"config bounds (deviation = {deviation}). "
                 "Triggering an update!"
             )
         return is_deviating
