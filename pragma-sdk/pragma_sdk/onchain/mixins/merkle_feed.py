@@ -1,6 +1,9 @@
+from typing import Sequence
 from starknet_py.net.client import Client
 from starknet_py.net.account.account import Account
 
+
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import OptionData
 from pragma_sdk.onchain.types import Contract
 
 
@@ -14,5 +17,10 @@ class MerkleFeedMixin:
     account: Account
     summary_stats: Contract
 
-    async def i_do_not_know_yet(self) -> None:
-        raise NotImplementedError("🙅‍♀ i_do_not_know_yet not implemented yet!")
+    async def get_options_data() -> OptionData:
+        raise NotImplementedError("🙅‍♀ get_options_data not implemented yet!")
+
+    async def update_options_data(
+        self, merkle_proof: Sequence[int], update_data: OptionData
+    ) -> None:
+        raise NotImplementedError("🙅‍♀ update_options_data not implemented yet!")
