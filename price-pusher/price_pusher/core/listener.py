@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import statistics
 
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union
@@ -221,32 +222,40 @@ class PriceListener(IPriceListener):
                     data_type
                 ]
 
-                # Check if entries are not outdated...
                 match data_type:
                     case DataTypes.SPOT:
+                        # 1. Check if the oracle entry is outdated
                         newest_spot_entry = self._get_latest_orchestrator_entry(pair_id, data_type)
                         if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_spot_entry):
                             return True
+
+                        # 2. Check if the oracle entry is deviating too much from new sources
+                        orchestrator_median_price = statistics.median(
+                            [entry.price for entry in list(orchestrator_entries.values())]
+                        )
+                        if self._new_price_is_deviating(
+                            pair_id, orchestrator_median_price, oracle_entry.price
+                        ):
+                            return True
+
                     case DataTypes.FUTURE:
+                        # 1. Check if the oracle entry is outdated
                         if self._future_entries_are_outdated(pair_id, data_type, oracle_entry):
                             return True
 
-                # If they're not, we now check for the price deviation
-                for entry in orchestrator_entries.values():
-                    match data_type:
-                        case DataTypes.SPOT:
-                            oracle_entry_price = oracle_entry.price
+                        # 2. Check if the oracle entry is deviating too much from new sources
+                        for oracle_expiry, o_entry in oracle_entry.items():
+                            orchestrator_median_price = statistics.median(
+                                [
+                                    e.price
+                                    for expiry, e in orchestrator_entries.items()
+                                    if expiry == oracle_expiry
+                                ]
+                            )
                             if self._new_price_is_deviating(
-                                pair_id, entry.price, oracle_entry_price
+                                pair_id, orchestrator_median_price, o_entry.price
                             ):
                                 return True
-                        case DataTypes.FUTURE:
-                            for expiry, _entry in entry.items():
-                                oracle_entry_price = oracle_entry[expiry].price
-                                if self._new_price_is_deviating(
-                                    pair_id, _entry.price, oracle_entry_price
-                                ):
-                                    return True
 
         return False
 
@@ -271,9 +280,11 @@ class PriceListener(IPriceListener):
         deviation = abs(new_price - oracle_price)
         is_deviating = deviation >= max_deviation
         if is_deviating:
+            deviation_percentage = (deviation / oracle_price) * 100
             logger.info(
-                f"🔔 Newest price for {pair_id} is deviating from the "
-                f"config bounds (deviation = {deviation}). "
+                f"🔔 Newest median price for {pair_id} is deviating from the "
+                f"config bounds (deviation = {deviation_percentage:.2f}%, more than "
+                f"{self.price_config.price_deviation * 100}%). "
                 "Triggering an update!"
             )
         return is_deviating
@@ -293,7 +304,7 @@ class PriceListener(IPriceListener):
 
         if is_outdated:
             logger.info(
-                f"🔔 Last oracle entry for {pair_id} is too old (delta = {delta_t}). "
+                f"🔔 Latest oracle entry for {pair_id} is too old (delta = {delta_t}). "
                 "Triggering an update!"
             )
 
