@@ -72,7 +72,7 @@ class OkxFetcher(FetcherInterfaceT):
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["volCcy24h"])
 
-        logger.debug("Fetched price %d for %s from OKX", price, pair)
+        logger.debug("Fetched price %d for %s from OKX", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,

@@ -113,7 +113,7 @@ class BybitFetcher(FetcherInterfaceT):
             if hop_result is None
             else 0
         )
-        logger.debug("Fetched price %d for %s from Bybit", price, pair)
+        logger.debug("Fetched price %d for %s from Bybit", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,
