@@ -261,6 +261,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         invocations = await pragma_client.publish_many(
             [spot_entry_future],
         )
+        invocations[-1].wait_for_acceptance()
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Timestamp is in the future"
@@ -371,9 +372,10 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
         volume=10,
     )
     try:
-        await pragma_client.publish_many(
+        txs = await pragma_client.publish_many(
             [future_entry_future],
         )
+        await txs[-1].wait_for_acceptance()
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Timestamp is in the future"
