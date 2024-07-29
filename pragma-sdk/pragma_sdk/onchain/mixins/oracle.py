@@ -27,6 +27,8 @@ from pragma_sdk.onchain.types import (
     BlockId,
 )
 
+WAIT_FOR_ACCEPTANCE_MAX_RETRIES = 60
+WAIT_FOR_ACCEPTANCE_RETRY_DELAY = 1
 logger = get_pragma_sdk_logger()
 
 
@@ -118,10 +120,18 @@ class OracleMixin:
             for i in range(0, len(serialized_entries), pagination):
                 entries_subset = serialized_entries[i : i + pagination]
                 invocation = await self._invoke_publish(entries_subset, data_type)
+                await invocation.wait_for_acceptance(
+                    check_interval=WAIT_FOR_ACCEPTANCE_RETRY_DELAY,
+                    retries=WAIT_FOR_ACCEPTANCE_MAX_RETRIES,
+                )
                 invocations.append(invocation)
                 self._log_transaction(invocation, len(entries_subset), data_type)
         else:
             invocation = await self._invoke_publish(serialized_entries, data_type)
+            await invocation.wait_for_acceptance(
+                check_interval=WAIT_FOR_ACCEPTANCE_RETRY_DELAY,
+                retries=WAIT_FOR_ACCEPTANCE_MAX_RETRIES,
+            )
             invocations.append(invocation)
             self._log_transaction(invocation, len(serialized_entries), data_type)
 
