@@ -40,7 +40,11 @@ class PricePusher(IPricePusher):
         try:
             response = await self.client.publish_entries(entries)
             if self.is_publishing_on_chain:
-                await response[-1].wait_for_acceptance(
+                last_invocation = response[-1]
+                logger.info(
+                    f"🏋️ PUSHER: ⏳ waiting TX hash {hex(last_invocation.hash)} to be executed..."
+                )
+                await last_invocation.wait_for_acceptance(
                     check_interval=1, retries=WAIT_FOR_ACCEPTANCE_MAX_RETRIES
                 )
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
