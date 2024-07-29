@@ -123,7 +123,7 @@ class PriceListener(IPriceListener):
         on their way to be pushed with the new data.
         """
         while self.notification_event.is_set():
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
