@@ -255,7 +255,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
 
     # Fails if timestamp too far in the future (>7min)
     spot_entry_future = SpotEntry(
-        ETH_PAIR, 100, timestamp + 450, SOURCE_1, publisher_name, volume=100000000000
+        ETH_PAIR, 100, timestamp - 450, SOURCE_1, publisher_name, volume=100000000000
     )
     try:
         invocations = await pragma_client.publish_many(
@@ -272,10 +272,10 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         await pragma_client.add_source_for_publisher(publisher_name, SOURCE_2)
     )
     spot_entry_1 = SpotEntry(
-        ETH_PAIR, 100, timestamp + 20, SOURCE_1, publisher_name, volume=10
+        ETH_PAIR, 100, timestamp - 20, SOURCE_1, publisher_name, volume=10
     )
     spot_entry_2 = SpotEntry(
-        ETH_PAIR, 200, timestamp + 30, SOURCE_2, publisher_name, volume=20
+        ETH_PAIR, 200, timestamp - 30, SOURCE_2, publisher_name, volume=20
     )
 
     invocations = await pragma_client.publish_many(
