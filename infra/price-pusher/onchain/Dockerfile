@@ -29,6 +29,6 @@ RUN poetry install
 
 FROM base as final
 COPY --from=builder /opt /opt
-COPY infra/config/price-pusher/config/ /opt/price-pusher/config/
+COPY infra/price-pusher/config/ /opt/price-pusher/config/
 WORKDIR /opt/price-pusher
 ENTRYPOINT /opt/price-pusher/.venv/bin/python3.12 price_pusher/main.py -c ${CONFIG_PATH} -t ${TARGET} -n ${NETWORK} -p ${PRIVATE_KEY} --publisher-name ${PUBLISHER_NAME} --publisher-address ${PUBLISHER_ADDRESS} --rpc-url ${RPC_URL}
