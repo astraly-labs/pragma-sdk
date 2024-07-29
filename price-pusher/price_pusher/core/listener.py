@@ -111,7 +111,7 @@ class PriceListener(IPriceListener):
                 last_fetch_time = -1
             await asyncio.sleep(1)
 
-    def _wait_until_notification_is_handled(self) -> None:
+    async def _wait_until_notification_is_handled(self) -> None:
         """
         Pauses the listener checks until the notification is handled.
         This means for our case that we wait until the pusher price
