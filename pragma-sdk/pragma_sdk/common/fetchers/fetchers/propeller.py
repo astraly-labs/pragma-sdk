@@ -133,7 +133,7 @@ class PropellerFetcher(FetcherInterfaceT):
 
         timestamp = int(time.time())
 
-        logger.debug("Fetched  price %d for %s from Propeller", price, pair)
+        logger.debug("Fetched  price %d for %s from Propeller", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,

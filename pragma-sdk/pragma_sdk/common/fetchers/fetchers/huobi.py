@@ -107,7 +107,7 @@ class HuobiFetcher(FetcherInterfaceT):
         timestamp = int(result["ts"] / 1000)
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(result["tick"]["vol"]) if hop_result is None else 0
-        logger.debug("Fetched  price %d for %s from Huobi", price, pair)
+        logger.debug("Fetched  price %d for %s from Huobi", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,

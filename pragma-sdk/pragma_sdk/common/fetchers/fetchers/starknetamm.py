@@ -80,6 +80,7 @@ class StarknetAMMFetcher(FetcherInterfaceT):
 
     def _construct(self, pair: Pair, result: float) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))
+        logger.debug("Fetched price %d for %s from Starknet", price_int, pair)
         return SpotEntry(
             pair_id=pair.id,
             price=price_int,

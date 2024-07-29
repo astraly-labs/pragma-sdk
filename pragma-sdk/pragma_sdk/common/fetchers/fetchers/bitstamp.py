@@ -42,8 +42,7 @@ class BitstampFetcher(FetcherInterfaceT):
         timestamp = int(result["timestamp"])
         price = float(result["last"])
         price_int = int(price * (10 ** pair.decimals()))
-
-        logger.debug("Fetched price %d for %s from Bitstamp", price, pair)
+        logger.debug("Fetched price %d for %s from Bitstamp", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,

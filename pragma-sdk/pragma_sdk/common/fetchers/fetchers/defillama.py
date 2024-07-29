@@ -100,7 +100,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             price_int = int(price * (10**decimals))
 
-        logger.debug("Fetched  price %d for %s from Defillama", price, pair)
+        logger.debug("Fetched  price %d for %s from Defillama", price_int, pair)
 
         entry = SpotEntry(
             pair_id=pair.id,
