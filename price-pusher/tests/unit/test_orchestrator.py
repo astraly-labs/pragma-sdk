@@ -119,7 +119,6 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
         pass
 
     # Assertions
-    mock_listener.notification_event.clear.assert_called_once()
     mock_listener.price_config.get_all_assets.assert_called_once()
 
     # Check logs

@@ -100,7 +100,7 @@ class KucoinFetcher(FetcherInterfaceT):
             price = hop_price / price
         timestamp = int(result["data"]["time"] / 1000)
         price_int = int(price * (10 ** pair.decimals()))
-        logger.debug("Fetched  price %d for %s from Kucoin", price, pair)
+        logger.debug("Fetched price %d for %s from Kucoin", price_int, pair)
 
         return SpotEntry(
             pair_id=pair.id,

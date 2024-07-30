@@ -1,19 +1,26 @@
 import asyncio
 import logging
+import statistics
 
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, List
 
 from pragma_utils.readable_id import generate_human_readable_id, HumanReadableId
 
-
 from pragma_sdk.common.types.entry import Entry, SpotEntry, FutureEntry
+from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.types import DataTypes
 
 from price_pusher.utils import exclude_none_and_exceptions, flatten_list
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from price_pusher.types import DurationInSeconds, LatestOrchestratorPairPrices, ExpiryTimestamp
+from price_pusher.types import (
+    DurationInSeconds,
+    LatestOrchestratorPairPrices,
+    ExpiryTimestamp,
+    SourceName,
+    FuturePrices,
+)
 
 
 CONSECUTIVES_EMPTY_ERRORS_LIMIT = 10
@@ -36,6 +43,9 @@ class IPriceListener(ABC):
     polling_frequency_in_s: DurationInSeconds
 
     consecutive_empty_oracle_error: int
+
+    @property
+    def data_config(self) -> Dict[DataTypes, List[Pair]]: ...
 
     @abstractmethod
     def set_orchestrator_prices(
@@ -92,6 +102,10 @@ class PriceListener(IPriceListener):
 
         self._log_listener_spawning()
 
+    @property
+    def data_config(self) -> Dict[DataTypes, List[Pair]]:
+        return self.price_config.get_all_assets()
+
     async def run_forever(self) -> None:
         """
         Main loop responsible of:
@@ -101,6 +115,7 @@ class PriceListener(IPriceListener):
         """
         last_fetch_time = -1
         while True:
+            await self._wait_until_notification_is_handled()
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
                 await self._fetch_all_oracle_prices()
@@ -109,6 +124,20 @@ class PriceListener(IPriceListener):
                 self._notify()
                 last_fetch_time = -1
             await asyncio.sleep(1)
+
+    async def _wait_until_notification_is_handled(self) -> None:
+        """
+        Pauses the listener checks until the notification is handled.
+        This means for our case that we wait until the pusher price
+        update is actually done - so we can here fetch for new prices
+        and compare them with the latest available from the poller.
+
+        If we don't do this, the listener will spam notification
+        the pusher with new entries even though there are some entries
+        on their way to be pushed with the new data.
+        """
+        while self.notification_event.is_set():
+            await asyncio.sleep(0.5)
 
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
@@ -122,7 +151,7 @@ class PriceListener(IPriceListener):
         """
         tasks = [
             self.request_handler.fetch_latest_entries(data_type, pair)
-            for data_type, pairs in self.price_config.get_all_assets().items()
+            for data_type, pairs in self.data_config.items()
             for pair in pairs
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -199,51 +228,95 @@ class PriceListener(IPriceListener):
                 )
             return True
 
-        for pair_id, oracle_entries in self.oracle_prices.items():
-            if pair_id not in self.orchestrator_prices:
-                continue
-
-            for data_type, orchestrator_entries in self.orchestrator_prices[pair_id].items():
-                if data_type not in oracle_entries:
-                    logging.warn(
-                        f"LISTENER {self.id} miss {data_type} prices in oracle entries. Sending notification."
+        for data_type, pairs in self.data_config.items():
+            for pair in pairs:
+                pair_id = str(pair)
+                # Poller is incomplete, retrying...
+                if pair_id not in self.orchestrator_prices:
+                    continue
+                # Poller is incomplete, retrying...
+                if data_type not in self.orchestrator_prices[pair_id]:
+                    continue
+                # Warning there - we should have all the prices in the Oracle. We try to fill empty values.
+                if pair_id not in self.oracle_prices:
+                    logger.warn(
+                        f"LISTENER {self.id} miss {pair_id} entries in oracle. Sending notification."
+                    )
+                    return True
+                if data_type not in self.oracle_prices[pair_id]:
+                    logger.warn(
+                        f"LISTENER {self.id} miss {pair_id}:{data_type} entries in oracle entries. Sending notification."
                     )
                     return True
 
-                # For Spot entries, oracle_entry will be an Entry
-                # For future entries, it will be a Dict[str, Entry] for each expiry.
-                oracle_entry: Union[SpotEntry, Dict[ExpiryTimestamp, FutureEntry]] = oracle_entries[
-                    data_type
-                ]
-
-                # Check if entries are not outdated...
                 match data_type:
                     case DataTypes.SPOT:
-                        newest_spot_entry = self._get_latest_orchestrator_entry(pair_id, data_type)
-                        if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_spot_entry):
+                        if self._does_oracle_spot_entry_needs_update(
+                            pair_id,
+                            data_type,
+                            self.oracle_prices[pair_id][data_type],
+                            self.orchestrator_prices[pair_id][data_type],
+                        ):
                             return True
+
                     case DataTypes.FUTURE:
-                        if self._future_entries_are_outdated(pair_id, data_type, oracle_entry):
+                        if self._does_oracle_future_entry_needs_update(
+                            pair_id,
+                            data_type,
+                            self.oracle_prices[pair_id][data_type],
+                            self.orchestrator_prices[pair_id][data_type],
+                        ):
                             return True
-
-                # If they're not, we now check for the price deviation
-                for entry in orchestrator_entries.values():
-                    match data_type:
-                        case DataTypes.SPOT:
-                            oracle_entry_price = oracle_entry.price
-                            if self._new_price_is_deviating(
-                                pair_id, entry.price, oracle_entry_price
-                            ):
-                                return True
-                        case DataTypes.FUTURE:
-                            for expiry, _entry in entry.items():
-                                oracle_entry_price = oracle_entry[expiry].price
-                                if self._new_price_is_deviating(
-                                    pair_id, _entry.price, oracle_entry_price
-                                ):
-                                    return True
-
         return False
+
+    def _does_oracle_spot_entry_needs_update(
+        self,
+        pair_id: str,
+        data_type: DataTypes,
+        oracle_entry: SpotEntry,
+        orchestrator_entries: Dict[SourceName, Entry],
+    ) -> bool:
+        """
+        Check if a spot oracle entry needs to be updated.
+        """
+        # 1. Check if the oracle entry is outdated
+        newest_spot_entry = self._get_latest_orchestrator_entry(pair_id, data_type)
+        if self._oracle_entry_is_outdated(pair_id, oracle_entry, newest_spot_entry):
+            return True
+
+        # 2. Check if the oracle entry is deviating too much from new sources
+        orchestrator_median_price = statistics.median(
+            [entry.price for entry in list(orchestrator_entries.values())]
+        )
+        if self._new_price_is_deviating(pair_id, orchestrator_median_price, oracle_entry.price):
+            return True
+
+    def _does_oracle_future_entry_needs_update(
+        self,
+        pair_id: str,
+        data_type: DataTypes,
+        oracle_entry: Dict[ExpiryTimestamp, FutureEntry],
+        orchestrator_entries: Dict[SourceName, FuturePrices],
+    ) -> bool:
+        """
+        Check if a future oracle entry needs to be updated.
+        """
+        # 1. Check if the oracle entry is outdated
+        if self._future_entries_are_outdated(pair_id, data_type, oracle_entry):
+            return True
+
+        # 2. Check if the oracle entry is deviating too much from new sources
+        for oracle_expiry, o_entry in oracle_entry.items():
+            future_prices = []
+
+            for dict_future_entry in orchestrator_entries.values():
+                for expiry, future_entry in dict_future_entry.items():
+                    if expiry == oracle_expiry:
+                        future_prices.append(future_entry.price)
+
+            orchestrator_median_price = statistics.median(future_prices)
+            if self._new_price_is_deviating(pair_id, orchestrator_median_price, o_entry.price):
+                return True
 
     def _future_entries_are_outdated(
         self, pair_id: str, data_type: DataTypes, entries: Dict[ExpiryTimestamp, FutureEntry]
@@ -266,10 +339,12 @@ class PriceListener(IPriceListener):
         deviation = abs(new_price - oracle_price)
         is_deviating = deviation >= max_deviation
         if is_deviating:
-            # TODO: show current deviation
+            deviation_percentage = (deviation / oracle_price) * 100
             logger.info(
-                f"🔔 Newest price for {pair_id} is deviating from the "
-                "config bounds. Triggering an update!"
+                f"🔔 Newest median price for {pair_id} is deviating from the "
+                f"config bounds (deviation = {deviation_percentage:.2f}%, more than "
+                f"{self.price_config.price_deviation * 100}%). "
+                "Triggering an update!"
             )
         return is_deviating
 
@@ -287,9 +362,9 @@ class PriceListener(IPriceListener):
         is_outdated = delta_t > max_time_elapsed
 
         if is_outdated:
-            # TODO: show time diff
             logger.info(
-                f"🔔 Last oracle entry for {pair_id} is too old (delta = {delta_t}). "
+                f"🔔 Latest oracle entry for {pair_id} is too old (delta = {delta_t}s, "
+                f"more than {self.price_config.time_difference}s). "
                 "Triggering an update!"
             )
 

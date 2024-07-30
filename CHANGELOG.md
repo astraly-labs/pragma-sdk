@@ -1,3 +1,24 @@
+## v2.0.2 (2024-07-29)
+
+### Fix
+
+- infra things (#176)
+- Dockerfile's infra config path (#175)
+- some infra changes (#173)
+- More price pusher fixes after Kakarot test (#172)
+
+## v2.0.1 (2024-07-27)
+
+### Feat
+
+- add infra files (#170)
+- Deribit Generic Fetcher + MerkleFeedMixin (#150)
+
+### Fix
+
+- Various fixes after trying things on Kakarot (#171)
+- dockerfile build ci (#168)
+
 ## v2.0.0 (2024-07-26)
 
 ### Fix
