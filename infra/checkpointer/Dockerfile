@@ -26,4 +26,9 @@ COPY checkpointer/ /opt/checkpointer/
 WORKDIR /opt/checkpointer
 RUN poetry env use 3.12
 RUN poetry install
-ENTRYPOINT poetry run checkpointer -c config/config.yaml -n ${NETWORK} --oracle-address ${ORACLE_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL}
+
+FROM base as final
+COPY --from=builder /opt /opt
+COPY infra/checkpointer/config/ /opt/checkpointer/config/
+WORKDIR /opt/checkpointer
+ENTRYPOINT /opt/checkpointer/.venv/bin/python3.12 checkpointer/main.py -c ${CONFIG_PATH} -n ${NETWORK} --oracle-address ${ORACLE_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL}
