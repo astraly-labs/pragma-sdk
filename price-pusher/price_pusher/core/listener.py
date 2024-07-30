@@ -337,7 +337,7 @@ class PriceListener(IPriceListener):
         """
         max_deviation = self.price_config.price_deviation * oracle_price
         deviation = abs(new_price - oracle_price)
-        is_deviating = deviation >= max_deviation
+        is_deviating = deviation > max_deviation
         if is_deviating:
             deviation_percentage = (deviation / oracle_price) * 100
             logger.info(

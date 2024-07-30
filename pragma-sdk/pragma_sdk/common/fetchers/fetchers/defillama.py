@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any, List, Optional
 
 from aiohttp import ClientSession
@@ -89,7 +90,7 @@ class DefillamaFetcher(FetcherInterfaceT):
         self, pair: Pair, result: Any, hop_result: Optional[Any] = None
     ) -> SpotEntry:
         base_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
-        timestamp = int(result["coins"][f"coingecko:{base_id}"]["timestamp"])
+        timestamp = int(time.time())
         decimals = pair.decimals()
         if hop_result is not None:
             quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)

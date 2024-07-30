@@ -397,6 +397,7 @@ class OracleMixin:
                     ],
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
+                    callback=self.track_nonce,
                 )
                 index += pagination
                 logger.info(
@@ -412,6 +413,7 @@ class OracleMixin:
                 ],
                 aggregation_mode.serialize(),
                 max_fee=self.execution_config.max_fee,
+                callback=self.track_nonce,
             )
 
         return invocation
@@ -448,6 +450,7 @@ class OracleMixin:
                     ],
                     aggregation_mode.serialize(),
                     max_fee=self.execution_config.max_fee,
+                    callback=self.track_nonce,
                 )
                 index += pagination
                 logger.info(
@@ -463,6 +466,7 @@ class OracleMixin:
                 ],
                 aggregation_mode.serialize(),
                 max_fee=self.execution_config.max_fee,
+                callback=self.track_nonce,
             )
 
         return invocation
