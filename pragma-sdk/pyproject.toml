@@ -66,6 +66,7 @@ format_check = "ruff format . --check"
 typecheck = "mypy pragma_sdk"
 
 check_circular_imports = "poetry run python tests/check_circular_imports.py"
+update_abis = "find ../pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma_sdk/onchain/abis' ';'"
 
 test_integration = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/ -s"
 test_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/client_test.py -s"

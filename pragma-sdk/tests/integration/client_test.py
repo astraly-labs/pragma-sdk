@@ -371,9 +371,7 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
         volume=10,
     )
     try:
-        await pragma_client.publish_many(
-            [future_entry_future],
-        )
+        await pragma_client.publish_many([future_entry_future])
     except TransactionRevertedError as err:
         # err_msg = "Execution was reverted; failure reason: [0x54696d657374616d7020697320696e2074686520667574757265]"
         err_msg = "Unknown Starknet error"

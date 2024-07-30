@@ -120,17 +120,6 @@ class PragmaOnChainClient(  # type: ignore[misc]
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
 
-    async def publish_entries(
-        self, entries: List[Entry]
-    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
-        """
-        Publish entries on-chain.
-
-        :param entries: List of Entry objects
-        :return: List of InvokeResult objects
-        """
-        return await self.publish_many(entries)
-
     def _setup_contracts(self):
         """
         Setup the contracts for the client.
@@ -150,23 +139,12 @@ class PragmaOnChainClient(  # type: ignore[misc]
             provider=provider,
             cairo_version=1,
         )
-
-    async def get_balance(self, account_contract_address, token_address=None) -> int:
-        """
-        Get the balance of an account given the account contract address and token address.
-
-        :param account_contract_address: The account contract address.
-        :param token_address: The token address. If None, will use ETH as the token address.
-        :return: The balance of the account.
-        """
-
-        client = Account(
-            address=account_contract_address,
-            client=self.client,
-            key_pair=KeyPair.from_private_key(1),
-            chain=CHAIN_IDS[self.network],
+        self.summary_stats = Contract(
+            address=self.contract_addresses_config.summary_stats_address,
+            abi=ABIS["pragma_SummaryStats"],
+            provider=provider,
+            cairo_version=1,
         )
-        return await client.get_balance(token_address)  # type: ignore[no-any-return]
 
     def _process_secret_key(self, private_key: PrivateKey) -> KeyPair:
         """Converts a Private Key to a KeyPair."""
@@ -209,17 +187,30 @@ class PragmaOnChainClient(  # type: ignore[misc]
 
         return self.account.address  # type: ignore[no-any-return]
 
-    def init_stats_contract(
-        self,
-        stats_contract_address: Address,
-    ):
+    async def get_balance(self, account_contract_address, token_address=None) -> int:
         """
-        Initialize the Summary Stats contract.
+        Get the balance of an account given the account contract address and token address.
+
+        :param account_contract_address: The account contract address.
+        :param token_address: The token address. If None, will use ETH as the token address.
+        :return: The balance of the account.
         """
-        provider = self.account if self.account else self.client
-        self.stats = Contract(
-            address=stats_contract_address,
-            abi=ABIS["pragma_SummaryStats"],
-            provider=provider,
-            cairo_version=1,
+
+        client = Account(
+            address=account_contract_address,
+            client=self.client,
+            key_pair=KeyPair.from_private_key(1),
+            chain=CHAIN_IDS[self.network],
         )
+        return await client.get_balance(token_address)  # type: ignore[no-any-return]
+
+    async def publish_entries(
+        self, entries: List[Entry]
+    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
+        """
+        Publish entries on-chain.
+
+        :param entries: List of Entry objects
+        :return: List of InvokeResult objects
+        """
+        return await self.publish_many(entries)

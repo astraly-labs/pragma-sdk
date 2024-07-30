@@ -3,9 +3,9 @@ import time
 from typing import Optional, List, Dict, Any, Tuple
 from pydantic.dataclasses import dataclass
 from starknet_py.hash.utils import compute_hash_on_elements
+from starknet_py.utils.merkle_tree import MerkleTree
 
 from pragma_sdk.common.types.types import UnixTimestamp
-from pragma_sdk.common.types.merkle_tree import MerkleTree
 
 from pragma_sdk.common.utils import str_to_felt
 
@@ -122,6 +122,14 @@ class OptionData:
                 int(self.mark_price),
             ]
         )
+
+    def serialize(self) -> Dict[str, int]:
+        return {
+            "instrument_name": str_to_felt(self.instrument_name),
+            "base_currency_id": str_to_felt(self.base_currency),
+            "current_timestamp": self.current_timestamp,
+            "mark_price": int(self.mark_price),
+        }
 
 
 CurrenciesOptions = Dict[str, List[OptionData]]
