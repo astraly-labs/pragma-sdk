@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from abc import ABC, abstractmethod
 
@@ -52,10 +53,15 @@ class PricePusher(IPricePusher):
         async with self.lock:
             try:
                 logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
+                start_t = time.time()
                 response = await self.client.publish_entries(entries)
                 if self.is_publishing_on_chain:
                     await self.wait_for_publishing_tx_acceptance(response)
-                logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
+                end_t = time.time()
+                logger.info(
+                    f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)! "
+                    f"(took {(end_t - start_t):.2f}s)"
+                )
                 self.consecutive_push_error = 0
                 return response
 
