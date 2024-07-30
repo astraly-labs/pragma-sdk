@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import List, Optional, Any
 
 from aiohttp import ClientSession
@@ -104,7 +105,7 @@ class HuobiFetcher(FetcherInterfaceT):
             hop_ask = float(hop_result["tick"]["ask"][0])
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
-        timestamp = int(result["ts"] / 1000)
+        timestamp = int(time.time())
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(result["tick"]["vol"]) if hop_result is None else 0
         logger.debug("Fetched price %d for %s from Huobi", price_int, pair)

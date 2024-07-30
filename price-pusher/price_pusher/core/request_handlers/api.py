@@ -42,7 +42,6 @@ class APIRequestHandler(IRequestHandler):
         )
         if entry_result is None:
             return []
-
         entry = SpotEntry(
             pair_id=entry_result.pair_id,
             price=int(entry_result.data, 16),
