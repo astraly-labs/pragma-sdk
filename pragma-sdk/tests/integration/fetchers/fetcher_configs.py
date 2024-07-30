@@ -23,9 +23,7 @@ FETCHER_CONFIGS = {
         "fetcher_class": DefillamaFetcher,
         "name": "Defillama",
         "expected_result": [
-            SpotEntry(
-                "BTC/USD", 2604800000000, 12345, "DEFILLAMA", PUBLISHER_NAME
-            ),
+            SpotEntry("BTC/USD", 2604800000000, 12345, "DEFILLAMA", PUBLISHER_NAME),
             SpotEntry("ETH/USD", 164507000000, 12345, "DEFILLAMA", PUBLISHER_NAME),
         ],
     },
