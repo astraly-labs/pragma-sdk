@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Callable
 
-from pragma_sdk.common.types.entry import Entry
+from pragma_sdk.common.types.entry import Entry, FutureEntry
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 
 
@@ -51,11 +51,11 @@ class PricePoller(IPricePoller):
 
         try:
             new_entries = await self._fetch_action()
-            new_entries = self._filter_zeros_from_entries(new_entries)
+            new_entries = self._filter_zeros_and_non_perp_from_entries(new_entries)
             logger.info(f"🔄 POLLER: Successfully fetched {len(new_entries)} new entries!")
             self.update_prices_callback(new_entries)
         except Exception as e:
-            logger.error(f"🔄 POLLER: exception is {e}")
+            logger.error(f"🔄 POLLER: ⛔ error while fetching new prices: {e}")
             if not self._is_requesting_onchain:
                 raise e
             try:
@@ -76,9 +76,14 @@ class PricePoller(IPricePoller):
         )
         return new_entries
 
-    def _filter_zeros_from_entries(self, entries: List[Entry]) -> List[Entry]:
+    def _filter_zeros_and_non_perp_from_entries(self, entries: List[Entry]) -> List[Entry]:
         """
         Some fetchers sometimes bug and return 0 as the price for an Entry.
         We use this function to filter them out.
         """
-        return [entry for entry in entries if entry.price > 0]
+        return [
+            entry
+            for entry in entries
+            if (entry.price > 0)
+            and ((not isinstance(entry, FutureEntry)) or (entry.expiry_timestamp == 0))
+        ]
