@@ -128,7 +128,7 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
     caplog.set_level(logging.INFO)
     orchestrator_entry = SpotEntry(
         pair_id="BTC/USD",
-        price=110,
+        price=111,
         timestamp=1000000000,
         source="source_1",
         publisher="publisher_1",
