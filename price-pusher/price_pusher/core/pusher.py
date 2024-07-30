@@ -12,7 +12,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 CONSECUTIVES_PUSH_ERRORS_LIMIT = 10
-
 WAIT_FOR_ACCEPTANCE_MAX_RETRIES = 60
 
 
@@ -40,9 +39,12 @@ class PricePusher(IPricePusher):
         logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
         try:
             response = await self.client.publish_entries(entries)
-            logger.debug(f"Response: {response}")
             if self.is_publishing_on_chain:
-                await response[-1].wait_for_acceptance(
+                last_invocation = response[-1]
+                logger.info(
+                    f"🏋️ PUSHER: ⏳ waiting TX hash {hex(last_invocation.hash)} to be executed..."
+                )
+                await last_invocation.wait_for_acceptance(
                     check_interval=1, retries=WAIT_FOR_ACCEPTANCE_MAX_RETRIES
                 )
             logger.info(f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)!")
