@@ -24,9 +24,9 @@ FETCHER_CONFIGS = {
         "name": "Defillama",
         "expected_result": [
             SpotEntry(
-                "BTC/USD", 2604800000000, 1692779346, "DEFILLAMA", PUBLISHER_NAME
+                "BTC/USD", 2604800000000, 12345, "DEFILLAMA", PUBLISHER_NAME
             ),
-            SpotEntry("ETH/USD", 164507000000, 1692779707, "DEFILLAMA", PUBLISHER_NAME),
+            SpotEntry("ETH/USD", 164507000000, 12345, "DEFILLAMA", PUBLISHER_NAME),
         ],
     },
     "BitstampFetcher": {
@@ -34,8 +34,8 @@ FETCHER_CONFIGS = {
         "fetcher_class": BitstampFetcher,
         "name": "Bitstamp",
         "expected_result": [
-            SpotEntry("BTC/USD", 2602100000000, 1692781034, "BITSTAMP", PUBLISHER_NAME),
-            SpotEntry("ETH/USD", 164250000000, 1692780986, "BITSTAMP", PUBLISHER_NAME),
+            SpotEntry("BTC/USD", 2602100000000, 12345, "BITSTAMP", PUBLISHER_NAME),
+            SpotEntry("ETH/USD", 164250000000, 12345, "BITSTAMP", PUBLISHER_NAME),
         ],
     },
     "CoinbaseFetcher": {
@@ -55,7 +55,7 @@ FETCHER_CONFIGS = {
             SpotEntry(
                 "BTC/USD",
                 2640240000000,
-                1692829724,
+                12345,
                 "OKX",
                 PUBLISHER_NAME,
                 volume=18382.3898,
@@ -63,7 +63,7 @@ FETCHER_CONFIGS = {
             SpotEntry(
                 "ETH/USD",
                 167372000000,
-                1692829751,
+                12345,
                 "OKX",
                 PUBLISHER_NAME,
                 volume=185341.3646,
@@ -145,7 +145,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 "BTC/USD",
                 2589900000000,
-                1692982428,
+                12345,
                 "BYBIT",
                 PUBLISHER_NAME,
                 0,
@@ -154,7 +154,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 "ETH/USD",
                 164025000000,
-                1692982480,
+                12345,
                 "BYBIT",
                 PUBLISHER_NAME,
                 0,
@@ -196,7 +196,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 pair_id="BTC/USD",
                 price=2664490000000,
-                timestamp=1695293953,
+                timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
                 volume=274,
@@ -205,7 +205,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 pair_id="BTC/USD",
                 price=2666120000000,
-                timestamp=1695293953,
+                timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
                 volume=1020,
@@ -214,7 +214,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 pair_id="ETH/USD",
                 price=159390000000,
-                timestamp=1695293986,
+                timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
                 volume=2276,
@@ -223,7 +223,7 @@ FUTURE_FETCHER_CONFIGS = {
             FutureEntry(
                 pair_id="ETH/USD",
                 price=159092000000,
-                timestamp=1695293987,
+                timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
                 volume=6178,
