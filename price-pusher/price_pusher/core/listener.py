@@ -117,7 +117,6 @@ class PriceListener(IPriceListener):
         while True:
             # Check if the notification event is clear
             while self.notification_event.is_set():
-                # If not clear, wait for a second and recheck
                 await asyncio.sleep(1)
 
             current_time = asyncio.get_event_loop().time()

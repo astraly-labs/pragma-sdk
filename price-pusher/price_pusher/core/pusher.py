@@ -43,7 +43,8 @@ class PricePusher(IPricePusher):
         Waits for all publishing TX to be accepted on-chain.
         """
         for invocation in invocations:
-            logger.info(f"🏋️ PUSHER: ⏳ Waiting for TX {hex(invocation.hash)} to be accepted...")
+            nonce = invocation.invoke_transaction.nonce
+            logger.info(f"🏋️ PUSHER: ⏳ Waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted...")
             await invocation.wait_for_acceptance(check_interval=1)
 
     async def update_price_feeds(self, entries: List[Entry]) -> Optional[Dict]:
