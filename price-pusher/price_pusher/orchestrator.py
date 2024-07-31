@@ -99,17 +99,15 @@ class Orchestrator:
         """
         while True:
             await listener.notification_event.wait()
-            assets_to_push = listener.price_config.get_all_assets()
             logger.info(
                 f"💡 Notification received from LISTENER [{listener.id}] ! "
                 "Sending entries into queue for: "
-                f"{assets_to_push}"
+                f"{listener.data_config}"
             )
-            entries_to_push = self._flush_entries_for_assets(assets_to_push)
+            entries_to_push = self._flush_entries_for_assets(listener.data_config)
             if len(entries_to_push) > 0:
                 await self.push_queue.put(entries_to_push)
-                # Wait for the task to be completed before clearing the notification
-                await self.push_queue.join()
+                await self.push_queue.join()  # Wait for the entries to be processed
             listener.notification_event.clear()
 
     async def _pusher_service(self) -> None:
