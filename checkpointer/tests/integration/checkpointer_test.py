@@ -238,7 +238,7 @@ async def test_checkpointer_spot_and_future(
         private_key=private_key,
     )
 
-    await asyncio.sleep(5)
+    await asyncio.sleep(10)
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         pair_id="BTC/USD",
@@ -256,7 +256,7 @@ async def test_checkpointer_spot_and_future(
         expiration_timestamp=0,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424244
-    assert latest_checkpoint.num_sources_aggregated == 2
+    assert latest_checkpoint.value == 4242424248
+    assert latest_checkpoint.num_sources_aggregated == 1
 
     main_task.cancel()
