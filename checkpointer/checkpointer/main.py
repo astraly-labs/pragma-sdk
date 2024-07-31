@@ -3,14 +3,14 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
 from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.onchain.client import PragmaOnChainClient
-from pragma_sdk.onchain.types import ContractAddresses
+from pragma_sdk.onchain.types import ContractAddresses, PrivateKey
 
 from checkpointer.configs.pairs_config import PairsConfig
 
@@ -22,7 +22,7 @@ async def main(
     network: Literal["mainnet", "sepolia"],
     oracle_address: str,
     admin_address: str,
-    private_key: str | Tuple[str, str],
+    private_key: PrivateKey,
     set_checkpoint_interval: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:

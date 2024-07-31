@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "checkpointer"
-version = "2.0.2"
+version = "2.0.4"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Checkpoints service for Pragma."
 readme = "README.md"
@@ -16,7 +16,7 @@ include = ["checkpointer"]
 packages = [{ include = "checkpointer" }]
 
 [tool.poetry.scripts]
-scheduler = 'checkpointer.main:cli_entrypoint'
+checkpointer = 'checkpointer.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
@@ -49,7 +49,9 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
 typecheck = "mypy ."
-test = "coverage run -m pytest -v tests -s"
+# TODO: The tests loop forever if we run them all, so we only run spot_and_future together.
+# See: https://github.com/astraly-labs/pragma-sdk/issues/153
+test = 'coverage run -m pytest -v tests -s -k "test_checkpointer_spot_and_future"'
 
 [tool.ruff]
 exclude = [

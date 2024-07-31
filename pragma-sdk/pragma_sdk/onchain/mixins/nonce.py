@@ -119,7 +119,7 @@ class NonceMixin:
             block_number=block_number,
         )
 
-        return int(nonce)
+        return nonce  # type: ignore[no-any-return]
 
     async def get_status(
         self,

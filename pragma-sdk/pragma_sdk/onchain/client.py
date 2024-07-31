@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -198,6 +198,10 @@ class PragmaOnChainClient(  # type: ignore[misc]
         )
         return await client.get_balance(token_address)  # type: ignore[no-any-return]
 
+    async def get_block_number(self) -> Any:
+        """Returns the current block number."""
+        return await self.full_node_client.get_block_number()
+      
     async def publish_entries(
         self, entries: List[Entry]
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:

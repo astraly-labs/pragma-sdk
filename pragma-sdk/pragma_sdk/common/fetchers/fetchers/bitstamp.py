@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any, List
 
 from aiohttp import ClientSession
@@ -39,7 +40,7 @@ class BitstampFetcher(FetcherInterfaceT):
         return url
 
     def _construct(self, pair: Pair, result: Any) -> SpotEntry:
-        timestamp = int(result["timestamp"])
+        timestamp = int(time.time())
         price = float(result["last"])
         price_int = int(price * (10 ** pair.decimals()))
 

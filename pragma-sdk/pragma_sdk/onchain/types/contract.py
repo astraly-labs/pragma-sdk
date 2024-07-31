@@ -1,4 +1,6 @@
-from typing import Awaitable, Callable, Optional, Any
+import asyncio
+
+from typing import Awaitable, Callable, Optional, Any, Dict
 
 from starknet_py.contract import Contract as StarknetContract
 from starknet_py.contract import ContractFunction, InvokeResult
@@ -16,6 +18,10 @@ class Contract(StarknetContract):  # type: ignore[misc]
             return getattr(self, attr)
 
         raise AttributeError("Invalid Attribute")
+
+
+# Global dictionary to store locks for each account
+account_locks: Dict[str, asyncio.Lock] = {}
 
 
 async def _invoke(
@@ -43,19 +49,29 @@ async def _invoke(
     if execution_config.max_fee is not None:
         self.max_fee = execution_config.max_fee
 
-    transaction = (
-        await self.get_account.sign_invoke_v3(
-            calls=self,
-            l1_resource_bounds=execution_config.l1_resource_bounds,
-            auto_estimate=execution_config.auto_estimate,
+    # Get or create a lock for this account
+    account_address = str(self.get_account.address)
+    if account_address not in account_locks:
+        account_locks[account_address] = asyncio.Lock()
+
+    # We have concurrency issues on the account if we don't do this
+    # because two calls parallel can end up generating the same nonce.
+    # We really want to avoid that.
+    async with account_locks[account_address]:
+        transaction = (
+            await self.get_account.sign_invoke_v3(
+                calls=self,
+                l1_resource_bounds=execution_config.l1_resource_bounds,
+                auto_estimate=execution_config.auto_estimate,
+            )
+            if execution_config.enable_strk_fees
+            else await self.get_account.sign_invoke_v1(
+                calls=self, max_fee=execution_config.max_fee
+            )
         )
-        if execution_config.enable_strk_fees
-        else await self.get_account.sign_invoke_v1(
-            calls=self, max_fee=execution_config.max_fee
-        )
-    )
 
     response = await self._client.send_transaction(transaction)
+
     if callback:
         await callback(transaction.nonce, response.transaction_hash)
 
@@ -65,9 +81,6 @@ async def _invoke(
         contract=self._contract_data,
         invoke_transaction=transaction,
     )
-
-    # don't return invoke result until it is received or errors
-    # await invoke_result.wait_for_acceptance()
 
     return invoke_result
 

@@ -13,7 +13,7 @@
     build_containers:
       strategy:
         matrix:
-          package: [pragma-sdk, price-pusher, vrf-listener, checkpointer]
+          package: [pragma-sdk, price-pusher, vrf-listener, checkpointer, merkle-maker]
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from typing import Any, List
 
 from aiohttp import ClientSession
@@ -59,7 +60,6 @@ class ByBitFutureFetcher(FetcherInterfaceT):
     def _construct(self, pair: Pair, result: Any) -> FutureEntry:
         data = result["result"]["list"][0]
         decimals = pair.decimals()
-        timestamp = int(int(result["time"]) / 1000)
 
         price = float(data["lastPrice"])
         price_int = int(price * (10**decimals))
@@ -73,7 +73,7 @@ class ByBitFutureFetcher(FetcherInterfaceT):
             pair_id=pair.id,
             price=price_int,
             volume=volume,
-            timestamp=timestamp,
+            timestamp=int(time.time()),
             source=self.SOURCE,
             publisher=self.publisher,
             expiry_timestamp=expiry_timestamp,

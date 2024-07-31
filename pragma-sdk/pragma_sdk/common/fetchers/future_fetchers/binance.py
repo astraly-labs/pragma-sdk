@@ -1,4 +1,6 @@
 import json
+import time
+
 from datetime import datetime, timezone
 from typing import Any, List, Optional, Tuple
 
@@ -92,7 +94,6 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         result_arr = []
         decimals = pair.decimals()
         for data in result:
-            timestamp = int(data["time"])
             price = float(data["markPrice"])
             price_int = int(price * (10**decimals))
             volume = float(self._retrieve_volume(data["symbol"], volume_arr)) / (
@@ -116,7 +117,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
                     pair_id=pair.id,
                     price=price_int,
                     volume=int(volume),
-                    timestamp=int(timestamp / 1000),
+                    timestamp=int(time.time()),
                     source=self.SOURCE,
                     publisher=self.publisher,
                     expiry_timestamp=expiry_timestamp * 1000,

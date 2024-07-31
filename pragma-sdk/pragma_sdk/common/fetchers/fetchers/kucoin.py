@@ -1,4 +1,6 @@
 import asyncio
+import time
+
 from typing import List, Optional, Any
 
 from aiohttp import ClientSession
@@ -98,7 +100,7 @@ class KucoinFetcher(FetcherInterfaceT):
         if hop_result is not None:
             hop_price = float(hop_result["data"]["price"])
             price = hop_price / price
-        timestamp = int(result["data"]["time"] / 1000)
+        timestamp = int(time.time())
         price_int = int(price * (10 ** pair.decimals()))
         logger.debug("Fetched price %d for %s from Kucoin", price_int, pair)
 

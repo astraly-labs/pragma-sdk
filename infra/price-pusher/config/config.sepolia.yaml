@@ -10,11 +10,16 @@
       - USDC/USD
       - USDT/USD
       - DAI/USD
+  time_difference: 120
+  price_deviation: 0.0025
+
+- pairs:
+    spot:
       - LORDS/USD
       - ZEND/USD
       - NSTR/USD
   time_difference: 120
-  price_deviation: 0.0025
+  price_deviation: 0.005
 
 - pairs:
     future:
