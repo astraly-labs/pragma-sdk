@@ -85,10 +85,10 @@ class PragmaAPIClient(PragmaClient):
         path_params = {
             key: value
             for key, value in {
-                "timestamp": str(timestamp),
-                "interval": str(interval),
+                "timestamp": timestamp,
+                "interval": interval,
                 "aggregation": (
-                    str(aggregation.value.lower()) if aggregation is not None else None
+                    aggregation.value.lower() if aggregation is not None else None
                 ),
             }.items()
             if value is not None
@@ -103,7 +103,9 @@ class PragmaAPIClient(PragmaClient):
         # Create connection
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url, headers=headers, params=path_params
+                url,
+                headers=headers,
+                params=path_params,  # type: ignore[arg-type]
             ) as response_raw:
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
@@ -168,8 +170,8 @@ class PragmaAPIClient(PragmaClient):
         url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {
-            "PRAGMA-TIMESTAMP": str(now),
-            "PRAGMA-SIGNATURE-EXPIRATION": str(expiry),
+            "PRAGMA-TIMESTAMP": now,
+            "PRAGMA-SIGNATURE-EXPIRATION": expiry,
             "x-api-key": self.api_key,
         }
 
@@ -218,10 +220,10 @@ class PragmaAPIClient(PragmaClient):
         params = {
             key: value
             for key, value in {
-                "routing": str(routing),
-                "timestamp": str(timestamp),
-                "interval": str(interval.value) if interval else None,
-                "aggregation": str(aggregation.value.lower()) if aggregation else None,
+                "routing": routing,
+                "timestamp": timestamp,
+                "interval": interval.value if interval else None,
+                "aggregation": aggregation.value.lower() if aggregation else None,
             }.items()
             if value is not None
         }
@@ -231,7 +233,7 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response_raw:
+            async with session.get(url, headers=headers, params=params) as response_raw:  # type: ignore[arg-type]
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
@@ -277,12 +279,12 @@ class PragmaAPIClient(PragmaClient):
         params = {
             key: value
             for key, value in {
-                "routing": str(routing),
-                "timestamp": str(timestamp),
-                "interval": str(interval.value) if interval else None,
-                "aggregation": str(aggregation.value.lower()) if aggregation else None,
+                "routing": routing,
+                "timestamp": timestamp,
+                "interval": interval.value if interval else None,
+                "aggregation": aggregation.value.lower() if aggregation else None,
                 "entry_type": "future",
-                "expiry": str(expiry) if expiry else None,
+                "expiry": expiry if expiry else None,
             }.items()
             if value is not None
         }
@@ -292,7 +294,7 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
+            async with session.get(url, headers=headers, params=params) as response:  # type: ignore[arg-type]
                 status_code: int = response.status
                 json_response: Dict = await response.json()
                 if status_code == 200:
@@ -332,15 +334,15 @@ class PragmaAPIClient(PragmaClient):
         }
 
         params = {
-            "start": str(start),
-            "end": str(end),
+            "start": start,
+            "end": end,
         }
 
         # Construct URL with parameters
         url = f"{self.api_base_url}{endpoint}"
         # Send GET request with headers
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response_raw:
+            async with session.get(url, headers=headers, params=params) as response_raw:  # type: ignore[arg-type]
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
