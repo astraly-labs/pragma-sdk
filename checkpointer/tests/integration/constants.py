@@ -64,7 +64,8 @@ TESTNET_ACCOUNT_ADDRESS = "0x260a8311b4f1092db620b923e8d7d20e76dedcc615fb4b6fdf2
 USD_ASSET_CONFIG = AssetConfig.from_ticker("USD")
 
 CURRENCIES = [Currency.from_asset_config(asset) for asset in ALL_ASSETS_CONFIGS]
-USD_PAIRS: List[Pair] = filter(
-    lambda x: x is not None,
-    [Pair.from_asset_configs(asset, USD_ASSET_CONFIG) for asset in ALL_ASSETS_CONFIGS],
-)
+USD_PAIRS: List[Pair] = [
+    Pair.from_asset_configs(asset, USD_ASSET_CONFIG)
+    for asset in ALL_ASSETS_CONFIGS
+    if asset != USD_ASSET_CONFIG
+]

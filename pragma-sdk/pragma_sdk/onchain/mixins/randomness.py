@@ -16,7 +16,8 @@ from pragma_sdk.common.randomness.utils import (
 )
 from pragma_sdk.common.types.types import Address
 
-from pragma_sdk.onchain.types import RequestStatus, RandomnessRequest, ExecutionConfig
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
+from pragma_sdk.onchain.types import RequestStatus, RandomnessRequest
 from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.constants import RANDOMNESS_REQUEST_EVENT_SELECTOR
 from pragma_sdk.onchain.types import Contract

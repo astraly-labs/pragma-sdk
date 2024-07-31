@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Dict
 
 
 from pragma_sdk.common.utils import currency_pair_to_pair_id, str_to_felt
@@ -63,7 +63,7 @@ class Pair:
     @classmethod
     def from_asset_configs(
         cls, base_asset: AssetConfig, quote_asset: AssetConfig
-    ) -> Optional["Pair"]:
+    ) -> "Pair":
         """
         Return a Pair from two AssetConfigs.
         Return None if the base and quote assets are the same.
@@ -74,7 +74,9 @@ class Pair:
         """
 
         if base_asset == quote_asset:
-            return None
+            raise ValueError(
+                "Unable to build Pair: base_asset can't be equal to quote_asset."
+            )
 
         return cls(
             base_currency=Currency.from_asset_config(base_asset),
@@ -82,7 +84,7 @@ class Pair:
         )
 
     @staticmethod
-    def from_tickers(base_ticker: str, quote_ticker: str) -> Optional["Pair"]:
+    def from_tickers(base_ticker: str, quote_ticker: str) -> "Pair":
         """
         Return a Pair from two tickers.
         Return None if the base and quote tickers are the same.

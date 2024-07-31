@@ -1539,7 +1539,7 @@ url = "../pragma-sdk"
 
 [[package]]
 name = "pragma-utils"
-version = "2.0.0rc0"
+version = "2.0.0"
 description = "Utils functions shared accross Pragma python packages."
 optional = false
 python-versions = ">=3.11,<3.13"

@@ -14,7 +14,7 @@ from pragma_sdk.common.types.types import (
     UnixTimestamp,
 )
 
-# Contains the Path to the keystore & the password to decrypt the filer
+# Contains the Path to the keystore & the password to decrypt the file
 KeyStoreCredentials = Tuple[str, str]
 
 PrivateKey = int | str | KeyStoreCredentials

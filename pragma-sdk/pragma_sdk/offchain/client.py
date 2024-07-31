@@ -1,10 +1,10 @@
 import asyncio
 import time
-from typing import Dict, List, Optional, Union, Any
 import logging
-
 import aiohttp
-from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
+
+from typing import Dict, List, Optional, Union, Any
+
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
@@ -12,13 +12,14 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
-from pragma_sdk.offchain.signer import OffchainSigner
-from pragma_sdk.offchain.types import Interval, PublishEntriesAPIResult
 from pragma_sdk.common.types.pair import Pair
-
 from pragma_sdk.common.types.client import PragmaClient
 
+from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
+
 from pragma_sdk.offchain.exceptions import PragmaAPIError
+from pragma_sdk.offchain.types import Interval, PublishEntriesAPIResult
+from pragma_sdk.offchain.signer import OffchainSigner
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +103,9 @@ class PragmaAPIClient(PragmaClient):
         # Create connection
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url, headers=headers, params=path_params
+                url,
+                headers=headers,
+                params=path_params,  # type: ignore[arg-type]
             ) as response_raw:
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
@@ -167,8 +170,8 @@ class PragmaAPIClient(PragmaClient):
         url = f"{self.api_base_url}{endpoint}"
 
         headers: Dict = {
-            "PRAGMA-TIMESTAMP": str(now),
-            "PRAGMA-SIGNATURE-EXPIRATION": str(expiry),
+            "PRAGMA-TIMESTAMP": now,
+            "PRAGMA-SIGNATURE-EXPIRATION": expiry,
             "x-api-key": self.api_key,
         }
 
@@ -230,7 +233,7 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response_raw:
+            async with session.get(url, headers=headers, params=params) as response_raw:  # type: ignore[arg-type]
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
@@ -291,7 +294,7 @@ class PragmaAPIClient(PragmaClient):
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
+            async with session.get(url, headers=headers, params=params) as response:  # type: ignore[arg-type]
                 status_code: int = response.status
                 json_response: Dict = await response.json()
                 if status_code == 200:
@@ -339,7 +342,7 @@ class PragmaAPIClient(PragmaClient):
         url = f"{self.api_base_url}{endpoint}"
         # Send GET request with headers
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response_raw:
+            async with session.get(url, headers=headers, params=params) as response_raw:  # type: ignore[arg-type]
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:

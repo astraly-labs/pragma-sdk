@@ -21,10 +21,17 @@ For more information, see the [project's repository](https://github.com/Astraly-
 
 ## Repository Structure
 
+Our main SDK:
 - <a href="./pragma-sdk">Python SDK</a>
-- <a href="./price-pusher">Price Pusher</a>
-- <a href="./vrf_listener">VRF Listener</a>
+
+Our utility library:
 - <a href="./pragma-utils">Pragma utils</a>
+
+Our services used to publish data etc...:
+- <a href="./price-pusher">Price Pusher</a>
+- <a href="./vrf-listener">VRF Listener</a>
+- <a href="./checkpointer">Checkpointer</a>
+- <a href="./merkle-maker">Merkle Maker</a>
 
 ## Contributing
 

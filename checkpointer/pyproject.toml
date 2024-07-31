@@ -16,7 +16,7 @@ include = ["checkpointer"]
 packages = [{ include = "checkpointer" }]
 
 [tool.poetry.scripts]
-scheduler = 'checkpointer.main:cli_entrypoint'
+checkpointer = 'checkpointer.main:cli_entrypoint'
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"

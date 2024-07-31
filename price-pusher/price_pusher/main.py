@@ -2,14 +2,17 @@ import asyncio
 import click
 import logging
 
-from typing import Optional, List, Tuple
+from typing import Optional, List
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
-from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.offchain.client import PragmaAPIClient
+
+from pragma_sdk.onchain.types.types import PrivateKey
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.client import PragmaOnChainClient
+
+from pragma_sdk.offchain.client import PragmaAPIClient
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
@@ -32,7 +35,7 @@ async def main(
     price_configs: List[PriceConfig],
     target: Target,
     network: Network,
-    private_key: str | Tuple[str, str],
+    private_key: PrivateKey,
     publisher_name: str,
     publisher_address: str,
     rpc_url: Optional[str] = None,
@@ -104,7 +107,7 @@ def _create_client(
     target: Target,
     network: Network,
     publisher_address: str,
-    private_key: str | Tuple[str, str],
+    private_key: PrivateKey,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
@@ -301,7 +304,7 @@ def cli_entrypoint(
             target=target,
             network=network,
             private_key=private_key,
-            publisher_name=publisher_name,
+            publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
             api_base_url=api_base_url,
             api_key=api_key,
