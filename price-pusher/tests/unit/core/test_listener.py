@@ -66,17 +66,20 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
         pair_id="BTC/USD",
         price=10000,
         timestamp=1234567890,
-        source="source_1",
-        publisher="publisher_1",
+        source="SOURCE_1",
+        publisher="PUBLISHER_1",
     )
     mock_request_handler.fetch_latest_entries.return_value = mock_entry
+
+    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {"SOURCE_1": mock_entry}}}
+
     await price_listener._fetch_all_oracle_prices()
 
-    first_key = list(mock_price_config.get_all_assets.return_value.keys())[0]
+    data_type = list(mock_price_config.get_all_assets.return_value.keys())[0]
+    pair = mock_price_config.get_all_assets.return_value[data_type][0]
 
     mock_request_handler.fetch_latest_entries.assert_called_once_with(
-        first_key,
-        mock_price_config.get_all_assets.return_value[first_key][0],
+        pair=pair, data_type=data_type, sources=["SOURCE_1"]
     )
     assert "BTC/USD" in price_listener.oracle_prices
     assert DataTypes.SPOT in price_listener.oracle_prices["BTC/USD"]

@@ -22,9 +22,15 @@ class APIRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaAPIClient) -> None:
         self.client = client
 
-    async def fetch_latest_entries(self, data_type: DataTypes, pair: Pair) -> List[Entry]:
+    async def fetch_latest_entries(
+        self,
+        pair: Pair,
+        data_type: DataTypes,
+        sources: List[str],
+    ) -> List[Entry]:
         """
         Fetch last entry for the asset from the API.
+        NOTE: The sources parameter is not used for this handler.
         """
         if data_type is DataTypes.FUTURE:
             return await self._fetch_latest_future_entries(pair)

@@ -22,14 +22,21 @@ class ChainRequestHandler(IRequestHandler):
     def __init__(self, client: PragmaOnChainClient) -> None:
         self.client = client
 
-    async def fetch_latest_entries(self, data_type: DataTypes, pair: Pair) -> List[Entry]:
-        entry = await self._fetch_oracle_price(data_type, pair)
+    async def fetch_latest_entries(
+        self,
+        pair: Pair,
+        data_type: DataTypes,
+        sources: List[str],
+    ) -> List[Entry]:
+        entry = await self._fetch_oracle_price(pair, data_type, sources)
         if entry is None:
             logger.error("Can't get price for {}: unknown asset type.")
             return None
         return entry
 
-    async def _fetch_oracle_price(self, data_type: DataTypes, pair: Pair) -> List[Entry]:
+    async def _fetch_oracle_price(
+        self, pair: Pair, data_type: DataTypes, sources: List[str]
+    ) -> List[Entry]:
         pair_id = str(pair)
 
         async def fetch_action() -> List[Entry]:
@@ -37,7 +44,9 @@ class ChainRequestHandler(IRequestHandler):
             new_entry = None
             match data_type:
                 case DataTypes.SPOT:
-                    oracle_response = await self.client.get_spot(pair_id, block_id="pending")
+                    oracle_response = await self.client.get_spot(
+                        pair_id, sources=sources, block_id="pending"
+                    )
                     new_entry = SpotEntry.from_oracle_response(
                         pair,
                         oracle_response,
@@ -46,7 +55,9 @@ class ChainRequestHandler(IRequestHandler):
                     )
                 case DataTypes.FUTURE:
                     # TODO: We only fetch the perp entry for now
-                    oracle_response = await self.client.get_future(pair_id, 0, block_id="pending")
+                    oracle_response = await self.client.get_future(
+                        pair_id, 0, sources=sources, block_id="pending"
+                    )
                     new_entry = FutureEntry.from_oracle_response(
                         pair,
                         oracle_response,
