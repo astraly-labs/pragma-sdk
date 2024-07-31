@@ -254,6 +254,61 @@ class OracleMixin:
             response["expiration_timestamp"],
         )
 
+    async def get_entry(
+        self,
+        pair_id: str | int,
+        data_type: DataTypes,
+        publisher: str | int,
+        source: str | int,
+        expiration_timestamp: Optional[int] = None,
+        block_id: Optional[BlockId] = "latest",
+    ) -> Entry:
+        """
+        Query the Oracle contract for the entry of a publisher for a source.
+
+        :param pair_id: Pair ID
+        :param data_type: DataTypes
+        :param publisher: Publisher to check entry for
+        :param source: Source to check
+        :param expiration_timestamp: Optional, expiration timestamp for futures. Defaults to 0.
+        :param block_id: Block number or Block Tag
+        :return: Entry
+        """
+        if data_type == DataTypes.FUTURE and expiration_timestamp is None:
+            expiration_timestamp = 0
+
+        if isinstance(pair_id, str):
+            pair_id = str_to_felt(pair_id.upper())
+        elif not isinstance(pair_id, int):
+            raise TypeError(
+                "Pair ID must be string (will be converted to felt) or integer"
+            )
+
+        match data_type:
+            case DataTypes.SPOT | DataTypes.GENERIC:
+                asset = Asset(data_type, pair_id, None)
+            case DataTypes.FUTURE:
+                asset = Asset(data_type, pair_id, expiration_timestamp)
+
+        (response,) = await self.oracle.functions["get_data_entry"].call(
+            asset.serialize(),
+            source,
+            publisher,
+            block_number=block_id,
+        )
+
+        response = response.as_dict()
+        response = dict(response["value"])
+        entry: Entry
+        match data_type:
+            case DataTypes.SPOT:
+                entry = SpotEntry.from_dict(response)
+            case DataTypes.FUTURE:
+                entry = FutureEntry.from_dict(response)
+            case DataTypes.GENERIC:
+                entry = GenericEntry.from_dict(response)
+        return entry
+
     async def get_future(
         self,
         pair_id: str | int,

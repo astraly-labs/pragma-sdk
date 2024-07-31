@@ -16,6 +16,7 @@ from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.types import (
     DurationInSeconds,
+    LatestOraclePairPrices,
     LatestOrchestratorPairPrices,
     ExpiryTimestamp,
     SourceName,
@@ -37,6 +38,7 @@ class IPriceListener(ABC):
     request_handler: IRequestHandler
     price_config: PriceConfig
 
+    oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
 
     notification_event: asyncio.Event
