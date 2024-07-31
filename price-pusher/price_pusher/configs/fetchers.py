@@ -13,6 +13,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     OkxFetcher,
     BinanceFetcher,
     PropellerFetcher,
+    StarknetAMMFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
 
@@ -27,6 +28,7 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BybitFetcher,
     BinanceFetcher,
     PropellerFetcher,
+    StarknetAMMFetcher,
 ]
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [BinanceFutureFetcher, ByBitFutureFetcher]

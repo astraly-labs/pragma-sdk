@@ -1,4 +1,6 @@
 import json
+import time
+
 from typing import Any, List, Union
 
 from aiohttp import ClientSession
@@ -85,7 +87,6 @@ class OkxFutureFetcher(FetcherInterfaceT):
         return url
 
     def _construct(self, pair: Pair, data: Any, expiry_timestamp: int) -> FutureEntry:
-        timestamp = int(int(data["ts"]) / 1000)
         decimals = pair.decimals()
         price = float(data["last"])
         price_int = int(price * (10**decimals))
@@ -97,7 +98,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
             pair_id=pair.id,
             price=price_int,
             volume=volume,
-            timestamp=timestamp,
+            timestamp=int(time.time()),
             source=self.SOURCE,
             publisher=self.publisher,
             expiry_timestamp=int(expiry_timestamp),

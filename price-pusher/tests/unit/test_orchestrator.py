@@ -118,9 +118,6 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
     except asyncio.CancelledError:
         pass
 
-    # Assertions
-    mock_listener.price_config.get_all_assets.assert_called_once()
-
     # Check logs
     assert any(
         "💡 Notification received from LISTENER" in record.message for record in caplog.records

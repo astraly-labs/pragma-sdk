@@ -1,4 +1,5 @@
 import asyncio
+import time
 import json
 from typing import Any, List
 
@@ -67,7 +68,7 @@ class OkxFetcher(FetcherInterfaceT):
     def _construct(self, pair: Pair, result: Any, usdt_price: float = 1) -> SpotEntry:
         data = result["data"][0]
 
-        timestamp = int(int(data["ts"]) / 1000)
+        timestamp = int(time.time())
         price = float(data["last"]) / usdt_price
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["volCcy24h"])

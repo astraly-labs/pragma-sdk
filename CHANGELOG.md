@@ -1,3 +1,25 @@
+## v2.0.4 (2024-07-31)
+
+### Feat
+
+- Adds a Mutex to each account contract during invocation
+
+## v2.0.3 (2024-07-31)
+
+### Feat
+
+- config file path for checkpointer Dockerfile (#177)
+
+### Fix
+
+- Price pusher concurrency issue onchain (#180)
+- Fixed some price pusher edge cases (#179)
+- Fixed some price pusher issues (#174)
+
+### Breaking Changes
+
+- Fetchers now all use the current timestamp
+
 ## v2.0.2 (2024-07-29)
 
 ### Fix

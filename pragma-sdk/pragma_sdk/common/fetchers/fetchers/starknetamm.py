@@ -62,9 +62,8 @@ class StarknetAMMFetcher(FetcherInterfaceT):
     def format_url(self, pair: Pair, timestamp: Optional[int] = None) -> str:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         if timestamp:
-            return f"{self.EKUBO_PUBLIC_API}/price/{pair.base_currency.id}/{new_pair}?atTime={timestamp}&period=3600"
-
-        return f"{self.EKUBO_PUBLIC_API}/price/{pair.base_currency.id}/{new_pair}?period=3600"
+            return f"{self.EKUBO_PUBLIC_API}/price/{new_pair}?atTime={timestamp}&period=3600"
+        return f"{self.EKUBO_PUBLIC_API}/price/{new_pair}?period=3600"
 
     async def fetch(
         self, session: ClientSession
