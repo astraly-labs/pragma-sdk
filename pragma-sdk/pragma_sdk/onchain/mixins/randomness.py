@@ -31,8 +31,8 @@ logger = get_pragma_sdk_logger()
 
 class RandomnessMixin:
     client: Client
-    randomness: Contract
     account: Optional[Account] = None
+    randomness: Contract
     is_user_client: bool = False
     full_node_client: FullNodeClient
     execution_config: ExecutionConfig

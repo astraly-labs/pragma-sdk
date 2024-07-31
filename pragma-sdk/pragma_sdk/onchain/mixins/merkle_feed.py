@@ -1,9 +1,11 @@
 from typing import Optional
+from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.account.account import Account
 
-
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import OptionData
+
+from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.types import Contract, MerkleProof, BlockId
 
 
@@ -16,6 +18,7 @@ class MerkleFeedMixin:
     client: Client
     account: Account
     summary_stats: Contract
+    execution_config: ExecutionConfig
 
     async def get_options_data(
         self,
@@ -33,12 +36,13 @@ class MerkleFeedMixin:
         self,
         merkle_proof: MerkleProof,
         update_data: OptionData,
-    ) -> None:
+    ) -> InvokeResult:
         """
         Update the Option data upon merkle proof verification.
         """
-        print(self.summary_stats.functions)
-        (response,) = await self.summary_stats.functions["update_options_data"].call(
+        invocation = await self.summary_stats.functions["update_options_data"].invoke(
             merkle_proof,
             update_data.serialize(),
+            execution_config=self.execution_config,
         )
+        return invocation

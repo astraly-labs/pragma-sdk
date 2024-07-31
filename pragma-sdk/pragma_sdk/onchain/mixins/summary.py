@@ -3,6 +3,9 @@ from typing import Tuple
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
+from pragma_sdk.common.types.types import Address
+
+from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.onchain.types.types import (
     MeanFeedParams,
@@ -15,6 +18,15 @@ class SummaryStatsMixin:
     client: Client
     account: Account
     summary_stats: Contract
+
+    def init_summary_stats_contract(self, contract_address: Address):
+        provider = self.account if self.account else self.client
+        self.summary_stats = Contract(
+            address=contract_address,
+            abi=ABIS["pragma_SummaryStats"],
+            provider=provider,
+            cairo_version=1,
+        )
 
     async def calculate_mean(self, mean_feed_params: MeanFeedParams) -> Tuple[int, int]:
         """
