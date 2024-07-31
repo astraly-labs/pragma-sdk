@@ -11,6 +11,10 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.types import DataTypes
 
 
+PUBLISHER = "PUBLISHER_1"
+SOURCE = "SOURCE_1"
+
+
 @pytest.fixture
 def mock_request_handler():
     return AsyncMock(spec=IRequestHandler)
@@ -66,12 +70,12 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
         pair_id="BTC/USD",
         price=10000,
         timestamp=1234567890,
-        source="SOURCE_1",
-        publisher="PUBLISHER_1",
+        source=SOURCE,
+        publisher=PUBLISHER,
     )
     mock_request_handler.fetch_latest_entries.return_value = mock_entry
 
-    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {"SOURCE_1": mock_entry}}}
+    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {SOURCE: mock_entry}}}
 
     await price_listener._fetch_all_oracle_prices()
 
@@ -79,7 +83,7 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
     pair = mock_price_config.get_all_assets.return_value[data_type][0]
 
     mock_request_handler.fetch_latest_entries.assert_called_once_with(
-        pair=pair, data_type=data_type, sources=["SOURCE_1"]
+        pair=pair, data_type=data_type, sources=[SOURCE]
     )
     assert "BTC/USD" in price_listener.oracle_prices
     assert DataTypes.SPOT in price_listener.oracle_prices["BTC/USD"]
@@ -91,8 +95,8 @@ def test_get_most_recent_orchestrator_entry(price_listener):
         pair_id="BTC/USD",
         price=10000,
         timestamp=1234567890,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE,
+        publisher=PUBLISHER,
     )
     mock_entry.base.timestamp = 1000
     price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {"BINANCE": mock_entry}}}
@@ -108,8 +112,8 @@ async def test_oracle_needs_update_because_outdated(caplog, price_listener):
         pair_id="BTC/USD",
         price=10000,
         timestamp=1000000061,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE,
+        publisher=PUBLISHER,
     )
     oracle_entry = SpotEntry(
         pair_id="BTC/USD",
@@ -133,8 +137,8 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
         pair_id="BTC/USD",
         price=111,
         timestamp=1000000000,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE,
+        publisher=PUBLISHER,
     )
     oracle_entry = SpotEntry(
         pair_id="BTC/USD",
