@@ -110,7 +110,7 @@ async def test_vrf_listener_miss_with_large_interval(
         check_requests_interval=10000,
     )
 
-    await asyncio.sleep(5)
+    await asyncio.sleep(10)
 
     # Send a VRF request...
     last_request_id = 0

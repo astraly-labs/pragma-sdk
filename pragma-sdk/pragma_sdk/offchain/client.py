@@ -1,10 +1,10 @@
 import asyncio
 import time
-from typing import Dict, List, Optional, Union, Any
 import logging
-
 import aiohttp
-from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
+
+from typing import Dict, List, Optional, Union, Any
+
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
@@ -12,13 +12,14 @@ from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
-from pragma_sdk.offchain.signer import OffchainSigner
-from pragma_sdk.offchain.types import Interval, PublishEntriesAPIResult
 from pragma_sdk.common.types.pair import Pair
-
 from pragma_sdk.common.types.client import PragmaClient
 
+from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
+
 from pragma_sdk.offchain.exceptions import PragmaAPIError
+from pragma_sdk.offchain.types import Interval, PublishEntriesAPIResult
+from pragma_sdk.offchain.signer import OffchainSigner
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +85,10 @@ class PragmaAPIClient(PragmaClient):
         path_params = {
             key: value
             for key, value in {
-                "timestamp": timestamp,
-                "interval": interval,
+                "timestamp": str(timestamp),
+                "interval": str(interval),
                 "aggregation": (
-                    aggregation.value.lower() if aggregation is not None else None
+                    str(aggregation.value.lower()) if aggregation is not None else None
                 ),
             }.items()
             if value is not None
@@ -217,10 +218,10 @@ class PragmaAPIClient(PragmaClient):
         params = {
             key: value
             for key, value in {
-                "routing": routing,
-                "timestamp": timestamp,
-                "interval": interval.value if interval else None,
-                "aggregation": aggregation.value.lower() if aggregation else None,
+                "routing": str(routing),
+                "timestamp": str(timestamp),
+                "interval": str(interval.value) if interval else None,
+                "aggregation": str(aggregation.value.lower()) if aggregation else None,
             }.items()
             if value is not None
         }
@@ -276,12 +277,12 @@ class PragmaAPIClient(PragmaClient):
         params = {
             key: value
             for key, value in {
-                "routing": routing,
-                "timestamp": timestamp,
-                "interval": interval.value if interval else None,
-                "aggregation": aggregation.value.lower() if aggregation else None,
+                "routing": str(routing),
+                "timestamp": str(timestamp),
+                "interval": str(interval.value) if interval else None,
+                "aggregation": str(aggregation.value.lower()) if aggregation else None,
                 "entry_type": "future",
-                "expiry": expiry if expiry else None,
+                "expiry": str(expiry) if expiry else None,
             }.items()
             if value is not None
         }
@@ -331,8 +332,8 @@ class PragmaAPIClient(PragmaClient):
         }
 
         params = {
-            "start": start,
-            "end": end,
+            "start": str(start),
+            "end": str(end),
         }
 
         # Construct URL with parameters
