@@ -1,3 +1,9 @@
+## v2.0.4 (2024-07-31)
+
+### Feat
+
+- Adds a Mutex to each account contract during invocation
+
 ## v2.0.3 (2024-07-31)
 
 ### Feat
