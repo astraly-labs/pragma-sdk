@@ -16,6 +16,7 @@ from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.types import (
     DurationInSeconds,
+    LatestOraclePairPrices,
     LatestOrchestratorPairPrices,
     ExpiryTimestamp,
     SourceName,
@@ -37,6 +38,7 @@ class IPriceListener(ABC):
     request_handler: IRequestHandler
     price_config: PriceConfig
 
+    oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
 
     notification_event: asyncio.Event
@@ -145,12 +147,29 @@ class PriceListener(IPriceListener):
         """
         self.orchestrator_prices = orchestrator_prices
 
+    def _get_sources_for_pair(self, pair: Pair, data_type: DataTypes) -> List[str]:
+        """
+        Return the sources that have entries for the pair requested in the orchestrator.
+        """
+        if self.orchestrator_prices is None:
+            return []
+        pair_id = str(pair)
+        if pair_id not in self.orchestrator_prices:
+            return []
+        if data_type not in self.orchestrator_prices[pair_id]:
+            return []
+        return list(self.orchestrator_prices[pair_id][data_type].keys())
+
     async def _fetch_all_oracle_prices(self) -> None:
         """
         Fetch the latest oracle prices for all assets in parallel.
         """
         tasks = [
-            self.request_handler.fetch_latest_entries(data_type, pair)
+            self.request_handler.fetch_latest_entries(
+                pair=pair,
+                data_type=data_type,
+                sources=self._get_sources_for_pair(pair, data_type),
+            )
             for data_type, pairs in self.data_config.items()
             for pair in pairs
         ]
