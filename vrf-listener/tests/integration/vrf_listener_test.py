@@ -107,10 +107,10 @@ async def test_vrf_listener_miss_with_large_interval(
         admin_address=caller_address,
         private_key=private_key,
         # Very big check interval request so we're sure it does not catch the request
-        check_requests_interval=10000,
+        check_requests_interval=1000,
     )
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(30)
 
     # Send a VRF request...
     last_request_id = 0
