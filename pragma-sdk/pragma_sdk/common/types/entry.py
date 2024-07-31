@@ -213,7 +213,7 @@ class SpotEntry(Entry):
         return felt_to_str(self.pair_id)
 
     def get_source(self) -> str:
-        return felt_to_str(self.base.source).upper()
+        return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
         return DataTypes.SPOT
@@ -406,7 +406,7 @@ class FutureEntry(Entry):
         return felt_to_str(self.pair_id)
 
     def get_source(self) -> str:
-        return felt_to_str(self.base.source).upper()
+        return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
         return DataTypes.FUTURE
@@ -562,7 +562,7 @@ class GenericEntry(Entry):
         return felt_to_str(self.key)
 
     def get_source(self) -> str:
-        return felt_to_str(self.base.source).upper()
+        return felt_to_str(self.base.source)
 
     def get_asset_type(self) -> DataTypes:
         return DataTypes.GENERIC
