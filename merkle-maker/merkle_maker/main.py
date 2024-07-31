@@ -7,7 +7,7 @@ from typing import Optional, Literal, Never
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
 
 from pragma_sdk.onchain.types.types import PrivateKey
 from pragma_sdk.onchain.client import PragmaOnChainClient

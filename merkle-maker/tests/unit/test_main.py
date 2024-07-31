@@ -6,7 +6,7 @@ from pragma_sdk.common.utils import str_to_felt
 from pragma_sdk.common.types.entry import GenericEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers.deribit import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.constants import DERIBIT_MERKLE_FEED_KEY

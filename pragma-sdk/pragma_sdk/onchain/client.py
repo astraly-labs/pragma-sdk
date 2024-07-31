@@ -201,7 +201,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     async def get_block_number(self) -> Any:
         """Returns the current block number."""
         return await self.full_node_client.get_block_number()
-      
+
     async def publish_entries(
         self, entries: List[Entry]
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
