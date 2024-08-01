@@ -85,5 +85,5 @@ class RedisManager:
         # see: https://redis.io/docs/latest/develop/data-types/json/
         return bool(res)
 
-    def _get_key(self, network: Literal["mainnet", "sepolia"], key: str) -> str:
-        return f"{network}/{key}"
+    def _get_key(self, network: Literal["mainnet", "sepolia"], name: str) -> str:
+        return f"{network}/{name}"
