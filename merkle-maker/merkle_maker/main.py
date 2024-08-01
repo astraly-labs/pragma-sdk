@@ -56,6 +56,7 @@ async def main(
 
     logger.info("🧩 Starting the Merkle Maker...\n")
     await _publish_merkle_feeds_forever(
+        network=network,
         pragma_client=pragma_client,
         fetcher_client=fetcher_client,
         redis_manager=redis_manager,
@@ -64,6 +65,7 @@ async def main(
 
 
 async def _publish_merkle_feeds_forever(
+    network: Literal["mainnet", "sepolia"],
     pragma_client: PragmaOnChainClient,
     fetcher_client: FetcherClient,
     redis_manager: RedisManager,
@@ -93,7 +95,7 @@ async def _publish_merkle_feeds_forever(
             logger.warning("Could not publish! Contract not yet updated.")
 
         logger.info("🏭 Storing the merkle tree & options in Redis...")
-        success_store = redis_manager.store_latest_data(deribit_fetcher.latest_data)
+        success_store = redis_manager.store_latest_data(network, deribit_fetcher.latest_data)
         if not success_store:
             raise RuntimeError("Could not store the latest data to the Redis instance.")
 

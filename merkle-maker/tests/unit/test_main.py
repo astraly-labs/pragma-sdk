@@ -86,6 +86,7 @@ async def test_main():
 
         # Assert that _publish_merkle_feeds_forever was called with the correct arguments
         mock_publish_forever.assert_called_once_with(
+            network="sepolia",
             pragma_client=mock_pragma_client,
             fetcher_client=mock_fetcher_client,
             redis_manager=mock_redis_manager,

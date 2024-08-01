@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from redis import Redis
 from starknet_py.hash.hash_method import HashMethod
@@ -19,18 +19,22 @@ class RedisManager:
     def __init__(self, host: str, port: str):
         self.client = Redis(host=host, port=port)
 
-    def store_latest_data(self, latest_data: Optional[LatestData]) -> bool:
+    def store_latest_data(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        latest_data: Optional[LatestData],
+    ) -> bool:
         if latest_data is None:
             return False
         return all(
             [
-                self._store_latest_merkle_tree(latest_data.merkle_tree),
-                self._store_latest_options(latest_data.options),
+                self._store_latest_merkle_tree(network, latest_data.merkle_tree),
+                self._store_latest_options(network, latest_data.options),
             ]
         )
 
-    def get_options(self) -> Optional[CurrenciesOptions]:
-        response = self.client.json().get("last_options", "$")
+    def get_options(self, network: Literal["mainnet", "sepolia"]) -> Optional[CurrenciesOptions]:
+        response = self.client.json().get(f"{network}/last_options", "$")
         if response is None or len(response) == 0:
             return None
         options = {
@@ -39,8 +43,8 @@ class RedisManager:
         }
         return options
 
-    def get_merkle_tree(self) -> Optional[MerkleTree]:
-        response = self.client.json().get("last_merkle_tree", "$")
+    def get_merkle_tree(self, network: Literal["mainnet", "sepolia"]) -> Optional[MerkleTree]:
+        response = self.client.json().get(f"{network}/last_merkle_tree", "$")
         if response is None or len(response) == 0:
             return None
         return MerkleTree(
@@ -48,19 +52,27 @@ class RedisManager:
             hash_method=HashMethod(response[0]["hash_method"].lower()),
         )
 
-    def _store_latest_merkle_tree(self, merkle_tree: MerkleTree) -> bool:
+    def _store_latest_merkle_tree(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        merkle_tree: MerkleTree,
+    ) -> bool:
         last_merkle_tree = merkle_tree_to_dict(merkle_tree)
-        res = self.client.json().set("last_merkle_tree", "$", last_merkle_tree)
+        res = self.client.json().set(f"{network}/last_merkle_tree", "$", last_merkle_tree)
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
         # see: https://redis.io/docs/latest/develop/data-types/json/
         return bool(res)
 
-    def _store_latest_options(self, options: CurrenciesOptions) -> bool:
+    def _store_latest_options(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        options: CurrenciesOptions,
+    ) -> bool:
         last_options = {
             currency: [option.as_dict() for option in options]
             for currency, options in options.items()
         }
-        res = self.client.json().set("last_options", "$", last_options)
+        res = self.client.json().set(f"{network}/last_options", "$", last_options)
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
         # see: https://redis.io/docs/latest/develop/data-types/json/
         return bool(res)

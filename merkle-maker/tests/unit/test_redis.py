@@ -13,6 +13,9 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
 
 from merkle_maker.redis import RedisManager
 
+MAINNET = "mainnet"
+SEPOLIA = "sepolia"
+
 
 @pytest.fixture
 def redis_manager():
@@ -69,39 +72,39 @@ def test_store_latest_data(
     redis_manager: RedisManager, sample_merkle_tree: MerkleTree, sample_options: CurrenciesOptions
 ):
     latest_data = LatestData(merkle_tree=sample_merkle_tree, options=sample_options)
-    assert redis_manager.store_latest_data(latest_data)
-    assert not redis_manager.store_latest_data(None)
+    assert redis_manager.store_latest_data(MAINNET, latest_data)
+    assert not redis_manager.store_latest_data(MAINNET, None)
 
 
 def test_get_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
-    redis_manager._store_latest_options(sample_options)
+    redis_manager._store_latest_options(MAINNET, sample_options)
 
-    result = redis_manager.get_options()
+    result = redis_manager.get_options(MAINNET)
     assert result is not None
     assert "BTC" in result
     assert len(result["BTC"]) == 1
     assert isinstance(result["BTC"][0], OptionData)
     assert result["BTC"][0].instrument_name == "BTC-27DEC24-20000-P"
 
-    redis_manager.client.delete("last_options")
-    assert redis_manager.get_options() is None
+    redis_manager.client.delete(f"{MAINNET}/last_options")
+    assert redis_manager.get_options(MAINNET) is None
 
 
 def test_get_merkle_tree(redis_manager: RedisManager, sample_merkle_tree: MerkleTree):
-    redis_manager._store_latest_merkle_tree(sample_merkle_tree)
+    redis_manager._store_latest_merkle_tree(SEPOLIA, sample_merkle_tree)
 
-    out = redis_manager.get_merkle_tree()
+    out = redis_manager.get_merkle_tree(SEPOLIA)
     assert out is not None
     assert len(out.leaves) == 1
     assert out.hash_method == HashMethod.PEDERSEN
 
-    redis_manager.client.delete("last_merkle_tree")
-    assert redis_manager.get_merkle_tree() is None
+    redis_manager.client.delete(f"{SEPOLIA}/last_merkle_tree")
+    assert redis_manager.get_merkle_tree(SEPOLIA) is None
 
 
 def test_store_latest_merkle_tree(redis_manager: RedisManager, sample_merkle_tree: MerkleTree):
-    assert redis_manager._store_latest_merkle_tree(sample_merkle_tree)
+    assert redis_manager._store_latest_merkle_tree(SEPOLIA, sample_merkle_tree)
 
 
 def test_store_latest_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
-    assert redis_manager._store_latest_options(sample_options)
+    assert redis_manager._store_latest_options(MAINNET, sample_options)
