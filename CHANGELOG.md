@@ -1,3 +1,14 @@
+## v2.0.5 (2024-08-02)
+
+### Feat
+
+- Dexscreener fetcher (#183)
+- Merkle Maker service (#164)
+
+### Fix
+
+- Price pusher median comparison (#182)
+
 ## v2.0.4 (2024-07-31)
 
 ### Feat
