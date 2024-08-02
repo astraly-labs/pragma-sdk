@@ -4,7 +4,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     BitstampFetcher,
     CoinbaseFetcher,
     OkxFetcher,
-    StarknetAMMFetcher,
+    EkuboFetcher,
     PropellerFetcher,
     GeckoTerminalFetcher,
 )
@@ -255,16 +255,16 @@ ONCHAIN_FETCHER_CONFIGS = {
             ),
         ],
     },
-    "StarknetAMMFetcher": {
+    "EkuboFetcher": {
         "mock_file": MOCK_DIR / "responses" / "starknet_amm.json",
-        "fetcher_class": StarknetAMMFetcher,
+        "fetcher_class": EkuboFetcher,
         "name": "Starknet",
         "expected_result": [
             SpotEntry(
                 "LUSD/USD",
                 1001354537000,
                 12345,
-                "STARKNET",
+                "EKUBO",
                 PUBLISHER_NAME,
                 volume=0,
             ),
@@ -272,7 +272,7 @@ ONCHAIN_FETCHER_CONFIGS = {
                 "WBTC/USD",
                 5763275533000,
                 12345,
-                "STARKNET",
+                "EKUBO",
                 PUBLISHER_NAME,
                 volume=0,
             ),

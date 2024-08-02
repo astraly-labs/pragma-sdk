@@ -32,9 +32,9 @@ SUPPORTED_ASSETS = [
 ]
 
 
-class StarknetAMMFetcher(FetcherInterfaceT):
+class EkuboFetcher(FetcherInterfaceT):
     EKUBO_PUBLIC_API: str = "https://mainnet-api.ekubo.org"
-    SOURCE = "STARKNET"
+    SOURCE = "EKUBO"
 
     hop_handler = HopHandler(
         hopped_currencies={
@@ -48,11 +48,11 @@ class StarknetAMMFetcher(FetcherInterfaceT):
         url = self.format_url(pair, timestamp)
         async with session.get(url) as resp:
             if resp.status == 404:
-                return PublisherFetchError(f"No data found for {pair} from Starknet")
+                return PublisherFetchError(f"No data found for {pair} from Ekubo")
             if resp.status == 200:
                 result_json = await resp.json()
                 return self._construct(pair, float(result_json["price"]))
-            return PublisherFetchError(f"Failed to fetch data for {pair} from Starknet")
+            return PublisherFetchError(f"Failed to fetch data for {pair} from Ekubo")
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -73,13 +73,13 @@ class StarknetAMMFetcher(FetcherInterfaceT):
             if pair.to_tuple() in SUPPORTED_ASSETS:
                 entries.append(self.fetch_pair(pair, session))
             else:
-                logger.debug(f"Skipping StarknetAMM for non supported pair: {pair}")
+                logger.debug(f"Skipping Ekubo for non supported pair: {pair}")
 
         return list(await asyncio.gather(*entries, return_exceptions=True))  # type: ignore[call-overload]
 
     def _construct(self, pair: Pair, result: float) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))
-        logger.debug("Fetched price %d for %s from Starknet (Ekubo)", price_int, pair)
+        logger.debug("Fetched price %d for %s from Ekubo", price_int, pair)
         return SpotEntry(
             pair_id=pair.id,
             price=price_int,

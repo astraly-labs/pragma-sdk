@@ -20,6 +20,8 @@ class AssetConfig(BaseModel):
     ticker: str
     coingecko_id: Optional[str] = None
     abstract: Optional[bool] = False
+    starknet_address: Optional[str] = None
+    ethereum_address: Optional[str] = None
 
     @classmethod
     def from_yaml(cls, path: Path) -> List[Self]:
