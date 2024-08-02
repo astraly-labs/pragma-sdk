@@ -102,8 +102,9 @@ class DexscreenerFetcher(FetcherInterfaceT):
         self, base: Currency, quote: Currency, session: ClientSession
     ) -> dict | PublisherFetchError:
         pair_id = f"{base.id}/{quote.id}"
-        url = self.format_url(hex(base.starknet_address), hex(quote.starknet_address))
-        print(url)
+        base_address_hex = f"{base.starknet_address:#0{66}x}"
+        quote_address_hex = f"{quote.starknet_address:#0{66}x}"
+        url = self.format_url(base_address_hex, quote_address_hex)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -112,7 +113,6 @@ class DexscreenerFetcher(FetcherInterfaceT):
             if resp.status == 200:
                 response = await resp.json()
                 # NOTE: Response are sorted by highest liq, so we take the first.
-                print(response)
                 if len(response["pairs"]) > 0:
                     return response["pairs"][0]  # type: ignore[no-any-return]
         return PublisherFetchError(f"No data found for {pair_id} from Dexscreener")
@@ -138,21 +138,3 @@ class DexscreenerFetcher(FetcherInterfaceT):
             publisher=self.publisher,
             volume=0,
         )
-
-
-from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-
-
-async def main():
-    pairs = [Pair.from_tickers("EKUBO", "USDC")]
-    fc = FetcherClient()
-
-    dex = DexscreenerFetcher(pairs, "AKHERCHA")
-    fc.add_fetcher(dex)
-
-    entries = await fc.fetch(filter_exceptions=False)
-    print(entries)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
