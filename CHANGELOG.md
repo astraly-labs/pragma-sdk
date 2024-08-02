@@ -1,3 +1,13 @@
+## v2.0.6 (2024-08-02)
+
+### Feat
+
+- add EKUBO pairs to fetchers
+
+### Fix
+
+- pair serialization method
+
 ## v2.0.5 (2024-08-02)
 
 ### Feat
