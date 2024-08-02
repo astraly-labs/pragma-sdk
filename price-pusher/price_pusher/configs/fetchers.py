@@ -14,7 +14,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     BinanceFetcher,
     PropellerFetcher,
     EkuboFetcher,
-    DexscreenerFetcher
+    DexscreenerFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
 
