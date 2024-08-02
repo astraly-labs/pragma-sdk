@@ -31,5 +31,4 @@ FROM base as final
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
 WORKDIR /opt/price-pusher
-RUN echo "/opt/price-pusher/.venv/bin/python3.12 price_pusher/main.py \$ARGS \$@" > /run_module.sh
-ENTRYPOINT ["/bin/bash", "/run_module.sh"]
+ENTRYPOINT /opt/price-pusher/.venv/bin/python3.12 price_pusher/main.py ${ARGS} 
