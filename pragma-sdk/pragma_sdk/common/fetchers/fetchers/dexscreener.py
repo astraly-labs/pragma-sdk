@@ -111,7 +111,6 @@ class DexscreenerFetcher(FetcherInterfaceT):
     ) -> dict | PublisherFetchError:
         pair_id = f"{base.id}/{quote.id}"
         url = self.format_url(Pair.from_tickers(base.id, quote.id))
-        print(url)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
