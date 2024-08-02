@@ -16,6 +16,7 @@ from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
 from price_pusher.types import (
     DurationInSeconds,
+    LatestOraclePairPrices,
     LatestOrchestratorPairPrices,
     ExpiryTimestamp,
     SourceName,
@@ -37,6 +38,7 @@ class IPriceListener(ABC):
     request_handler: IRequestHandler
     price_config: PriceConfig
 
+    oracle_prices: LatestOraclePairPrices
     orchestrator_prices: Optional[LatestOrchestratorPairPrices]
 
     notification_event: asyncio.Event
@@ -115,10 +117,7 @@ class PriceListener(IPriceListener):
         """
         last_fetch_time = -1
         while True:
-            # Check if the notification event is clear
-            while self.notification_event.is_set():
-                await asyncio.sleep(1)
-
+            await self._wait_until_notification_is_handled()
             current_time = asyncio.get_event_loop().time()
             if current_time - last_fetch_time >= self.polling_frequency_in_s:
                 await self._fetch_all_oracle_prices()
@@ -128,18 +127,49 @@ class PriceListener(IPriceListener):
                 last_fetch_time = -1
             await asyncio.sleep(1)
 
+    async def _wait_until_notification_is_handled(self) -> None:
+        """
+        Pauses the listener checks until the notification is handled.
+        This means for our case that we wait until the pusher price
+        update is actually done - so we can here fetch for new prices
+        and compare them with the latest available from the poller.
+
+        If we don't do this, the listener will spam notification
+        the pusher with new entries even though there are some entries
+        on their way to be pushed with the new data.
+        """
+        while self.notification_event.is_set():
+            await asyncio.sleep(0.5)
+
     def set_orchestrator_prices(self, orchestrator_prices: dict) -> None:
         """
         Set the reference of the orchestrator prices in the Listener.
         """
         self.orchestrator_prices = orchestrator_prices
 
+    def _get_sources_for_pair(self, pair: Pair, data_type: DataTypes) -> List[str]:
+        """
+        Return the sources that have entries for the pair requested in the orchestrator.
+        """
+        if self.orchestrator_prices is None:
+            return []
+        pair_id = str(pair)
+        if pair_id not in self.orchestrator_prices:
+            return []
+        if data_type not in self.orchestrator_prices[pair_id]:
+            return []
+        return list(self.orchestrator_prices[pair_id][data_type].keys())
+
     async def _fetch_all_oracle_prices(self) -> None:
         """
         Fetch the latest oracle prices for all assets in parallel.
         """
         tasks = [
-            self.request_handler.fetch_latest_entries(data_type, pair)
+            self.request_handler.fetch_latest_entries(
+                pair=pair,
+                data_type=data_type,
+                sources=self._get_sources_for_pair(pair, data_type),
+            )
             for data_type, pairs in self.data_config.items()
             for pair in pairs
         ]
@@ -227,9 +257,14 @@ class PriceListener(IPriceListener):
                 if data_type not in self.orchestrator_prices[pair_id]:
                     continue
                 # Warning there - we should have all the prices in the Oracle. We try to fill empty values.
+                if pair_id not in self.oracle_prices:
+                    logger.warn(
+                        f"LISTENER {self.id} miss {pair_id} entries in oracle. Sending notification."
+                    )
+                    return True
                 if data_type not in self.oracle_prices[pair_id]:
                     logger.warn(
-                        f"LISTENER {self.id} miss {data_type} prices in oracle entries. Sending notification."
+                        f"LISTENER {self.id} miss {pair_id}:{data_type} entries in oracle entries. Sending notification."
                     )
                     return True
 
@@ -321,7 +356,7 @@ class PriceListener(IPriceListener):
         """
         max_deviation = self.price_config.price_deviation * oracle_price
         deviation = abs(new_price - oracle_price)
-        is_deviating = deviation >= max_deviation
+        is_deviating = deviation > max_deviation
         if is_deviating:
             deviation_percentage = (deviation / oracle_price) * 100
             logger.info(
@@ -347,7 +382,7 @@ class PriceListener(IPriceListener):
 
         if is_outdated:
             logger.info(
-                f"🔔 Latest oracle entry for {pair_id} is too old (delta = {delta_t}, "
+                f"🔔 Latest oracle entry for {pair_id} is too old (delta = {delta_t}s, "
                 f"more than {self.price_config.time_difference}s). "
                 "Triggering an update!"
             )

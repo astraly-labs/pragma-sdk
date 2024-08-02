@@ -107,7 +107,7 @@ class Orchestrator:
             entries_to_push = self._flush_entries_for_assets(listener.data_config)
             if len(entries_to_push) > 0:
                 await self.push_queue.put(entries_to_push)
-                await self.push_queue.join() # Wait for the entries to be processed
+                await self.push_queue.join()  # Wait for the entries to be processed
             listener.notification_event.clear()
 
     async def _pusher_service(self) -> None:

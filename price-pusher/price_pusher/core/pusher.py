@@ -44,7 +44,9 @@ class PricePusher(IPricePusher):
         """
         for invocation in invocations:
             nonce = invocation.invoke_transaction.nonce
-            logger.info(f"🏋️ PUSHER: ⏳ Waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted...")
+            logger.info(
+                f"🏋️ PUSHER: ⏳ Waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted..."
+            )
             await invocation.wait_for_acceptance(check_interval=1)
 
     async def update_price_feeds(self, entries: List[Entry]) -> Optional[Dict]:
