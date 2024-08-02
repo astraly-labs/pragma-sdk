@@ -17,8 +17,8 @@ class Currency:
         currency_id: str,
         decimals: Decimals,
         is_abstract_currency: bool,
-        starknet_address: Optional[Address] = None,
-        ethereum_address: Optional[Address] = None,
+        starknet_address: Optional[int | str] = None,
+        ethereum_address: Optional[int | str] = None,
     ):
         self.id = currency_id
         self.decimals = decimals
@@ -30,7 +30,7 @@ class Currency:
         self.starknet_address = self._validate_address(starknet_address)
         self.ethereum_address = self._validate_address(ethereum_address)
 
-    def _validate_address(self, address: Optional[Address]) -> int:
+    def _validate_address(self, address: Optional[int | str]) -> int:
         if address is None:
             return 0
         if isinstance(address, str):
@@ -43,6 +43,8 @@ class Currency:
             currency_id=config.ticker,
             decimals=config.decimals,
             is_abstract_currency=config.abstract or False,
+            starknet_address=config.starknet_address,
+            ethereum_address=config.ethereum_address,
         )
 
     def serialize(self) -> Tuple[str, int, bool, int, int]:
