@@ -12,3 +12,4 @@ container_environment:
       - PUBLISHER_ADDRESS
       - RPC_URL
       - API_KEY
+      - API_BASE_URL
