@@ -27,7 +27,7 @@ class Pair:
         self.quote_currency = quote_currency
 
     def serialize(self) -> Tuple[int, Currency, Currency]:
-        return (self.id, self.base_currency, self.quote_currency)
+        return (self.id, self.base_currency.id, self.quote_currency.id)
 
     def to_dict(self) -> Dict[str, int | str]:
         return {
