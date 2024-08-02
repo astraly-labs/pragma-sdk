@@ -14,6 +14,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     BinanceFetcher,
     PropellerFetcher,
     EkuboFetcher,
+    DexscreenerFetcher
 )
 from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
 
@@ -29,6 +30,7 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BinanceFetcher,
     PropellerFetcher,
     EkuboFetcher,
+    DexscreenerFetcher,
 ]
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [BinanceFutureFetcher, ByBitFutureFetcher]

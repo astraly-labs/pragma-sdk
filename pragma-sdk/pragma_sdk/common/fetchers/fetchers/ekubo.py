@@ -29,6 +29,8 @@ SUPPORTED_ASSETS = [
     ("NSTR", "USDC"),
     ("NSTR", "USDT"),
     ("ETH", "NSTR"),
+    ("EKUBO", "USD"),
+    ("EKUBO", "USDC"),
 ]
 
 
