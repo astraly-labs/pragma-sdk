@@ -1,0 +1,80 @@
+{
+    "LUSD": {
+        "schemaVersion": "1.0.0",
+        "pairs": [
+            {
+                "chainId": "starknet",
+                "dexId": "ekubo",
+                "baseToken": {
+                    "address": "9gP2kCy3wA1ctvYWQk75guqXuHfrEomqydHLtcTCqiLa",
+                    "name": "Liquity USD",
+                    "symbol": "LUSD"
+                },
+                "quoteToken": {
+                    "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "name": "USD Coin",
+                    "symbol": "USDC"
+                },
+                "priceUsd": "568.45",
+                "volume": {
+                    "h24": 49222.18,
+                    "h6": 11012.97,
+                    "h1": 61.77,
+                    "m5": 0
+                },
+                "priceChange": {
+                    "m5": 0,
+                    "h1": -0.58,
+                    "h6": 0.26,
+                    "h24": -0.22
+                },
+                "liquidity": {
+                    "usd": 59850.33,
+                    "base": 62.9497,
+                    "quote": 24066
+                },
+                "fdv": 524327,
+                "pairCreatedAt": 1704661640000
+            }
+        ]
+    },
+    "WBTC": {
+        "schemaVersion": "1.0.0",
+        "pairs": [
+            {
+                "chainId": "starknet",
+                "dexId": "ekubo",
+                "baseToken": {
+                    "address": "9gP2kCy3wA1ctvYWQk75guqXuHfrEomqydHLtcTCqiLa",
+                    "name": "Wrapped BTC",
+                    "symbol": "WBTC"
+                },
+                "quoteToken": {
+                    "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "name": "USD Coin",
+                    "symbol": "USDC"
+                },
+                "priceUsd": "568.45",
+                "volume": {
+                    "h24": 49222.18,
+                    "h6": 11012.97,
+                    "h1": 61.77,
+                    "m5": 0
+                },
+                "priceChange": {
+                    "m5": 0,
+                    "h1": -0.58,
+                    "h6": 0.26,
+                    "h24": -0.22
+                },
+                "liquidity": {
+                    "usd": 59850.33,
+                    "base": 62.9497,
+                    "quote": 24066
+                },
+                "fdv": 524327,
+                "pairCreatedAt": 1704661640000
+            }
+        ]
+    }
+}

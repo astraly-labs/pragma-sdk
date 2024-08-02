@@ -1,7 +1,7 @@
 - name: 'Bitcoin'
   decimals: 8
   ticker: 'BTC'
-  coingecko_id: 'bitczoin'
+  coingecko_id: 'bitcoin'
 
 - name: 'Ethereum'
   decimals: 18

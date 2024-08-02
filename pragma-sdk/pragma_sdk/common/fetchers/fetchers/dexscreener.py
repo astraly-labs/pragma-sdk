@@ -18,6 +18,13 @@ logger = get_pragma_sdk_logger()
 
 
 class DexscreenerFetcher(FetcherInterfaceT):
+    """
+    Dexscreener fetcher.
+    NOTE: Only works for Starknet at the moment.
+
+    Also, the API is still in beta so we expect breaking changes to happen.
+    """
+
     publisher: str
     pairs: List[Pair]
     _client: PragmaOnChainClient
@@ -52,16 +59,16 @@ class DexscreenerFetcher(FetcherInterfaceT):
 
         NOTE: The currencies of the pair must have a starknet_address.
         """
-        pair = self.hop_handler.get_hop_pair(pair) or pair
-        if pair.base_currency.starknet_address == 0:
+        hopped_pair = self.hop_handler.get_hop_pair(pair) or pair
+        if hopped_pair.base_currency.starknet_address == 0:
             return PublisherFetchError(
-                f"Failed to fetch data for {pair} from Dexscreener: "
-                f"{pair.base_currency.id} starknet_address is None."
+                f"Failed to fetch data for {hopped_pair} from Dexscreener: "
+                f"{hopped_pair.base_currency.id} starknet_address is None."
             )
-        if pair.base_currency.starknet_address == 0:
+        if hopped_pair.base_currency.starknet_address == 0:
             return PublisherFetchError(
-                f"Failed to fetch data for {pair} from Dexscreener: "
-                f"{pair.quote_currency.id} starknet_address is None."
+                f"Failed to fetch data for {hopped_pair} from Dexscreener: "
+                f"{hopped_pair.quote_currency.id} starknet_address is None."
             )
         return await self._fetch_dexscreener_price(pair, session)
 
@@ -77,16 +84,17 @@ class DexscreenerFetcher(FetcherInterfaceT):
         sometimes the quote asset is in front of the base asset...
         To be sure it works, we try both.
         """
+        hopped_pair = self.hop_handler.get_hop_pair(pair) or pair
         pair_data = await self._query_dexscreener(
-            pair.base_currency,
-            pair.quote_currency,
+            hopped_pair.base_currency,
+            hopped_pair.quote_currency,
             session,
         )
 
         if isinstance(pair_data, PublisherFetchError):
             pair_data = await self._query_dexscreener(
-                pair.quote_currency,
-                pair.base_currency,
+                hopped_pair.quote_currency,
+                hopped_pair.base_currency,
                 session,
             )
             if isinstance(pair_data, PublisherFetchError):
@@ -102,8 +110,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
         self, base: Currency, quote: Currency, session: ClientSession
     ) -> dict | PublisherFetchError:
         pair_id = f"{base.id}/{quote.id}"
-        url = self.format_url(hex(base.starknet_address), hex(quote.starknet_address))
-        print(url)
+        url = self.format_url(Pair.from_tickers(base.id, quote.id))
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
@@ -112,19 +119,19 @@ class DexscreenerFetcher(FetcherInterfaceT):
             if resp.status == 200:
                 response = await resp.json()
                 # NOTE: Response are sorted by highest liq, so we take the first.
-                print(response)
                 if len(response["pairs"]) > 0:
                     return response["pairs"][0]  # type: ignore[no-any-return]
         return PublisherFetchError(f"No data found for {pair_id} from Dexscreener")
 
     def format_url(  # type: ignore[override]
         self,
-        base_address: str,
-        quote_address: str,
+        pair: Pair,
     ) -> str:
         """
         Format the URL to fetch in order to retrieve the price for a pair.
         """
+        base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
+        quote_address = f"{pair.quote_currency.starknet_address:#0{66}x}"
         return f"{self.BASE_URL}/search?q={base_address}-{quote_address}"
 
     def _construct(self, pair: Pair, result: float, volume: float) -> SpotEntry:
@@ -138,21 +145,3 @@ class DexscreenerFetcher(FetcherInterfaceT):
             publisher=self.publisher,
             volume=0,
         )
-
-
-from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-
-
-async def main():
-    pairs = [Pair.from_tickers("EKUBO", "USDC")]
-    fc = FetcherClient()
-
-    dex = DexscreenerFetcher(pairs, "AKHERCHA")
-    fc.add_fetcher(dex)
-
-    entries = await fc.fetch(filter_exceptions=False)
-    print(entries)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
