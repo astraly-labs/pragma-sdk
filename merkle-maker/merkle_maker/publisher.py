@@ -17,6 +17,13 @@ TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
 
 
 class MerkleFeedPublisher:
+    """
+    Class responsible of querying the latest options, publishing them on-chain
+    and in our Redis database.
+
+    TODO: Implement automatic cleanup so we only keep the latest 100/1000 blocks?
+    """
+
     network: Literal["mainnet", "sepolia"]
     pragma_client: PragmaOnChainClient
     fetcher_client: FetcherClient
@@ -42,6 +49,11 @@ class MerkleFeedPublisher:
         self.redis_manager = redis_manager
         self.block_interval = block_interval
         self.time_to_wait_between_block_number_polling = time_to_wait_between_block_number_polling
+
+    @property
+    def deribit_fetcher(self) -> DeribitOptionsFetcher:
+        # We know for sure that fetchers[0] is DeribitOptionsFetcher, see assertions above.
+        return self.fetcher_client.fetchers[0]  # type: ignore[return-value]
 
     async def publish_forever(self) -> Never:
         """
@@ -90,9 +102,9 @@ class MerkleFeedPublisher:
             logger.warning("Could not publish! Contract not yet updated.")
 
         logger.info("🏭 Storing the merkle tree & options in Redis...")
-        # We know for sure that fetchers[0] is DeribitOptionsFetcher, see assertions above.
-        latest_data = self.fetcher_client.fetchers[0].latest_data  # type: ignore[attr-defined]
-        success_store = self.redis_manager.store_latest_data(
+
+        latest_data = self.deribit_fetcher.latest_data
+        success_store = self.redis_manager.store_block_data(
             self.network, current_block, latest_data
         )
         if not success_store:
