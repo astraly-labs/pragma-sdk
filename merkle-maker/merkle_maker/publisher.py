@@ -91,14 +91,11 @@ class MerkleFeedPublisher:
         """
         logger.info("🔍 Fetching the deribit options...")
         entries = await self.fetcher_client.fetch()
+        logger.info("... fetched!")
 
         logger.info("🎣 Publishing the merkle root onchain...")
-        try:
-            await self.pragma_client.publish_entries(entries)  # type: ignore[arg-type]
-            logger.info("... done!")
-        except Exception:
-            # TODO: remove this part when the contract has been updated
-            logger.warning("Could not publish! Contract not yet updated.")
+        await self.pragma_client.publish_entries(entries)  # type: ignore[arg-type]
+        logger.info("... published!")
 
         logger.info("🏭 Storing the merkle tree & options in Redis...")
 
