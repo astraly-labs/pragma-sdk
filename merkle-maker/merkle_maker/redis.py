@@ -22,19 +22,32 @@ class RedisManager:
     def store_latest_data(
         self,
         network: Literal["mainnet", "sepolia"],
+        block_number: int,
         latest_data: Optional[LatestData],
     ) -> bool:
         if latest_data is None:
             return False
         return all(
             [
-                self._store_latest_merkle_tree(network, latest_data.merkle_tree),
-                self._store_latest_options(network, latest_data.options),
+                self._store_latest_merkle_tree(
+                    network,
+                    block_number,
+                    latest_data.merkle_tree,
+                ),
+                self._store_latest_options(
+                    network,
+                    block_number,
+                    latest_data.options,
+                ),
             ]
         )
 
-    def get_options(self, network: Literal["mainnet", "sepolia"]) -> Optional[CurrenciesOptions]:
-        key = self._get_key(network, "last_options")
+    def get_options(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        block_number: int,
+    ) -> Optional[CurrenciesOptions]:
+        key = self._get_key(network, block_number, "last_options")
         response = self.client.json().get(key, "$")
         if response is None or len(response) == 0:
             return None
@@ -44,8 +57,12 @@ class RedisManager:
         }
         return options
 
-    def get_merkle_tree(self, network: Literal["mainnet", "sepolia"]) -> Optional[MerkleTree]:
-        key = self._get_key(network, "last_merkle_tree")
+    def get_merkle_tree(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        block_number: int,
+    ) -> Optional[MerkleTree]:
+        key = self._get_key(network, block_number, "last_merkle_tree")
         response = self.client.json().get(key, "$")
         if response is None or len(response) == 0:
             return None
@@ -57,11 +74,12 @@ class RedisManager:
     def _store_latest_merkle_tree(
         self,
         network: Literal["mainnet", "sepolia"],
+        block_number: int,
         merkle_tree: MerkleTree,
     ) -> bool:
         last_merkle_tree = merkle_tree_to_dict(merkle_tree)
 
-        key = self._get_key(network, "last_merkle_tree")
+        key = self._get_key(network, block_number, "last_merkle_tree")
         res = self.client.json().set(key, "$", last_merkle_tree)
 
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
@@ -71,6 +89,7 @@ class RedisManager:
     def _store_latest_options(
         self,
         network: Literal["mainnet", "sepolia"],
+        block_number: int,
         options: CurrenciesOptions,
     ) -> bool:
         last_options = {
@@ -78,12 +97,17 @@ class RedisManager:
             for currency, options in options.items()
         }
 
-        key = self._get_key(network, "last_options")
+        key = self._get_key(network, block_number, "last_options")
         res = self.client.json().set(key, "$", last_options)
 
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
         # see: https://redis.io/docs/latest/develop/data-types/json/
         return bool(res)
 
-    def _get_key(self, network: Literal["mainnet", "sepolia"], name: str) -> str:
-        return f"{network}/{name}"
+    def _get_key(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        block_number: int,
+        name: str,
+    ) -> str:
+        return f"{network}/{block_number}/{name}"
