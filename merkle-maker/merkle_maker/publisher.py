@@ -62,8 +62,8 @@ class MerkleFeedPublisher:
         We store the merkle tree and the options used to generate the merkle root
         to a Redis database that will get consumed by our Rust services.
         """
+        current_block = await self.pragma_client.get_block_number()
         while True:
-            current_block = await self.pragma_client.get_block_number()
             logger.info(f"Current block: {current_block}")
 
             if self._current_block_is_not_processed(current_block):
@@ -79,6 +79,7 @@ class MerkleFeedPublisher:
                 new_block = await self.pragma_client.get_block_number()
                 if new_block >= next_block:
                     logger.info(f"⌛ ... reached block {new_block}!\n")
+                    current_block = new_block
                     break
 
     async def _publish_and_store(
@@ -122,7 +123,7 @@ class MerkleFeedPublisher:
         """
         return all(
             [
-                self.redis_manager.get_options(self.network, block_number) is None,
+                self.redis_manager.get_all_options(self.network, block_number) is None,
                 self.redis_manager.get_merkle_tree(self.network, block_number) is None,
             ]
         )

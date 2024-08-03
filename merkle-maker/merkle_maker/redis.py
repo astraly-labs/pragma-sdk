@@ -1,4 +1,5 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, List, Any
+from collections import defaultdict
 
 from redis import Redis
 from starknet_py.hash.hash_method import HashMethod
@@ -10,10 +11,41 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     OptionData,
 )
 
-from merkle_maker.serializers import merkle_tree_to_dict
+from merkle_maker.serializers import serialize_merkle_tree
 
 
 class RedisManager:
+    """
+    Class responsible of storing the options data and the merkle tree used
+    to generate the Merkle Root onchain that was published at a certain block.
+
+    The current layout is:
+
+        .
+        ├── mainnet
+        │   └── 64680
+        │       ├── merkle_tree
+        │       └── options
+        │           ├── BTC-27DEC24-59000-C
+        │           └── BTC-27SEP24-42000-P
+        └── sepolia
+            ├── 56777
+            │   ├── merkle_tree
+            │   └── options
+            │       ├── BTC-27DEC24-59000-C
+            │       └── BTC-27SEP24-42000-P
+            └── 56778
+                ├── merkle_tree
+                └── options
+                    ├── BTC-27DEC24-59000-C
+                    └── BTC-27SEP24-42000-P
+
+    - `merkle_tree` being the merkle tree used to generate the merkle root
+      published on chain,
+    - `options` being the directory containg the options. The option name
+      is the instrument name.
+    """
+
     client: Redis
 
     def __init__(self, host: str, port: str):
@@ -42,20 +74,38 @@ class RedisManager:
             ]
         )
 
-    def get_options(
+    def get_option(
+        self,
+        network: Literal["mainnet", "sepolia"],
+        block_number: int,
+        instrument_name: str,
+    ) -> Optional[OptionData]:
+        key = self._get_key(network, block_number, f"options/{instrument_name}")
+        response = self.client.json().get(key, "$")
+        if response is None or len(response) != 1:
+            return None
+        return OptionData(**(response[0]))
+
+    def get_all_options(
         self,
         network: Literal["mainnet", "sepolia"],
         block_number: int,
     ) -> Optional[CurrenciesOptions]:
-        key = self._get_key(network, block_number, "options")
-        response = self.client.json().get(key, "$")
-        if response is None or len(response) == 0:
+        # Get all keys for options at this block number
+        all_options_pattern = self._get_key(network, block_number, "options/*")
+        option_keys: Any = self.client.keys(all_options_pattern)
+
+        if not option_keys:
             return None
-        options = {
-            currency: [OptionData(**option) for option in options]
-            for currency, options in response[0].items()
-        }
-        return options
+
+        options: Dict[str, List[OptionData]] = defaultdict(list)
+        for key in option_keys:
+            option_dict = self.client.json().get(key)
+            if option_dict:
+                option = OptionData(**option_dict)
+                options[option.base_currency].append(option)
+
+        return dict(options)
 
     def get_merkle_tree(
         self,
@@ -77,7 +127,7 @@ class RedisManager:
         block_number: int,
         merkle_tree: MerkleTree,
     ) -> bool:
-        serialized_merkle_tree = merkle_tree_to_dict(merkle_tree)
+        serialized_merkle_tree = serialize_merkle_tree(merkle_tree)
 
         key = self._get_key(network, block_number, "merkle_tree")
         res = self.client.json().set(key, "$", serialized_merkle_tree)
@@ -92,17 +142,24 @@ class RedisManager:
         block_number: int,
         options: CurrenciesOptions,
     ) -> bool:
-        serialized_options = {
-            currency: [option.as_dict() for option in options]
-            for currency, options in options.items()
-        }
+        for currency, option_list in options.items():
+            for option in option_list:
+                option_name = f"options/{option.instrument_name}"
+                key = self._get_key(network, block_number, option_name)
 
-        key = self._get_key(network, block_number, "options")
-        res = self.client.json().set(key, "$", serialized_options)
+                serialized_option = option.as_dict()
+                res = self.client.json().set(key, "$", serialized_option)
 
-        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
-        # see: https://redis.io/docs/latest/develop/data-types/json/
-        return bool(res)
+                # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
+                # see: https://redis.io/docs/latest/develop/data-types/json/
+                if not bool(res):
+                    # If we could not store something, we fail fast and exit the application.
+                    # This should never happen, the only possible failures are:
+                    # - connection to Redis is corrupted,
+                    # - redis is full.
+                    # For both cases, we have to handle this ourselves after crashing the app.
+                    return False
+        return True
 
     def _get_key(
         self,
