@@ -13,8 +13,6 @@ from merkle_maker.redis import RedisManager
 
 logger = logging.getLogger(__name__)
 
-TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
-
 
 class MerkleFeedPublisher:
     """
@@ -75,7 +73,7 @@ class MerkleFeedPublisher:
             logger.info(f"⏳ Waiting for block {next_block}...")
 
             while True:
-                await asyncio.sleep(TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING)
+                await asyncio.sleep(self.time_to_wait_between_block_number_polling)
                 new_block = await self.pragma_client.get_block_number()
                 if new_block >= next_block:
                     logger.info(f"⌛ ... reached block {new_block}!\n")
