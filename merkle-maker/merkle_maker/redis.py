@@ -1,5 +1,6 @@
 from typing import Optional, Literal, Dict, List, Any
 from collections import defaultdict
+from decimal import Decimal
 
 from redis import Redis
 from starknet_py.hash.hash_method import HashMethod
@@ -101,6 +102,7 @@ class RedisManager:
         options: Dict[str, List[OptionData]] = defaultdict(list)
         for key in option_keys:
             option_dict = self.client.json().get(key)
+            option_dict["mark_price"] = int(Decimal(option_dict["mark_price"]))
             if option_dict:
                 option = OptionData(**option_dict)
                 options[option.base_currency].append(option)

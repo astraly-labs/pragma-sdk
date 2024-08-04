@@ -4,6 +4,7 @@ from starknet_py.hash.hash_method import HashMethod
 from starknet_py.utils.merkle_tree import MerkleTree
 from fakeredis import FakeStrictRedis
 
+from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     OptionData,
     LatestData,
@@ -57,7 +58,9 @@ def sample_deribit_response():
 
 @pytest.fixture
 def sample_option_data(sample_deribit_response: DeribitOptionResponse) -> OptionData:
-    return OptionData.from_deribit_response(sample_deribit_response)
+    btc_usd = Pair.from_tickers("BTC", "USD")
+    decimals = btc_usd.base_currency.decimals
+    return OptionData.from_deribit_response(sample_deribit_response, decimals)
 
 
 @pytest.fixture

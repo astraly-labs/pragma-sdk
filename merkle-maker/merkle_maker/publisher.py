@@ -98,13 +98,14 @@ class MerkleFeedPublisher:
         logger.info("... published!")
 
         logger.info("🏭 Storing the merkle tree & options in Redis...")
-
         latest_data = self.deribit_fetcher.latest_data
         success_store = self.redis_manager.store_block_data(
             self.network, current_block, latest_data
         )
         if not success_store:
             raise RuntimeError(f"Could not store data for block {current_block} to Redis.")
+        else:
+            logger.info("... stored!")
 
         logger.info(f"✅ Block {current_block} done!\n")
 

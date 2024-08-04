@@ -100,7 +100,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
                     DeribitOptionResponse.from_dict(item) for item in data["result"]
                 ]
                 return [
-                    OptionData.from_deribit_response(response)
+                    OptionData.from_deribit_response(response, currency.decimals)
                     for response in option_responses
                 ]
 

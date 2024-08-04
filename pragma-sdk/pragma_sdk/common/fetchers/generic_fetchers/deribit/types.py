@@ -6,7 +6,7 @@ from pydantic.dataclasses import dataclass
 from starknet_py.utils.merkle_tree import MerkleTree
 from starknet_py.hash.utils import compute_hash_on_elements
 
-from pragma_sdk.common.types.types import UnixTimestamp
+from pragma_sdk.common.types.types import UnixTimestamp, Decimals
 from pragma_sdk.common.utils import str_to_felt
 
 
@@ -90,16 +90,21 @@ class OptionData:
     instrument_name: str
     base_currency: str
     current_timestamp: UnixTimestamp
-    mark_price: float
+    mark_price: int
 
     @classmethod
-    def from_deribit_response(cls, response: DeribitOptionResponse) -> "OptionData":
+    def from_deribit_response(
+        cls,
+        response: DeribitOptionResponse,
+        decimals: Decimals,
+    ) -> "OptionData":
         current_timestamp = int(time.time())
+        mark_price = (response.mark_price * response.underlying_price) * (10**decimals)
         return cls(
             instrument_name=response.instrument_name,
             base_currency=response.base_currency,
             current_timestamp=current_timestamp,
-            mark_price=response.mark_price * response.underlying_price,
+            mark_price=int(mark_price),
         )
 
     def as_dict(self) -> dict:
@@ -119,7 +124,7 @@ class OptionData:
                 instrument_name_felt,
                 base_currency_felt,
                 self.current_timestamp,
-                int(self.mark_price),
+                self.mark_price,
             ]
         )
 
@@ -128,7 +133,7 @@ class OptionData:
             "instrument_name": str_to_felt(self.instrument_name),
             "base_currency_id": str_to_felt(self.base_currency),
             "current_timestamp": self.current_timestamp,
-            "mark_price": int(self.mark_price),
+            "mark_price": self.mark_price,
         }
 
 
