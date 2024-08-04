@@ -2,9 +2,10 @@ from starknet_py.utils.merkle_tree import MerkleTree
 
 
 def serialize_merkle_tree(merkle_tree: MerkleTree) -> dict:
+    serialized_levels = [list(map(hex, level)) for level in merkle_tree.levels]
     return {
-        "leaves": merkle_tree.leaves,
+        "leaves": list(map(hex, merkle_tree.leaves)),
         "hash_method": merkle_tree.hash_method.name.upper(),
         "root_hash": hex(merkle_tree.root_hash),
-        "levels": merkle_tree.levels,
+        "levels": serialized_levels,
     }

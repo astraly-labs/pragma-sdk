@@ -118,8 +118,9 @@ class RedisManager:
         response = self.client.json().get(key, "$")
         if response is None or len(response) == 0:
             return None
+        leaves = [int(leaf, 16) for leaf in response[0]["leaves"]]
         return MerkleTree(
-            leaves=response[0]["leaves"],
+            leaves=leaves,
             hash_method=HashMethod(response[0]["hash_method"].lower()),
         )
 
