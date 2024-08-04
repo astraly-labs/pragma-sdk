@@ -135,7 +135,7 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
         leaves = []
         for currency, option_data_list in options.items():
             for option_data in option_data_list:
-                leaf = hash(option_data)
+                leaf = option_data.get_pedersen_hash()
                 leaves.append(leaf)
         leaves.sort()  # Sort the leaves to ensure consistent tree construction
         return MerkleTree(leaves, hash_method)

@@ -5,9 +5,9 @@ from typing import Optional, List, Dict, Any, Tuple
 from pydantic.dataclasses import dataclass
 from starknet_py.utils.merkle_tree import MerkleTree
 from starknet_py.hash.utils import compute_hash_on_elements
+from starknet_py.cairo.felt import encode_shortstring
 
 from pragma_sdk.common.types.types import UnixTimestamp, Decimals
-from pragma_sdk.common.utils import str_to_felt
 
 
 @dataclass
@@ -115,23 +115,26 @@ class OptionData:
             "mark_price": self.mark_price,
         }
 
-    def __hash__(self) -> int:
-        """Computes the Pedersen hash of the OptionData."""
-        instrument_name_felt = str_to_felt(self.instrument_name)
-        base_currency_felt = str_to_felt(self.base_currency)
-        return compute_hash_on_elements(  # type: ignore[no-any-return]
-            [
-                instrument_name_felt,
-                base_currency_felt,
-                self.current_timestamp,
-                self.mark_price,
-            ]
-        )
+    def get_pedersen_hash(self) -> int:
+        """
+        Computes the Pedersen hash of the OptionData.
+
+        NOTE: We don't implement the `__hash__` method, because under the hood
+        it will truncate your hash so it is maximum 64 bytes. Which won't work
+        with our implementation because we need more space. 😹
+        """
+        to_hash = [
+            encode_shortstring(self.instrument_name),
+            encode_shortstring(self.base_currency),
+            self.current_timestamp,
+            self.mark_price,
+        ]
+        return compute_hash_on_elements(to_hash)  # type: ignore[no-any-return]
 
     def serialize(self) -> Dict[str, int]:
         return {
-            "instrument_name": str_to_felt(self.instrument_name),
-            "base_currency_id": str_to_felt(self.base_currency),
+            "instrument_name": encode_shortstring(self.instrument_name),
+            "base_currency_id": encode_shortstring(self.base_currency),
             "current_timestamp": self.current_timestamp,
             "mark_price": self.mark_price,
         }
