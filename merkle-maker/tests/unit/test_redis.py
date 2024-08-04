@@ -70,7 +70,9 @@ def sample_options(sample_option_data: OptionData) -> CurrenciesOptions:
 
 @pytest.fixture
 def sample_merkle_tree(sample_option_data: OptionData) -> MerkleTree:
-    return MerkleTree(leaves=[hash(sample_option_data)], hash_method=HashMethod.PEDERSEN)
+    return MerkleTree(
+        leaves=[sample_option_data.get_pedersen_hash()], hash_method=HashMethod.PEDERSEN
+    )
 
 
 def test_store_block_data(
