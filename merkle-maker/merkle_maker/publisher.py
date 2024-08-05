@@ -142,9 +142,7 @@ class MerkleFeedPublisher:
         Check if the current block is already processed, i.e if we already
         published a merkle root onchain and stored the data into Redis.
         """
-        return all(
-            [
-                self.redis_manager.get_all_options(self.network, block_number) is None,
-                self.redis_manager.get_merkle_tree(self.network, block_number) is None,
-            ]
+        return (
+            self.redis_manager.get_merkle_tree(self.network, block_number) is None
+            and self.redis_manager.get_all_options(self.network, block_number) is None
         )
