@@ -1,4 +1,4 @@
-from typing import Optional, Literal, Dict, List, Any
+from typing import Optional, Dict, List, Any
 from collections import defaultdict
 from decimal import Decimal
 
@@ -11,6 +11,8 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     CurrenciesOptions,
     OptionData,
 )
+
+from pragma_sdk.onchain.types.types import NetworkName
 
 from merkle_maker.serializers import serialize_merkle_tree
 
@@ -54,7 +56,7 @@ class RedisManager:
 
     def store_block_data(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
         latest_data: Optional[LatestData],
     ) -> bool:
@@ -77,7 +79,7 @@ class RedisManager:
 
     def get_option(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
         instrument_name: str,
     ) -> Optional[OptionData]:
@@ -89,7 +91,7 @@ class RedisManager:
 
     def get_all_options(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
     ) -> Optional[CurrenciesOptions]:
         # Get all keys for options at this block number
@@ -111,7 +113,7 @@ class RedisManager:
 
     def get_merkle_tree(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
     ) -> Optional[MerkleTree]:
         key = self._get_key(network, block_number, "merkle_tree")
@@ -126,7 +128,7 @@ class RedisManager:
 
     def _store_merkle_tree(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
         merkle_tree: MerkleTree,
     ) -> bool:
@@ -141,7 +143,7 @@ class RedisManager:
 
     def _store_options(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
         options: CurrenciesOptions,
     ) -> bool:
@@ -166,7 +168,7 @@ class RedisManager:
 
     def _get_key(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         block_number: int,
         name: str,
     ) -> str:

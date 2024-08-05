@@ -1,17 +1,21 @@
 import asyncio
 import logging
 
-from typing import Literal, Never
+from typing import Never, List
+from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.onchain.types.types import NetworkName
 
 
 from merkle_maker.redis import RedisManager
 
 logger = logging.getLogger(__name__)
+
+TIME_TO_SLEEP_BETWEEN_RETRIES = 3
 
 
 class MerkleFeedPublisher:
@@ -22,7 +26,7 @@ class MerkleFeedPublisher:
     TODO: Implement automatic cleanup so we only keep the latest 100/1000 blocks?
     """
 
-    network: Literal["mainnet", "sepolia"]
+    network: NetworkName
     pragma_client: PragmaOnChainClient
     fetcher_client: FetcherClient
     redis_manager: RedisManager
@@ -31,7 +35,7 @@ class MerkleFeedPublisher:
 
     def __init__(
         self,
-        network: Literal["mainnet", "sepolia"],
+        network: NetworkName,
         pragma_client: PragmaOnChainClient,
         fetcher_client: FetcherClient,
         redis_manager: RedisManager,
@@ -65,7 +69,15 @@ class MerkleFeedPublisher:
             logger.info(f"Current block: {current_block}")
 
             if self._current_block_is_not_processed(current_block):
-                await self._publish_and_store(current_block=current_block)
+                try:
+                    await self._publish_and_store(current_block=current_block)
+                except Exception:
+                    logger.error(
+                        f"⛔ Publishing for block {current_block} failed. "
+                        f"Retrying in {TIME_TO_SLEEP_BETWEEN_RETRIES} seconds...\n"
+                    )
+                    await asyncio.sleep(TIME_TO_SLEEP_BETWEEN_RETRIES)
+                    continue
             else:
                 logger.info(f"🫷 Block {current_block} is already processed!\n")
 
@@ -94,7 +106,8 @@ class MerkleFeedPublisher:
         logger.info("... fetched!")
 
         logger.info("🎣 Publishing the merkle root onchain...")
-        await self.pragma_client.publish_entries(entries)  # type: ignore[arg-type]
+        invocations = await self.pragma_client.publish_many(entries)  # type: ignore[arg-type]
+        await self._wait_for_txs_acceptance(invocations)
         logger.info("... published!")
 
         logger.info("🏭 Storing the merkle tree & options in Redis...")
@@ -108,6 +121,18 @@ class MerkleFeedPublisher:
             logger.info("... stored!")
 
         logger.info(f"✅ Block {current_block} done!\n")
+
+    async def _wait_for_txs_acceptance(self, invocations: List[InvokeResult]):
+        """
+        Wait for all the transactions in the passed list to be accepted on-chain.
+        Raises an error if one transaction is not accepted.
+        """
+        for invocation in invocations:
+            nonce = invocation.invoke_transaction.nonce
+            logger.info(
+                f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted..."
+            )
+            await invocation.wait_for_acceptance(check_interval=1)
 
     def _current_block_is_not_processed(
         self,

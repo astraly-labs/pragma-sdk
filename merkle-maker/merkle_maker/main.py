@@ -3,13 +3,13 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal
+from typing import Optional
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
 
-from pragma_sdk.onchain.types.types import PrivateKey
+from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from pragma_utils.logger import setup_logging
@@ -24,7 +24,7 @@ TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
 
 
 async def main(
-    network: Literal["mainnet", "sepolia"],
+    network: NetworkName,
     redis_host: str,
     publisher_name: str,
     publisher_address: str,
@@ -137,7 +137,7 @@ async def main(
 )
 def cli_entrypoint(
     log_level: str,
-    network: Literal["mainnet", "sepolia"],
+    network: NetworkName,
     redis_host: str,
     rpc_url: Optional[HttpUrl],
     publisher_name: str,
