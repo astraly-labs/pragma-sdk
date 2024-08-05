@@ -16,6 +16,8 @@ from pragma_sdk.onchain.types.types import NetworkName
 
 from merkle_maker.serializers import serialize_merkle_tree
 
+KEYS_TIME_TO_EXPIRE = 24 * 60 * 60  # 24 hours
+
 
 class RedisManager:
     """
@@ -136,10 +138,11 @@ class RedisManager:
 
         key = self._get_key(network, block_number, "merkle_tree")
         res = self.client.json().set(key, "$", serialized_merkle_tree)
+        res_expire = self.client.expire(key, KEYS_TIME_TO_EXPIRE)
 
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
         # see: https://redis.io/docs/latest/develop/data-types/json/
-        return bool(res)
+        return bool(res and res_expire)
 
     def _store_options(
         self,
@@ -154,10 +157,11 @@ class RedisManager:
 
                 serialized_option = option.as_dict()
                 res = self.client.json().set(key, "$", serialized_option)
+                res_expire = self.client.expire(key, KEYS_TIME_TO_EXPIRE)
 
                 # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
                 # see: https://redis.io/docs/latest/develop/data-types/json/
-                if not bool(res):
+                if not bool(res and res_expire):
                     # If we could not store something, we fail fast and exit the application.
                     # This should never happen, the only possible failures are:
                     # - connection to Redis is corrupted,
