@@ -51,6 +51,8 @@ class RedisManager:
       published on chain,
     - `options` being the directory containg the options. The option name
       is the instrument name.
+    - `latest_published_block` holds the latest block number that we published on
+      redis (corresponds to the pending block on starknet).
     """
 
     client: Redis
