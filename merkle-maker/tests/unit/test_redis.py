@@ -80,6 +80,10 @@ def test_store_block_data(
 ):
     latest_data = LatestData(merkle_tree=sample_merkle_tree, options=sample_options)
     assert redis_manager.store_block_data(MAINNET, CURRENT_BLOCK, latest_data)
+
+    latest_published_block = redis_manager.get_latest_published_block(MAINNET)
+
+    assert latest_published_block == CURRENT_BLOCK
     assert not redis_manager.store_block_data(MAINNET, CURRENT_BLOCK, None)
 
 

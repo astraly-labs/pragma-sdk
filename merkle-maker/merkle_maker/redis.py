@@ -26,14 +26,16 @@ class RedisManager:
 
     The current layout is:
 
-        .
         ├── mainnet
+        │   └── latest_published_block (=64680)
         │   └── 64680
         │       ├── merkle_tree
         │       └── options
         │           ├── BTC-27DEC24-59000-C
         │           └── BTC-27SEP24-42000-P
+        │
         └── sepolia
+            └── latest_published_block (=56778)
             ├── 56777
             │   ├── merkle_tree
             │   └── options
@@ -75,6 +77,10 @@ class RedisManager:
                     network,
                     block_number,
                     latest_data.options,
+                ),
+                self._store_current_block_number(
+                    network,
+                    block_number,
                 ),
             ]
         )
@@ -128,6 +134,13 @@ class RedisManager:
             hash_method=HashMethod(response[0]["hash_method"].lower()),
         )
 
+    def get_latest_published_block(self, network: NetworkName) -> Optional[int]:
+        key = f"{network}/latest_published_block"
+        response = self.client.json().get(key, "$")
+        if response is None or len(response) == 0:
+            return None
+        return int(response[0])
+
     def _store_merkle_tree(
         self,
         network: NetworkName,
@@ -169,6 +182,13 @@ class RedisManager:
                     # For both cases, we have to handle this ourselves after crashing the app.
                     return False
         return True
+
+    def _store_current_block_number(self, network: NetworkName, block_number: int) -> bool:
+        key = f"{network}/latest_published_block"
+        res = self.client.json().set(key, "$", block_number)
+        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
+        # see: https://redis.io/docs/latest/develop/data-types/json/
+        return bool(res)
 
     def _get_key(
         self,

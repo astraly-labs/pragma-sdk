@@ -139,10 +139,9 @@ class MerkleFeedPublisher:
         block_number: int,
     ) -> bool:
         """
-        Check if the current block is already processed, i.e if we already
-        published a merkle root onchain and stored the data into Redis.
+        Check if the current block is already processed.
         """
-        return (
-            self.redis_manager.get_merkle_tree(self.network, block_number) is None
-            and self.redis_manager.get_all_options(self.network, block_number) is None
-        )
+        latest_published_block = self.redis_manager.get_latest_published_block(self.network)
+        if latest_published_block is None:
+            return True
+        return block_number > latest_published_block
