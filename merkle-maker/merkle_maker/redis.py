@@ -138,10 +138,10 @@ class RedisManager:
 
     def get_latest_published_block(self, network: NetworkName) -> Optional[int]:
         key = f"{network}/latest_published_block"
-        response = self.client.json().get(key, "$")
-        if response is None or len(response) == 0:
+        response = self.client.get(key)
+        if response is None:
             return None
-        return int(response[0])
+        return int(response.decode())  # type: ignore[union-attr]
 
     def _store_merkle_tree(
         self,
@@ -187,7 +187,7 @@ class RedisManager:
 
     def _store_current_block_number(self, network: NetworkName, block_number: int) -> bool:
         key = f"{network}/latest_published_block"
-        res = self.client.json().set(key, "$", block_number)
+        res = self.client.set(key, block_number)
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
         # see: https://redis.io/docs/latest/develop/data-types/json/
         return bool(res)
