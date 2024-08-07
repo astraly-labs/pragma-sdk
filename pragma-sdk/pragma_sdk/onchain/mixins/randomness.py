@@ -26,6 +26,7 @@ from pragma_sdk.onchain.types import (
     VRFRequestParams,
     VRFSubmitParams,
 )
+from pragma_sdk.onchain.types.types import BlockId
 
 logger = get_pragma_sdk_logger()
 
@@ -191,6 +192,7 @@ class RandomnessMixin:
         self,
         caller_address: Address,
         request_id: int,
+        block_id: Optional[BlockId] = "latest",
     ) -> RequestStatus:
         """
         Query the status of a request given the caller address and request ID.
@@ -202,6 +204,7 @@ class RandomnessMixin:
         (response,) = await self.randomness.functions["get_request_status"].call(
             caller_address,
             request_id,
+            block_number=block_id,
         )
         return RequestStatus(response.variant)
 
@@ -386,7 +389,7 @@ class RandomnessMixin:
 
             statuses = await asyncio.gather(
                 *[
-                    self.get_request_status(event.caller_address, event.request_id)
+                    self.get_request_status(event.caller_address, event.request_id, block_id="pending")
                     for event in events
                 ]
             )
