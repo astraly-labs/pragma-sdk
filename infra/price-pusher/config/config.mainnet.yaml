@@ -3,6 +3,7 @@
       - BTC/USD
       - BTC/EUR
       - WBTC/USD
+      - WBTC/BTC
       - STETH/USD
       - ETH/USD
       - WSTETH/USD
@@ -18,6 +19,7 @@
       - LORDS/USD
       - ZEND/USD
       - NSTR/USD
+      - EKUBO/USD
   time_difference: 120
   price_deviation: 0.005
 

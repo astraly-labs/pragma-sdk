@@ -14,6 +14,7 @@ Here is step by step example:
 
     from pragma_sdk.common.fetchers import FetcherClient
     from pragma_sdk.common.fetchers.fetchers import BitstampFetcher, GateIOFetcher
+    from pragma_sdk.common.types.pair import Pair
 
     # 1. Create a list of pairs that you want to fetch
     pairs = [

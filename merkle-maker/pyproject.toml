@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "merkle-maker"
-version = "2.0.4"
+version = "2.0.6"
 authors = ["0xevolve <matthias@pragma.build>"]
 description = "Service used to publish Merkle Feeds on chain."
 readme = "README.md"

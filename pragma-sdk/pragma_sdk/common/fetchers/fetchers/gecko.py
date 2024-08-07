@@ -40,6 +40,10 @@ ASSET_MAPPING: Dict[str, Any] = {
         "eth",
         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
     ),
+    "EKUBO": (
+        "starknet-alpha",
+        "0x75afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87",
+    ),
     "COMP": ("eth", "0xc00e94Cb662C3520282E6f5717214004A7f26888"),
     "SNX": ("eth", "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"),
     "MKR": ("eth", "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"),

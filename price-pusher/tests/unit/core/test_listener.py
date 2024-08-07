@@ -6,9 +6,17 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from price_pusher.core.listener import PriceListener
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from tests.constants import BTC_USD_PAIR
+
 from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.types import DataTypes
+
+from tests.constants import BTC_USD_PAIR
+
+PUBLISHER = "PUBLISHER_1"
+SOURCE_1 = "SOURCE_1"
+SOURCE_2 = "SOURCE_2"
+SOURCE_3 = "SOURCE_3"
+SOURCE_4 = "SOURCE_4"
 
 
 @pytest.fixture
@@ -66,17 +74,20 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
         pair_id="BTC/USD",
         price=10000,
         timestamp=1234567890,
-        source="source_1",
-        publisher="publisher_1",
+        source="ONCHAIN",
+        publisher="AGGREGATION",
     )
     mock_request_handler.fetch_latest_entries.return_value = mock_entry
+
+    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}}
+
     await price_listener._fetch_all_oracle_prices()
 
-    first_key = list(mock_price_config.get_all_assets.return_value.keys())[0]
+    data_type = list(mock_price_config.get_all_assets.return_value.keys())[0]
+    pair = mock_price_config.get_all_assets.return_value[data_type][0]
 
     mock_request_handler.fetch_latest_entries.assert_called_once_with(
-        first_key,
-        mock_price_config.get_all_assets.return_value[first_key][0],
+        pair=pair, data_type=data_type, sources=[SOURCE_1]
     )
     assert "BTC/USD" in price_listener.oracle_prices
     assert DataTypes.SPOT in price_listener.oracle_prices["BTC/USD"]
@@ -88,11 +99,11 @@ def test_get_most_recent_orchestrator_entry(price_listener):
         pair_id="BTC/USD",
         price=10000,
         timestamp=1234567890,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE_1,
+        publisher=PUBLISHER,
     )
     mock_entry.base.timestamp = 1000
-    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {"BINANCE": mock_entry}}}
+    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}}
 
     result = price_listener._get_latest_orchestrator_entry("BTC/USD", DataTypes.SPOT)
     assert result == mock_entry
@@ -105,8 +116,8 @@ async def test_oracle_needs_update_because_outdated(caplog, price_listener):
         pair_id="BTC/USD",
         price=10000,
         timestamp=1000000061,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE_1,
+        publisher=PUBLISHER,
     )
     oracle_entry = SpotEntry(
         pair_id="BTC/USD",
@@ -116,7 +127,7 @@ async def test_oracle_needs_update_because_outdated(caplog, price_listener):
         publisher="ORACLE",
     )
     price_listener.orchestrator_prices = {
-        "BTC/USD": {DataTypes.SPOT: {"BINANCE": orchestrator_entry}}
+        "BTC/USD": {DataTypes.SPOT: {SOURCE_1: orchestrator_entry}}
     }
     price_listener.oracle_prices = {"BTC/USD": {DataTypes.SPOT: oracle_entry}}
     assert await price_listener._does_oracle_needs_update()
@@ -130,8 +141,8 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
         pair_id="BTC/USD",
         price=111,
         timestamp=1000000000,
-        source="source_1",
-        publisher="publisher_1",
+        source=SOURCE_1,
+        publisher=PUBLISHER,
     )
     oracle_entry = SpotEntry(
         pair_id="BTC/USD",
@@ -141,7 +152,7 @@ async def test_oracle_needs_update_because_deviating(caplog, price_listener):
         publisher="ORACLE",
     )
     price_listener.orchestrator_prices = {
-        "BTC/USD": {DataTypes.SPOT: {"BINANCE": orchestrator_entry}}
+        "BTC/USD": {DataTypes.SPOT: {SOURCE_1: orchestrator_entry}}
     }
     price_listener.oracle_prices = {"BTC/USD": {DataTypes.SPOT: oracle_entry}}
     assert await price_listener._does_oracle_needs_update()
@@ -176,3 +187,33 @@ def test_log_listener_spawning(caplog, price_listener, mock_price_config):
     caplog.set_level(logging.INFO)
     price_listener._log_listener_spawning()
     assert "👂 Spawned listener [" in caplog.text
+
+
+def test_get_sources_for_pair(price_listener):
+    orchestrator_entry = SpotEntry(
+        pair_id="BTC/USD",
+        price=111,
+        timestamp=1000000000,
+        source=SOURCE_1,
+        publisher=PUBLISHER,
+    )
+
+    price_listener.orchestrator_prices = {
+        "BTC/USD": {
+            DataTypes.SPOT: {
+                SOURCE_1: orchestrator_entry,
+                SOURCE_3: orchestrator_entry,
+            },
+            DataTypes.FUTURE: {
+                SOURCE_1: {0: orchestrator_entry},
+                SOURCE_2: {0: orchestrator_entry},
+                SOURCE_4: {0: orchestrator_entry},
+            },
+        }
+    }
+
+    spot_sources = price_listener._get_sources_for_pair(BTC_USD_PAIR, DataTypes.SPOT)
+    assert spot_sources == [SOURCE_1, SOURCE_3]
+
+    future_sources = price_listener._get_sources_for_pair(BTC_USD_PAIR, DataTypes.FUTURE)
+    assert future_sources == [SOURCE_1, SOURCE_2, SOURCE_4]

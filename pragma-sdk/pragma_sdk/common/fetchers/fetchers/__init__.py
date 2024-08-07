@@ -9,9 +9,10 @@ from pragma_sdk.common.fetchers.fetchers.indexcoop import IndexCoopFetcher
 from pragma_sdk.common.fetchers.fetchers.kucoin import KucoinFetcher
 from pragma_sdk.common.fetchers.fetchers.okx import OkxFetcher
 from pragma_sdk.common.fetchers.fetchers.propeller import PropellerFetcher
-from pragma_sdk.common.fetchers.fetchers.starknetamm import StarknetAMMFetcher
+from pragma_sdk.common.fetchers.fetchers.ekubo import EkuboFetcher
 from pragma_sdk.common.fetchers.fetchers.mexc import MEXCFetcher
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
+from pragma_sdk.common.fetchers.fetchers.dexscreener import DexscreenerFetcher
 
 __all__ = [
     "BinanceFetcher",
@@ -25,7 +26,8 @@ __all__ = [
     "KucoinFetcher",
     "OkxFetcher",
     "PropellerFetcher",
-    "StarknetAMMFetcher",
+    "EkuboFetcher",
     "MEXCFetcher",
     "GateioFetcher",
+    "DexscreenerFetcher",
 ]

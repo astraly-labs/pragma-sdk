@@ -409,6 +409,54 @@ async def test_client_oracle_mixin_generic(pragma_client: PragmaOnChainClient):
     assert felt_to_str(res.base.publisher) == publisher_name
 
 
+@pytest.mark.asyncio
+async def test_client_oracle_mixin_get_entry(pragma_client: PragmaOnChainClient):
+    # Checks
+    publisher_name = "PRAGMA"
+    publishers = await pragma_client.get_all_publishers()
+    assert publishers == [str_to_felt("PUBLISHER_1"), str_to_felt(publisher_name)]
+
+    timestamp = int(time.time())
+    spot_entry = SpotEntry(
+        ETH_PAIR, 100, timestamp + 40, SOURCE_1, publisher_name, volume=0
+    )
+    future_entry = FutureEntry(
+        ETH_PAIR,
+        200,
+        timestamp + 20,
+        SOURCE_1,
+        publisher_name,
+        expiry_timestamp=0,
+        volume=20,
+    )
+
+    invocations = await pragma_client.publish_many([spot_entry, future_entry])
+    await invocations[len(invocations) - 1].wait_for_acceptance()
+
+    # Get spot entry
+    published_entry = await pragma_client.get_entry(
+        ETH_PAIR, DataTypes.SPOT, publisher_name, SOURCE_1
+    )
+    assert published_entry.pair_id == ETH_PAIR
+    assert published_entry.price == 100
+    assert published_entry.volume == 0
+    assert published_entry.base.timestamp == timestamp + 40
+    assert felt_to_str(published_entry.base.source) == SOURCE_1
+    assert felt_to_str(published_entry.base.publisher) == publisher_name
+
+    # Get future entry
+    published_entry = await pragma_client.get_entry(
+        ETH_PAIR, DataTypes.FUTURE, publisher_name, SOURCE_1
+    )
+    assert published_entry.pair_id == ETH_PAIR
+    assert published_entry.price == 200
+    assert published_entry.volume == 20
+    assert published_entry.base.timestamp == timestamp + 20
+    assert felt_to_str(published_entry.base.source) == SOURCE_1
+    assert felt_to_str(published_entry.base.publisher) == publisher_name
+    assert published_entry.expiry_timestamp == 0
+
+
 def test_client_with_http_network():
     client_with_chain_name = PragmaOnChainClient(
         network="http://test.rpc/rpc", chain_name="sepolia"
