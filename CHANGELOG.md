@@ -1,3 +1,9 @@
+## v2.1.1 (2024-08-08)
+
+### Fix
+
+- get vrf status in pending block
+
 ## v2.1.0 (2024-08-07)
 
 ### Feat
