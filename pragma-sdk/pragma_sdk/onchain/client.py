@@ -139,6 +139,12 @@ class PragmaOnChainClient(  # type: ignore[misc]
             provider=provider,
             cairo_version=1,
         )
+        self.summary_stats = Contract(
+            address=self.contract_addresses_config.summary_stats_address,
+            abi=ABIS["pragma_SummaryStats"],
+            provider=provider,
+            cairo_version=1,
+        )
 
     def _process_secret_key(self, private_key: PrivateKey) -> KeyPair:
         """Converts a Private Key to a KeyPair."""

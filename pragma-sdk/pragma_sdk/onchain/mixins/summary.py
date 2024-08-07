@@ -19,15 +19,6 @@ class SummaryStatsMixin:
     account: Account
     summary_stats: Contract
 
-    def init_summary_stats_contract(self, contract_address: Address):
-        provider = self.account if self.account else self.client
-        self.summary_stats = Contract(
-            address=contract_address,
-            abi=ABIS["pragma_SummaryStats"],
-            provider=provider,
-            cairo_version=1,
-        )
-
     async def calculate_mean(self, mean_feed_params: MeanFeedParams) -> Tuple[int, int]:
         """
         Calculates the mean for a given data feeds.

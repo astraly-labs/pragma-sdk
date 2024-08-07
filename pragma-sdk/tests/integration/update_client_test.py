@@ -83,7 +83,7 @@ async def test_update_oracle(
 
     # Update oracle
     update_invoke = await forked_client.update_oracle(
-        declare_result.class_hash, 
+        declare_result.class_hash,
     )
     update_invoke.wait_for_acceptance()
     logger.info("Contract upgraded with tx %s", hex(update_invoke.hash))

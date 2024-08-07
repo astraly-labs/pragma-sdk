@@ -74,6 +74,7 @@ test_update_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-r
 test_publisher = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/publisher_test.py -s"
 test_fetchers = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/fetchers/ -s"
 test_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/vrf_test.py -s"
+test_merkle_feed = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/merkle_feed_test.py -s"
 
 test_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/ -s"
 test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"

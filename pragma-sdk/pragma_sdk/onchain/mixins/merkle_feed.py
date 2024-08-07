@@ -6,6 +6,7 @@ from starknet_py.cairo.felt import encode_shortstring
 
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import OptionData
 
+from pragma_sdk.common.utils import felt_to_str
 from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.types import Contract, MerkleProof, BlockId
 
@@ -35,7 +36,14 @@ class MerkleFeedMixin:
         (response,) = await self.summary_stats.functions["get_options_data"].call(
             instrument_name, block_number=block_id
         )
-        return OptionData(**dict(response))
+        response = dict(response)
+
+        return OptionData(
+            instrument_name=felt_to_str(response["instrument_name"]),
+            base_currency=felt_to_str(response["base_currency_id"]),
+            current_timestamp=response["current_timestamp"],
+            mark_price=response["mark_price"],
+        )
 
     async def update_options_data(
         self,
