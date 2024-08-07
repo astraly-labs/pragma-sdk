@@ -10,7 +10,7 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.common.utils import str_to_felt
 from tests.integration.utils import get_deployments, read_contract
 from pragma_sdk.common.types.pair import Pair
-from tests.integration.constants import USD_PAIRS
+from tests.integration.constants import SAMPLE_PAIRS
 
 logger = get_pragma_sdk_logger()
 
@@ -73,17 +73,17 @@ async def test_update_oracle(
     # Retrieve old state
 
     publishers = await forked_client.get_all_publishers()
-    initial_prices = await retrieve_spot_prices(forked_client, USD_PAIRS)
+    initial_prices = await retrieve_spot_prices(forked_client, SAMPLE_PAIRS)
     oracle_admin = await forked_client.get_admin_address()
-    assert oracle_admin == forked_client.account_address()
+    assert oracle_admin == forked_client.account_address
 
     # Determine new implementation hash
     declare_result = declare_oracle
-    logger.info("Contract declared with hash: %s", declare_result.class_hash)
+    logger.info("Contract declared with hash: %s", hex(declare_result.class_hash))
 
     # Update oracle
     update_invoke = await forked_client.update_oracle(
-        declare_result.class_hash, MAX_FEE
+        declare_result.class_hash, 
     )
     update_invoke.wait_for_acceptance()
     logger.info("Contract upgraded with tx %s", hex(update_invoke.hash))
@@ -96,7 +96,7 @@ async def test_update_oracle(
     assert class_hash == declare_result.class_hash
     # Retrieve new state
     new_publishers = await forked_client.get_all_publishers()
-    post_treatment_prices = await retrieve_spot_prices(forked_client, USD_PAIRS)
+    post_treatment_prices = await retrieve_spot_prices(forked_client, SAMPLE_PAIRS)
 
     # Check that state is the same
     assert publishers == new_publishers
