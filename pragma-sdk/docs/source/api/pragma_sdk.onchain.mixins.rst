@@ -34,3 +34,11 @@ RandomnessMixin
    :members:
    :undoc-members:
    :show-inheritance:
+
+MerkleFeedMixin
+-----------------------------------
+
+.. automodule:: pragma_sdk.onchain.mixins.merkle_feed
+   :members:
+   :undoc-members:
+   :show-inheritance:

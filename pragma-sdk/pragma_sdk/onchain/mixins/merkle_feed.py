@@ -2,6 +2,7 @@ from typing import Optional
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.account.account import Account
+from starknet_py.cairo.felt import encode_shortstring
 
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import OptionData
 
@@ -22,13 +23,17 @@ class MerkleFeedMixin:
 
     async def get_options_data(
         self,
+        instrument_name: int | str,
         block_id: Optional[BlockId] = "latest",
     ) -> OptionData:
         """
-        Returns the latest OptionData.
+        Returns the latest OptionData for the given instrument name.
         """
+        if isinstance(instrument_name, str):
+            instrument_name = encode_shortstring(instrument_name.upper())
+
         (response,) = await self.summary_stats.functions["get_options_data"].call(
-            block_number=block_id
+            encode_shortstring(instrument_name), block_number=block_id
         )
         return OptionData(**dict(response))
 
