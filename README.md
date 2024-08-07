@@ -17,7 +17,7 @@ This SDK should also be used by Data Providers willing to push data on Pragma co
 
 ## About
 
-For more information, see the [project's repository](https://github.com/Astraly-Labs/Pragma), [documentation overview](https://docs.pragma.build/) and [documentation on how to publish data](https://docs.pragma.build/using-pragma/publishing-data).
+For more information, see the [project's repository](https://github.com/Astraly-Labs/Pragma), [documentation overview](https://docs.pragma.build/) and [documentation on how to publish data](https://docs.pragma.build/Resources/Cairo%201/data-feeds/publishing-data).
 
 ## Repository Structure
 
