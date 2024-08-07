@@ -33,7 +33,7 @@ class MerkleFeedMixin:
             instrument_name = encode_shortstring(instrument_name.upper())
 
         (response,) = await self.summary_stats.functions["get_options_data"].call(
-            encode_shortstring(instrument_name), block_number=block_id
+            instrument_name, block_number=block_id
         )
         return OptionData(**dict(response))
 
