@@ -1,3 +1,15 @@
+## v2.1.0 (2024-08-07)
+
+### Feat
+
+- merkle-maker + MerkleFeed mixin (#178)
+- add migration guide to docs (#185)
+
+### Fix
+
+- readme link (#186)
+- linters
+
 ## v2.0.6 (2024-08-02)
 
 ### Feat
