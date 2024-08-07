@@ -146,7 +146,7 @@ explicit_package_bases = true
 show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
-exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py"]
+exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py", "build"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.poetry.build]

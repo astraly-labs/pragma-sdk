@@ -7,14 +7,10 @@ from urllib.parse import urlparse
 
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
-from starknet_py.net.client_errors import ClientError
-from starknet_py.transaction_errors import TransactionRevertedError
 
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import OptionData
-from pragma_sdk.common.types.entry import FutureEntry, SpotEntry, GenericEntry
-from pragma_sdk.common.types.asset import Asset
-from pragma_sdk.common.types.types import DataTypes
-from pragma_sdk.common.utils import str_to_felt, felt_to_str
+from pragma_sdk.common.types.entry import GenericEntry
+from pragma_sdk.common.utils import felt_to_str
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types import ContractAddresses, Network
