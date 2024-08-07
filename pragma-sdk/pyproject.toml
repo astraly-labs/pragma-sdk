@@ -66,6 +66,7 @@ format_check = "ruff format . --check"
 typecheck = "mypy pragma_sdk"
 
 check_circular_imports = "poetry run python tests/check_circular_imports.py"
+update_abis = "find ../pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma_sdk/onchain/abis' ';'"
 
 test_integration = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/ -s"
 test_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/client_test.py -s"
@@ -73,6 +74,7 @@ test_update_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-r
 test_publisher = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/publisher_test.py -s"
 test_fetchers = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/fetchers/ -s"
 test_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/vrf_test.py -s"
+test_merkle_feed = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/merkle_feed_test.py -s"
 
 test_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/ -s"
 test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"
@@ -144,7 +146,7 @@ explicit_package_bases = true
 show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
-exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py"]
+exclude = ["tests", "pragma_sdk/common/randomness/randomness_utils.py", "build"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
 [tool.poetry.build]

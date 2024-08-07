@@ -3,19 +3,20 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal, Never
+from typing import Optional
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
 
-from pragma_sdk.onchain.types.types import PrivateKey
+from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
 from merkle_maker.redis import RedisManager
+from merkle_maker.publisher import MerkleFeedPublisher
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
 
 
 async def main(
-    network: Literal["mainnet", "sepolia"],
+    network: NetworkName,
     redis_host: str,
     publisher_name: str,
     publisher_address: str,
@@ -54,59 +55,16 @@ async def main(
     )
     fetcher_client.add_fetcher(deribit_fetcher)
 
-    logger.info("🧩 Starting the Merkle Maker...\n")
-    await _publish_merkle_feeds_forever(
+    publisher = MerkleFeedPublisher(
+        network=network,
         pragma_client=pragma_client,
         fetcher_client=fetcher_client,
         redis_manager=redis_manager,
         block_interval=block_interval,
+        time_to_wait_between_block_number_polling=TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING,
     )
-
-
-async def _publish_merkle_feeds_forever(
-    pragma_client: PragmaOnChainClient,
-    fetcher_client: FetcherClient,
-    redis_manager: RedisManager,
-    block_interval: int,
-) -> Never:
-    """
-    Publish a new Merkle Feed on chain every [block_interval] block(s) forever.
-    We store the merkle tree and the options used to generate the merkle root
-    to a Redis database that will get consumed by our Rust service.
-    """
-    deribit_fetcher: DeribitOptionsFetcher = fetcher_client.fetchers[0]  # type: ignore[assignment]
-    while True:
-        # TODO: In case of a restart, check if a merkle feed already exists for the
-        # current block.
-        current_block = await pragma_client.get_block_number()
-        logger.info(f"Current block: {current_block}")
-
-        logger.info("🔍 Fetching the deribit options...")
-        entries = await fetcher_client.fetch()
-
-        logger.info("🎣 Publishing the merkle root onchain...")
-        try:
-            await pragma_client.publish_entries(entries)  # type: ignore[arg-type]
-            logger.info("... done!")
-        except Exception:
-            # TODO: remove this part when the contract has been updated
-            logger.warning("Could not publish! Contract not yet updated.")
-
-        logger.info("🏭 Storing the merkle tree & options in Redis...")
-        success_store = redis_manager.store_latest_data(deribit_fetcher.latest_data)
-        if not success_store:
-            raise RuntimeError("Could not store the latest data to the Redis instance.")
-
-        logger.info(f"✅ Block {current_block} done!\n")
-        next_block = current_block + block_interval
-        logger.info(f"⏳ Waiting for block {next_block}...")
-
-        while True:
-            await asyncio.sleep(TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING)
-            new_block = await pragma_client.get_block_number()
-            if new_block >= next_block:
-                logger.info(f"⌛ ... reached block {new_block}!\n")
-                break
+    logger.info(f"🧩 Starting the Merkle Maker for {network}...\n")
+    await publisher.publish_forever()
 
 
 @click.command()
@@ -125,7 +83,7 @@ async def _publish_merkle_feeds_forever(
     required=True,
     default="sepolia",
     type=click.Choice(
-        ["sepolia", "mainnet"],
+        ["sepolia", "mainnet", "devnet"],
         case_sensitive=False,
     ),
     help="On which networks the checkpoints will be set.",
@@ -179,7 +137,7 @@ async def _publish_merkle_feeds_forever(
 )
 def cli_entrypoint(
     log_level: str,
-    network: Literal["mainnet", "sepolia"],
+    network: NetworkName,
     redis_host: str,
     rpc_url: Optional[HttpUrl],
     publisher_name: str,

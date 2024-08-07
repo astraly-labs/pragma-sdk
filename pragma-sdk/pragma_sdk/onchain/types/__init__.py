@@ -17,6 +17,7 @@ from pragma_sdk.onchain.types.types import (
     PublishEntriesOnChainResult,
     KeyStoreCredentials,
     PrivateKey,
+    MerkleProof,
 )
 
 
@@ -38,4 +39,5 @@ __all__ = [
     "PublishEntriesOnChainResult",
     "KeyStoreCredentials",
     "PrivateKey",
+    "MerkleProof",
 ]

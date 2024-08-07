@@ -5,9 +5,9 @@ from typing import Optional, List, Dict, Any, Tuple
 from pydantic.dataclasses import dataclass
 from starknet_py.utils.merkle_tree import MerkleTree
 from starknet_py.hash.utils import compute_hash_on_elements
+from starknet_py.cairo.felt import encode_shortstring
 
-from pragma_sdk.common.types.types import UnixTimestamp
-from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.common.types.types import UnixTimestamp, Decimals
 
 
 @dataclass
@@ -90,16 +90,21 @@ class OptionData:
     instrument_name: str
     base_currency: str
     current_timestamp: UnixTimestamp
-    mark_price: float
+    mark_price: int
 
     @classmethod
-    def from_deribit_response(cls, response: DeribitOptionResponse) -> "OptionData":
+    def from_deribit_response(
+        cls,
+        response: DeribitOptionResponse,
+        decimals: Decimals,
+    ) -> "OptionData":
         current_timestamp = int(time.time())
+        mark_price = (response.mark_price * response.underlying_price) * (10**decimals)
         return cls(
             instrument_name=response.instrument_name,
             base_currency=response.base_currency,
             current_timestamp=current_timestamp,
-            mark_price=response.mark_price * response.underlying_price,
+            mark_price=int(mark_price),
         )
 
     def as_dict(self) -> dict:
@@ -110,18 +115,29 @@ class OptionData:
             "mark_price": self.mark_price,
         }
 
-    def __hash__(self) -> int:
-        """Computes the Pedersen hash of the OptionData."""
-        instrument_name_felt = str_to_felt(self.instrument_name)
-        base_currency_felt = str_to_felt(self.base_currency)
-        return compute_hash_on_elements(  # type: ignore[no-any-return]
-            [
-                instrument_name_felt,
-                base_currency_felt,
-                self.current_timestamp,
-                int(self.mark_price),
-            ]
-        )
+    def get_pedersen_hash(self) -> int:
+        """
+        Computes the Pedersen hash of the OptionData.
+
+        NOTE: We don't implement the `__hash__` method, because under the hood
+        it will truncate your hash so it is maximum 64 bytes. Which won't work
+        with our implementation because we need more space. 😹
+        """
+        to_hash = [
+            encode_shortstring(self.instrument_name),
+            encode_shortstring(self.base_currency),
+            self.current_timestamp,
+            self.mark_price,
+        ]
+        return compute_hash_on_elements(to_hash)  # type: ignore[no-any-return]
+
+    def serialize(self) -> Dict[str, int]:
+        return {
+            "instrument_name": encode_shortstring(self.instrument_name),
+            "base_currency_id": encode_shortstring(self.base_currency),
+            "current_timestamp": self.current_timestamp,
+            "mark_price": self.mark_price,
+        }
 
 
 CurrenciesOptions = Dict[str, List[OptionData]]

@@ -4,6 +4,7 @@ from starknet_py.hash.hash_method import HashMethod
 from starknet_py.utils.merkle_tree import MerkleTree
 from fakeredis import FakeStrictRedis
 
+from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     OptionData,
     LatestData,
@@ -12,6 +13,11 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
 )
 
 from merkle_maker.redis import RedisManager
+
+MAINNET = "mainnet"
+SEPOLIA = "sepolia"
+
+CURRENT_BLOCK = 69420
 
 
 @pytest.fixture
@@ -52,7 +58,9 @@ def sample_deribit_response():
 
 @pytest.fixture
 def sample_option_data(sample_deribit_response: DeribitOptionResponse) -> OptionData:
-    return OptionData.from_deribit_response(sample_deribit_response)
+    btc_usd = Pair.from_tickers("BTC", "USD")
+    decimals = btc_usd.base_currency.decimals
+    return OptionData.from_deribit_response(sample_deribit_response, decimals)
 
 
 @pytest.fixture
@@ -62,46 +70,73 @@ def sample_options(sample_option_data: OptionData) -> CurrenciesOptions:
 
 @pytest.fixture
 def sample_merkle_tree(sample_option_data: OptionData) -> MerkleTree:
-    return MerkleTree(leaves=[hash(sample_option_data)], hash_method=HashMethod.PEDERSEN)
+    return MerkleTree(
+        leaves=[sample_option_data.get_pedersen_hash()], hash_method=HashMethod.PEDERSEN
+    )
 
 
-def test_store_latest_data(
+def test_store_block_data(
     redis_manager: RedisManager, sample_merkle_tree: MerkleTree, sample_options: CurrenciesOptions
 ):
     latest_data = LatestData(merkle_tree=sample_merkle_tree, options=sample_options)
-    assert redis_manager.store_latest_data(latest_data)
-    assert not redis_manager.store_latest_data(None)
+    assert redis_manager.store_block_data(MAINNET, CURRENT_BLOCK, latest_data)
+
+    latest_published_block = redis_manager.get_latest_published_block(MAINNET)
+
+    assert latest_published_block == CURRENT_BLOCK
+    assert not redis_manager.store_block_data(MAINNET, CURRENT_BLOCK, None)
 
 
-def test_get_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
-    redis_manager._store_latest_options(sample_options)
+def test_get_option(redis_manager: RedisManager, sample_options: CurrenciesOptions):
+    redis_manager._store_options(MAINNET, CURRENT_BLOCK, sample_options)
+    instrument = "BTC-27DEC24-20000-P"
 
-    result = redis_manager.get_options()
+    result = redis_manager.get_option(MAINNET, CURRENT_BLOCK, instrument)
+    assert result is not None
+    assert isinstance(result, OptionData)
+    assert result.instrument_name == instrument
+    assert result.mark_price == sample_options["BTC"][0].mark_price
+    assert result.current_timestamp == sample_options["BTC"][0].current_timestamp
+    assert result.base_currency == sample_options["BTC"][0].base_currency
+
+    redis_manager.client.delete(f"{MAINNET}/{CURRENT_BLOCK}/options/BTC-27DEC24-20000-P")
+    assert redis_manager.get_option(MAINNET, CURRENT_BLOCK, instrument) is None
+
+
+def test_get_all_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
+    redis_manager._store_options(MAINNET, CURRENT_BLOCK, sample_options)
+
+    result = redis_manager.get_all_options(MAINNET, CURRENT_BLOCK)
     assert result is not None
     assert "BTC" in result
     assert len(result["BTC"]) == 1
     assert isinstance(result["BTC"][0], OptionData)
     assert result["BTC"][0].instrument_name == "BTC-27DEC24-20000-P"
 
-    redis_manager.client.delete("last_options")
-    assert redis_manager.get_options() is None
+    pattern = f"{MAINNET}/{CURRENT_BLOCK}/options/*"
+    keys_to_delete = redis_manager.client.keys(pattern)
+    if keys_to_delete:
+        redis_manager.client.delete(*keys_to_delete)
+
+    assert redis_manager.get_option(MAINNET, CURRENT_BLOCK, "BTC-27DEC24-20000-P") is None
+    assert redis_manager.get_all_options(MAINNET, CURRENT_BLOCK) is None
 
 
 def test_get_merkle_tree(redis_manager: RedisManager, sample_merkle_tree: MerkleTree):
-    redis_manager._store_latest_merkle_tree(sample_merkle_tree)
+    redis_manager._store_merkle_tree(SEPOLIA, CURRENT_BLOCK, sample_merkle_tree)
 
-    out = redis_manager.get_merkle_tree()
+    out = redis_manager.get_merkle_tree(SEPOLIA, CURRENT_BLOCK)
     assert out is not None
     assert len(out.leaves) == 1
     assert out.hash_method == HashMethod.PEDERSEN
 
-    redis_manager.client.delete("last_merkle_tree")
-    assert redis_manager.get_merkle_tree() is None
+    redis_manager.client.delete(f"{SEPOLIA}/{CURRENT_BLOCK}/merkle_tree")
+    assert redis_manager.get_merkle_tree(SEPOLIA, CURRENT_BLOCK) is None
 
 
-def test_store_latest_merkle_tree(redis_manager: RedisManager, sample_merkle_tree: MerkleTree):
-    assert redis_manager._store_latest_merkle_tree(sample_merkle_tree)
+def test_store_merkle_tree(redis_manager: RedisManager, sample_merkle_tree: MerkleTree):
+    assert redis_manager._store_merkle_tree(SEPOLIA, CURRENT_BLOCK, sample_merkle_tree)
 
 
-def test_store_latest_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
-    assert redis_manager._store_latest_options(sample_options)
+def test_store_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
+    assert redis_manager._store_options(MAINNET, CURRENT_BLOCK, sample_options)

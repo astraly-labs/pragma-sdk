@@ -1,4 +1,4 @@
-from typing import Optional, Literal, List, Any, Dict, Union, Tuple
+from typing import Optional, Literal, List, Any, Dict, Union, Tuple, Sequence
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from collections import namedtuple
@@ -36,6 +36,8 @@ PublishEntriesOnChainResult = List[InvokeResult]
 
 BlockNumber = int
 BlockId = Union[BlockTag, BlockNumber]
+
+MerkleProof = Sequence[int]
 
 
 @unique
