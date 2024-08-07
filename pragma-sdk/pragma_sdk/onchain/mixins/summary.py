@@ -3,9 +3,7 @@ from typing import Tuple
 from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
-from pragma_sdk.common.types.types import Address
 
-from pragma_sdk.onchain.abis.abi import ABIS
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.onchain.types.types import (
     MeanFeedParams,
