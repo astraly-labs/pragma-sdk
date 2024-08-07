@@ -16,4 +16,5 @@ Pragma SDK for Python
 
    installation
    quickstart
+   migration
    api
