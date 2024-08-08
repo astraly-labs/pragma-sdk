@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug report
 title: "[BUG] <title>"
-labels: [ "bug" ]
+labels: ["bug"]
 body:
   - type: textarea
     id: what-happened
@@ -62,5 +62,4 @@ body:
       label: Is there an existing issue for this?
       options:
         - label: I have searched the existing issues and verified no issue exits for this problem.
-
 # Thanks to https://github.com/MarketingPipeline/Awesome-Repo-Template

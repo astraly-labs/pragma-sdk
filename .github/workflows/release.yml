@@ -1,16 +1,17 @@
 ---
-  name: Workflow - Release
-  
-  on:
-    workflow_dispatch:
-    release:
-      types: [published]
+name: Workflow - Release
 
-  jobs:
-      python_package_publish:
-        name: Publish python package
-        uses: ./.github/workflows/publish.yml
-    
-      docker_release_build:
-        name: Build docker release
-        uses: ./.github/workflows/docker-build.yml
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  python_package_publish:
+    name: Publish python package
+    uses: ./.github/workflows/publish.yml
+
+  docker_release_build:
+    needs: [python_package_publish]
+    name: Build docker release
+    uses: ./.github/workflows/docker-build.yml

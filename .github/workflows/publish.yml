@@ -1,30 +1,78 @@
 ---
-  name: Task - Publish Package to Pypi
-  
-  on:
-    workflow_call:
+name: Task - Publish Package to Pypi
 
-  defaults:
-    run:
-      working-directory: pragma-sdk
+on:
+  workflow_call:
 
-  env:
-    PYTHON_VERSION: 3.12.4
+defaults:
+  run:
+    working-directory: pragma-sdk
 
-  jobs:
-    pypi_publish:
-      name: Upload package to PyPI
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - uses: CfirTsabari/actions-pipx@v1
-        - name: Install poetry
-          run: pipx install poetry
-        - uses: actions/setup-python@v5
-          with:
-            python-version: ${{ env.PYTHON_VERSION }}
-            cache: "poetry"
-        - run: pipx inject poetry poetry-monorepo-dependency-plugin
-        - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_KEY }}"
-        - run: poetry build -f sdist
-        - run: poetry publish --skip-existing
+env:
+  PYTHON_VERSION: 3.12.4
+
+jobs:
+  bump_version:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Commitizen
+        run: pip install --upgrade Commitizen
+      - name: Configure Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Bump version
+        run: |
+          git fetch --tags
+          cz bump --retry || echo "probably nothing to do"
+      - name: Push changes
+        run: |
+          TAG=$(git tag --points-at HEAD)
+          if [[ $TAG ]]; then
+            echo "Version bumped to $TAG"
+            git push
+            git push --tags
+          else
+            echo "Version NOT bumped"
+          fi
+
+  pypi_publish:
+    needs: [bump_version]
+    name: Upload package to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: CfirTsabari/actions-pipx@v1
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+      - run: pipx inject poetry poetry-monorepo-dependency-plugin
+      - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_KEY }}"
+      - run: poetry build -f sdist
+      - run: poetry publish --skip-existing
+
+  update_lock:
+    needs: [pypi_publish]
+    name: Update lock file
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: CfirTsabari/actions-pipx@v1
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+      - run: sh scripts/poetry_lock_update.sh
