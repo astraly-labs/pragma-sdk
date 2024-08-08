@@ -389,7 +389,9 @@ class RandomnessMixin:
 
             statuses = await asyncio.gather(
                 *[
-                    self.get_request_status(event.caller_address, event.request_id, block_id="pending")
+                    self.get_request_status(
+                        event.caller_address, event.request_id, block_id="pending"
+                    )
                     for event in events
                 ]
             )
