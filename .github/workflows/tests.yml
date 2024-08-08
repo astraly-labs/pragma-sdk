@@ -83,6 +83,7 @@
               poetry run poe test_fetchers
               poetry run poe test_merkle_feed
               poetry run poe test_unit
+              poetry run poe test_update_client
             else
               poetry run poe test
             fi
