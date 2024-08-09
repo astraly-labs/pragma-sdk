@@ -11,6 +11,5 @@ container_environment:
       - PRIVATE_KEY
       - PUBLISHER_NAME
       - PUBLISHER_ADDRESS
-      - RPC_URL
       - API_KEY
       - API_BASE_URL
