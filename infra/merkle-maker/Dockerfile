@@ -30,4 +30,4 @@ RUN poetry install
 FROM base as final
 COPY --from=builder /opt/ opt/
 WORKDIR /opt/merkle-maker
-ENTRYPOINT /opt/merkle-maker/.venv/bin/python3.12 merkle-maker/main.py ${ARG}
+ENTRYPOINT /opt/merkle-maker/.venv/bin/python3.12 merkle_maker/main.py ${ARG}
