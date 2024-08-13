@@ -15,7 +15,7 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
-from merkle_maker.redis import RedisManager
+from merkle_maker.redis_manager import RedisManager
 from merkle_maker.publisher import MerkleFeedPublisher
 
 logger = logging.getLogger(__name__)

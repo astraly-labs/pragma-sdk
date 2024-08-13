@@ -11,7 +11,7 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types.types import NetworkName
 
 
-from merkle_maker.redis import RedisManager
+from merkle_maker.redis_manager import RedisManager
 
 logger = logging.getLogger(__name__)
 

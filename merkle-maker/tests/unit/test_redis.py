@@ -12,7 +12,7 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
     CurrenciesOptions,
 )
 
-from merkle_maker.redis import RedisManager
+from merkle_maker.redis_manager import RedisManager
 
 MAINNET = "mainnet"
 SEPOLIA = "sepolia"
