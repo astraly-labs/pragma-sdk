@@ -10,7 +10,7 @@ from vrf_listener.main import main as vrf_listener
 from benchmark.devnet import starknet_devnet_container, DEVNET_PORT
 from benchmark.accounts import get_users_client, get_admin_account
 from benchmark.deploy import deploy_randomness_contracts
-from benchmark.stresstest import process_user, RequestInfo
+from benchmark.stresstest import spam_reqs_with_user, RequestInfo
 
 
 def spawn_vrf_listener(
@@ -51,9 +51,9 @@ async def main():
         print("✅ done!")
 
         # 2. create accounts that will submit requests
-        print("🧩 Deploying VRF contracts...")
+        print("🧩 Creating user clients...")
         users = await get_users_client(randomness_contracts)
-        print(f"Got {len(users)} that will spam requests...")
+        print(f"Got {len(users)} users that will spam requests 👀")
 
         # 3. starts VRF listener
         print("🧩 Spawning the VRF listener...")
@@ -63,6 +63,7 @@ async def main():
             private_key=deployer_info.private_key,
         )
         # TODO: is it possible to create "wait_for_ready" for the vrf_listener?
+        print("⏳ waiting a bit to be sure the task is spawned...")
         await asyncio.sleep(10)
         print("✅ done!")
 
@@ -75,7 +76,7 @@ async def main():
             tasks = []
             for user in users:
                 task = asyncio.create_task(
-                    process_user(user, randomness_contracts[1], num_requests_per_user)
+                    spam_reqs_with_user(user, randomness_contracts[1], num_requests_per_user)
                 )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
@@ -88,8 +89,7 @@ async def main():
         vrf_listener.cancel()
 
         # 7. Stats
-        print("✅ VRF request spam completed!")
-
+        print("✅ spam requests done! 🥳")
         total_requests = sum(len(infos) for infos in all_request_infos.values())
         total_fulfillment_time = sum(
             (info.fulfillment_time - info.request_time).total_seconds()

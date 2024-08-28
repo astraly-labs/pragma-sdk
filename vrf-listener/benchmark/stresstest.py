@@ -19,38 +19,34 @@ class RequestInfo:
     fulfillment_time: datetime = None
 
 
-async def spam_requests(user: ExtendedPragmaClient, example_contract: Contract, num_requests: int):
-    request_infos: List[RequestInfo] = []
-
-    for _ in range(num_requests):
-        invocation = await user.request_random(
-            VRFRequestParams(
-                seed=1,
-                callback_address=example_contract.address,
-                callback_fee_limit=2855600000000000000,
-                publish_delay=1,
-                num_words=1,
-                calldata=[0x1234, 0x1434, 314141, 13401234],
-            )
+async def submit_and_check_request(
+    user: ExtendedPragmaClient, example_contract: Contract
+) -> RequestInfo:
+    invocation = await user.request_random(
+        VRFRequestParams(
+            seed=1,
+            callback_address=example_contract.address,
+            callback_fee_limit=2855600000000000000,
+            publish_delay=1,
+            num_words=1,
+            calldata=[0x1234, 0x1434, 314141, 13401234],
         )
-        await invocation.wait_for_acceptance()
-        request_hash = invocation.hash
-        request_time = datetime.now()
-        request_infos.append(RequestInfo(hash=request_hash, request_time=request_time))
+    )
+    await invocation.wait_for_acceptance()
+    request_info = RequestInfo(hash=invocation.hash, request_time=datetime.now())
 
-    return request_infos
-
-
-async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
     while True:
         status = await user.get_request_status(user.account.address, request_info.hash)
         if status == RequestStatus.FULFILLED:
             request_info.fulfillment_time = datetime.now()
             break
-        await asyncio.sleep(1)  # Check every second
+        await asyncio.sleep(0.5)  # Check every 0.5 secs
+
+    return request_info
 
 
-async def process_user(user: ExtendedPragmaClient, example_contract: Contract, num_requests: int):
-    request_infos = await spam_requests(user, example_contract, num_requests)
-    await asyncio.gather(*[check_request_status(user, info) for info in request_infos])
-    return request_infos
+async def spam_reqs_with_user(
+    user: ExtendedPragmaClient, example_contract: Contract, num_requests: int
+) -> List[RequestInfo]:
+    tasks = [submit_and_check_request(user, example_contract) for _ in range(num_requests)]
+    return await asyncio.gather(*tasks)

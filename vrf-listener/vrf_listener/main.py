@@ -10,6 +10,7 @@ from pragma_utils.cli import load_private_key_from_cli_arg
 from pragma_sdk.onchain.types import ContractAddresses
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
+
 logger = logging.getLogger(__name__)
 
 
