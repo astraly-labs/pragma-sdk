@@ -381,6 +381,25 @@ class RandomnessMixin:
 
         return invocation
 
+    async def _get_randomness_requests_events(
+        self, min_block: int, continuation_token=None
+    ) -> EventsChunk:
+        """
+        Get randomness requests events.
+        Queries from the min_block to the pending block.
+
+        :return: The randomness requests events.
+        """
+        event_list = await self.full_node_client.get_events(
+            self.randomness.address,
+            keys=[[RANDOMNESS_REQUEST_EVENT_SELECTOR]],
+            from_block_number=min_block,
+            to_block_number="pending",
+            continuation_token=continuation_token,
+            chunk_size=500,
+        )
+        return event_list
+
     async def handle_random(
         self,
         private_key: int,
@@ -393,14 +412,11 @@ class RandomnessMixin:
         :param private_key: The private key of the account that will sign the randomness.
         :param ignore_request_threshold: The number of blocks we ignore requests that are older than.
         """
-
         block_number = await self.full_node_client.get_block_number()
-
         min_block = max(block_number - ignore_request_threshold, 0)
         logger.info(f"Handle random job running with min_block: {min_block}")
 
         sk = felt_to_secret_key(private_key)
-
         more_pages = True
         continuation_token = None
 
@@ -428,6 +444,13 @@ class RandomnessMixin:
                     for event in events
                 ]
             )
+
+            to_process = len(
+                [status for status in statuses if status == RequestStatus.RECEIVED]
+            )
+            if to_process == 0:
+                return
+            logger.info(f"Got {to_process} events to process")
 
             block_hashes = await self.fetch_block_hashes(
                 events, block_number, ignore_request_threshold
@@ -477,18 +500,16 @@ class RandomnessMixin:
 
         with multiprocessing.Pool() as pool:
             vrf_submit_requests = pool.map(
-                RandomnessMixin._generate_single_request, data
+                RandomnessMixin._create_randomness_for_event, data
             )
 
         return [req for req in vrf_submit_requests if req is not None]
 
     @staticmethod
-    def _generate_single_request(args: Tuple):
+    def _create_randomness_for_event(args: Tuple):
         event, status, block_hash, sk = args
 
-        seed = RandomnessMixin._build_request_seed(
-            event, block_hash
-        )  # # type: ignore[assignment]
+        seed = RandomnessMixin._build_request_seed(event, block_hash)  # type: ignore[assignment]
         beta_string, pi_string, _ = create_randomness(sk, seed)
         beta_string = int.from_bytes(beta_string, sys.byteorder)  # type: ignore[assignment, arg-type]
         proof = [
@@ -496,34 +517,6 @@ class RandomnessMixin:
             for p in [pi_string[:31], pi_string[31:62], pi_string[62:]]
         ]
         random_words: List[int] = [beta_string]  # type: ignore[list-item]
-
-        return VRFSubmitParams(
-            request_id=event.request_id,
-            requestor_address=event.caller_address,
-            seed=event.seed,
-            minimum_block_number=event.minimum_block_number,
-            callback_address=event.callback_address,
-            callback_fee_limit=event.callback_fee_limit,
-            random_words=random_words,
-            proof=proof,
-            calldata=event.calldata,
-        )
-
-    def create_randomness_for_event(
-        self,
-        event,
-        block_hash,
-        status,
-        sk,
-    ):
-        seed = RandomnessMixin._build_request_seed(event, block_hash)
-        beta_string, pi_string, _ = create_randomness(sk, seed)  # type: ignore[arg-type]
-        beta_string = int.from_bytes(beta_string, sys.byteorder)  # type: ignore[arg-type, assignment]
-        proof = [
-            int.from_bytes(p, sys.byteorder)  # type: ignore[arg-type]
-            for p in [pi_string[:31], pi_string[31:62], pi_string[62:]]
-        ]
-        random_words: List[int] = [beta_string]  # type: ignore[list-item, annotation-unchecked]
 
         return VRFSubmitParams(
             request_id=event.request_id,
@@ -545,23 +538,3 @@ class RandomnessMixin:
             + event.seed.to_bytes(32, sys.byteorder)
             + event.caller_address.to_bytes(32, sys.byteorder)
         )
-
-    async def _get_randomness_requests_events(
-        self, min_block: int, continuation_token=None
-    ) -> EventsChunk:
-        """
-        Get randomness requests events.
-        Queries from the min_block to the pending block.
-
-        :return: The randomness requests events.
-        """
-        event_list = await self.full_node_client.get_events(
-            self.randomness.address,
-            keys=[[RANDOMNESS_REQUEST_EVENT_SELECTOR]],
-            from_block_number=min_block,
-            to_block_number="pending",
-            continuation_token=continuation_token,
-            chunk_size=500,
-        )
-        logger.info(f"Got {len(event_list.events)} events")
-        return event_list
