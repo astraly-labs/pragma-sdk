@@ -55,9 +55,9 @@ async def create_request(user: ExtendedPragmaClient, example_contract: Contract)
 async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
     while True:
         status = await user.get_request_status(
-            user.account.address,
-            request_info.request_id,
-            "pending",
+            caller_address=user.account.address,
+            request_id=request_info.request_id,
+            block_id="pending",
         )
         if status == RequestStatus.FULFILLED:
             request_info.fulfillment_time = datetime.now()
@@ -90,6 +90,9 @@ async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List
 async def spam_reqs_with_user(
     user: ExtendedPragmaClient, user_no: int, example_contract: Contract, num_requests: int = 10
 ) -> List[RequestInfo]:
+    """
+    Given a User client, spams [num_requests] requests.
+    """
     queue = Queue()
     results = []
 

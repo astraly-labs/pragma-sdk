@@ -31,7 +31,7 @@ def spawn_vrf_listener(
             admin_address=admin_address,
             private_key=private_key,
             check_requests_interval=1,
-            ignore_request_threshold=2,
+            ignore_request_threshold=20,
         )
     )
     return vrf_listener_task
@@ -77,7 +77,7 @@ async def main():
             tasks = []
             for i, user in enumerate(users):
                 task = asyncio.create_task(
-                    spam_reqs_with_user(user, i, randomness_contracts[1], 10)
+                    spam_reqs_with_user(user, i, randomness_contracts[1], 50)
                 )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
@@ -109,7 +109,7 @@ async def main():
         print(f"Average fulfillment time: {avg_fulfillment_time:.2f} seconds")
         print(f"Median fulfillment time: {median_fulfillment_time:.2f} seconds")
 
-        # 8. TODO: Save stats
+        # 8. TODO: Save stats for CI stuff
 
 
 if __name__ == "__main__":

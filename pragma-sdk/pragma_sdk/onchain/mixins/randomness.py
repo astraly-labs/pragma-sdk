@@ -396,7 +396,7 @@ class RandomnessMixin:
             from_block_number=min_block,
             to_block_number="pending",
             continuation_token=continuation_token,
-            chunk_size=500,
+            chunk_size=512,
         )
         return event_list
 
@@ -432,6 +432,7 @@ class RandomnessMixin:
                     event.data[index_to_split + 1 :]
                 ]
 
+            logger.info(f"Found {len(event_list.events)} events")
             events = [RandomnessRequest(*r.data) for r in event_list.events]
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
@@ -439,18 +440,20 @@ class RandomnessMixin:
             statuses = await asyncio.gather(
                 *[
                     self.get_request_status(
-                        event.caller_address, event.request_id, block_id="pending"
+                        event.caller_address,
+                        event.request_id,
+                        block_id="pending",
                     )
                     for event in events
                 ]
             )
 
-            to_process = len(
+            nb_received_events = len(
                 [status for status in statuses if status == RequestStatus.RECEIVED]
             )
-            if to_process == 0:
-                return
-            logger.info(f"Got {to_process} events to process")
+            if nb_received_events == 0:
+                continue
+            logger.info(f"Got {nb_received_events} events to process")
 
             block_hashes = await self.fetch_block_hashes(
                 events, block_number, ignore_request_threshold
@@ -459,7 +462,7 @@ class RandomnessMixin:
                 events, statuses, block_hashes, sk
             )
             if len(vrf_submit_requests) == 0:
-                return
+                continue
             invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
             if invoke_tx is None:
                 logger.error("Failed to submit randomness")
