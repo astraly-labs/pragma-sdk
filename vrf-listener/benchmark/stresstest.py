@@ -8,20 +8,22 @@ from pragma_sdk.onchain.types import (
     RequestStatus,
 )
 
-from starknet_py.contract import Contract
+from starknet_py.contract import Contract, TypeSentTransaction
 from benchmark.pragma_client import ExtendedPragmaClient
+
+# Time to wait between request status check (in secs)
+TTW_BETWEEN_REQ_CHECK = 0.1
 
 
 @dataclass
 class RequestInfo:
     hash: str
+    sent_tx: TypeSentTransaction
     request_time: datetime
     fulfillment_time: datetime = None
 
 
-async def submit_and_check_request(
-    user: ExtendedPragmaClient, example_contract: Contract
-) -> RequestInfo:
+async def create_request(user: ExtendedPragmaClient, example_contract: Contract) -> RequestInfo:
     invocation = await user.request_random(
         VRFRequestParams(
             seed=1,
@@ -32,21 +34,38 @@ async def submit_and_check_request(
             calldata=[0x1234, 0x1434, 314141, 13401234],
         )
     )
-    await invocation.wait_for_acceptance()
-    request_info = RequestInfo(hash=invocation.hash, request_time=datetime.now())
+    return RequestInfo(
+        hash=invocation.hash,
+        sent_tx=invocation,
+        request_time=datetime.now(),
+    )
 
+
+async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
     while True:
+        await request_info.sent_tx.wait_for_acceptance()
         status = await user.get_request_status(user.account.address, request_info.hash)
         if status == RequestStatus.FULFILLED:
             request_info.fulfillment_time = datetime.now()
             break
-        await asyncio.sleep(0.1)  # Check every 0.1 secs
-
-    return request_info
+        await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)
 
 
 async def spam_reqs_with_user(
     user: ExtendedPragmaClient, example_contract: Contract, num_requests: int = 10
 ) -> List[RequestInfo]:
-    tasks = [submit_and_check_request(user, example_contract) for _ in range(num_requests)]
-    return await asyncio.gather(*tasks)
+    request_infos = []
+    status_check_tasks = []
+
+    async def create_and_check():
+        request_info = await create_request(user, example_contract)
+        request_infos.append(request_info)
+        status_check_tasks.append(asyncio.create_task(check_request_status(user, request_info)))
+
+    # Create requests and start checking their status concurrently
+    await asyncio.gather(*[create_and_check() for _ in range(num_requests)])
+
+    # Wait for all status checks to complete
+    await asyncio.gather(*status_check_tasks)
+
+    return request_infos
