@@ -1,5 +1,7 @@
 import asyncio
 
+from typing import Dict, List
+
 from testcontainers.core.waiting_utils import wait_for_logs
 from starknet_py.net.full_node_client import FullNodeClient
 
@@ -8,6 +10,7 @@ from vrf_listener.main import main as vrf_listener
 from benchmark.devnet import starknet_devnet_container, DEVNET_PORT
 from benchmark.accounts import get_users_client, get_admin_account
 from benchmark.deploy import deploy_randomness_contracts
+from benchmark.stresstest import process_user, RequestInfo
 
 
 def spawn_vrf_listener(
@@ -48,6 +51,7 @@ async def main():
         print("✅ done!")
 
         # 2. create accounts that will submit requests
+        print("🧩 Deploying VRF contracts...")
         users = await get_users_client(randomness_contracts)
         print(f"Got {len(users)} that will spam requests...")
 
@@ -63,9 +67,40 @@ async def main():
         print("✅ done!")
 
         # 5. send txs requests
+        print("🧩 Starting VRF request spam...")
+        num_requests_per_user = 5
+        all_request_infos: Dict[str, List[RequestInfo]] = {}
+
+        async def process_all_users():
+            tasks = []
+            for user in users:
+                task = asyncio.create_task(
+                    process_user(user, randomness_contracts[1], num_requests_per_user)
+                )
+                tasks.append(task)
+            results = await asyncio.gather(*tasks)
+            for user, request_infos in zip(users, results):
+                all_request_infos[user.account.address] = request_infos
+
+        await process_all_users()
 
         # 6. kill the vrf task
         vrf_listener.cancel()
+
+        # 7. Stats
+        print("✅ VRF request spam completed!")
+
+        total_requests = sum(len(infos) for infos in all_request_infos.values())
+        total_fulfillment_time = sum(
+            (info.fulfillment_time - info.request_time).total_seconds()
+            for infos in all_request_infos.values()
+            for info in infos
+            if info.fulfillment_time
+        )
+        avg_fulfillment_time = total_fulfillment_time / total_requests
+
+        print(f"Total requests: {total_requests}")
+        print(f"Average fulfillment time: {avg_fulfillment_time:.2f} seconds")
 
 
 if __name__ == "__main__":

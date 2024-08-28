@@ -85,7 +85,7 @@ def get_admin_account(client: FullNodeClient) -> (Account, AccountInfo):
             address=admin_info.account_address,
             client=client,
             key_pair=KeyPair.from_private_key(int(admin_info.private_key, 16)),
-            chain=StarknetChainId.SEPOLIA,
+            chain=StarknetChainId.MAINNET,
         ),
         admin_info,
     )
