@@ -69,27 +69,25 @@ async def main():
 
         # 5. send txs requests
         print("🧩 Starting VRF request spam...")
-        num_requests_per_user = 5
         all_request_infos: Dict[str, List[RequestInfo]] = {}
 
         async def process_all_users():
             tasks = []
             for user in users:
-                task = asyncio.create_task(
-                    spam_reqs_with_user(user, randomness_contracts[1], num_requests_per_user)
-                )
+                task = asyncio.create_task(spam_reqs_with_user(user, randomness_contracts[1], 10))
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             for user, request_infos in zip(users, results):
                 all_request_infos[user.account.address] = request_infos
 
         await process_all_users()
+        print("✅ spam requests done! 🥳")
 
         # 6. kill the vrf task
         vrf_listener.cancel()
 
-        # 7. Stats
-        print("✅ spam requests done! 🥳")
+        # 7. Show Stats
+        print("🤓 Computed Statistics:")
         total_requests = sum(len(infos) for infos in all_request_infos.values())
         total_fulfillment_time = sum(
             (info.fulfillment_time - info.request_time).total_seconds()
@@ -101,6 +99,8 @@ async def main():
 
         print(f"Total requests: {total_requests}")
         print(f"Average fulfillment time: {avg_fulfillment_time:.2f} seconds")
+
+        # 8. TODO: Save stats
 
 
 if __name__ == "__main__":

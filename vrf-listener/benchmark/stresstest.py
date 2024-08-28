@@ -40,13 +40,13 @@ async def submit_and_check_request(
         if status == RequestStatus.FULFILLED:
             request_info.fulfillment_time = datetime.now()
             break
-        await asyncio.sleep(0.5)  # Check every 0.5 secs
+        await asyncio.sleep(0.1)  # Check every 0.1 secs
 
     return request_info
 
 
 async def spam_reqs_with_user(
-    user: ExtendedPragmaClient, example_contract: Contract, num_requests: int
+    user: ExtendedPragmaClient, example_contract: Contract, num_requests: int = 10
 ) -> List[RequestInfo]:
     tasks = [submit_and_check_request(user, example_contract) for _ in range(num_requests)]
     return await asyncio.gather(*tasks)
