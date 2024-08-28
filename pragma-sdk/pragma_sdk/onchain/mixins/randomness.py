@@ -467,6 +467,10 @@ class RandomnessMixin:
             logger.info("Sumbitted random tx: %s", hex(invoke_tx.transaction_hash))
 
     async def fetch_block_hashes(self, events, block_number, ignore_request_threshold):
+        """
+        Fetch the block_hash of all events in parallel.
+        """
+
         async def get_block_hash(event):
             minimum_block_number = event.minimum_block_number
             if (
@@ -489,7 +493,7 @@ class RandomnessMixin:
     def generate_all_vrf_requests(self, events, statuses, block_hashes, sk):
         # Prepare data for multiprocessing
         data = [
-            (event, status, block_hash, sk)
+            (event, block_hash, sk)
             for event, status, block_hash in zip(events, statuses, block_hashes)
             if status == RequestStatus.RECEIVED and block_hash is not None
         ]
@@ -503,7 +507,13 @@ class RandomnessMixin:
 
     @staticmethod
     def _create_randomness_for_event(args: Tuple):
-        event, status, block_hash, sk = args
+        """
+        Create the randomness submit params for the provided args, that should be:
+        - event: int
+        - block_hash: str
+        - sk: secret_key
+        """
+        event, block_hash, sk = args
 
         seed = RandomnessMixin._build_request_seed(event, block_hash)  # type: ignore[assignment]
         beta_string, pi_string, _ = create_randomness(sk, seed)
