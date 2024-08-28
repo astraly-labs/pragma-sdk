@@ -1,5 +1,4 @@
 import asyncio
-import time
 import sys
 import multiprocessing
 
@@ -435,19 +434,15 @@ class RandomnessMixin:
             )
 
             # Generate requests in paralle
-            now = time.time()
             vrf_submit_requests = self.generate_all_vrf_requests(
                 events, statuses, block_hashes, sk
             )
-            print(f"Generate requests {(time.time() - now):0.2f}s\n")
 
             # Submit handling sequentially
             if len(vrf_submit_requests) == 0:
                 return
 
-            now = time.time()
             resp = await self.submit_random_multicall(vrf_submit_requests)
-            print(f"Submit multicall {(time.time() - now):0.2f}s\n")
             if resp is None:
                 logger.error("Failed to submit randomness")
                 continue
