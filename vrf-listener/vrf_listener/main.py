@@ -20,6 +20,7 @@ async def main(
     admin_address: str,
     private_key: str,
     check_requests_interval: int,
+    ignore_request_threshold: int,
     rpc_url: Optional[HttpUrl] = None,
 ) -> None:
     logger.info("🧩 Starting VRF listener...")
@@ -39,9 +40,13 @@ async def main(
     logger.info("👂 Listening for randomness requests!")
     while True:
         try:
-            await client.handle_random(int(private_key, 16), ignore_request_threshold=100000)
+            await client.handle_random(
+                int(private_key, 16),
+                ignore_request_threshold=ignore_request_threshold,
+            )
         except Exception as e:
             logger.error(f"⛔ Error while handling randomness request: {e}")
+            raise e
         await asyncio.sleep(check_requests_interval)
 
 
@@ -99,6 +104,13 @@ async def main(
     default=10,
     help="Delay in seconds between checks for VRF requests. Defaults to 10 seconds.",
 )
+@click.option(
+    "--ignore-request-threshold",
+    type=click.IntRange(min=0),
+    required=False,
+    default=3,
+    help="Blocks to ignore before the current block for the handling.",
+)
 def cli_entrypoint(
     log_level: str,
     network: Literal["mainnet", "sepolia"],
@@ -107,6 +119,7 @@ def cli_entrypoint(
     admin_address: str,
     raw_private_key: str,
     check_requests_interval: int,
+    ignore_request_threshold: int,
 ) -> None:
     """
     VRF Listener entry point.
@@ -123,6 +136,7 @@ def cli_entrypoint(
             admin_address=admin_address,
             private_key=private_key,
             check_requests_interval=check_requests_interval,
+            ignore_request_threshold=ignore_request_threshold,
         )
     )
 

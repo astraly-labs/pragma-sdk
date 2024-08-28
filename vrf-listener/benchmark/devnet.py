@@ -2,7 +2,7 @@ from testcontainers.core.container import DockerContainer
 
 DEVNET_IMAGE = "shardlabs/starknet-devnet-rs"
 DEVNET_PORT = 5050
-DEVNET_ARGS = "--chain-id MAINNET --seed 1"
+DEVNET_ARGS = "--chain-id MAINNET --seed 1 --block-generation-on 15"
 
 
 def starknet_devnet_container() -> DockerContainer:

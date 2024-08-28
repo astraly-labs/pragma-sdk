@@ -1,5 +1,6 @@
 import asyncio
 
+from statistics import median
 from typing import Dict, List
 
 from testcontainers.core.waiting_utils import wait_for_logs
@@ -30,6 +31,7 @@ def spawn_vrf_listener(
             admin_address=admin_address,
             private_key=private_key,
             check_requests_interval=1,
+            ignore_request_threshold=2,
         )
     )
     return vrf_listener_task
@@ -91,16 +93,21 @@ async def main():
         # 7. Show Stats
         print("🤓 Computed Statistics:")
         total_requests = sum(len(infos) for infos in all_request_infos.values())
-        total_fulfillment_time = sum(
+
+        fulfillment_times = [
             (info.fulfillment_time - info.request_time).total_seconds()
             for infos in all_request_infos.values()
             for info in infos
             if info.fulfillment_time
-        )
+        ]
+        print(fulfillment_times)
+        print("===========")
+        total_fulfillment_time = sum(fulfillment_times)
         avg_fulfillment_time = total_fulfillment_time / total_requests
-
+        median_fulfillment_time = median(fulfillment_times)
         print(f"Total requests: {total_requests}")
         print(f"Average fulfillment time: {avg_fulfillment_time:.2f} seconds")
+        print(f"Median fulfillment time: {median_fulfillment_time:.2f} seconds")
 
         # 8. TODO: Save stats
 

@@ -13,7 +13,7 @@ from starknet_py.contract import Contract, TypeSentTransaction
 from benchmark.pragma_client import ExtendedPragmaClient
 
 # Time to wait between request status check (in secs)
-TTW_BETWEEN_REQ_CHECK = 0.1
+TTW_BETWEEN_REQ_CHECK = 0.5
 
 
 @dataclass
@@ -25,8 +25,8 @@ class RequestInfo:
     request_id: int = None
 
 
-async def get_request_id(user: ExtendedPragmaClient, req: RequestInfo) -> int:
-    receipt = await user.full_node_client.get_transaction_receipt(tx_hash=req.tx_hash)
+async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
+    receipt = await user.full_node_client.get_transaction_receipt(tx_hash=tx_hash)
     request_id = receipt.events[2].data[0]
     return request_id
 
@@ -42,7 +42,10 @@ async def create_request(user: ExtendedPragmaClient, example_contract: Contract)
             calldata=[0x1234, 0x1434, 314141, 13401234],
         )
     )
+    request_id = await get_request_id(user, invocation.hash)
+    await invocation.wait_for_acceptance()
     return RequestInfo(
+        request_id=request_id,
         tx_hash=invocation.hash,
         sent_tx=invocation,
         request_time=datetime.now(),
@@ -50,10 +53,12 @@ async def create_request(user: ExtendedPragmaClient, example_contract: Contract)
 
 
 async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
-    request_info.request_id = await get_request_id(user, request_info)
-    await request_info.sent_tx.wait_for_acceptance()
     while True:
-        status = await user.get_request_status(user.account.address, request_info.request_id)
+        status = await user.get_request_status(
+            user.account.address,
+            request_info.request_id,
+            "pending",
+        )
         if status == RequestStatus.FULFILLED:
             request_info.fulfillment_time = datetime.now()
             break
@@ -68,7 +73,6 @@ async def request_creator(
     queue: Queue,
 ):
     for _ in range(num_requests):
-        print(f"User {user_no} creating request...")
         request_info = await create_request(user, example_contract)
         await queue.put(request_info)
     await queue.put(None)  # Signal that we're done creating requests
