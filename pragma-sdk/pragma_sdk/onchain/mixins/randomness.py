@@ -190,9 +190,9 @@ class RandomnessMixin:
             )
             all_calls.append(call)
 
-        invocation = await self.account.execute_v1(calls=all_calls, max_fee=int(1e18))  # type: ignore[union-attr]
-        logger.info("Sumbitted random %s", invocation.transaction_hash)
-
+        invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+            calls=all_calls, max_fee=self.execution_config.max_fee
+        )  # type: ignore[union-attr]
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -455,20 +455,16 @@ class RandomnessMixin:
             block_hashes = await self.fetch_block_hashes(
                 events, block_number, ignore_request_threshold
             )
-
-            # Generate requests in paralle
             vrf_submit_requests = self.generate_all_vrf_requests(
                 events, statuses, block_hashes, sk
             )
-
-            # Submit handling sequentially
             if len(vrf_submit_requests) == 0:
                 return
-
-            resp = await self.submit_random_multicall(vrf_submit_requests)
-            if resp is None:
+            invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
+            if invoke_tx is None:
                 logger.error("Failed to submit randomness")
                 continue
+            logger.info("Sumbitted random tx: %s", hex(invoke_tx.transaction_hash))
 
     async def fetch_block_hashes(self, events, block_number, ignore_request_threshold):
         async def get_block_hash(event):
