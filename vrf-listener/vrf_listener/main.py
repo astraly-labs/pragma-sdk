@@ -39,7 +39,7 @@ async def main(
     logger.info("👂 Listening for randomness requests!")
     while True:
         try:
-            await client.handle_random(int(private_key, 16))
+            await client.handle_random(int(private_key, 16), ignore_request_threshold=100000)
         except Exception as e:
             logger.error(f"⛔ Error while handling randomness request: {e}")
         await asyncio.sleep(check_requests_interval)

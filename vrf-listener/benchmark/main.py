@@ -64,7 +64,7 @@ async def main():
         )
         # TODO: is it possible to create "wait_for_ready" for the vrf_listener?
         print("⏳ waiting a bit to be sure the task is spawned...")
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
         print("✅ done!")
 
         # 5. send txs requests
@@ -73,8 +73,10 @@ async def main():
 
         async def process_all_users():
             tasks = []
-            for user in users:
-                task = asyncio.create_task(spam_reqs_with_user(user, randomness_contracts[1], 10))
+            for i, user in enumerate(users):
+                task = asyncio.create_task(
+                    spam_reqs_with_user(user, i, randomness_contracts[1], 10)
+                )
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             for user, request_infos in zip(users, results):
