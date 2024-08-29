@@ -25,6 +25,9 @@ pragma-utils = { path = "../pragma-utils", develop = true }
 click = "^8.1.0"
 types-pyyaml = "^6.0.12.20240311"
 pydantic = "^2.7.4"
+apibara = "0.8.0"
+# Apibara deps
+pymongo = "4.8.0"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.26.1"
@@ -38,6 +41,7 @@ pytest-xdist = "^3.2.1"
 pytest-cov = "^4.0.0"
 setuptools = "^70.1.0"
 pytest-rerunfailures = "^12.0"
+testcontainers = "4.8.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
@@ -49,7 +53,10 @@ format = "ruff format ."
 format_check = "ruff format . --check"
 lint = "ruff check ."
 typecheck = "mypy vrf_listener"
+
 test = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
+
+benchmark = "python benchmark/main.py"
 
 [tool.ruff]
 exclude = [
@@ -96,7 +103,7 @@ explicit_package_bases = true
 show_error_codes = true
 warn_return_any = true
 ignore_missing_imports = true
-exclude = ["tests"]
+exclude = ["tests", "benchmarks"]
 mypy_path = ["../pragma-utils", "../pragma-sdk"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
@@ -107,7 +114,7 @@ generate-setup-file = true
 source = ["vrf_listener"]
 
 [tool.coverage.report]
-omit = ["*_test.py", "tests/*"]
+omit = ["*_test.py", "tests/*", "benchmark/*"]
 skip_empty = true
 
 [tool.poetry-monorepo.deps]

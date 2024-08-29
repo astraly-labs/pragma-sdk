@@ -36,6 +36,7 @@ def spawn_main_in_parallel_thread(
             admin_address=hex(admin_address),
             private_key=private_key,
             check_requests_interval=check_requests_interval,
+            ignore_request_threshold=3,
         )
     )
     return main_task

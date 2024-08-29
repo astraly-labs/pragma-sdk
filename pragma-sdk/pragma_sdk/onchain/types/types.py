@@ -129,6 +129,31 @@ class VRFSubmitParams:
         ]
         return result
 
+    def to_calldata(self) -> List[int | None]:
+        calldata = [
+            self.request_id,
+            self.requestor_address,
+            self.seed,
+            self.minimum_block_number,
+            self.callback_address,
+            self.callback_fee_limit,
+            self.callback_fee,
+            len(self.random_words),
+            *self.random_words,
+            len(self.proof),
+            *self.proof,
+        ]
+        if self.calldata:
+            calldata.extend(
+                [
+                    len(self.calldata),
+                    *self.calldata,
+                ]
+            )
+        if self.callback_fee:
+            calldata.append(self.callback_fee)
+        return calldata
+
 
 @dataclass
 class VRFCancelParams:
