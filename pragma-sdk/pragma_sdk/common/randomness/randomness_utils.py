@@ -176,7 +176,7 @@ def ecvrf_verify(y, pi_string, alpha_string) -> (str, list):  # type: ignore[syn
     return "INVALID", []
 
 
-def get_public_key(secret_key: str) -> str:
+def get_public_key(secret_key: bytes) -> str:
     """Calculate and return the public_key as an encoded point string (bytes)"""
     secret_int = _get_secret_scalar(secret_key)
     public_point = _scalar_multiply(p=BASE, e=secret_int)

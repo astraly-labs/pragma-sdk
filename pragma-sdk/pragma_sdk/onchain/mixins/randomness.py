@@ -162,8 +162,6 @@ class RandomnessMixin:
             *vrf_submit_params.to_list(),
             execution_config=self.execution_config,
         )
-        logger.info("Sumbitted random %s", invocation.hash)
-
         return invocation
 
     async def submit_random_multicall(
@@ -441,7 +439,7 @@ class RandomnessMixin:
         """
         block_number = await self.full_node_client.get_block_number()
         min_block = max(block_number - ignore_request_threshold, 0)
-        logger.info(f"Handle random job running with min_block: {min_block}")
+        logger.debug(f"Handle random job running with min_block: {min_block}")
 
         # We either retrieve the [requests_events] provided events or index ourselves
         # the request events.
@@ -470,7 +468,7 @@ class RandomnessMixin:
             return
 
         statuses, events = zip(*filtered)  # type: ignore[assignment]
-        logger.info(f"Got {len(events)} RECEIVED events to process")
+        logger.debug(f"Got {len(events)} RECEIVED events to process")
 
         block_hashes = await self.fetch_block_hashes(
             events=events,
@@ -485,28 +483,31 @@ class RandomnessMixin:
         )
         if not vrf_submit_requests:
             logger.error(
-                "🤔 Could not compute any VRF submissions for "
+                "⛔ Could not compute any VRF submissions for "
                 f"the {len(events)} events provided."
             )
             return
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
-        if invoke_tx is None:
-            logger.error("Failed to submit randomness")
+        if not invoke_tx:
+            logger.error(f"⛔ VRF Submission for {len(events)} failed!")
         else:
-            logger.info("Submitted random tx: %s", hex(invoke_tx.transaction_hash))
+            logger.info(
+                f"✅ Submitted the VRF responses for {len(events)} requests:"
+                f" {hex(invoke_tx.transaction_hash)}"
+            )
 
     async def fetch_block_hashes(
         self,
         events: List[RandomnessRequest],
         block_number: int,
         ignore_request_threshold: int,
-    ) -> List[str]:
+    ) -> List[int]:
         """
         Fetch the block_hash of all events in parallel.
         """
 
-        async def get_block_hash(minimum_block_number: int) -> Optional[str]:
+        async def get_block_hash(minimum_block_number: int) -> Optional[int]:
             if (
                 minimum_block_number > block_number + 1
                 or minimum_block_number < block_number - ignore_request_threshold
@@ -527,7 +528,7 @@ class RandomnessMixin:
     def _compute_all_vrf_submit(
         self,
         events: List[RandomnessRequest],
-        block_hashes: List[str],
+        block_hashes: List[int],
         sk: bytes,
     ) -> List[VRFSubmitParams]:
         """
@@ -538,22 +539,24 @@ class RandomnessMixin:
         ]
 
         with multiprocessing.Pool() as pool:
+            # Executes in different threads all the computation for all requests instead
+            # of doing it sequentially for each.
             vrf_submit_requests = pool.map(
-                RandomnessMixin._create_randomness_for_event, data
+                RandomnessMixin._create_randomness_for_event,
+                data,
             )
         return [req for req in vrf_submit_requests]
 
     @staticmethod
-    def _create_randomness_for_event(args: Tuple) -> VRFSubmitParams:
+    def _create_randomness_for_event(
+        args: Tuple[RandomnessRequest, int, bytes],
+    ) -> VRFSubmitParams:
         """
-        Create the randomness submit params for the provided args, that should be:
-        - event: RandomnessRequest
-        - block_hash: str
-        - sk (secret key): bytes
+        Create the randomness submit params for the provided event request.
         """
         event, block_hash, sk = args
 
-        seed = RandomnessMixin._build_request_seed(event, block_hash)  # type: ignore[assignment]
+        seed = RandomnessMixin._build_request_seed(event, block_hash)
         beta_string, pi_string, _ = create_randomness(sk, seed)
         beta_string = int.from_bytes(beta_string, sys.byteorder)  # type: ignore[assignment, arg-type]
         proof = [
@@ -575,7 +578,7 @@ class RandomnessMixin:
         )
 
     @staticmethod
-    def _build_request_seed(event: RandomnessRequest, block_hash: int) -> int:
+    def _build_request_seed(event: RandomnessRequest, block_hash: int) -> bytes:
         """
         Builds the seed of a given RandomnessRequest for a block_hash.
         """

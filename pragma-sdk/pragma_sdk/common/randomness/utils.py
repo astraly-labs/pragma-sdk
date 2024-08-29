@@ -28,8 +28,8 @@ def uint256_to_2_128(num: int) -> Tuple[int, int]:
 
 
 def create_randomness(
-    secret_key: str,
-    seed: int,
+    secret_key: bytes,
+    seed: bytes,
 ) -> Tuple[str, str, str]:
     # Alice generates a secret and public key pair
     public_key = get_public_key(secret_key)

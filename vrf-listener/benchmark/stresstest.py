@@ -21,17 +21,23 @@ class RequestInfo:
     tx_hash: str
     sent_tx: TypeSentTransaction
     request_time: datetime
-    fulfillment_time: datetime = None
     request_id: int = None
+    fulfillment_time: datetime = None
 
 
 async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
+    """
+    Retrieve the request_id in the transaction receipt of a request.
+    """
     receipt = await user.full_node_client.get_transaction_receipt(tx_hash=tx_hash)
     request_id = receipt.events[2].data[0]
     return request_id
 
 
 async def create_request(user: ExtendedPragmaClient, example_contract: Contract) -> RequestInfo:
+    """
+    Create a VRF request with the provided user using the example_contract as callback.
+    """
     invocation = await user.request_random(
         VRFRequestParams(
             seed=1,
@@ -53,6 +59,9 @@ async def create_request(user: ExtendedPragmaClient, example_contract: Contract)
 
 
 async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
+    """
+    Check forever the status of the provided request until it is FULFILLED.
+    """
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
@@ -72,6 +81,9 @@ async def request_creator(
     num_requests: int,
     queue: Queue,
 ):
+    """
+    Creates N VRF requests using the provided user & put them into the check queue.
+    """
     for _ in range(num_requests):
         request_info = await create_request(user, example_contract)
         await queue.put(request_info)
@@ -79,6 +91,9 @@ async def request_creator(
 
 
 async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List[RequestInfo]):
+    """
+    Reads the provided queue that will be filled with VRF Requests & check their status.
+    """
     while True:
         request_info = await queue.get()
         if request_info is None:
