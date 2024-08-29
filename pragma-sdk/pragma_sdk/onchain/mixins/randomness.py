@@ -128,7 +128,7 @@ class RandomnessMixin:
                 *request.to_list(),
                 max_fee=self.execution_config.max_fee,
             )
-            estimate_fee = await submit_call.estimate_fee()
+            estimate_fee = await submit_call.estimate_fee(block_number="pending")
             if estimate_fee.overall_fee > request.callback_fee_limit:
                 logger.error(
                     "OUT OF GAS %s > %s - request %s cancelled",
