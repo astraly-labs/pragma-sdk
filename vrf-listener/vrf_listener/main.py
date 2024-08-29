@@ -51,6 +51,7 @@ async def main(
             pragma_client=client,
             apibara_api_key=apibara_api_key,
             requests_queue=requests_queue,
+            ignore_request_threshold=ignore_request_threshold,
         )
         asyncio.create_task(indexer.run_forever())
 

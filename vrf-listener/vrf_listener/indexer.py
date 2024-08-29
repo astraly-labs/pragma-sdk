@@ -37,6 +37,7 @@ class Indexer:
         pragma_client: PragmaOnChainClient,
         apibara_api_key: Optional[str],
         requests_queue: ThreadSafeQueue,
+        ignore_request_threshold: int,
         from_block: Optional[int] = None,
     ):
         """
@@ -72,7 +73,7 @@ class Indexer:
             filter=filter,
             finality=DataFinality.DATA_STATUS_PENDING,
             batch_size=1,
-            cursor=starknet_cursor(current_block),
+            cursor=starknet_cursor(current_block - ignore_request_threshold),
         )
         return cls(stream=stream, requests_queue=requests_queue)
 
