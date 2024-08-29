@@ -488,6 +488,10 @@ class RandomnessMixin:
     ) -> List[int | None]:
         """
         Fetch the block_hash of all events in parallel.
+        --
+        TODO: Really not optimal but not a bottleneck at the moment.
+        We should be fetching only pending + latest and attribute that to
+        the events, instead of doing N times (n = len of events).
         """
 
         async def get_block_hash(minimum_block_number: int) -> Optional[int]:
