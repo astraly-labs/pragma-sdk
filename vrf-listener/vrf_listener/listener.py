@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 
 from typing import Optional, List, Set
 
@@ -58,6 +59,7 @@ class Listener:
                 )
             except Exception as e:
                 logger.error(f"⛔ Error while handling randomness request: {e}")
+                logger.error(f"Traceback:\n{''.join(traceback.format_exc())}")
                 self.processed_requests.clear()
             await asyncio.sleep(self.check_requests_interval)
 
