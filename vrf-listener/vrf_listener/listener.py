@@ -48,6 +48,8 @@ class Listener:
         while True:
             if self.indexer is not None:
                 events = await self._consume_requests_queue()
+                if len(events) > 0:
+                    logger.info(f"🔥 Consumed {len(events)} events from the indexing queue...")
             try:
                 await self.pragma_client.handle_random(
                     private_key=self.private_key,
