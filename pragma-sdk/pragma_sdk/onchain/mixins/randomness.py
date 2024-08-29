@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import multiprocessing
+import logging
 
 from typing import List, Optional, Tuple
 
@@ -10,7 +11,6 @@ from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
 
-from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.randomness.utils import (
     create_randomness,
     felt_to_secret_key,
@@ -29,7 +29,7 @@ from pragma_sdk.onchain.types import (
 )
 from pragma_sdk.onchain.types.types import BlockId
 
-logger = get_pragma_sdk_logger()
+logger = logging.getLogger(__name__)
 
 
 class RandomnessMixin:
@@ -172,7 +172,10 @@ class RandomnessMixin:
         invocation = await self.account.execute_v1(  # type: ignore[union-attr]
             calls=all_calls, max_fee=self.execution_config.max_fee
         )
-        await self.full_node_client.wait_for_tx(invocation.transaction_hash)
+        await self.full_node_client.wait_for_tx(
+            tx_hash=invocation.transaction_hash,
+            check_interval=1,
+        )
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -425,18 +428,24 @@ class RandomnessMixin:
 
         # We either retrieve the [requests_events] provided events or index ourselves
         # the request events.
-        events = requests_events or await self._index_randomness_requests_events(
-            from_block=min_block,
-            to_block="pending",
-        )
-        if not events:
+        if requests_events is None:
+            events = await self._index_randomness_requests_events(
+                from_block=min_block,
+                to_block="pending",
+            )
+        else:
+            events = requests_events
+
+        if not events or len(events) == 0:
             return
 
         # We only keep the RECEIVED requests.
         statuses = await asyncio.gather(
             *(
                 self.get_request_status(
-                    event.caller_address, event.request_id, block_id="pending"
+                    caller_address=event.caller_address,
+                    request_id=event.request_id,
+                    block_id="pending",
                 )
                 for event in events
             )
@@ -450,7 +459,7 @@ class RandomnessMixin:
             return
 
         statuses, events = zip(*filtered)  # type: ignore[assignment]
-        logger.debug(f"Got {len(events)} RECEIVED events to process")
+        logger.debug(f"Got {len(events)} RECEIVED event(s) to process")
 
         block_hashes = await self.fetch_block_hashes(
             events=events,
@@ -466,7 +475,7 @@ class RandomnessMixin:
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
         if not invoke_tx:
-            logger.error(f"⛔ VRF Submission for {len(events)} failed!")
+            raise ValueError(f"⛔ VRF Submission for {len(events)} failed!")
         else:
             logger.info(
                 f"✅ Submitted the VRF responses for {len(events)} requests:"

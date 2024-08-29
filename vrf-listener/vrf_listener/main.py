@@ -10,6 +10,7 @@ from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 from pragma_sdk.onchain.types import ContractAddresses
 from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from vrf_listener.safe_queue import ThreadSafeQueue
 from vrf_listener.indexer import Indexer
@@ -50,6 +51,7 @@ async def main(
             pragma_client=client,
             apibara_api_key=apibara_api_key,
             requests_queue=requests_queue,
+            ignore_request_threshold=ignore_request_threshold,
         )
         asyncio.create_task(indexer.run_forever())
 
@@ -181,6 +183,9 @@ def cli_entrypoint(
     VRF Listener entry point.
     """
     setup_logging(logger, log_level)
+    pragma_sdk_logger = get_pragma_sdk_logger()
+    pragma_sdk_logger.setLevel(log_level)
+
     private_key = load_private_key_from_cli_arg(raw_private_key)
 
     if isinstance(private_key, tuple):
