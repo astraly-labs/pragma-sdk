@@ -165,7 +165,8 @@ async def _consume_full_queue(requests_queue: asyncio.Queue) -> List[RandomnessR
     while not requests_queue.empty():
         try:
             e = requests_queue.get_nowait()
-            events.append(e)
+            if e not in events:
+                events.append(e)
         except asyncio.QueueEmpty:
             break
     return events
