@@ -50,7 +50,7 @@ class Listener:
             if self.indexer is not None:
                 events = await self._consume_requests_queue()
                 if len(events) > 0:
-                    logger.info(f"🔥 Consumed {len(events)} events from the indexing queue...")
+                    logger.info(f"🔥 Consumed {len(events)} event(s) from the indexing queue...")
             try:
                 await self.pragma_client.handle_random(
                     private_key=self.private_key,
@@ -67,7 +67,7 @@ class Listener:
         """
         Consumes the whole requests_queue and return the requests.
         """
-        events = []
+        events = list()
         while not self.requests_queue.empty():
             try:
                 request: RandomnessRequest = await self.requests_queue.get()
