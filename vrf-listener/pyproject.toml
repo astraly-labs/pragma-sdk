@@ -25,6 +25,9 @@ pragma-utils = { path = "../pragma-utils", develop = true }
 click = "^8.1.0"
 types-pyyaml = "^6.0.12.20240311"
 pydantic = "^2.7.4"
+apibara = "0.8.0"
+# Apibara deps
+pymongo = "4.8.0"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.26.1"
