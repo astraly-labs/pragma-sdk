@@ -19,6 +19,81 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 
 logger = logging.getLogger(__name__)
 
+EVENT_INDEX_TO_SPLIT = 7
+
+
+async def main(
+    network: Literal["mainnet", "sepolia"],
+    vrf_address: str,
+    admin_address: str,
+    private_key: str,
+    check_requests_interval: int,
+    ignore_request_threshold: int,
+    rpc_url: Optional[HttpUrl] = None,
+    index_with_apibara: bool = False,
+    apibara_api_key: Optional[str] = None,
+) -> None:
+    logger.info("🧩 Starting VRF listener...")
+    client = _create_pragma_client(
+        network=network,
+        vrf_address=vrf_address,
+        admin_address=admin_address,
+        private_key=private_key,
+        rpc_url=rpc_url,
+    )
+
+    if index_with_apibara:
+        logger.info("👩‍💻 Indexing VRF requests using apibara...")
+        stream = await _create_apibara_stream(
+            client=client,
+            network=network,
+            apibara_api_key=apibara_api_key,
+            vrf_address=vrf_address,
+        )
+        requests_queue: asyncio.Queue = asyncio.Queue()
+        asyncio.create_task(_index_using_apibara(stream, requests_queue))
+
+    logger.info("👂 Listening for VRF requests!")
+    while True:
+        if index_with_apibara:
+            events = await _consume_full_queue(requests_queue)
+            logger.info(events)
+        try:
+            await client.handle_random(
+                private_key=int(private_key, 16),
+                ignore_request_threshold=ignore_request_threshold,
+                requests_events=events if index_with_apibara else None,
+            )
+        except Exception as e:
+            logger.error(f"⛔ Error while handling randomness request: {e}")
+            raise e
+        await asyncio.sleep(check_requests_interval)
+
+
+def _create_pragma_client(
+    network: Literal["mainnet", "sepolia"],
+    vrf_address: str,
+    admin_address: str,
+    private_key: str,
+    rpc_url: Optional[HttpUrl] = None,
+) -> PragmaOnChainClient:
+    """
+    Creates the Pragma Client & init the VRF contract.
+    """
+    client = PragmaOnChainClient(
+        chain_name=network,
+        network=network if rpc_url is None else rpc_url,
+        account_contract_address=admin_address,
+        account_private_key=private_key,
+        contract_addresses_config=ContractAddresses(
+            publisher_registry_address=0x0,
+            oracle_proxy_addresss=0x0,
+            summary_stats_address=0x0,
+        ),
+    )
+    client.init_randomness_contract(int(vrf_address, 16))
+    return client
+
 
 async def _create_apibara_stream(
     client: PragmaOnChainClient,
@@ -52,20 +127,22 @@ async def _create_apibara_stream(
     return StreamService(channel).stream_data_immutable(
         filter=filter,
         finality=DataFinality.DATA_STATUS_PENDING,
-        batch_size=512,
+        batch_size=1,
         cursor=starknet_cursor(current_block),
     )
 
 
-async def _consume_requests_from_apibara_stream(stream: StreamService) -> List[RandomnessRequest]:
+async def _index_using_apibara(
+    stream: StreamService,
+    requests_queue: asyncio.Queue,
+) -> None:
     """
     Consumes the apibara stream until empty and extract found vrf requests.
     """
-    vrf_requests: List[RandomnessRequest] = []
     block = Block()
     async for message in stream:
         if message.data is None:
-            return vrf_requests
+            continue
         else:
             for batch in message.data.data:
                 block.ParseFromString(batch)
@@ -73,83 +150,25 @@ async def _consume_requests_from_apibara_stream(stream: StreamService) -> List[R
                     continue
                 events = block.events
                 for event in events:
-                    index_to_split = 7
-                    event.event.data = event.event.data[:index_to_split] + [
-                        event.event.data[index_to_split + 1 :]
+                    from_data = list(map(felt.to_int, event.event.data))
+                    from_data = from_data[:EVENT_INDEX_TO_SPLIT] + [
+                        from_data[EVENT_INDEX_TO_SPLIT + 1 :]
                     ]
-                vrf_requests.extend([RandomnessRequest(*r.event.data) for r in events])
-
-    return vrf_requests
+                    await requests_queue.put(RandomnessRequest(*from_data))
 
 
-def _create_pragma_client(
-    network: Literal["mainnet", "sepolia"],
-    vrf_address: str,
-    admin_address: str,
-    private_key: str,
-    rpc_url: Optional[HttpUrl] = None,
-) -> PragmaOnChainClient:
+async def _consume_full_queue(requests_queue: asyncio.Queue) -> List[RandomnessRequest]:
     """
-    Creates the Pragma Client & init the VRF contract.
+    Consume the whole requests_queue and return the requests.
     """
-    client = PragmaOnChainClient(
-        chain_name=network,
-        network=network if rpc_url is None else rpc_url,
-        account_contract_address=admin_address,
-        account_private_key=private_key,
-        contract_addresses_config=ContractAddresses(
-            publisher_registry_address=0x0,
-            oracle_proxy_addresss=0x0,
-            summary_stats_address=0x0,
-        ),
-    )
-    client.init_randomness_contract(int(vrf_address, 16))
-    return client
-
-
-async def main(
-    network: Literal["mainnet", "sepolia"],
-    vrf_address: str,
-    admin_address: str,
-    private_key: str,
-    check_requests_interval: int,
-    ignore_request_threshold: int,
-    rpc_url: Optional[HttpUrl] = None,
-    index_with_apibara: bool = False,
-    apibara_api_key: Optional[str] = None,
-) -> None:
-    logger.info("🧩 Starting VRF listener...")
-    client = _create_pragma_client(
-        network=network,
-        vrf_address=vrf_address,
-        admin_address=admin_address,
-        private_key=private_key,
-        rpc_url=rpc_url,
-    )
-
-    if index_with_apibara:
-        logger.info("👩‍💻 Indexing VRF requests using apibara...")
-        stream = await _create_apibara_stream(
-            client=client,
-            network=network,
-            apibara_api_key=apibara_api_key,
-            vrf_address=vrf_address,
-        )
-
-    logger.info("👂 Listening for VRF requests!")
-    while True:
-        if index_with_apibara:
-            events = await _consume_requests_from_apibara_stream(stream)
+    events = []
+    while not requests_queue.empty():
         try:
-            await client.handle_random(
-                private_key=int(private_key, 16),
-                ignore_request_threshold=ignore_request_threshold,
-                requests_events=events if index_with_apibara else None,
-            )
-        except Exception as e:
-            logger.error(f"⛔ Error while handling randomness request: {e}")
-            raise e
-        await asyncio.sleep(check_requests_interval)
+            e = requests_queue.get_nowait()
+            events.append(e)
+        except asyncio.QueueEmpty:
+            break
+    return events
 
 
 @click.command()
@@ -216,6 +235,7 @@ async def main(
 @click.option(
     "--index-with-apibara",
     type=click.BOOL,
+    is_flag=True,
     required=False,
     default=False,
     help="Self index the VRF requests using Apibara instead of using Starknet.py",
