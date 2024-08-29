@@ -441,6 +441,7 @@ class RandomnessMixin:
                 for event in events
             )
         )
+        logger.info(f"Found statuses: {statuses}")
         filtered: List[Tuple[RequestStatus, RandomnessRequest]] = [
             (status, event)
             for status, event in zip(statuses, events)
