@@ -10,8 +10,6 @@ from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
-from starknet_py.net.client_models import Call
-from starknet_py.hash.selector import get_selector_from_name
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.randomness.utils import (
@@ -171,7 +169,10 @@ class RandomnessMixin:
         """
         Submit randomness to the VRF contract using a multicall.
 
-        See [submit_random] docstring for more info.
+        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
+        Then, the remaining gas is refunded to the requestor address.
+
+        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
         """
         if not self.is_user_client:
             raise AttributeError(
@@ -179,18 +180,55 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        all_calls = []
-        for request in vrf_requests:
-            call = Call(
-                to_addr=self.randomness.address,
-                selector=get_selector_from_name("submit_random"),
-                calldata=request.to_calldata(),
+        async def process_request(request):
+            submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
+                *request.to_list(),
+                max_fee=self.execution_config.max_fee,
             )
-            all_calls.append(call)
+            estimate_fee = await submit_call.estimate_fee()
+            if estimate_fee.overall_fee > request.callback_fee_limit:
+                logger.error(
+                    "OUT OF GAS %s > %s - request %s cancelled",
+                    estimate_fee.overall_fee,
+                    request.callback_fee_limit,
+                    request.request_id,
+                )
+                update_status_call = await self.randomness.functions[
+                    "update_status"
+                ].prepare_invoke_v1(
+                    request.requestor_address,
+                    request.request_id,
+                    RequestStatus.OUT_OF_GAS.serialize(),
+                    max_fee=self.execution_config.max_fee,
+                )
+                refund_call = await self.randomness.functions[
+                    "refund_operation"
+                ].prepare_invoke_v1(
+                    request.requestor_address,
+                    request.request_id,
+                    max_fee=self.execution_config.max_fee,
+                )
+                return [update_status_call, refund_call], None
+            return None, submit_call
 
+        # Process all requests concurrently
+        results = await asyncio.gather(
+            *[process_request(request) for request in vrf_requests]
+        )
+
+        all_refund_calls = []
+        all_submit_calls = []
+        for refund_calls, submit_call in results:
+            if refund_calls:
+                all_refund_calls.extend(refund_calls)
+            if submit_call:
+                all_submit_calls.append(submit_call)
+
+        # Big multicall refunding all requests + submitting requests
+        all_calls = all_refund_calls + all_submit_calls
         invocation = await self.account.execute_v1(  # type: ignore[union-attr]
             calls=all_calls, max_fee=self.execution_config.max_fee
-        )  # type: ignore[union-attr]
+        )
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -534,16 +572,15 @@ class RandomnessMixin:
         """
         Generate all the VRFSubmitParams requests that will be handled.
         """
-        data = [
+        all_create_randomness_args = [
             (event, block_hash, sk) for event, block_hash in zip(events, block_hashes)
         ]
-
+        # Spawn all the computations for all requests in different process instead
+        # of doing it sequentially in one.
         with multiprocessing.Pool() as pool:
-            # Executes in different threads all the computation for all requests instead
-            # of doing it sequentially for each.
             vrf_submit_requests = pool.map(
                 RandomnessMixin._create_randomness_for_event,
-                data,
+                all_create_randomness_args,
             )
         return [req for req in vrf_submit_requests]
 

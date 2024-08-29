@@ -68,7 +68,7 @@ async def check_request_status(user: ExtendedPragmaClient, request_info: Request
             request_id=request_info.request_id,
             block_id="pending",
         )
-        if status == RequestStatus.FULFILLED:
+        if status == RequestStatus.FULFILLED or status == RequestStatus.REFUNDED:
             request_info.fulfillment_time = datetime.now()
             break
         await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)
