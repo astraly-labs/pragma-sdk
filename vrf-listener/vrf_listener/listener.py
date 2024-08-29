@@ -59,8 +59,8 @@ class Listener:
                     logger.info(f"🔥 Consumed {len(events)} event(s) from the indexing queue...")
                 if len(self.requests_to_retry) > 0:
                     logger.info(
-                        f"🏥 Found {len(self.requests_to_retry)} event(s) that failed before, "
-                        "adding them to the submission list..."
+                        f"🧑‍⚕ Found {len(self.requests_to_retry)} event(s) that failed before, "
+                        "adding to the requests list..."
                     )
                     events += list(set(list(self.requests_to_retry)))
                     self.requests_to_retry = set()
@@ -75,6 +75,7 @@ class Listener:
                 logger.error(f"Traceback:\n{''.join(traceback.format_exc())}")
                 # If the submission failed, keep track of the failed requests & retry next loop
                 if self.is_indexing:
+                    logger.info("🏥 Saving failed requests for next loop...")
                     self.requests_to_retry.update(events)
             await asyncio.sleep(self.check_requests_interval)
 

@@ -172,6 +172,10 @@ class RandomnessMixin:
         invocation = await self.account.execute_v1(  # type: ignore[union-attr]
             calls=all_calls, max_fee=self.execution_config.max_fee
         )
+        await self.full_node_client.wait_for_tx(
+            tx_hash=invocation.transaction_hash,
+            check_interval=1,
+        )
         return invocation
 
     async def estimate_gas_submit_random_op(
