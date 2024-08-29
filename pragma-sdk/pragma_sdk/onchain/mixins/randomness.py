@@ -462,14 +462,6 @@ class RandomnessMixin:
             block_hashes=block_hashes,
             sk=felt_to_secret_key(private_key),
         )
-        if not vrf_submit_requests:
-            logger.error(
-                "⛔ Could not compute any VRF submissions for "
-                f"the {len(events)} events provided."
-            )
-            logger.debug(f"({len(events)} => {events}")
-            logger.debug(f"({len(block_hashes)} => {block_hashes}")
-            return
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
         if not invoke_tx:
