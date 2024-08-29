@@ -455,7 +455,7 @@ class RandomnessMixin:
             return
 
         statuses, events = zip(*filtered)  # type: ignore[assignment]
-        logger.debug(f"Got {len(events)} RECEIVED events to process")
+        logger.debug(f"Got {len(events)} RECEIVED event(s) to process")
 
         block_hashes = await self.fetch_block_hashes(
             events=events,
@@ -471,7 +471,7 @@ class RandomnessMixin:
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
         if not invoke_tx:
-            logger.error(f"⛔ VRF Submission for {len(events)} failed!")
+            raise ValueError(f"⛔ VRF Submission for {len(events)} failed!")
         else:
             logger.info(
                 f"✅ Submitted the VRF responses for {len(events)} requests:"
