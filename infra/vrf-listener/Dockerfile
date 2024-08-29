@@ -30,4 +30,4 @@ RUN poetry install
 FROM base as final
 COPY --from=builder /opt /opt
 WORKDIR /opt/vrf-listener
-ENTRYPOINT /opt/vrf-listener/.venv/bin/python3.12 vrf_listener/main.py -n ${NETWORK} --vrf-address ${VRF_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL}
+ENTRYPOINT /opt/vrf-listener/.venv/bin/python3.12 vrf_listener/main.py -n ${NETWORK} --vrf-address ${VRF_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL} --ignore-request-threshold 5 --index-with-apibara --apibara-api-key ${APIBARA_API_KEY}

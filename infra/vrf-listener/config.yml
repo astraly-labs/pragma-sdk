@@ -12,3 +12,4 @@ container_environment:
       - PRIVATE_KEY
       - CHECK_INTERVAL
       - RPC_URL
+      - APIBARA_API_KEY
