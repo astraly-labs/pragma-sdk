@@ -213,14 +213,11 @@ class RandomnessMixin:
         :param request_id: The request ID.
         :return: The status of the request.
         """
-        logger.info("GETTING STATUS OF")
-        logger.info(f"{caller_address} - {request_id}")
         (response,) = await self.randomness.functions["get_request_status"].call(
             caller_address,
             request_id,
             block_number=block_id,
         )
-        logger.info(f"response={response} ({response.variant})")
         return RequestStatus(response.variant)
 
     async def get_total_fees(self, caller_address: Address, request_id: int) -> int:

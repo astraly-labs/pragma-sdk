@@ -20,6 +20,7 @@ class Listener:
     requests_queue: ThreadSafeQueue
     check_requests_interval: int
     processed_requests: Set[RandomnessRequest]
+    requests_to_retry: Set[RandomnessRequest]
     indexer: Optional[Indexer] = None
 
     def __init__(
@@ -39,7 +40,12 @@ class Listener:
         self.check_requests_interval = check_requests_interval
         self.ignore_request_threshold = ignore_request_threshold
         self.processed_requests = set()
+        self.requests_to_retry = set()
         self.indexer = indexer
+
+    @property
+    def is_indexing(self) -> bool:
+        return self.indexer is not None
 
     async def run_forever(self) -> None:
         """
@@ -47,10 +53,13 @@ class Listener:
         """
         logger.info("👂 Listening for VRF requests!")
         while True:
-            if self.indexer is not None:
+            if self.is_indexing:
                 events = await self._consume_requests_queue()
                 if len(events) > 0:
                     logger.info(f"🔥 Consumed {len(events)} event(s) from the indexing queue...")
+                if len(self.requests_to_retry) > 0:
+                    events += list(set(list(self.requests_to_retry)))
+                    self.requests_to_retry = set()
             try:
                 await self.pragma_client.handle_random(
                     private_key=self.private_key,
@@ -60,7 +69,8 @@ class Listener:
             except Exception as e:
                 logger.error(f"⛔ Error while handling randomness request: {e}")
                 logger.error(f"Traceback:\n{''.join(traceback.format_exc())}")
-                self.processed_requests.clear()
+                if self.is_indexing:
+                    self.requests_to_retry.update(events)
             await asyncio.sleep(self.check_requests_interval)
 
     async def _consume_requests_queue(self) -> List[RandomnessRequest]:
