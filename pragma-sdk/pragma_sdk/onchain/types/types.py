@@ -238,8 +238,16 @@ class RandomnessRequest:
     num_words: int
     calldata: List[int]
 
+    def __hash__(self):
+        return hash(
+            (
+                self.request_id,
+                self.caller_address,
+            )
+        )
+
     def __repr__(self) -> str:
         return (
             f"Request(caller_address={self.caller_address},request_id={self.request_id},"
-            f"minimum_block_number={self.minimum_block_number}"
+            f"minimum_block_number={self.minimum_block_number})"
         )
