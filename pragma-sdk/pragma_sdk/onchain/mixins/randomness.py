@@ -6,7 +6,6 @@ from typing import List, Optional, Tuple
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
-from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
@@ -42,6 +41,9 @@ class RandomnessMixin:
     execution_config: ExecutionConfig
 
     def init_randomness_contract(self, contract_address: Address):
+        """
+        Init the [`randomness`] class parameter for the VRF contract with the provided address.
+        """
         provider = self.account if self.account else self.client
         self.randomness = Contract(
             address=contract_address,
@@ -103,65 +105,6 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
-    async def submit_random(
-        self,
-        vrf_submit_params: VRFSubmitParams,
-    ) -> InvokeResult:
-        """
-        Submit randomness to the VRF contract.
-        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
-        Then, the remaining gas is refunded to the requestor address.
-
-        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
-
-        :param vrf_submit_params: VRFSubmitParams object containing the submit parameters.
-        :param execution_config: ExecutionConfig object containing the execution parameters.
-        :return: InvokeResult object containing the result of the invocation.
-        """
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account.  You may do this by "
-                "invoking self._setup_account_client(private_key, account_contract_address)"
-            )
-
-        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-            *vrf_submit_params.to_list(),
-            max_fee=self.execution_config.max_fee,
-        )
-
-        try:
-            estimate_fee = await prepared_call.estimate_fee()
-        except ClientError as e:
-            logger.error("Error while estimating fee: ", e)
-            return None
-
-        if estimate_fee.overall_fee > vrf_submit_params.callback_fee_limit:
-            logger.error(
-                "OUT OF GAS %s > %s",
-                estimate_fee.overall_fee,
-                vrf_submit_params.callback_fee_limit,
-            )
-            invocation = await self.randomness.functions["update_status"].invoke(
-                vrf_submit_params.requestor_address,
-                vrf_submit_params.request_id,
-                RequestStatus.OUT_OF_GAS.serialize(),
-                execution_config=self.execution_config,
-            )
-
-            # Refund gas
-            await self.refund_operation(
-                vrf_submit_params.request_id, vrf_submit_params.requestor_address
-            )
-            return invocation
-
-        vrf_submit_params.callback_fee = estimate_fee.overall_fee
-
-        invocation = await self.randomness.functions["submit_random"].invoke(
-            *vrf_submit_params.to_list(),
-            execution_config=self.execution_config,
-        )
-        return invocation
-
     async def submit_random_multicall(
         self,
         vrf_requests: List[VRFSubmitParams],
@@ -193,7 +136,7 @@ class RandomnessMixin:
                     request.callback_fee_limit,
                     request.request_id,
                 )
-                update_status_call = await self.randomness.functions[
+                update_status_call = self.randomness.functions[
                     "update_status"
                 ].prepare_invoke_v1(
                     request.requestor_address,
@@ -201,7 +144,7 @@ class RandomnessMixin:
                     RequestStatus.OUT_OF_GAS.serialize(),
                     max_fee=self.execution_config.max_fee,
                 )
-                refund_call = await self.randomness.functions[
+                refund_call = self.randomness.functions[
                     "refund_operation"
                 ].prepare_invoke_v1(
                     request.requestor_address,
