@@ -12,7 +12,7 @@ from pragma_sdk.onchain.types import RandomnessRequest
 from pragma_sdk.onchain.constants import RANDOMNESS_REQUEST_EVENT_SELECTOR
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
-from vrf_listener.queue import ThreadSafeQueue
+from vrf_listener.safe_queue import ThreadSafeQueue
 
 EVENT_INDEX_TO_SPLIT = 7
 
@@ -56,7 +56,7 @@ class Indexer:
             .with_header(weak=False)
             .add_event(
                 EventFilter()
-                .with_from_address(felt.from_hex(pragma_client.randomness.address))
+                .with_from_address(felt.from_int(pragma_client.randomness.address))
                 .with_keys([felt.from_hex(RANDOMNESS_REQUEST_EVENT_SELECTOR)])
                 .with_include_receipt(False)
                 .with_include_transaction(False)

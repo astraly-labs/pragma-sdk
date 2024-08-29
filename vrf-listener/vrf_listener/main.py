@@ -6,13 +6,12 @@ import logging
 from pydantic import HttpUrl
 from typing import Optional, Literal
 
-
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 from pragma_sdk.onchain.types import ContractAddresses
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
-from vrf_listener.queue import ThreadSafeQueue
+from vrf_listener.safe_queue import ThreadSafeQueue
 from vrf_listener.indexer import Indexer
 from vrf_listener.listener import Listener
 
@@ -52,6 +51,7 @@ async def main(
             apibara_api_key=apibara_api_key,
             requests_queue=requests_queue,
         )
+        asyncio.create_task(indexer.run_forever())
 
     listener = Listener(
         pragma_client=client,

@@ -8,7 +8,7 @@ from pragma_sdk.onchain.types import RandomnessRequest
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from vrf_listener.indexer import Indexer
-from vrf_listener.queue import ThreadSafeQueue
+from vrf_listener.safe_queue import ThreadSafeQueue
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ class Listener:
         while True:
             if self.indexer is not None:
                 events = await self._consume_requests_queue()
-                logger.info(events)
             try:
                 await self.pragma_client.handle_random(
                     private_key=self.private_key,
@@ -57,7 +56,7 @@ class Listener:
                 )
             except Exception as e:
                 logger.error(f"⛔ Error while handling randomness request: {e}")
-                raise e
+                self.processed_requests.clear()
             await asyncio.sleep(self.check_requests_interval)
 
     async def _consume_requests_queue(self) -> List[RandomnessRequest]:
