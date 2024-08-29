@@ -41,7 +41,7 @@ async def main(
     while True:
         try:
             await client.handle_random(
-                int(private_key, 16),
+                private_key=int(private_key, 16),
                 ignore_request_threshold=ignore_request_threshold,
             )
         except Exception as e:

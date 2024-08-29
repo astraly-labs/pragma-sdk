@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
-from starknet_py.net.client_models import EstimatedFee, EventsChunk
+from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
 from starknet_py.net.client_models import Call
@@ -381,48 +381,28 @@ class RandomnessMixin:
 
         return invocation
 
-    async def _get_randomness_requests_events(
-        self, min_block: int, continuation_token=None
-    ) -> EventsChunk:
-        """
-        Get randomness requests events.
-        Queries from the min_block to the pending block.
-
-        :return: The randomness requests events.
-        """
-        event_list = await self.full_node_client.get_events(
-            self.randomness.address,
-            keys=[[RANDOMNESS_REQUEST_EVENT_SELECTOR]],
-            from_block_number=min_block,
-            to_block_number="pending",
-            continuation_token=continuation_token,
-            chunk_size=512,
-        )
-        return event_list
-
-    async def handle_random(
+    async def _index_randomness_requests_events(
         self,
-        private_key: int,
-        ignore_request_threshold: int = 3,
-    ):
+        from_block: int,
+        to_block: BlockId = "pending",
+        chunk_size: int = 512,
+    ) -> List[RandomnessRequest]:
         """
-        Handle randomness requests.
-        Will submit randomness for requests that are not too old and have not been handled yet.
-
-        :param private_key: The private key of the account that will sign the randomness.
-        :param ignore_request_threshold: The number of blocks we ignore requests that are older than.
+        Indexes all the Randomness request events from the [from_block] block
+        to [to_block] and returns them.
         """
-        block_number = await self.full_node_client.get_block_number()
-        min_block = max(block_number - ignore_request_threshold, 0)
-        logger.info(f"Handle random job running with min_block: {min_block}")
-
-        sk = felt_to_secret_key(private_key)
         more_pages = True
         continuation_token = None
+        requests_events = []
 
         while more_pages:
-            event_list = await self._get_randomness_requests_events(
-                min_block, continuation_token
+            event_list = await self.full_node_client.get_events(
+                self.randomness.address,
+                keys=[[RANDOMNESS_REQUEST_EVENT_SELECTOR]],
+                from_block_number=from_block,
+                to_block_number=to_block,
+                continuation_token=continuation_token,
+                chunk_size=512,
             )
 
             # Remove the calldata length from the event data
@@ -432,50 +412,101 @@ class RandomnessMixin:
                     event.data[index_to_split + 1 :]
                 ]
 
-            logger.info(f"Found {len(event_list.events)} events")
-            events = [RandomnessRequest(*r.data) for r in event_list.events]
+            requests_events.extend(
+                [RandomnessRequest(*r.data) for r in event_list.events]
+            )
+
             continuation_token = event_list.continuation_token
             more_pages = continuation_token is not None
 
-            statuses = await asyncio.gather(
-                *[
-                    self.get_request_status(
-                        event.caller_address,
-                        event.request_id,
-                        block_id="pending",
-                    )
-                    for event in events
-                ]
-            )
+        return requests_events
 
-            nb_received_events = len(
-                [status for status in statuses if status == RequestStatus.RECEIVED]
-            )
-            if nb_received_events == 0:
-                continue
-            logger.info(f"Got {nb_received_events} events to process")
+    async def handle_random(
+        self,
+        private_key: int,
+        ignore_request_threshold: int = 3,
+        requests_events: Optional[List[RandomnessRequest]] = None,
+    ) -> None:
+        """
+        Handle randomness requests.
+        Will submit randomness for requests that are not too old and have not been handled yet.
 
-            block_hashes = await self.fetch_block_hashes(
-                events, block_number, ignore_request_threshold
-            )
-            vrf_submit_requests = self.generate_all_vrf_requests(
-                events, statuses, block_hashes, sk
-            )
-            if len(vrf_submit_requests) == 0:
-                continue
-            invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
-            if invoke_tx is None:
-                logger.error("Failed to submit randomness")
-                continue
-            logger.info("Sumbitted random tx: %s", hex(invoke_tx.transaction_hash))
+        The steps are:
+            1. Index the RandomnessRequest events if they're not provided in the [requests_events]
+               parameter,
+            2. Fetch the status of the requests & only keep the RECEIVED requests,
+            3. Fetch the block hash of each events,
+            4. Compute the VRF submissions of all events,
+            5. Submit all the submissions through a multicall in [submit_random_multicall].
+        """
+        block_number = await self.full_node_client.get_block_number()
+        min_block = max(block_number - ignore_request_threshold, 0)
+        logger.info(f"Handle random job running with min_block: {min_block}")
 
-    async def fetch_block_hashes(self, events, block_number, ignore_request_threshold):
+        # We either retrieve the [requests_events] provided events or index ourselves
+        # the request events.
+        events = requests_events or await self._index_randomness_requests_events(
+            from_block=min_block,
+            to_block="pending",
+        )
+        if not events:
+            return
+
+        # We only keep the RECEIVED requests.
+        statuses = await asyncio.gather(
+            *(
+                self.get_request_status(
+                    event.caller_address, event.request_id, block_id="pending"
+                )
+                for event in events
+            )
+        )
+        filtered: List[Tuple[RequestStatus, RandomnessRequest]] = [
+            (status, event)
+            for status, event in zip(statuses, events)
+            if status == RequestStatus.RECEIVED
+        ]
+        if not filtered:
+            return
+
+        statuses, events = zip(*filtered)  # type: ignore[assignment]
+        logger.info(f"Got {len(events)} RECEIVED events to process")
+
+        block_hashes = await self.fetch_block_hashes(
+            events=events,
+            block_number=block_number,
+            ignore_request_threshold=ignore_request_threshold,
+        )
+
+        vrf_submit_requests = self._compute_all_vrf_submit(
+            events=events,
+            block_hashes=block_hashes,
+            sk=felt_to_secret_key(private_key),
+        )
+        if not vrf_submit_requests:
+            logger.error(
+                "🤔 Could not compute any VRF submissions for "
+                f"the {len(events)} events provided."
+            )
+            return
+
+        invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
+        if invoke_tx is None:
+            logger.error("Failed to submit randomness")
+        else:
+            logger.info("Submitted random tx: %s", hex(invoke_tx.transaction_hash))
+
+    async def fetch_block_hashes(
+        self,
+        events: List[RandomnessRequest],
+        block_number: int,
+        ignore_request_threshold: int,
+    ) -> List[str]:
         """
         Fetch the block_hash of all events in parallel.
         """
 
-        async def get_block_hash(event):
-            minimum_block_number = event.minimum_block_number
+        async def get_block_hash(minimum_block_number: int) -> Optional[str]:
             if (
                 minimum_block_number > block_number + 1
                 or minimum_block_number < block_number - ignore_request_threshold
@@ -486,35 +517,39 @@ class RandomnessMixin:
             block = await self.full_node_client.get_block(
                 block_number="pending" if is_pending else "latest"
             )
-            return block.parent_hash
+            return block.parent_hash  # type: ignore[no-any-return]
 
         block_hashes = await asyncio.gather(
-            *[get_block_hash(event) for event in events]
+            *[get_block_hash(event.minimum_block_number) for event in events]
         )
         return [hash for hash in block_hashes if hash is not None]
 
-    def generate_all_vrf_requests(self, events, statuses, block_hashes, sk):
-        # Prepare data for multiprocessing
+    def _compute_all_vrf_submit(
+        self,
+        events: List[RandomnessRequest],
+        block_hashes: List[str],
+        sk: bytes,
+    ) -> List[VRFSubmitParams]:
+        """
+        Generate all the VRFSubmitParams requests that will be handled.
+        """
         data = [
-            (event, block_hash, sk)
-            for event, status, block_hash in zip(events, statuses, block_hashes)
-            if status == RequestStatus.RECEIVED and block_hash is not None
+            (event, block_hash, sk) for event, block_hash in zip(events, block_hashes)
         ]
 
         with multiprocessing.Pool() as pool:
             vrf_submit_requests = pool.map(
                 RandomnessMixin._create_randomness_for_event, data
             )
-
-        return [req for req in vrf_submit_requests if req is not None]
+        return [req for req in vrf_submit_requests]
 
     @staticmethod
-    def _create_randomness_for_event(args: Tuple):
+    def _create_randomness_for_event(args: Tuple) -> VRFSubmitParams:
         """
         Create the randomness submit params for the provided args, that should be:
-        - event: int
+        - event: RandomnessRequest
         - block_hash: str
-        - sk: secret_key
+        - sk (secret key): bytes
         """
         event, block_hash, sk = args
 
@@ -541,6 +576,9 @@ class RandomnessMixin:
 
     @staticmethod
     def _build_request_seed(event: RandomnessRequest, block_hash: int) -> int:
+        """
+        Builds the seed of a given RandomnessRequest for a block_hash.
+        """
         return (
             event.request_id.to_bytes(8, sys.byteorder)  # type: ignore[return-value]
             + block_hash.to_bytes(32, sys.byteorder)
