@@ -57,7 +57,6 @@ async def main(
     while True:
         if index_with_apibara:
             events = await _consume_full_queue(requests_queue)
-            logger.info(events)
         try:
             await client.handle_random(
                 private_key=int(private_key, 16),
@@ -165,8 +164,7 @@ async def _consume_full_queue(requests_queue: asyncio.Queue) -> List[RandomnessR
     while not requests_queue.empty():
         try:
             e = requests_queue.get_nowait()
-            if e not in events:
-                events.append(e)
+            events.append(e)
         except asyncio.QueueEmpty:
             break
     return events
