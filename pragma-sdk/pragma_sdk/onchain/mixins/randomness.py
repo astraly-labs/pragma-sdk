@@ -467,9 +467,8 @@ class RandomnessMixin:
                 "⛔ Could not compute any VRF submissions for "
                 f"the {len(events)} events provided."
             )
-            logger.info(events)
-            logger.info(block_hashes)
-            logger.info("==========")
+            logger.debug(f"({len(events)} => {events}")
+            logger.debug(f"({len(block_hashes)} => {block_hashes}")
             return
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
