@@ -467,6 +467,9 @@ class RandomnessMixin:
                 "⛔ Could not compute any VRF submissions for "
                 f"the {len(events)} events provided."
             )
+            logger.info(events)
+            logger.info(block_hashes)
+            logger.info("==========")
             return
 
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
@@ -483,7 +486,7 @@ class RandomnessMixin:
         events: List[RandomnessRequest],
         block_number: int,
         ignore_request_threshold: int,
-    ) -> List[int]:
+    ) -> List[int | None]:
         """
         Fetch the block_hash of all events in parallel.
         """
@@ -504,19 +507,21 @@ class RandomnessMixin:
         block_hashes = await asyncio.gather(
             *[get_block_hash(event.minimum_block_number) for event in events]
         )
-        return [hash for hash in block_hashes if hash is not None]
+        return [hash for hash in block_hashes]
 
     def _compute_all_vrf_submit(
         self,
         events: List[RandomnessRequest],
-        block_hashes: List[int],
+        block_hashes: List[int | None],
         sk: bytes,
     ) -> List[VRFSubmitParams]:
         """
         Generate all the VRFSubmitParams requests that will be handled.
         """
         all_create_randomness_args = [
-            (event, block_hash, sk) for event, block_hash in zip(events, block_hashes)
+            (event, block_hash, sk)
+            for event, block_hash in zip(events, block_hashes)
+            if block_hash is not None
         ]
         # Spawn all the computations for all requests in different process instead
         # of doing it sequentially in one.
