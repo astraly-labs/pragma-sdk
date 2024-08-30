@@ -94,8 +94,6 @@ def cli_entrypoint(
         if rpc_url is None:
             rpc_url = RPC_URLS[network][0]
 
-    print(f"[BENCHMARK] 🔫 Gonna send {txs_per_user} VRF request per user")
-
     asyncio.run(
         main(
             network=network,

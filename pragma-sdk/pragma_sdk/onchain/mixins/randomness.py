@@ -3,13 +3,13 @@ import sys
 import multiprocessing
 import time
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Sequence
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
-from starknet_py.net.account.account import Account
+from starknet_py.net.account.account import Account, Call
 
 from pragma_sdk.common.randomness.utils import (
     create_randomness,
@@ -106,29 +106,16 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
-    async def submit_random_multicall(
+    async def _get_submit_or_refund_calls(
         self,
-        vrf_requests: List[VRFSubmitParams],
-    ) -> InvokeResult:
-        """
-        Submit randomness to the VRF contract using a multicall.
-
-        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
-        Then, the remaining gas is refunded to the requestor address.
-
-        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
-        """
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account.  You may do this by "
-                "invoking self._setup_account_client(private_key, account_contract_address)"
-            )
-
-        async def process_request(request):
-            submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-                *request.to_list(),
-                max_fee=self.execution_config.max_fee,
-            )
+        request: VRFSubmitParams,
+        check_fees: bool = True,
+    ) -> Sequence[Call]:
+        submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
+            *request.to_list(),
+            max_fee=self.execution_config.max_fee,
+        )
+        if check_fees:
             estimate_fee = await submit_call.estimate_fee(block_number="pending")
             if estimate_fee.overall_fee > request.callback_fee_limit:
                 logger.error(
@@ -152,31 +139,61 @@ class RandomnessMixin:
                     request.request_id,
                     max_fee=self.execution_config.max_fee,
                 )
-                return [update_status_call, refund_call], None
-            return None, submit_call
+                return update_status_call, refund_call
+        return submit_call  # type: ignore[no-any-return]
 
-        # Process all requests concurrently
-        results = await asyncio.gather(
-            *[process_request(request) for request in vrf_requests]
-        )
+    async def submit_random_multicall(
+        self,
+        vrf_requests: List[VRFSubmitParams],
+    ) -> InvokeResult:
+        """
+        Submit randomness to the VRF contract using a multicall.
 
-        all_refund_calls = []
-        all_submit_calls = []
-        for refund_calls, submit_call in results:
-            if refund_calls:
-                all_refund_calls.extend(refund_calls)
-            if submit_call:
-                all_submit_calls.append(submit_call)
+        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
+        Then, the remaining gas is refunded to the requestor address.
 
-        # Big multicall refunding all requests + submitting requests
-        all_calls = all_refund_calls + all_submit_calls
-        invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-            calls=all_calls, max_fee=self.execution_config.max_fee
-        )
-        await self.full_node_client.wait_for_tx(
-            tx_hash=invocation.transaction_hash,
-            check_interval=1,
-        )
+        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
+        """
+        if not self.is_user_client:
+            raise AttributeError(
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+
+        try:
+            all_calls = await asyncio.gather(
+                *[
+                    self._get_submit_or_refund_calls(
+                        request=request,
+                        check_fees=False,
+                    )
+                    for request in vrf_requests
+                ]
+            )
+            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+                calls=all_calls, max_fee=self.execution_config.max_fee
+            )
+            await self.full_node_client.wait_for_tx(
+                tx_hash=invocation.transaction_hash,
+                check_interval=1,
+            )
+        except Exception:
+            all_calls = await asyncio.gather(
+                *[
+                    self._get_submit_or_refund_calls(
+                        request=request,
+                        check_fees=True,
+                    )
+                    for request in vrf_requests
+                ]
+            )
+            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+                calls=all_calls, max_fee=self.execution_config.max_fee
+            )
+            await self.full_node_client.wait_for_tx(
+                tx_hash=invocation.transaction_hash,
+                check_interval=1,
+            )
         return invocation
 
     async def estimate_gas_submit_random_op(

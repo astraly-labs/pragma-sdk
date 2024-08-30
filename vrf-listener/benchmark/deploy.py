@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Literal, Dict
+from typing import Tuple, Optional, Literal
 
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
@@ -6,12 +6,7 @@ from starknet_py.net.account.account import Account
 from pragma_sdk.onchain.abis import ABIS
 
 from benchmark.constants import FEE_TOKEN_ADDRESS
-
-CLASS_HASHES: Dict[Literal["mainnet", "sepolia"], str] = {
-    "devnet": "0x5e269051bec902aa2bd421d348e023c3893c4ff93de6c5f4b8964cd67cc3fc5",
-    "mainnet": "0x5e269051bec902aa2bd421d348e023c3893c4ff93de6c5f4b8964cd67cc3fc5",
-    "sepolia": "0x040a2430b48587833abc2e912335cffd863c010e2c798d005d9bcace56a156fc",
-}
+from benchmark.devnet.contracts import read_contract
 
 
 async def deploy_randomness_contracts(
@@ -20,8 +15,7 @@ async def deploy_randomness_contracts(
     oracle_address: Optional[int] = None,
 ) -> (Contract, Contract, Contract):
     """
-    TODO: Don't redeploy the VRF if the admin already has a deployed account with the same
-    hash?
+    TODO: Don't redeploy if the admin already has a deployed account with same hash?
     """
     (
         deploy_result,
@@ -55,20 +49,25 @@ async def _deploy_everything(
 ) -> Tuple[DeclareResult, DeployResult, DeployResult, Optional[DeployResult]]:
     deploy_oracle_result = None
     if oracle_address is None:
-        # Deploy Mock Oracle
-        deploy_oracle_result = await Contract.deploy_contract_v1(
-            class_hash=CLASS_HASHES[network],
-            account=deployer,
-            abi=ABIS["pragma_Oracle"],
-            constructor_args=[
-                deployer.address,  # admin
-                0,  # publisher_registry
-                [],
-                [],
-            ],
-            auto_estimate=True,
-            cairo_version=1,
+        compiled_oracle_mock_contract = read_contract(
+            "pragma_MockOracle.sierra.json", directory=None
         )
+        compiled_oracle_mock_contract_casm = read_contract(
+            "pragma_MockOracle.casm.json", directory=None
+        )
+        declare_mock_oracle_result = await Contract.declare_v2(
+            account=deployer,
+            compiled_contract=compiled_oracle_mock_contract,
+            compiled_contract_casm=compiled_oracle_mock_contract_casm,
+            auto_estimate=True,
+        )
+        await declare_mock_oracle_result.wait_for_acceptance()
+
+        # Deploy Mock Oracle
+        deploy_oracle_result = await declare_mock_oracle_result.deploy_v1(
+            constructor_args=[], auto_estimate=True
+        )
+        await deploy_oracle_result.wait_for_acceptance()
         await deploy_oracle_result.wait_for_acceptance()
         oracle_address = deploy_oracle_result.deployed_contract.address
 
