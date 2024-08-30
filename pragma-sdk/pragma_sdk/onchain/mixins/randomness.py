@@ -3,15 +3,13 @@ import sys
 import multiprocessing
 import time
 
-from typing import List, Optional, Tuple, Sequence
+from typing import List, Optional, Tuple, Sequence, Any
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account, Call
-
-from pragma_utils.collections import flatten_list
 
 from pragma_sdk.common.randomness.utils import (
     create_randomness,
@@ -602,3 +600,13 @@ class RandomnessMixin:
             + event.seed.to_bytes(32, sys.byteorder)
             + event.caller_address.to_bytes(32, sys.byteorder)
         )
+
+
+def flatten_list(nested_list: list[Any] | tuple[Any, ...]) -> List:
+    flattened = []
+    for item in nested_list:
+        if isinstance(item, (list, tuple)):
+            flattened.extend(flatten_list(item))
+        else:
+            flattened.append(item)
+    return flattened
