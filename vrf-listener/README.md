@@ -83,3 +83,23 @@ Options:
                                   
   --help                          Show this message and exit.
 ```
+
+When supplying a config file, the format must be:
+
+```yaml
+- account_address: "0x260a8311b4f1092db620b923e8d7d20e76dedcc615fb4b6fdf28315b81de201"
+  private_key: "0x00000000000000000000000000000000c10662b7b247c7cecf7e8a30726cff12"
+  is_admin: true
+
+- account_address: "0x14923a0e03ec4f7484f600eab5ecf3e4eacba20ffd92d517b213193ea991502"
+  private_key: "0x00000000000000000000000000000000e5852452e0757e16b127975024ade3eb"
+
+- account_address: "0x18f81c2ef42310e0abd4fafd27f37beb34d000641beb2cd8a6fb97596552ddb"
+  private_key: "0x0000000000000000000000000000000016b0be70a6344cccf3ed6e7d9cf04de4"
+
+# ...
+```
+
+There must be ONE admin per config.
+
+The admin will be used to feed ETH to all other accounts.

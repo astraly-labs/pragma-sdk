@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import multiprocessing
-import logging
+import time
 
 from typing import List, Optional, Tuple
 
@@ -16,6 +16,7 @@ from pragma_sdk.common.randomness.utils import (
     felt_to_secret_key,
 )
 from pragma_sdk.common.types.types import Address
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.types import RequestStatus, RandomnessRequest
@@ -29,7 +30,7 @@ from pragma_sdk.onchain.types import (
 )
 from pragma_sdk.onchain.types.types import BlockId
 
-logger = logging.getLogger(__name__)
+logger = get_pragma_sdk_logger()
 
 
 class RandomnessMixin:
@@ -473,7 +474,9 @@ class RandomnessMixin:
             sk=felt_to_secret_key(private_key),
         )
 
+        now = time.time()
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
+        print(f"Sent Invoke took: {(time.time() - now):02f}s")
         if not invoke_tx:
             raise ValueError(f"⛔ VRF Submission for {len(events)} failed!")
         else:

@@ -27,7 +27,10 @@ class RequestInfo:
     fulfillment_time: datetime = None
 
 
-async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
+async def get_request_id(
+    user: ExtendedPragmaClient,
+    tx_hash: str,
+) -> int:
     """
     Retrieve the request_id in the transaction receipt of a request.
     """
@@ -36,7 +39,10 @@ async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
     return request_id
 
 
-async def create_request(user: ExtendedPragmaClient, example_contract: Contract) -> RequestInfo:
+async def create_request(
+    user: ExtendedPragmaClient,
+    example_contract: Contract,
+) -> RequestInfo:
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
@@ -60,7 +66,10 @@ async def create_request(user: ExtendedPragmaClient, example_contract: Contract)
     )
 
 
-async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
+async def check_request_status(
+    user: ExtendedPragmaClient,
+    request_info: RequestInfo,
+) -> None:
     """
     Check forever the status of the provided request until it is FULFILLED.
     """
@@ -81,7 +90,7 @@ async def request_creator(
     example_contract: Contract,
     num_requests: int,
     queue: Queue,
-):
+) -> None:
     """
     Creates N VRF requests using the provided user & put them into the check queue.
     """
@@ -91,7 +100,11 @@ async def request_creator(
     await queue.put(None)  # Signal that we're done creating requests
 
 
-async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List[RequestInfo]):
+async def status_checker(
+    user: ExtendedPragmaClient,
+    queue: Queue,
+    results: List[RequestInfo],
+) -> None:
     """
     Reads the provided queue that will be filled with VRF Requests & check their status.
     """
@@ -106,7 +119,7 @@ async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List
 async def spam_reqs_with_user(
     user: ExtendedPragmaClient,
     example_contract: Contract,
-    num_requests: int = 10,
+    txs_per_user: int,
 ) -> List[RequestInfo]:
     """
     Given a User client, spams [num_requests] requests.
@@ -115,7 +128,7 @@ async def spam_reqs_with_user(
     results = []
 
     # Start the request creator and status checker tasks
-    creator_task = asyncio.create_task(request_creator(user, example_contract, num_requests, queue))
+    creator_task = asyncio.create_task(request_creator(user, example_contract, txs_per_user, queue))
     checker_task = asyncio.create_task(status_checker(user, queue, results))
 
     # Wait for both tasks to complete

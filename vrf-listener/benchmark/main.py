@@ -4,6 +4,8 @@ import click
 from typing import Literal, Optional
 
 from pydantic import HttpUrl
+from pragma_sdk.onchain.constants import RPC_URLS
+
 from benchmark.devnet.container import DEVNET_PORT
 from benchmark.config.accounts_config import AccountsConfig, DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG
 from benchmark.stress.stress_tester import StressTester
@@ -11,10 +13,10 @@ from benchmark.stress.stress_tester import StressTester
 
 async def main(
     network: Literal["devnet", "mainnet", "sepolia"],
+    rpc_url: HttpUrl,
     vrf_address: str,
     accounts_config: AccountsConfig,
     txs_per_user: int,
-    rpc_url: Optional[HttpUrl] = None,
 ):
     stress_tester = StressTester(
         network=network,
@@ -24,7 +26,10 @@ async def main(
         txs_per_user=txs_per_user,
     )
 
-    await stress_tester.run_devnet_stresstest()
+    if network == "devnet":
+        await stress_tester.run_devnet_stresstest()
+    else:
+        await stress_tester.run_stresstest()
 
 
 @click.command()
@@ -84,6 +89,9 @@ def cli_entrypoint(
                 '⛔ --config-file is required when --network is either "mainnet" or "sepolia".'
             )
         accounts_config = AccountsConfig.from_yaml(config_file)
+
+        if rpc_url is None:
+            rpc_url = RPC_URLS[network][0]
 
     asyncio.run(
         main(
