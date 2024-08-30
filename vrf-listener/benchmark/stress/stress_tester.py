@@ -261,7 +261,7 @@ class StressTester:
         to each account present in the list of users.
         If the admin has not enough balance, the benchmark fails.
 
-        0.1 ETH = 100000000000000000
+        0.3 ETH = 300000000000000000
         """
         eth_contract = Contract(
             address=FEE_TOKEN_ADDRESS,
@@ -274,7 +274,7 @@ class StressTester:
             admin.address,
             block_hash="pending",
         )
-        minimum_balance_accepted = (100000000000000000 * len(users)) + 1000000000000000000
+        minimum_balance_accepted = (300000000000000000 * len(users)) + 300000000000000000
         if minimum_balance_accepted > admin_balance:
             raise ValueError(f"😹🫵 Admin is too poor. Need at least {minimum_balance_accepted}")
 
@@ -282,10 +282,11 @@ class StressTester:
         for user in users:
             invoke = await eth_contract.functions["transfer"].invoke_v1(
                 int(user.account_address, 16),
-                100000000000000000,
+                300000000000000000,
                 auto_estimate=True,
             )
             await invoke.wait_for_acceptance()
+            await asyncio.sleep(2)
 
     async def _refund_admin_with_users(
         self, client: FullNodeClient, users: List[AccountConfig], admin: Account

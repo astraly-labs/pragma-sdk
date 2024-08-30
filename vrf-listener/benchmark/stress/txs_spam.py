@@ -46,6 +46,7 @@ async def create_request(
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
+    await asyncio.sleep(1)
     invocation = await user.request_random(
         VRFRequestParams(
             seed=1,
@@ -56,10 +57,8 @@ async def create_request(
             calldata=[0x1234, 0x1434, 314141, 13401234],
         )
     )
-    await invocation.wait_for_acceptance()
-    request_id = await get_request_id(user, invocation.hash)
     return RequestInfo(
-        request_id=request_id,
+        request_id=-1,
         tx_hash=invocation.hash,
         sent_tx=invocation,
         request_time=datetime.now(),
@@ -73,6 +72,8 @@ async def check_request_status(
     """
     Check forever the status of the provided request until it is FULFILLED.
     """
+    await asyncio.sleep(1)
+    request_info.request_id = await get_request_id(user, request_info.tx_hash)
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
