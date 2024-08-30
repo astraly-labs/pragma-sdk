@@ -45,3 +45,41 @@ poetry run vrf_listener --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAG
 ```
 
 Will start listening for VRF requests on Sepolia every 10 seconds since block 0.
+
+## Benchmarking
+
+We have created a small script to check the performances of the VRF listener performances.
+
+To run it, simply do:
+
+```bash
+poe benchmark -n devnet --txs-per-user 5
+```
+
+This will spawn a local devnet and sends 5 VRF requests per user.
+
+The script is also runnable for sepolia, see:
+
+```bash
+poe benchmark --help
+
+Usage: main.py [OPTIONS]
+
+  VRF Benchmark entry point.
+
+Options:
+  -n, --network [devnet|sepolia|mainnet]
+                                  Which network to listen. Defaults to
+                                  SEPOLIA.  [required]
+
+  --rpc-url TEXT                  RPC url used by the onchain client.
+                                  
+  --vrf-address TEXT              Address of the VRF contract
+                                  
+  -c, --config-file PATH          Path to YAML accounts configuration file.
+                                  Contains the accounts to use.
+                                  
+  --txs-per-user INTEGER RANGE    VRF requests sent per user.  [x>=1]
+                                  
+  --help                          Show this message and exit.
+```
