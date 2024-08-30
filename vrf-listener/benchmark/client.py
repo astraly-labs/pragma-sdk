@@ -9,7 +9,7 @@ from pragma_sdk.onchain.types import (
 )
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
-from benchmark.contracts import FEE_TOKEN_ADDRESS
+from benchmark.constants import FEE_TOKEN_ADDRESS
 
 
 class ExampleRandomnessMixin:
@@ -51,7 +51,7 @@ class ExtendedPragmaClient(PragmaOnChainClient, ExampleRandomnessMixin):
         )
 
 
-async def new_pragma_client(
+async def create_pragma_client(
     randomness_contracts: (Contract, Contract, Contract),
     account_address: str,
     private_key: str,

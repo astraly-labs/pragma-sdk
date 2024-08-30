@@ -1,16 +1,18 @@
 import asyncio
+
 from typing import List
 from dataclasses import dataclass
 from datetime import datetime
 from asyncio import Queue
+
+from starknet_py.contract import Contract, TypeSentTransaction
 
 from pragma_sdk.onchain.types import (
     VRFRequestParams,
     RequestStatus,
 )
 
-from starknet_py.contract import Contract, TypeSentTransaction
-from benchmark.pragma_client import ExtendedPragmaClient
+from benchmark.client import ExtendedPragmaClient
 
 # Time to wait between request status check (in secs)
 TTW_BETWEEN_REQ_CHECK = 0.5
@@ -76,7 +78,6 @@ async def check_request_status(user: ExtendedPragmaClient, request_info: Request
 
 async def request_creator(
     user: ExtendedPragmaClient,
-    user_no: int,
     example_contract: Contract,
     num_requests: int,
     queue: Queue,
@@ -103,7 +104,9 @@ async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List
 
 
 async def spam_reqs_with_user(
-    user: ExtendedPragmaClient, user_no: int, example_contract: Contract, num_requests: int = 10
+    user: ExtendedPragmaClient,
+    example_contract: Contract,
+    num_requests: int = 10,
 ) -> List[RequestInfo]:
     """
     Given a User client, spams [num_requests] requests.
@@ -112,9 +115,7 @@ async def spam_reqs_with_user(
     results = []
 
     # Start the request creator and status checker tasks
-    creator_task = asyncio.create_task(
-        request_creator(user, user_no, example_contract, num_requests, queue)
-    )
+    creator_task = asyncio.create_task(request_creator(user, example_contract, num_requests, queue))
     checker_task = asyncio.create_task(status_checker(user, queue, results))
 
     # Wait for both tasks to complete

@@ -3,7 +3,8 @@ from typing import Tuple
 from starknet_py.contract import Contract, DeclareResult, DeployResult
 from starknet_py.net.account.account import Account
 
-from benchmark.contracts import read_contract, FEE_TOKEN_ADDRESS
+from benchmark.devnet.contracts import read_contract
+from benchmark.constants import FEE_TOKEN_ADDRESS
 
 
 async def deploy_randomness_contracts(deployer: Account) -> (Contract, Contract, Contract):
