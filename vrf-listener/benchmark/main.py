@@ -16,12 +16,14 @@ async def main(
     rpc_url: HttpUrl,
     accounts_config: AccountsConfig,
     txs_per_user: int,
+    oracle_address: Optional[str] = None,
 ):
     stress_tester = StressTester(
         network=network,
         accounts_config=accounts_config,
         rpc_url=rpc_url,
         txs_per_user=txs_per_user,
+        oracle_address=oracle_address,
     )
 
     if network == "devnet":
@@ -45,6 +47,13 @@ async def main(
     help="RPC url used by the onchain client.",
 )
 @click.option(
+    "-o",
+    "--oracle-address",
+    type=click.STRING,
+    required=False,
+    help="Address of the VRF contract",
+)
+@click.option(
     "-c",
     "--config-file",
     type=click.Path(exists=True),
@@ -61,6 +70,7 @@ async def main(
 def cli_entrypoint(
     network: Literal["devnet", "mainnet", "sepolia"],
     rpc_url: Optional[HttpUrl],
+    oracle_address: Optional[str],
     config_file: Optional[str],
     txs_per_user: int,
 ):
@@ -75,10 +85,16 @@ def cli_entrypoint(
             raise click.UsageError(
                 '⛔ --config-file (-c) is required when --network is either "mainnet" or "sepolia".'
             )
+        if oracle_address is None:
+            raise click.UsageError(
+                '⛔ --oracle-address (-o) is required when --network is either "mainnet" or "sepolia".'
+            )
         accounts_config = AccountsConfig.from_yaml(config_file)
 
         if rpc_url is None:
             rpc_url = RPC_URLS[network][0]
+
+    print(f"[BENCHMARK] 🔫 Gonna send {txs_per_user} VRF request per user")
 
     asyncio.run(
         main(
@@ -86,6 +102,7 @@ def cli_entrypoint(
             rpc_url=rpc_url,
             accounts_config=accounts_config,
             txs_per_user=txs_per_user,
+            oracle_address=oracle_address,
         )
     )
 

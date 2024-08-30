@@ -1,7 +1,7 @@
 import yaml
 
 from typing import List, Optional, Literal
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, HttpUrl
 from pathlib import Path
 
 from starknet_py.net.account.account import Account
@@ -66,21 +66,33 @@ class AccountsConfig(BaseModel):
 
     async def get_admin_client(
         self,
+        network: Literal["devnet", "mainnet", "sepolia"],
+        rpc_url: HttpUrl,
         randomness_contracts: (Contract, Contract, Contract),
     ) -> ExtendedPragmaClient:
         admin_cfg = self.get_admin_account_config()
         await create_pragma_client(
-            randomness_contracts, admin_cfg.account_address, admin_cfg.private_key
+            network=network,
+            rpc_url=rpc_url,
+            randomness_contracts=randomness_contracts,
+            account_address=admin_cfg.account_address,
+            private_key=admin_cfg.private_key,
         )
 
     async def get_users_client(
         self,
+        network: Literal["devnet", "mainnet", "sepolia"],
+        rpc_url: HttpUrl,
         randomness_contracts: (Contract, Contract, Contract),
     ) -> List[ExtendedPragmaClient]:
-        users_cfg = self.get_non_admin_accounts_configs()
+        users_cfg = self.get_users_accounts_configs()
         return [
             await create_pragma_client(
-                randomness_contracts, user_cfg.account_address, user_cfg.private_key
+                network=network,
+                rpc_url=rpc_url,
+                randomness_contracts=randomness_contracts,
+                account_address=user_cfg.account_address,
+                private_key=user_cfg.private_key,
             )
             for user_cfg in users_cfg
             if not user_cfg.is_admin

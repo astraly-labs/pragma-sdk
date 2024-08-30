@@ -23,7 +23,7 @@ from benchmark.constants import FEE_TOKEN_ADDRESS
 
 
 class StressTester:
-    vrf_address: str
+    oracle_address: Optional[int]
     config: AccountsConfig
 
     network: Literal["devnet", "mainnet", "sepolia"]
@@ -37,11 +37,13 @@ class StressTester:
         rpc_url: HttpUrl,
         accounts_config: AccountsConfig,
         txs_per_user: int,
+        oracle_address: Optional[str],
     ) -> None:
         self.network = network
         self.rpc_url = rpc_url
         self.config = accounts_config
         self.txs_per_user = txs_per_user
+        self.oracle_address = int(oracle_address, 16) if oracle_address else None
 
     async def run_stresstest(self) -> None:
         full_node = FullNodeClient(node_url=self.rpc_url)
@@ -49,7 +51,11 @@ class StressTester:
         # 1. Deploy vrf etc etc
         print("\n🧩 Deploying VRF contracts...")
         (deployer, deployer_info) = self.config.get_admin_account(full_node, self.network)
-        randomness_contracts = await deploy_randomness_contracts(deployer)
+        randomness_contracts = await deploy_randomness_contracts(
+            network=self.network,
+            deployer=deployer,
+            oracle_address=self.oracle_address,
+        )
         print("✅ done!")
 
         # 2. Using the admin account,
@@ -60,7 +66,11 @@ class StressTester:
 
         # 3. create accounts that will submit requests
         print("\n🧩 Creating user clients...")
-        users = await self.config.get_users_client(randomness_contracts)
+        users = await self.config.get_users_client(
+            network=self.network,
+            rpc_url=self.rpc_url,
+            randomness_contracts=randomness_contracts,
+        )
         print("✅ done!")
         print(f"👀 Got {len(users)} users that will spam requests")
 
@@ -89,18 +99,19 @@ class StressTester:
         await asyncio.sleep(5)
         vrf_listener.cancel()
 
-        # 7. Send remaining balance of users to admin
+        # 7. Show & Save Stats
+        print("\n🤓 Computed Statistics:")
+        self.compute_and_show_stats(all_request_infos=all_request_infos)
+        self.save_statistics(all_request_infos=all_request_infos)
+
+        # 8. Send remaining balance of users to admin
         print("\n🙏 Users are now refunding the admin... thanks!")
         await self._refund_admin_with_users(
+            client=full_node,
             users=all_users_infos,
             admin=deployer,
         )
         print("✅ done!")
-
-        # 8. Show & Save Stats
-        print("\n🤓 Computed Statistics:")
-        self.compute_and_show_stats(all_request_infos=all_request_infos)
-        self.save_statistics(all_request_infos=all_request_infos)
 
     async def run_devnet_stresstest(self) -> None:
         """
@@ -115,12 +126,19 @@ class StressTester:
             # 1. deploy vrf etc etc
             print("\n🧩 Deploying VRF contracts...")
             (deployer, deployer_info) = self.config.get_admin_account(full_node, self.network)
-            randomness_contracts = await deploy_randomness_contracts(deployer)
+            randomness_contracts = await deploy_randomness_contracts(
+                network=self.network,
+                deployer=deployer,
+            )
             print("✅ done!")
 
             # 2. create accounts that will submit requests
             print("\n🧩 Creating user clients...")
-            users = await self.config.get_users_client(randomness_contracts)
+            users = await self.config.get_users_client(
+                network=self.network,
+                rpc_url=self.rpc_url,
+                randomness_contracts=randomness_contracts,
+            )
             print(f"👀 Got {len(users)} users that will spam requests")
 
             # 3. starts VRF listener
@@ -165,7 +183,7 @@ class StressTester:
         """
         vrf_listener_task = asyncio.create_task(
             vrf_listener(
-                network="devnet",
+                network=self.network,
                 rpc_url=self.rpc_url if self.rpc_url else None,
                 vrf_address=hex(vrf_address),
                 admin_address=admin_address,
@@ -198,6 +216,9 @@ class StressTester:
             tasks.append(task)
 
         results = await asyncio.gather(*tasks)
+
+        # Let all tasks the time to rly finish
+        await asyncio.sleep(5)
 
         for user, request_infos in zip(users, results):
             all_request_infos[user.account.address] = request_infos
@@ -249,16 +270,22 @@ class StressTester:
             cairo_version=0,
         )
 
-        admin_balance = await eth_contract.functions["balanceOf"].call(block_hash="pending")
+        (admin_balance,) = await eth_contract.functions["balanceOf"].call(
+            admin.address,
+            block_hash="pending",
+        )
         minimum_balance_accepted = (100000000000000000 * len(users)) + 1000000000000000000
         if minimum_balance_accepted > admin_balance:
             raise ValueError(f"😹🫵 Admin is too poor. Need at least {minimum_balance_accepted}")
 
         # Sends 0.1 eth to each user
         for user in users:
-            await eth_contract.functions["transfer"].invoke_v1(
-                user.account_address, 100000000000000000, auto_estimate=True
+            invoke = await eth_contract.functions["transfer"].invoke_v1(
+                int(user.account_address, 16),
+                100000000000000000,
+                auto_estimate=True,
             )
+            await invoke.wait_for_acceptance()
 
     async def _refund_admin_with_users(
         self, client: FullNodeClient, users: List[AccountConfig], admin: Account
@@ -281,13 +308,19 @@ class StressTester:
                 provider=user_account,
                 cairo_version=0,
             )
-            user_balance = await eth_contract.functions["balanceOf"].call(block_hash="pending")
+            (user_balance,) = await eth_contract.functions["balanceOf"].call(
+                user_account.address,
+                block_hash="pending",
+            )
 
             prepared_call = eth_contract.functions["transfer"].prepare_invoke_v1(
-                admin.address, user_balance, auto_estimate=True
+                admin.address,
+                user_balance,
             )
             estimate_fee = await prepared_call.estimate_fee()
-            user_balance_after_fees = user_balance - estimate_fee + 1  # + 1? why? why not?
+            user_balance_after_fees = (
+                user_balance - estimate_fee.overall_fee + 1
+            )  # + 1? why? why not?
 
             await eth_contract.functions["transfer"].invoke_v1(
                 admin.address, user_balance_after_fees, auto_estimate=True
