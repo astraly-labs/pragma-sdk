@@ -1,4 +1,6 @@
-from typing import Optional
+from typing import Optional, Literal
+
+from pydantic import HttpUrl
 
 from starknet_py.net.client import Client
 from starknet_py.contract import Contract
@@ -9,7 +11,7 @@ from pragma_sdk.onchain.types import (
 )
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
-from benchmark.contracts import FEE_TOKEN_ADDRESS
+from benchmark.constants import FEE_TOKEN_ADDRESS
 
 
 class ExampleRandomnessMixin:
@@ -51,7 +53,9 @@ class ExtendedPragmaClient(PragmaOnChainClient, ExampleRandomnessMixin):
         )
 
 
-async def new_pragma_client(
+async def create_pragma_client(
+    network: Literal["devnet", "mainnet", "sepolia"],
+    rpc_url: HttpUrl,
     randomness_contracts: (Contract, Contract, Contract),
     account_address: str,
     private_key: str,
@@ -59,8 +63,8 @@ async def new_pragma_client(
     (randomness, example, oracle) = randomness_contracts
 
     client = ExtendedPragmaClient(
-        network="devnet",
-        port=5050,
+        chain_name=network,
+        network=rpc_url,
         account_contract_address=account_address,
         account_private_key=private_key,
         contract_addresses_config=ContractAddresses(
