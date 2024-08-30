@@ -73,7 +73,7 @@ def cli_entrypoint(
     else:
         if config_file is None:
             raise click.UsageError(
-                '⛔ --config-file is required when --network is either "mainnet" or "sepolia".'
+                '⛔ --config-file (-c) is required when --network is either "mainnet" or "sepolia".'
             )
         accounts_config = AccountsConfig.from_yaml(config_file)
 

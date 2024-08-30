@@ -16,7 +16,7 @@ from vrf_listener.main import main as vrf_listener
 
 from benchmark.client import ExtendedPragmaClient
 from benchmark.config.accounts_config import AccountConfig, AccountsConfig
-from benchmark.devnet.deploy import deploy_randomness_contracts
+from benchmark.deploy import deploy_randomness_contracts
 from benchmark.devnet.container import starknet_devnet_container
 from benchmark.stress.txs_spam import spam_reqs_with_user, RequestInfo
 from benchmark.constants import FEE_TOKEN_ADDRESS
