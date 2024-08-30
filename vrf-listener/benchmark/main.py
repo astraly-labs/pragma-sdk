@@ -14,13 +14,11 @@ from benchmark.stress.stress_tester import StressTester
 async def main(
     network: Literal["devnet", "mainnet", "sepolia"],
     rpc_url: HttpUrl,
-    vrf_address: str,
     accounts_config: AccountsConfig,
     txs_per_user: int,
 ):
     stress_tester = StressTester(
         network=network,
-        vrf_address=vrf_address,
         accounts_config=accounts_config,
         rpc_url=rpc_url,
         txs_per_user=txs_per_user,
@@ -47,12 +45,6 @@ async def main(
     help="RPC url used by the onchain client.",
 )
 @click.option(
-    "--vrf-address",
-    type=click.STRING,
-    required=False,
-    help="Address of the VRF contract",
-)
-@click.option(
     "-c",
     "--config-file",
     type=click.Path(exists=True),
@@ -69,7 +61,6 @@ async def main(
 def cli_entrypoint(
     network: Literal["devnet", "mainnet", "sepolia"],
     rpc_url: Optional[HttpUrl],
-    vrf_address: Optional[str],
     config_file: Optional[str],
     txs_per_user: int,
 ):
@@ -80,10 +71,6 @@ def cli_entrypoint(
         rpc_url = f"http://127.0.0.1:{DEVNET_PORT}"
         accounts_config = DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG
     else:
-        if vrf_address is None:
-            raise click.UsageError(
-                '⛔ --vrf-address is required when --network is either "mainnet" or "sepolia".'
-            )
         if config_file is None:
             raise click.UsageError(
                 '⛔ --config-file is required when --network is either "mainnet" or "sepolia".'
@@ -97,7 +84,6 @@ def cli_entrypoint(
         main(
             network=network,
             rpc_url=rpc_url,
-            vrf_address=vrf_address,
             accounts_config=accounts_config,
             txs_per_user=txs_per_user,
         )

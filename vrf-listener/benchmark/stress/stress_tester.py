@@ -35,13 +35,11 @@ class StressTester:
         self,
         network: Literal["devnet", "mainnet", "sepolia"],
         rpc_url: HttpUrl,
-        vrf_address: str,
         accounts_config: AccountsConfig,
         txs_per_user: int,
     ) -> None:
         self.network = network
         self.rpc_url = rpc_url
-        self.vrf_address = vrf_address
         self.config = accounts_config
         self.txs_per_user = txs_per_user
 
@@ -289,7 +287,7 @@ class StressTester:
                 admin.address, user_balance, auto_estimate=True
             )
             estimate_fee = await prepared_call.estimate_fee()
-            user_balance_after_fees = user_balance - estimate_fee
+            user_balance_after_fees = user_balance - estimate_fee + 1  # + 1? why? why not?
 
             await eth_contract.functions["transfer"].invoke_v1(
                 admin.address, user_balance_after_fees, auto_estimate=True
