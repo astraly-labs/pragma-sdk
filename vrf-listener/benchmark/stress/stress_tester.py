@@ -189,7 +189,7 @@ class StressTester:
                 admin_address=admin_address,
                 private_key=private_key,
                 check_requests_interval=1,
-                ignore_request_threshold=10,
+                ignore_request_threshold=3,
             )
         )
         return vrf_listener_task
@@ -285,7 +285,7 @@ class StressTester:
                 300000000000000000,
                 auto_estimate=True,
             )
-            await invoke.wait_for_acceptance()
+            await invoke.wait_for_acceptance(check_interval=2)
             await asyncio.sleep(2)
 
     async def _refund_admin_with_users(

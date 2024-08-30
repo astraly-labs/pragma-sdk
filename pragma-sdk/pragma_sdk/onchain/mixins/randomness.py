@@ -11,6 +11,8 @@ from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account, Call
 
+from pragma_utils.collections import flatten_list
+
 from pragma_sdk.common.randomness.utils import (
     create_randomness,
     felt_to_secret_key,
@@ -171,11 +173,12 @@ class RandomnessMixin:
                 ]
             )
             invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls, max_fee=self.execution_config.max_fee
+                calls=all_calls,
+                max_fee=self.execution_config.max_fee,
             )
+            all_calls = flatten_list(all_calls)
             await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=1,
+                invocation.transaction_hash, check_interval=0.5
             )
         except Exception:
             all_calls = await asyncio.gather(
@@ -187,12 +190,13 @@ class RandomnessMixin:
                     for request in vrf_requests
                 ]
             )
+            all_calls = flatten_list(all_calls)
             invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls, max_fee=self.execution_config.max_fee
+                calls=all_calls,
+                max_fee=self.execution_config.max_fee,
             )
             await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=1,
+                invocation.transaction_hash, check_interval=0.5
             )
         return invocation
 

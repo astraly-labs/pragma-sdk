@@ -20,7 +20,6 @@ TTW_BETWEEN_REQ_CHECK = 0.5
 
 @dataclass
 class RequestInfo:
-    tx_hash: str
     sent_tx: TypeSentTransaction
     request_time: datetime
     request_id: int = None
@@ -46,20 +45,18 @@ async def create_request(
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
-    await asyncio.sleep(1)
     invocation = await user.request_random(
         VRFRequestParams(
             seed=1,
             callback_address=example_contract.address,
-            callback_fee_limit=369169033816440,
+            callback_fee_limit=369169033840,
             publish_delay=0,
             num_words=1,
             calldata=[0x1234, 0x1434, 314141, 13401234],
         )
     )
+    await invocation.wait_for_acceptance(check_interval=1)
     return RequestInfo(
-        request_id=-1,
-        tx_hash=invocation.hash,
         sent_tx=invocation,
         request_time=datetime.now(),
     )
@@ -70,10 +67,9 @@ async def check_request_status(
     request_info: RequestInfo,
 ) -> None:
     """
-    Check forever the status of the provided request until it is FULFILLED.
+    Check forever the status of the provided request until it is FULFILLED or REFUNDED.
     """
-    await asyncio.sleep(1)
-    request_info.request_id = await get_request_id(user, request_info.tx_hash)
+    request_info.request_id = await get_request_id(user, request_info.sent_tx.hash)
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
