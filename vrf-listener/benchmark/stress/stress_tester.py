@@ -189,7 +189,7 @@ class StressTester:
                 admin_address=admin_address,
                 private_key=private_key,
                 check_requests_interval=1,
-                ignore_request_threshold=3,
+                ignore_request_threshold=5,
             )
         )
         return vrf_listener_task
@@ -322,6 +322,7 @@ class StressTester:
                 user_balance - estimate_fee.overall_fee + 1
             )  # + 1? why? why not?
 
-            await eth_contract.functions["transfer"].invoke_v1(
+            tx = await eth_contract.functions["transfer"].invoke_v1(
                 admin.address, user_balance_after_fees, auto_estimate=True
             )
+            await tx.wait_for_acceptance()

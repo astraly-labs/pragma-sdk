@@ -114,6 +114,14 @@ class VRFSubmitParams:
         if self.callback_fee is None:
             self.callback_fee = 0
 
+    def __hash__(self):
+        return hash(
+            (
+                self.requestor_address,
+                self.request_id,
+            )
+        )
+
     def to_list(self) -> List[Any]:
         result = [
             self.request_id,

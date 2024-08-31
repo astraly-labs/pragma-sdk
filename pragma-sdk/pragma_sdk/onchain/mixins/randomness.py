@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import multiprocessing
-import time
 
 from typing import List, Optional, Tuple, Sequence, Any, Set
 
@@ -339,110 +338,12 @@ class RandomnessMixin:
     ) -> None:
         """
         Forward the handle_random call to the RandomnessHandler manager.
-
-        Will call the [submit_random_multicall] function.
         """
         await self._randomness_handler.handle(  # type: ignore[attr-defined]
             private_key=private_key,
             ignore_request_threshold=ignore_request_threshold,
             pre_indexed_requests=pre_indexed_requests,
         )
-
-    async def submit_random_multicall(
-        self,
-        vrf_requests: List[VRFSubmitParams],
-    ) -> None:
-        """
-        Submit randomness to the VRF contract using a multicall.
-
-        We first try to send all the submissions without validating the fees and only
-        if the call fails, we retry and we validate the fees of each request, so that
-        we can cancel not possible requests and refund users.
-
-        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
-        Then, the remaining gas is refunded to the requestor address.
-
-        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
-        """
-        if not self.is_user_client:
-            raise AttributeError(
-                "Must set account.  You may do this by "
-                "invoking self._setup_account_client(private_key, account_contract_address)"
-            )
-
-        # First try without validating any fees
-        all_calls = await asyncio.gather(
-            *[
-                self._get_submit_or_refund_calls(
-                    request=request,
-                    check_fees=False,
-                )
-                for request in vrf_requests
-            ]
-        )
-        all_calls = flatten_list(all_calls)
-        try:
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-        except ClientError:
-            # Can happen because of sync errors... retry after smol sleep.
-            await asyncio.sleep(1)
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-
-        # Spawn the wait_for_tx_and_retry function in parallel.
-        # Will assert that the execution is ok and if not, will retry with refunding
-        # fees.
-        asyncio.create_task(
-            self._randomness_handler.wait_for_tx_and_retry(vrf_requests, invocation)  # type: ignore[attr-defined]
-        )
-
-    async def _get_submit_or_refund_calls(
-        self,
-        request: VRFSubmitParams,
-        check_fees: bool = True,
-    ) -> Sequence[Call]:
-        """
-        Returns a Sequence of Call necesary to either submit or refund the provided
-        request.
-
-        If the check_fees flag is false, we don't validate the request fees.
-        """
-        submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-            *request.to_list(),
-            max_fee=self.execution_config.max_fee,
-        )
-        if not check_fees:
-            return [submit_call]
-
-        estimate_fee = await submit_call.estimate_fee(block_number="pending")
-        if estimate_fee.overall_fee <= request.callback_fee_limit:
-            return [submit_call]
-
-        logger.error(
-            "Request %s is OUT OF GAS: %s > %s - cancelled.",
-            request.request_id,
-            estimate_fee.overall_fee,
-            request.callback_fee_limit,
-        )
-        update_status_call = self.randomness.functions[
-            "update_status"
-        ].prepare_invoke_v1(
-            request.requestor_address,
-            request.request_id,
-            RequestStatus.OUT_OF_GAS.serialize(),
-            max_fee=self.execution_config.max_fee,
-        )
-        refund_call = self.randomness.functions["refund_operation"].prepare_invoke_v1(
-            request.requestor_address,
-            request.request_id,
-            max_fee=self.execution_config.max_fee,
-        )
-        return [update_status_call, refund_call]
 
     async def refund_operation(
         self,
@@ -471,12 +372,26 @@ class RandomnessMixin:
         return invocation
 
 
+def hash2emoji(h):
+    if h[:2] != "0x":
+        h = "0x" + h
+    offset = int(h[0:4], 0)
+    unicode = b"\U" + b"000" + str(hex(0x1F466 + offset))[2:].encode()
+    return unicode.decode("unicode_escape")
+
+
+def _ddebug(mdr: Sequence[VRFSubmitParams]) -> None:
+    for x in mdr:
+        print(f"{hash2emoji(hex(x.requestor_address))} #{x.request_id}", end=" ,")
+    print()
+
+
 class RandomnessHandler:
     pragma_client: Client
     full_node_client: FullNodeClient
 
     # Couple of user_address ; request_id already processed
-    seen_requests: Set[RandomnessRequest]
+    seen_requests: Set[VRFSubmitParams]
 
     def __init__(self, pragma_client: Client):
         self.pragma_client = pragma_client
@@ -501,6 +416,8 @@ class RandomnessHandler:
             4. Compute the VRF submissions of all events,
             5. Submit all the submissions through a multicall in [submit_random_multicall].
         """
+        print("REQUEST SEEN:")
+        _ddebug(self.seen_requests)
         block_number = await self.full_node_client.get_block_number()
         min_block = max(block_number - ignore_request_threshold, 0)
         logger.debug(f"Handle random job running with min_block: {min_block}")
@@ -537,7 +454,6 @@ class RandomnessHandler:
             return
 
         statuses, events = zip(*filtered)  # type: ignore[assignment]
-        self.seen_requests.update(events)
         logger.debug(f"Got {len(events)} RECEIVED event(s) to process")
 
         block_hashes = await self.fetch_block_hashes(
@@ -550,12 +466,8 @@ class RandomnessHandler:
             block_hashes=block_hashes,
             sk=felt_to_secret_key(private_key),
         )
-
-        now = time.time()
-        await self.pragma_client.submit_random_multicall(
-            vrf_requests=vrf_submit_requests
-        )
-        print(f"Sent Invoke took: {(time.time() - now):02f}s")
+        self.seen_requests.update(vrf_submit_requests)
+        await self.submit_random_multicall(vrf_requests=vrf_submit_requests)
         logger.info(f"✅ Submitted the VRF responses for {len(events)} requests.")
 
     async def _index_randomness_requests_events(
@@ -579,7 +491,7 @@ class RandomnessHandler:
                 from_block_number=from_block,
                 to_block_number=to_block,
                 continuation_token=continuation_token,
-                chunk_size=512,
+                chunk_size=chunk_size,
             )
 
             # Remove the calldata length from the event data
@@ -694,20 +606,132 @@ class RandomnessHandler:
             + event.caller_address.to_bytes(32, sys.byteorder)
         )
 
+    async def submit_random_multicall(
+        self,
+        vrf_requests: List[VRFSubmitParams],
+    ) -> None:
+        """
+        Submit randomness to the VRF contract using a multicall.
+
+        We first try to send all the submissions without validating the fees and only
+        if the call fails, we retry and we validate the fees of each request, so that
+        we can cancel not possible requests and refund users.
+
+        If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
+        Then, the remaining gas is refunded to the requestor address.
+
+        Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
+        """
+        if not self.pragma_client.is_user_client:
+            raise AttributeError(
+                "Must set account.  You may do this by "
+                "invoking self._setup_account_client(private_key, account_contract_address)"
+            )
+
+        account = self.pragma_client.account
+        execution_config = self.pragma_client.execution_config
+
+        print("EXECUTING FOR:")
+        _ddebug(vrf_requests)
+
+        # First try without validating any fees
+        all_calls = await asyncio.gather(
+            *[
+                self._get_submit_or_refund_calls(
+                    request=request,
+                    check_fees=False,
+                )
+                for request in vrf_requests
+            ]
+        )
+        all_calls = flatten_list(all_calls)
+        try:
+            invocation = await account.execute_v1(  # type: ignore[union-attr]
+                calls=all_calls,
+                max_fee=execution_config.max_fee,
+            )
+        except ClientError:
+            # Can happen because of sync errors... retry after smol sleep.
+            await asyncio.sleep(2)
+            try:
+                invocation = await account.execute_v1(  # type: ignore[union-attr]
+                    calls=all_calls,
+                    max_fee=execution_config.max_fee,
+                )
+            except Exception as e:
+                self.seen_requests.difference_update(vrf_requests)
+                raise e
+
+        # Spawn the wait_for_tx_and_retry function in parallel.
+        # Will assert that the execution is ok and if not, will retry with refunding
+        # fees.
+        asyncio.create_task(
+            self.wait_for_tx_and_retry(vrf_requests, invocation.transaction_hash)  # type: ignore[attr-defined]
+        )
+
+    async def _get_submit_or_refund_calls(
+        self,
+        request: VRFSubmitParams,
+        check_fees: bool = True,
+    ) -> Sequence[Call]:
+        """
+        Returns a Sequence of Call necesary to either submit or refund the provided
+        request.
+
+        If the check_fees flag is false, we don't validate the request fees.
+        """
+        submit_call = self.pragma_client.randomness.functions[
+            "submit_random"
+        ].prepare_invoke_v1(
+            *request.to_list(),
+            max_fee=self.pragma_client.execution_config.max_fee,
+        )
+        if not check_fees:
+            return [submit_call]
+
+        estimate_fee = await submit_call.estimate_fee(block_number="pending")
+        if estimate_fee.overall_fee <= request.callback_fee_limit:
+            return [submit_call]
+
+        logger.error(
+            "Request %s is OUT OF GAS: %s > %s - cancelled.",
+            request.request_id,
+            estimate_fee.overall_fee,
+            request.callback_fee_limit,
+        )
+        update_status_call = self.pragma_client.randomness.functions[
+            "update_status"
+        ].prepare_invoke_v1(
+            request.requestor_address,
+            request.request_id,
+            RequestStatus.OUT_OF_GAS.serialize(),
+            max_fee=self.pragma_client.execution_config.max_fee,
+        )
+        refund_call = self.pragma_client.randomness.functions[
+            "refund_operation"
+        ].prepare_invoke_v1(
+            request.requestor_address,
+            request.request_id,
+            max_fee=self.pragma_client.execution_config.max_fee,
+        )
+        return [update_status_call, refund_call]
+
     async def wait_for_tx_and_retry(
-        self, vrf_requests: List[RandomnessRequest], invocation
+        self,
+        vrf_requests: List[VRFSubmitParams],
+        hash: str,
     ) -> None:
         try:
             await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=0.5,
+                tx_hash=hash,
+                check_interval=1,
             )
         except (TransactionRevertedError, TransactionRejectedError):
             # The first multicall can fail because a request has not enough fees
             # to cover the callback. We retry by validating fees.
             all_calls = await asyncio.gather(
                 *[
-                    self.pragma_client._get_submit_or_refund_calls(
+                    self._get_submit_or_refund_calls(
                         request=request,
                         check_fees=True,
                     )
@@ -722,7 +746,7 @@ class RandomnessHandler:
                 )
                 await self.full_node_client.wait_for_tx(
                     tx_hash=retry_invocation.transaction_hash,
-                    check_interval=0.5,
+                    check_interval=1,
                 )
             except Exception as e:
                 # All txs failed, remove the requests from seen requests
