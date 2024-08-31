@@ -81,6 +81,12 @@ async def create_pragma_client(
         provider=client.account,
         cairo_version=0,
     )
+    # TODO: allowance.
+    xd = await erc20_contract.functions["allowance"].call(
+        client.account.address, randomness.address
+    )
+    print(xd)
+
     # Approve randomness contract to transfer fee tokens
     invocation = await erc20_contract.functions["approve"].invoke_v1(
         randomness.address, 0xFFFFFFFFFFFFFFFFFFFFFFFF, auto_estimate=True

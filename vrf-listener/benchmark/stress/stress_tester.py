@@ -234,12 +234,11 @@ class StressTester:
         """
         total_requests = sum(len(infos) for infos in all_request_infos.values())
         fulfillment_times = [
-            (info.fulfillment_time - info.request_time).total_seconds()
+            info.fulfillment_time - info.request_time
             for infos in all_request_infos.values()
             for info in infos
             if info.fulfillment_time
         ]
-        print(fulfillment_times)
         avg_fulfillment_time = sum(fulfillment_times) / total_requests
         median_fulfillment_time = median(fulfillment_times)
         print(f"Total requests: {total_requests}")

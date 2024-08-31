@@ -68,7 +68,7 @@ class Listener:
                 await self.pragma_client.handle_random(
                     private_key=self.private_key,
                     ignore_request_threshold=self.ignore_request_threshold,
-                    requests_events=events if self.indexer is not None else None,
+                    pre_indexed_requests=events if self.indexer is not None else None,
                 )
             except Exception as e:
                 logger.error(f"⛔ Error while handling randomness request: {e}")

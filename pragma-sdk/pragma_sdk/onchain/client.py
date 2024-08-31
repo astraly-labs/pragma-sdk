@@ -31,6 +31,7 @@ from pragma_sdk.onchain.mixins import (
     RandomnessMixin,
     MerkleFeedMixin,
 )
+from pragma_sdk.onchain.mixins.randomness import RandomnessHandler
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 
 from pragma_sdk.offchain.types import PublishEntriesAPIResult
@@ -76,6 +77,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
     full_node_client: FullNodeClient = None
     client: Client = None
     execution_config: ExecutionConfig
+    _randomness_handler: RandomnessHandler
 
     def __init__(
         self,
@@ -119,6 +121,8 @@ class PragmaOnChainClient(  # type: ignore[misc]
 
         self.contract_addresses_config = contract_addresses_config
         self._setup_contracts()
+
+        self._randomness_handler = RandomnessHandler(pragma_client=self)
 
     def _setup_contracts(self):
         """

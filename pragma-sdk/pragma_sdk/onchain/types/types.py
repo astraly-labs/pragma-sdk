@@ -241,8 +241,8 @@ class RandomnessRequest:
     def __hash__(self):
         return hash(
             (
-                self.request_id,
                 self.caller_address,
+                self.request_id,
             )
         )
 

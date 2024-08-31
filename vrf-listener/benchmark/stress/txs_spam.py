@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from typing import List
 from dataclasses import dataclass
@@ -16,6 +17,14 @@ from benchmark.client import ExtendedPragmaClient
 
 # Time to wait between request status check (in secs)
 TTW_BETWEEN_REQ_CHECK = 0.5
+
+
+def hash2emoji(h):
+    if h[:2] != "0x":
+        h = "0x" + h
+    offset = int(h[0:4], 0)
+    unicode = b"\U" + b"000" + str(hex(0x1F466 + offset))[2:].encode()
+    return unicode.decode("unicode_escape")
 
 
 @dataclass
@@ -55,10 +64,12 @@ async def create_request(
             calldata=[0x1234, 0x1434, 314141, 13401234],
         )
     )
-    await invocation.wait_for_acceptance(check_interval=1)
+    await invocation.wait_for_acceptance(check_interval=0.5)
+    request_id = await get_request_id(user, invocation.hash)
     return RequestInfo(
+        request_id=request_id,
         sent_tx=invocation,
-        request_time=datetime.now(),
+        request_time=time.time(),
     )
 
 
@@ -69,15 +80,15 @@ async def check_request_status(
     """
     Check forever the status of the provided request until it is FULFILLED or REFUNDED.
     """
-    request_info.request_id = await get_request_id(user, request_info.sent_tx.hash)
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
             request_id=request_info.request_id,
             block_id="pending",
         )
+        print(f"{hash2emoji(hex(user.account.address))} #{request_info.request_id} is {status}")
         if status == RequestStatus.FULFILLED or status == RequestStatus.REFUNDED:
-            request_info.fulfillment_time = datetime.now()
+            request_info.fulfillment_time = time.time()
             break
         await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)
 

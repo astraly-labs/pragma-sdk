@@ -20,10 +20,10 @@ STARKSCAN_URLS: Dict[Network, str] = {
 
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
-        "https://free-rpc.nethermind.io/mainnet-juno",
+        "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
     ],
     "sepolia": [
-        "https://free-rpc.nethermind.io/sepolia-juno",
+        "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
     ],
 }
 
