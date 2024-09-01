@@ -58,7 +58,7 @@ async def create_request(
         VRFRequestParams(
             seed=1,
             callback_address=example_contract.address,
-            callback_fee_limit=369169033840,
+            callback_fee_limit=5901825609732,
             publish_delay=0,
             num_words=1,
             calldata=[0x1234, 0x1434, 314141, 13401234],

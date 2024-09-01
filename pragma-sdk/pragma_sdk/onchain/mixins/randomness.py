@@ -468,7 +468,7 @@ class RandomnessHandler:
         )
         self.seen_requests.update(vrf_submit_requests)
         await self.submit_random_multicall(vrf_requests=vrf_submit_requests)
-        logger.info(f"✅ Submitted the VRF responses for {len(events)} requests.")
+        logger.info(f"✅ Fulfilled {len(events)} VRF requests.")
 
     async def _index_randomness_requests_events(
         self,
@@ -628,9 +628,6 @@ class RandomnessHandler:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        account = self.pragma_client.account
-        execution_config = self.pragma_client.execution_config
-
         print("EXECUTING FOR:")
         _ddebug(vrf_requests)
 
@@ -646,27 +643,33 @@ class RandomnessHandler:
         )
         all_calls = flatten_list(all_calls)
         try:
-            invocation = await account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=execution_config.max_fee,
+            invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
+                prepared_calls=all_calls,
+                execution_config=self.pragma_client.execution_config,
+                callback=self.pragma_client.track_nonce,
             )
         except ClientError:
-            # Can happen because of sync errors... retry after smol sleep.
-            await asyncio.sleep(2)
+            # NOTE: SYNC ISSUES. To remove when using Karnot Custom RPC.
+            await asyncio.sleep(3)
             try:
-                invocation = await account.execute_v1(  # type: ignore[union-attr]
-                    calls=all_calls,
-                    max_fee=execution_config.max_fee,
+                invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
+                    prepared_calls=all_calls,
+                    execution_config=self.pragma_client.execution_config,
+                    callback=self.pragma_client.track_nonce,
                 )
-            except Exception as e:
+            except Exception:
                 self.seen_requests.difference_update(vrf_requests)
-                raise e
+                return None
 
         # Spawn the wait_for_tx_and_retry function in parallel.
         # Will assert that the execution is ok and if not, will retry with refunding
         # fees.
         asyncio.create_task(
-            self.wait_for_tx_and_retry(vrf_requests, invocation.transaction_hash)  # type: ignore[attr-defined]
+            self.wait_for_tx_and_retry(
+                initial_calls=all_calls,
+                vrf_requests=vrf_requests,
+                tx_hash=invocation.hash,
+            )  # type: ignore[attr-defined]
         )
 
     async def _get_submit_or_refund_calls(
@@ -718,15 +721,30 @@ class RandomnessHandler:
 
     async def wait_for_tx_and_retry(
         self,
+        initial_calls: List[Call],
         vrf_requests: List[VRFSubmitParams],
-        hash: str,
+        tx_hash: str,
     ) -> None:
         try:
             await self.full_node_client.wait_for_tx(
-                tx_hash=hash,
-                check_interval=1,
+                tx_hash=tx_hash,
+                check_interval=0.5,
             )
-        except (TransactionRevertedError, TransactionRejectedError):
+        except (TransactionRevertedError, TransactionRejectedError) as e:
+            if "'request not received'" in str(e):
+                # NOTE: SYNC ISSUES. To remove when using Karnot Custom RPC.
+                await asyncio.sleep(3)
+                invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
+                    prepared_calls=initial_calls,
+                    execution_config=self.pragma_client.execution_config,
+                    callback=self.pragma_client.track_nonce,
+                )
+                return await self.wait_for_tx_and_retry(
+                    initial_calls=initial_calls,
+                    vrf_requests=vrf_requests,
+                    tx_hash=invocation.hash,
+                )
+
             # The first multicall can fail because a request has not enough fees
             # to cover the callback. We retry by validating fees.
             all_calls = await asyncio.gather(
@@ -740,18 +758,18 @@ class RandomnessHandler:
             )
             all_calls = flatten_list(all_calls)
             try:
-                retry_invocation = await self.pragma_client.account.execute_v1(  # type: ignore[union-attr]
-                    calls=all_calls,
-                    max_fee=self.pragma_client.execution_config.max_fee,
+                retry_invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
+                    prepared_calls=all_calls,
+                    execution_config=self.pragma_client.execution_config,
+                    callback=self.pragma_client.track_nonce,
                 )
                 await self.full_node_client.wait_for_tx(
-                    tx_hash=retry_invocation.transaction_hash,
-                    check_interval=1,
+                    tx_hash=retry_invocation.hash,
+                    check_interval=0.5,
                 )
-            except Exception as e:
+            except Exception:
                 # All txs failed, remove the requests from seen requests
                 self.seen_requests.difference_update(vrf_requests)
-                raise e
 
 
 def flatten_list(nested_list: list[Any] | tuple[Any, ...]) -> List:

@@ -318,9 +318,7 @@ class StressTester:
                 user_balance,
             )
             estimate_fee = await prepared_call.estimate_fee()
-            user_balance_after_fees = (
-                user_balance - estimate_fee.overall_fee + 1
-            )  # + 1? why? why not?
+            user_balance_after_fees = user_balance - (estimate_fee.overall_fee + 10)
 
             tx = await eth_contract.functions["transfer"].invoke_v1(
                 admin.address, user_balance_after_fees, auto_estimate=True
