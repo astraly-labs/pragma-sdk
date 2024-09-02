@@ -32,7 +32,7 @@ class RequestInfo:
     sent_tx: TypeSentTransaction
     request_time: datetime
     request_id: int = None
-    fulfillment_time: datetime = None
+    fulfillment_time: float = None
 
 
 async def get_request_id(
@@ -54,22 +54,28 @@ async def create_request(
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
-    invocation = await user.request_random(
-        VRFRequestParams(
-            seed=1,
-            callback_address=example_contract.address,
-            callback_fee_limit=5901825609732,
-            publish_delay=0,
-            num_words=1,
-            calldata=[0x1234, 0x1434, 314141, 13401234],
-        )
-    )
-    await invocation.wait_for_acceptance(check_interval=0.5)
-    request_id = await get_request_id(user, invocation.hash)
+    invocation = None
+    while invocation is None:
+        try:
+            invocation = await user.request_random(
+                VRFRequestParams(
+                    seed=1,
+                    callback_address=example_contract.address,
+                    callback_fee_limit=590182509732,
+                    publish_delay=0,
+                    num_words=1,
+                    calldata=[0x1234, 0x1434, 314141, 13401234],
+                )
+            )
+            await invocation.wait_for_acceptance(check_interval=1)
+        except Exception:
+            invocation = None
+            pass
     return RequestInfo(
-        request_id=request_id,
         sent_tx=invocation,
         request_time=time.time(),
+        request_id=None,  # will be fetched later
+        fulfillment_time=None,  # when the request is fulfilled
     )
 
 
@@ -80,6 +86,7 @@ async def check_request_status(
     """
     Check forever the status of the provided request until it is FULFILLED or REFUNDED.
     """
+    request_info.request_id = await get_request_id(user, request_info.sent_tx.hash)
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
@@ -87,7 +94,7 @@ async def check_request_status(
             block_id="pending",
         )
         print(f"{hash2emoji(hex(user.account.address))} #{request_info.request_id} is {status}")
-        if status == RequestStatus.FULFILLED or status == RequestStatus.REFUNDED:
+        if (status == RequestStatus.FULFILLED) or (status == RequestStatus.REFUNDED):
             request_info.fulfillment_time = time.time()
             break
         await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)

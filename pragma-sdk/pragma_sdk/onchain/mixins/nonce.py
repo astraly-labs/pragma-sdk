@@ -1,10 +1,12 @@
 import asyncio
-from typing import Dict, Literal, Optional
+from typing import Dict, Optional
 
 from starknet_py.net.client import Client
 from starknet_py.net.client_errors import ClientError
 from starknet_py.net.client_models import TransactionStatus
 from starknet_py.transaction_errors import TransactionNotReceivedError
+
+from pragma_sdk.onchain.types import BlockId
 
 
 class NonceMixin:
@@ -27,14 +29,17 @@ class NonceMixin:
         self.cleanup_nonce_dict()
 
         if self.pending_nonce:
-            return self.pending_nonce
+            next_nonce = self.pending_nonce
+            self.pending_nonce = None
+            return next_nonce
+
         if self.nonce_status:
             return max(self.nonce_status) + 1
 
-        latest_nonce = await self.get_nonce()
-        return latest_nonce
+        next_nonce = await self.get_nonce(block_number="pending")
+        return next_nonce
 
-    def cleanup_nonce_dict(self):
+    def cleanup_nonce_dict(self) -> None:
         """
         Cleanup the nonce_dict by removing all txs that have been either rejected or accepted.
         """
@@ -50,13 +55,12 @@ class NonceMixin:
             ]
         ]
         if nonce_seq:
-            max_accepted = max(nonce_seq)
             for nonce in list(self.nonce_dict):
-                if nonce <= max_accepted:
+                if nonce <= max(nonce_seq):
                     del self.nonce_dict[nonce]
                     if nonce in self.nonce_status:
                         del self.nonce_status[nonce]
-            if self.pending_nonce and self.pending_nonce < max_accepted:
+            if self.pending_nonce and (self.pending_nonce <= max(nonce_seq)):
                 self.pending_nonce = None
 
     async def track_nonce(
@@ -82,9 +86,7 @@ class NonceMixin:
                 self.pending_nonce = i
                 break
 
-    async def update_nonce_dict(
-        self,
-    ):
+    async def update_nonce_dict(self) -> None:
         """
         Update the statuses of the nonces in the nonce_dict.
         """
@@ -101,21 +103,16 @@ class NonceMixin:
 
     async def get_nonce(
         self,
-        include_pending=True,
-        block_number: Optional[int | str | Literal["pending", "latest"]] = None,
+        block_number: Optional[BlockId] = "pending",
     ) -> int:
         """
         Get the nonce of the account contract address.
         Just a wrapper around the client's get_contract_nonce method.
 
-        :param include_pending: Whether to include pending transactions in the nonce calculation.
-        :param block_number: Custom block number to get the nonce from.
+        :param block_number: Block number to get the nonce from.
         """
-        if not block_number:
-            block_number = "pending" if include_pending else "latest"
-
         nonce = await self.client.get_contract_nonce(
-            self.account_contract_address,
+            self.account.address,
             block_number=block_number,
         )
 
@@ -125,28 +122,22 @@ class NonceMixin:
         self,
         transaction_hash: int,
         check_interval: int = 2,
-        retries: int = 500,
     ) -> TransactionStatus:
         """
         Tries to get the status of a transaction by its hash.
 
         :param transaction_hash: The hash of the transaction.
         :param check_interval: The interval in seconds between each check.
-        :param retries: The number of retries before giving up.
         :return: The status of the transaction.
         """
         if check_interval <= 0:
             raise ValueError("Argument check_interval has to be greater than 0.")
-        if retries <= 0:
-            raise ValueError("Argument retries has to be greater than 0.")
 
         while True:
-            retries -= 1
             try:
                 tx_status = await self.client.get_transaction_status(
                     tx_hash=transaction_hash
                 )
-
                 return tx_status.finality_status
 
             except asyncio.CancelledError as exc:
@@ -154,5 +145,4 @@ class NonceMixin:
             except ClientError as exc:
                 if "Transaction hash not found" not in exc.message:
                     raise exc
-
                 await asyncio.sleep(check_interval)

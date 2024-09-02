@@ -65,7 +65,6 @@ class RandomnessMixin:
         Must set account. You may do this by invoking self._setup_account_client(private_key, account_contract_address)
 
         :param request_params: VRFRequestParams object containing the request parameters.
-        :param execution_config: ExecutionConfig object containing the execution parameters.
         :return: InvokeResult object containing the result of the invocation.
         """
         if request_params.calldata is None:
@@ -87,13 +86,14 @@ class RandomnessMixin:
         self,
         caller_address: Address,
         request_id: int,
-        block_id: Optional[BlockId] = "latest",
+        block_id: Optional[BlockId] = "pending",
     ) -> RequestStatus:
         """
         Query the status of a request given the caller address and request ID.
 
         :param caller_address: The caller address.
         :param request_id: The request ID.
+        :param block_id: The block ID.
         :return: The status of the request.
         """
         (response,) = await self.randomness.functions["get_request_status"].call(
@@ -366,7 +366,9 @@ class RandomnessMixin:
             )
 
         invocation = await self.randomness.functions["refund_operation"].invoke(
-            requestor_address, request_id, execution_config=self.execution_config
+            requestor_address,
+            request_id,
+            execution_config=self.execution_config,
         )
 
         return invocation
@@ -403,7 +405,7 @@ class RandomnessHandler:
         private_key: int,
         ignore_request_threshold: int,
         pre_indexed_requests: Optional[List[RandomnessRequest]] = None,
-    ):
+    ) -> None:
         """
         Handle randomness requests.
         Will submit randomness for requests that are not too old and have not been handled yet.
@@ -418,6 +420,7 @@ class RandomnessHandler:
         """
         print("REQUEST SEEN:")
         _ddebug(self.seen_requests)
+
         block_number = await self.full_node_client.get_block_number()
         min_block = max(block_number - ignore_request_threshold, 0)
         logger.debug(f"Handle random job running with min_block: {min_block}")
@@ -466,9 +469,7 @@ class RandomnessHandler:
             block_hashes=block_hashes,
             sk=felt_to_secret_key(private_key),
         )
-        self.seen_requests.update(vrf_submit_requests)
         await self.submit_random_multicall(vrf_requests=vrf_submit_requests)
-        logger.info(f"✅ Fulfilled {len(events)} VRF requests.")
 
     async def _index_randomness_requests_events(
         self,
@@ -628,6 +629,7 @@ class RandomnessHandler:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
+        self.seen_requests.update(vrf_requests)
         print("EXECUTING FOR:")
         _ddebug(vrf_requests)
 
@@ -650,7 +652,7 @@ class RandomnessHandler:
             )
         except ClientError:
             # NOTE: SYNC ISSUES. To remove when using Karnot Custom RPC.
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
             try:
                 invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
                     prepared_calls=all_calls,
@@ -730,9 +732,14 @@ class RandomnessHandler:
                 tx_hash=tx_hash,
                 check_interval=0.5,
             )
+            logger.info(f"✅ Fulfilled {len(vrf_requests)} VRF requests.")
+        except ClientError:
+            logger.warn("😹 Wtf. Deleting seen requests that failed.")
+            self.seen_requests.difference_update(vrf_requests)
         except (TransactionRevertedError, TransactionRejectedError) as e:
             if "'request not received'" in str(e):
                 # NOTE: SYNC ISSUES. To remove when using Karnot Custom RPC.
+                logger.warn(f"😹 Sync issues! Waiting a bit and retrying...\n{str(e)}")
                 await asyncio.sleep(3)
                 invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
                     prepared_calls=initial_calls,
@@ -744,6 +751,11 @@ class RandomnessHandler:
                     vrf_requests=vrf_requests,
                     tx_hash=invocation.hash,
                 )
+
+            logger.warning(
+                f"🤔 Fulfilling multicall failed with:\n{str(e)}\n"
+                "Retrying by checking fees..."
+            )
 
             # The first multicall can fail because a request has not enough fees
             # to cover the callback. We retry by validating fees.
@@ -758,14 +770,17 @@ class RandomnessHandler:
             )
             all_calls = flatten_list(all_calls)
             try:
-                retry_invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
+                _ = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
                     prepared_calls=all_calls,
                     execution_config=self.pragma_client.execution_config,
                     callback=self.pragma_client.track_nonce,
                 )
-                await self.full_node_client.wait_for_tx(
-                    tx_hash=retry_invocation.hash,
-                    check_interval=0.5,
+                # await self.full_node_client.wait_for_tx(
+                #     tx_hash=retry_invocation.hash,
+                #     check_interval=0.5,
+                # )
+                logger.info(
+                    f"✅ Fulfilled and/or Refunded {len(vrf_requests)} VRF requests."
                 )
             except Exception:
                 # All txs failed, remove the requests from seen requests

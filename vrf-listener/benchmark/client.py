@@ -75,16 +75,17 @@ async def create_pragma_client(
     )
     client.init_randomness_contract(randomness.address)
     client.init_example_randomness_contract(example.address)
+
+    # Approve randomness contract to transfer fee tokens
     erc20_contract = Contract(
         address=FEE_TOKEN_ADDRESS,
         abi=get_erc20_abi(),
         provider=client.account,
         cairo_version=0,
     )
-
-    # Approve randomness contract to transfer fee tokens
     invocation = await erc20_contract.functions["approve"].invoke_v1(
         randomness.address, 0xFFFFFFFFFFFFFFFFFFFFFFFF, auto_estimate=True
     )
     await invocation.wait_for_acceptance()
+
     return client

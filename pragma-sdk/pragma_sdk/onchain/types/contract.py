@@ -78,9 +78,7 @@ async def _invoke(
     self: Contract,
     *args: Any,
     execution_config: ExecutionConfig = ExecutionConfig(auto_estimate=True),
-    callback: Optional[
-        Callable[[SentTransactionResponse, str], Awaitable[None]]
-    ] = None,
+    callback: Optional[Callable[[int, int], Awaitable[None]]] = None,
     **kwargs: Any,
 ) -> InvokeResult:
     """
@@ -116,11 +114,11 @@ async def _invoke(
             )
             if execution_config.enable_strk_fees
             else await self.get_account.sign_invoke_v1(
-                calls=self, max_fee=execution_config.max_fee
+                calls=self,
+                max_fee=execution_config.max_fee,
             )
         )
-
-    response = await self._client.send_transaction(transaction)
+        response = await self._client.send_transaction(transaction)
 
     if callback:
         await callback(transaction.nonce, response.transaction_hash)
