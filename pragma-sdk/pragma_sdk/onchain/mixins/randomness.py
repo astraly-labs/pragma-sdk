@@ -2,10 +2,10 @@ import asyncio
 import sys
 import multiprocessing
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Sequence, Any
 
 from starknet_py.contract import InvokeResult
-from starknet_py.net.client import Client
+from starknet_py.net.client import Client, Call
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
@@ -105,6 +105,49 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
+    async def _get_submit_or_refund_calls(
+        self,
+        request: VRFSubmitParams,
+        check_fees: bool = True,
+    ) -> Sequence[Call]:
+        """
+        Returns a Sequence of Call necesary to either submit or refund the provided
+        request.
+
+        If the check_fees flag is false, we don't validate the request fees.
+        """
+        submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
+            *request.to_list(),
+            max_fee=self.execution_config.max_fee,
+        )
+        if not check_fees:
+            return [submit_call]
+
+        estimate_fee = await submit_call.estimate_fee(block_number="pending")
+        if estimate_fee.overall_fee <= request.callback_fee_limit:
+            return [submit_call]
+
+        logger.error(
+            "Request %s is OUT OF GAS: %s > %s - cancelled.",
+            request.request_id,
+            estimate_fee.overall_fee,
+            request.callback_fee_limit,
+        )
+        update_status_call = self.randomness.functions[
+            "update_status"
+        ].prepare_invoke_v1(
+            request.requestor_address,
+            request.request_id,
+            RequestStatus.OUT_OF_GAS.serialize(),
+            max_fee=self.execution_config.max_fee,
+        )
+        refund_call = self.randomness.functions["refund_operation"].prepare_invoke_v1(
+            request.requestor_address,
+            request.request_id,
+            max_fee=self.execution_config.max_fee,
+        )
+        return [update_status_call, refund_call]
+
     async def submit_random_multicall(
         self,
         vrf_requests: List[VRFSubmitParams],
@@ -123,56 +166,50 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        async def process_request(request):
-            submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
-                *request.to_list(),
+        # First try without validating any fees
+        all_calls = await asyncio.gather(
+            *[
+                self._get_submit_or_refund_calls(
+                    request=request,
+                    check_fees=False,
+                )
+                for request in vrf_requests
+            ]
+        )
+        all_calls = flatten_list(all_calls)
+
+        try:
+            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+                calls=all_calls,
                 max_fee=self.execution_config.max_fee,
             )
-            estimate_fee = await submit_call.estimate_fee(block_number="pending")
-            if estimate_fee.overall_fee > request.callback_fee_limit:
-                logger.error(
-                    "OUT OF GAS %s > %s - request %s cancelled",
-                    estimate_fee.overall_fee,
-                    request.callback_fee_limit,
-                    request.request_id,
-                )
-                update_status_call = self.randomness.functions[
-                    "update_status"
-                ].prepare_invoke_v1(
-                    request.requestor_address,
-                    request.request_id,
-                    RequestStatus.OUT_OF_GAS.serialize(),
-                    max_fee=self.execution_config.max_fee,
-                )
-                refund_call = self.randomness.functions[
-                    "refund_operation"
-                ].prepare_invoke_v1(
-                    request.requestor_address,
-                    request.request_id,
-                    max_fee=self.execution_config.max_fee,
-                )
-                return [update_status_call, refund_call], None
-            return None, submit_call
+            await self.full_node_client.wait_for_tx(
+                tx_hash=invocation.transaction_hash,
+                check_interval=0.5,
+            )
+        except Exception as e:
+            logger.warn(
+                f"Multicall first try failed! Error:\n {str(e)}.\n\nRetrying with fee estimation..."
+            )
+            all_calls = await asyncio.gather(
+                *[
+                    self._get_submit_or_refund_calls(
+                        request=request,
+                        check_fees=True,
+                    )
+                    for request in vrf_requests
+                ]
+            )
+            all_calls = flatten_list(all_calls)
+            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+                calls=all_calls,
+                max_fee=self.execution_config.max_fee,
+            )
+            await self.full_node_client.wait_for_tx(
+                tx_hash=invocation.transaction_hash,
+                check_interval=0.5,
+            )
 
-        # Process all requests concurrently
-        results = await asyncio.gather(
-            *[process_request(request) for request in vrf_requests]
-        )
-
-        all_refund_calls = []
-        all_submit_calls = []
-        for refund_calls, submit_call in results:
-            if refund_calls:
-                all_refund_calls.extend(refund_calls)
-            if submit_call:
-                all_submit_calls.append(submit_call)
-
-        # Big multicall refunding all requests + submitting requests
-        all_calls = all_refund_calls + all_submit_calls
-        invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-            calls=all_calls, max_fee=self.execution_config.max_fee
-        )
-        await self.full_node_client.wait_for_tx(invocation.transaction_hash)
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -425,18 +462,26 @@ class RandomnessMixin:
 
         # We either retrieve the [requests_events] provided events or index ourselves
         # the request events.
-        events = requests_events or await self._index_randomness_requests_events(
-            from_block=min_block,
-            to_block="pending",
-        )
-        if not events:
+        if requests_events is None:
+            events = await self._index_randomness_requests_events(
+                from_block=min_block,
+                to_block="pending",
+            )
+        else:
+            events = requests_events
+
+        if len(events) == 0:
             return
 
+        # TODO: Keep in memory the request status so we don't re-request over
+        # & over the same requests.
         # We only keep the RECEIVED requests.
         statuses = await asyncio.gather(
             *(
                 self.get_request_status(
-                    event.caller_address, event.request_id, block_id="pending"
+                    event.caller_address,
+                    event.request_id,
+                    block_id="pending",
                 )
                 for event in events
             )
@@ -569,3 +614,13 @@ class RandomnessMixin:
             + event.seed.to_bytes(32, sys.byteorder)
             + event.caller_address.to_bytes(32, sys.byteorder)
         )
+
+
+def flatten_list(nested_list: list[Any] | tuple[Any, ...]) -> List:
+    flattened = []
+    for item in nested_list:
+        if isinstance(item, (list, tuple)):
+            flattened.extend(flatten_list(item))
+        else:
+            flattened.append(item)
+    return flattened

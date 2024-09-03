@@ -2,8 +2,6 @@ from typing import Optional
 
 from pathlib import Path
 
-FEE_TOKEN_ADDRESS = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
-
 
 def find_repo_root(start_directory: Path) -> Path:
     """Finds the root directory of the repo by walking up the directory tree
@@ -18,7 +16,7 @@ def find_repo_root(start_directory: Path) -> Path:
 
 
 CURRENT_FILE_DIRECTORY = Path(__file__).parent
-REPO_ROOT = find_repo_root(CURRENT_FILE_DIRECTORY).parent
+REPO_ROOT = find_repo_root(CURRENT_FILE_DIRECTORY).parent.parent
 SUBMODULE_DIR = REPO_ROOT / "pragma-oracle"
 CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
 

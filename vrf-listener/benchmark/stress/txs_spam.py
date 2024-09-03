@@ -1,31 +1,44 @@
 import asyncio
+import time
+
 from typing import List
 from dataclasses import dataclass
 from datetime import datetime
 from asyncio import Queue
+
+from starknet_py.contract import Contract, TypeSentTransaction
 
 from pragma_sdk.onchain.types import (
     VRFRequestParams,
     RequestStatus,
 )
 
-from starknet_py.contract import Contract, TypeSentTransaction
-from benchmark.pragma_client import ExtendedPragmaClient
+from benchmark.client import ExtendedPragmaClient
 
 # Time to wait between request status check (in secs)
 TTW_BETWEEN_REQ_CHECK = 0.5
 
 
+def hash2emoji(h):
+    if h[:2] != "0x":
+        h = "0x" + h
+    offset = int(h[0:4], 0)
+    unicode = b"\U" + b"000" + str(hex(0x1F466 + offset))[2:].encode()
+    return unicode.decode("unicode_escape")
+
+
 @dataclass
 class RequestInfo:
-    tx_hash: str
     sent_tx: TypeSentTransaction
     request_time: datetime
     request_id: int = None
-    fulfillment_time: datetime = None
+    fulfillment_time: float = None
 
 
-async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
+async def get_request_id(
+    user: ExtendedPragmaClient,
+    tx_hash: str,
+) -> int:
     """
     Retrieve the request_id in the transaction receipt of a request.
     """
@@ -34,53 +47,66 @@ async def get_request_id(user: ExtendedPragmaClient, tx_hash: str) -> int:
     return request_id
 
 
-async def create_request(user: ExtendedPragmaClient, example_contract: Contract) -> RequestInfo:
+async def create_request(
+    user: ExtendedPragmaClient,
+    example_contract: Contract,
+) -> RequestInfo:
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
-    invocation = await user.request_random(
-        VRFRequestParams(
-            seed=1,
-            callback_address=example_contract.address,
-            callback_fee_limit=2855600000000000000,
-            publish_delay=1,
-            num_words=1,
-            calldata=[0x1234, 0x1434, 314141, 13401234],
-        )
-    )
-    request_id = await get_request_id(user, invocation.hash)
-    await invocation.wait_for_acceptance()
+    invocation = None
+    while invocation is None:
+        try:
+            invocation = await user.request_random(
+                VRFRequestParams(
+                    seed=1,
+                    callback_address=example_contract.address,
+                    callback_fee_limit=590182509732,
+                    publish_delay=0,
+                    num_words=1,
+                    calldata=[0x1234, 0x1434, 314141, 13401234],
+                )
+            )
+            await invocation.wait_for_acceptance(check_interval=1)
+        except Exception:
+            print("🤨 Sent VRF request failed.. retrying..")
+            invocation = None
+            pass
     return RequestInfo(
-        request_id=request_id,
-        tx_hash=invocation.hash,
         sent_tx=invocation,
-        request_time=datetime.now(),
+        request_time=time.time(),
+        request_id=None,  # will be fetched later
+        fulfillment_time=None,  # when the request is fulfilled
     )
 
 
-async def check_request_status(user: ExtendedPragmaClient, request_info: RequestInfo):
+async def check_request_status(
+    user: ExtendedPragmaClient,
+    request_info: RequestInfo,
+) -> None:
     """
-    Check forever the status of the provided request until it is FULFILLED.
+    Check forever the status of the provided request until it is FULFILLED or REFUNDED.
     """
+    request_info.request_id = await get_request_id(user, request_info.sent_tx.hash)
     while True:
         status = await user.get_request_status(
             caller_address=user.account.address,
             request_id=request_info.request_id,
             block_id="pending",
         )
-        if status == RequestStatus.FULFILLED or status == RequestStatus.REFUNDED:
-            request_info.fulfillment_time = datetime.now()
+        print(f"{hash2emoji(hex(user.account.address))} #{request_info.request_id} is {status}")
+        if (status == RequestStatus.FULFILLED) or (status == RequestStatus.REFUNDED):
+            request_info.fulfillment_time = time.time()
             break
         await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)
 
 
 async def request_creator(
     user: ExtendedPragmaClient,
-    user_no: int,
     example_contract: Contract,
     num_requests: int,
     queue: Queue,
-):
+) -> None:
     """
     Creates N VRF requests using the provided user & put them into the check queue.
     """
@@ -90,7 +116,11 @@ async def request_creator(
     await queue.put(None)  # Signal that we're done creating requests
 
 
-async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List[RequestInfo]):
+async def status_checker(
+    user: ExtendedPragmaClient,
+    queue: Queue,
+    results: List[RequestInfo],
+) -> None:
     """
     Reads the provided queue that will be filled with VRF Requests & check their status.
     """
@@ -103,7 +133,9 @@ async def status_checker(user: ExtendedPragmaClient, queue: Queue, results: List
 
 
 async def spam_reqs_with_user(
-    user: ExtendedPragmaClient, user_no: int, example_contract: Contract, num_requests: int = 10
+    user: ExtendedPragmaClient,
+    example_contract: Contract,
+    txs_per_user: int,
 ) -> List[RequestInfo]:
     """
     Given a User client, spams [num_requests] requests.
@@ -112,9 +144,7 @@ async def spam_reqs_with_user(
     results = []
 
     # Start the request creator and status checker tasks
-    creator_task = asyncio.create_task(
-        request_creator(user, user_no, example_contract, num_requests, queue)
-    )
+    creator_task = asyncio.create_task(request_creator(user, example_contract, txs_per_user, queue))
     checker_task = asyncio.create_task(status_checker(user, queue, results))
 
     # Wait for both tasks to complete
