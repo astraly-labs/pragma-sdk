@@ -630,6 +630,7 @@ class RandomnessHandler:
             )
 
         self.seen_requests.update(vrf_requests)
+
         print("EXECUTING FOR:")
         _ddebug(vrf_requests)
 
@@ -645,13 +646,18 @@ class RandomnessHandler:
         )
         all_calls = flatten_list(all_calls)
         try:
+            await asyncio.sleep(1.5)
             invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
                 prepared_calls=all_calls,
                 execution_config=self.pragma_client.execution_config,
                 callback=self.pragma_client.track_nonce,
             )
-        except ClientError:
+            await self.full_node_client.wait_for_tx(
+                tx_hash=invocation.hash,
+            )
+        except ClientError as e:
             # NOTE: SYNC ISSUES. To remove when using Karnot Custom RPC.
+            logger.warn(f"😹 Sync issues! Waiting a bit and retrying...\n{str(e)}")
             await asyncio.sleep(2)
             try:
                 invocation = await self.pragma_client.randomness.multicall(  # type: ignore[union-attr]
@@ -660,6 +666,7 @@ class RandomnessHandler:
                     callback=self.pragma_client.track_nonce,
                 )
             except Exception:
+                logger.warn(f"😹 Still failed\n{str(e)}")
                 self.seen_requests.difference_update(vrf_requests)
                 return None
 

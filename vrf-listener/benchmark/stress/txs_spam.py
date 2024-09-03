@@ -69,6 +69,7 @@ async def create_request(
             )
             await invocation.wait_for_acceptance(check_interval=1)
         except Exception:
+            print("🤨 Sent VRF request failed.. retrying..")
             invocation = None
             pass
     return RequestInfo(
