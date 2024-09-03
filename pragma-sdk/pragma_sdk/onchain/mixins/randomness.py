@@ -185,6 +185,7 @@ class RandomnessMixin:
             )
             await self.full_node_client.wait_for_tx(
                 tx_hash=invocation.transaction_hash,
+                check_interval=0.5,
             )
         except Exception as e:
             logger.warn(
@@ -206,6 +207,7 @@ class RandomnessMixin:
             )
             await self.full_node_client.wait_for_tx(
                 tx_hash=invocation.transaction_hash,
+                check_interval=0.5,
             )
 
         return invocation
