@@ -188,7 +188,7 @@ class RandomnessMixin:
             )
         except Exception as e:
             logger.warn(
-                f"Multicall first try failed: {str(e)}.\nRetrying with fee estimation..."
+                f"Multicall first try failed! Error:\n {str(e)}.\n\nRetrying with fee estimation..."
             )
             all_calls = await asyncio.gather(
                 *[
@@ -471,11 +471,15 @@ class RandomnessMixin:
         if len(events) == 0:
             return
 
+        # TODO: Keep in memory the request status so we don't re-request over
+        # & over the same requests.
         # We only keep the RECEIVED requests.
         statuses = await asyncio.gather(
             *(
                 self.get_request_status(
-                    event.caller_address, event.request_id, block_id="pending"
+                    event.caller_address,
+                    event.request_id,
+                    block_id="pending",
                 )
                 for event in events
             )
