@@ -56,9 +56,7 @@ class SummaryStatsMixin:
 
         return tuple(response)
 
-    async def calculate_twap(
-        self, volatility_feed_params: TwapFeedParams
-    ) -> Tuple[int, int]:
+    async def calculate_twap(self, twap_feed_params: TwapFeedParams) -> Tuple[int, int]:
         """
         Calculates the TWAP for a given data feeds.
         see https://docs.pragma.build/Resources/Cairo%201/computational-feeds/TWAP for more info
@@ -72,8 +70,8 @@ class SummaryStatsMixin:
         :return: Tuple[int, int] (twap, decimals)
         """
 
-        (response,) = await self.summary_stats.functions["calculate_volatility"].call(
-            *volatility_feed_params.to_list()
+        (response,) = await self.summary_stats.functions["calculate_twap"].call(
+            *twap_feed_params.to_list()
         )
 
         return tuple(response)
