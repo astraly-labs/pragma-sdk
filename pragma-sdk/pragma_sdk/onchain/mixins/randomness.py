@@ -108,7 +108,6 @@ class RandomnessMixin:
     async def _get_submit_or_refund_calls(
         self,
         request: VRFSubmitParams,
-        check_fees: bool = True,
     ) -> Sequence[Call]:
         """
         Returns a Sequence of Call necesary to either submit or refund the provided
@@ -120,15 +119,13 @@ class RandomnessMixin:
             *request.to_list(),
             max_fee=self.execution_config.max_fee,
         )
-        if not check_fees:
-            return [submit_call]
 
         estimate_fee = await submit_call.estimate_fee(block_number="pending")
         if estimate_fee.overall_fee <= request.callback_fee_limit:
             return [submit_call]
 
         logger.error(
-            "Request %s is OUT OF GAS: %s > %s - cancelled.",
+            "Request %s is OUT OF GAS: %s > %s - cancelled & refunded.",
             request.request_id,
             estimate_fee.overall_fee,
             request.callback_fee_limit,
@@ -166,49 +163,25 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        # First try without validating any fees
         all_calls = await asyncio.gather(
             *[
                 self._get_submit_or_refund_calls(
                     request=request,
-                    check_fees=False,
                 )
                 for request in vrf_requests
             ]
         )
         all_calls = flatten_list(all_calls)
 
-        try:
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-            await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=0.5,
-            )
-        except Exception as e:
-            logger.warn(
-                f"Multicall first try failed! Error:\n {str(e)}.\n\nRetrying with fee estimation..."
-            )
-            all_calls = await asyncio.gather(
-                *[
-                    self._get_submit_or_refund_calls(
-                        request=request,
-                        check_fees=True,
-                    )
-                    for request in vrf_requests
-                ]
-            )
-            all_calls = flatten_list(all_calls)
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-            await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=0.5,
-            )
+        invocation = await self.account.execute_v1(  # type: ignore[union-attr]
+            calls=all_calls,
+            max_fee=self.execution_config.max_fee,
+        )
+
+        await self.full_node_client.wait_for_tx(
+            tx_hash=invocation.transaction_hash,
+            check_interval=0.5,
+        )
 
         return invocation
 
