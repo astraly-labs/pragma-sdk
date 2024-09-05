@@ -46,7 +46,7 @@ class StressTester:
         self.oracle_address = int(oracle_address, 16) if oracle_address else None
 
     async def run_stresstest(self) -> None:
-        full_node = FullNodeClient(node_url=self.rpc_url)
+        full_node = FullNodeClient(node_url="https://api.cartridge.gg/x/starknet/sepolia")
 
         # 1. Deploy vrf etc etc
         print("\n🧩 Deploying VRF contracts...")
@@ -68,7 +68,7 @@ class StressTester:
         print("\n🧩 Creating user clients...")
         users = await self.config.get_users_client(
             network=self.network,
-            rpc_url=self.rpc_url,
+            rpc_url="https://api.cartridge.gg/x/starknet/sepolia",
             randomness_contracts=randomness_contracts,
         )
         print("✅ done!")
@@ -189,7 +189,7 @@ class StressTester:
                 admin_address=admin_address,
                 private_key=private_key,
                 check_requests_interval=1,
-                ignore_request_threshold=5,
+                ignore_request_threshold=10,
             )
         )
         return vrf_listener_task

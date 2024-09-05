@@ -1,8 +1,9 @@
 import asyncio
 import sys
 import multiprocessing
+import time
 
-from typing import List, Optional, Tuple, Sequence, Any
+from typing import List, Optional, Tuple, Any
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client, Call
@@ -108,7 +109,7 @@ class RandomnessMixin:
     async def _get_submit_or_refund_calls(
         self,
         request: VRFSubmitParams,
-    ) -> Sequence[Call]:
+    ) -> List[Call]:
         """
         Returns a Sequence of Call necesary to either submit or refund the provided
         request.
@@ -163,26 +164,20 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
+        ESS = time.time()
         all_calls = await asyncio.gather(
             *[
-                self._get_submit_or_refund_calls(
-                    request=request,
-                )
+                self._get_submit_or_refund_calls(request=request)
                 for request in vrf_requests
             ]
         )
         all_calls = flatten_list(all_calls)
+        print(f"Call creation took: {(time.time()) - ESS:02f}s")
 
-        invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-            calls=all_calls,
-            max_fee=self.execution_config.max_fee,
+        invocation = await self.randomness.multicall(
+            prepared_calls=all_calls,
+            execution_config=self.execution_config,
         )
-
-        await self.full_node_client.wait_for_tx(
-            tx_hash=invocation.transaction_hash,
-            check_interval=0.5,
-        )
-
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -215,7 +210,7 @@ class RandomnessMixin:
         self,
         caller_address: Address,
         request_id: int,
-        block_id: Optional[BlockId] = "latest",
+        block_id: Optional[BlockId] = "pending",
     ) -> RequestStatus:
         """
         Query the status of a request given the caller address and request ID.
@@ -482,14 +477,16 @@ class RandomnessMixin:
             sk=felt_to_secret_key(private_key),
         )
 
+        NOW = time.time()
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
         if not invoke_tx:
             logger.error(f"⛔ VRF Submission for {len(events)} failed!")
         else:
             logger.info(
                 f"✅ Submitted the VRF responses for {len(events)} requests:"
-                f" {hex(invoke_tx.transaction_hash)}"
+                f" {hex(invoke_tx.hash)}"
             )
+        print(f"Send tx took: {(time.time()) - NOW:02f}s")
 
     async def fetch_block_hashes(
         self,
