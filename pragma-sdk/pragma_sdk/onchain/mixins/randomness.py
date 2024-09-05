@@ -164,7 +164,7 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        ESS = time.time()
+        timer_before_calls = time.time()
         all_calls = await asyncio.gather(
             *[
                 self._get_submit_or_refund_calls(request=request)
@@ -172,7 +172,7 @@ class RandomnessMixin:
             ]
         )
         all_calls = flatten_list(all_calls)
-        print(f"Call creation took: {(time.time()) - ESS:02f}s")
+        logger.info(f"Call creation took: {(time.time()) - timer_before_calls:02f}s")
 
         invocation = await self.randomness.multicall(
             prepared_calls=all_calls,
@@ -477,8 +477,9 @@ class RandomnessMixin:
             sk=felt_to_secret_key(private_key),
         )
 
-        NOW = time.time()
+        timer_send_tx = time.time()
         invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
+        logger.info(f"Send tx took: {(time.time()) - timer_send_tx:02f}s")
         if not invoke_tx:
             logger.error(f"⛔ VRF Submission for {len(events)} failed!")
         else:
@@ -486,7 +487,6 @@ class RandomnessMixin:
                 f"✅ Submitted the VRF responses for {len(events)} requests:"
                 f" {hex(invoke_tx.hash)}"
             )
-        print(f"Send tx took: {(time.time()) - NOW:02f}s")
 
     async def fetch_block_hashes(
         self,
