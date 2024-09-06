@@ -6,7 +6,9 @@ from pragma_sdk.common.types.types import Address
 
 
 def validate_hex_string(value: str) -> str:
-    if not value.startswith("0x") or not all(c in "0123456789ABCDEFabcdef" for c in value[2:]):
+    if not value.startswith("0x") or not all(
+        c in "0123456789ABCDEFabcdef" for c in value[2:].lower()
+    ):
         raise ValueError(f"Invalid hexadecimal string: {value}")
     return value
 
