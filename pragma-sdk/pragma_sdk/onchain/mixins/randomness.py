@@ -189,6 +189,10 @@ class RandomnessMixin:
             prepared_calls=all_calls,
             execution_config=self.execution_config,
         )
+        await self.full_node_client.wait_for_tx(
+            tx_hash=invocation.hash,
+            check_interval=0.5,
+        )
         return invocation
 
     async def estimate_gas_submit_random_op(
