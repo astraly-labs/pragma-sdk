@@ -4,16 +4,18 @@ import os
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional, Literal
+from typing import Optional, Literal, List, Set
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
+from pragma_sdk.common.types.types import Address
 from pragma_sdk.onchain.types import ContractAddresses
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from vrf_listener.safe_queue import ThreadSafeQueue
 from vrf_listener.indexer import Indexer
 from vrf_listener.listener import Listener
+from vrf_listener.click_types import HEX_STRING, hex_addresses_list_to_addresses_set
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,7 @@ async def main(
     private_key: str,
     check_requests_interval: int,
     ignore_request_threshold: int,
+    whitelisted_addresses: Set[Address] = set(),
     rpc_url: Optional[HttpUrl] = None,
     index_with_apibara: bool = False,
     apibara_api_key: Optional[str] = None,
@@ -59,6 +62,7 @@ async def main(
         requests_queue=requests_queue,
         check_requests_interval=check_requests_interval,
         ignore_request_threshold=ignore_request_threshold,
+        whitelisted_addresses=whitelisted_addresses,
         indexer=indexer if index_with_apibara else None,
     )
 
@@ -165,6 +169,15 @@ def _create_pragma_client(
     required=False,
     help="Apibara API key. Needed when indexing with Apibara.",
 )
+@click.option(
+    "-w",
+    "--whitelisted",
+    type=HEX_STRING,
+    multiple=True,
+    required=False,
+    default=list(),
+    help="Whitelisted address for which we won't check their fees and pay for them if needed.",
+)
 def cli_entrypoint(
     log_level: str,
     network: Literal["mainnet", "sepolia"],
@@ -176,12 +189,14 @@ def cli_entrypoint(
     ignore_request_threshold: int,
     index_with_apibara: bool,
     apibara_api_key: Optional[str],
+    whitelisted: List[str],
 ) -> None:
     """
     VRF Listener entry point.
     """
     setup_logging(logger, log_level)
     private_key = load_private_key_from_cli_arg(raw_private_key)
+    whitelisted_addresses = hex_addresses_list_to_addresses_set(whitelisted)
 
     if isinstance(private_key, tuple):
         raise click.UsageError("⛔ KeyStores aren't supported as private key for the vrf-listener!")
@@ -202,6 +217,7 @@ def cli_entrypoint(
             ignore_request_threshold=ignore_request_threshold,
             index_with_apibara=index_with_apibara,
             apibara_api_key=apibara_api_key,
+            whitelisted_addresses=whitelisted_addresses,
         )
     )
 

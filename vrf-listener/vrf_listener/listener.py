@@ -5,6 +5,7 @@ from typing import Optional, List, Set
 
 
 from pragma_sdk.onchain.types import RandomnessRequest
+from pragma_sdk.common.types.types import Address
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
 from vrf_listener.indexer import Indexer
@@ -18,6 +19,7 @@ class Listener:
     private_key: int
     requests_queue: ThreadSafeQueue
     check_requests_interval: int
+    whitelisted_addresses: Set[Address]
     processed_requests: Set[RandomnessRequest]
     indexer: Optional[Indexer] = None
 
@@ -28,6 +30,7 @@ class Listener:
         requests_queue: ThreadSafeQueue,
         check_requests_interval: int,
         ignore_request_threshold: int,
+        whitelisted_addresses: Set[Address],
         indexer: Optional[Indexer] = None,
     ) -> None:
         self.pragma_client = pragma_client
@@ -37,6 +40,7 @@ class Listener:
         self.requests_queue = requests_queue
         self.check_requests_interval = check_requests_interval
         self.ignore_request_threshold = ignore_request_threshold
+        self.whitelisted_addresses = whitelisted_addresses
         self.processed_requests = set()
         self.indexer = indexer
 
@@ -53,6 +57,7 @@ class Listener:
                     private_key=self.private_key,
                     ignore_request_threshold=self.ignore_request_threshold,
                     requests_events=events if self.indexer is not None else None,
+                    whitelisted_addresses=self.whitelisted_addresses,
                 )
             except Exception as e:
                 logger.error(f"⛔ Error while handling randomness request: {e}")
