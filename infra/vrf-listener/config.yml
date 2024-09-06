@@ -13,3 +13,4 @@ container_environment:
       - CHECK_INTERVAL
       - RPC_URL
       - APIBARA_API_KEY
+      - LOOT_CONTRACT_ADDRESS

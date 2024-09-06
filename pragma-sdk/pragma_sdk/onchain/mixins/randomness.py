@@ -1,8 +1,9 @@
 import asyncio
 import sys
 import multiprocessing
+import time
 
-from typing import List, Optional, Tuple, Sequence, Any
+from typing import List, Optional, Tuple, Any, Set
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client, Call
@@ -108,19 +109,20 @@ class RandomnessMixin:
     async def _get_submit_or_refund_calls(
         self,
         request: VRFSubmitParams,
-        check_fees: bool = True,
-    ) -> Sequence[Call]:
+        is_whitelisted: bool = False,
+    ) -> List[Call]:
         """
         Returns a Sequence of Call necesary to either submit or refund the provided
         request.
 
-        If the check_fees flag is false, we don't validate the request fees.
+        If the caller is whitelisted, we don't check if there's enough fees for the call
+        to work. We will pay for the fees if there isn't enough.
         """
         submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
             *request.to_list(),
             max_fee=self.execution_config.max_fee,
         )
-        if not check_fees:
+        if is_whitelisted:
             return [submit_call]
 
         estimate_fee = await submit_call.estimate_fee(block_number="pending")
@@ -128,7 +130,7 @@ class RandomnessMixin:
             return [submit_call]
 
         logger.error(
-            "Request %s is OUT OF GAS: %s > %s - cancelled.",
+            "Request %s is OUT OF GAS: %s > %s - cancelled & refunded.",
             request.request_id,
             estimate_fee.overall_fee,
             request.callback_fee_limit,
@@ -151,12 +153,16 @@ class RandomnessMixin:
     async def submit_random_multicall(
         self,
         vrf_requests: List[VRFSubmitParams],
+        whitelisted_addresses: Set[Address],
     ) -> InvokeResult:
         """
         Submit randomness to the VRF contract using a multicall.
 
         If fee estimation fails, the status of the request is updated to OUT_OF_GAS.
         Then, the remaining gas is refunded to the requestor address.
+
+        For callers that are in the whitelisted_addresses set, we won't check if they
+        have enough ETH for the callback fees.
 
         Fee estimation is used to set the callback fee parameter in the VRFSubmitParams object.
         """
@@ -166,50 +172,27 @@ class RandomnessMixin:
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
 
-        # First try without validating any fees
+        timer_before_calls = time.time()
         all_calls = await asyncio.gather(
             *[
                 self._get_submit_or_refund_calls(
                     request=request,
-                    check_fees=False,
+                    is_whitelisted=request.requestor_address in whitelisted_addresses,
                 )
                 for request in vrf_requests
             ]
         )
         all_calls = flatten_list(all_calls)
+        logger.info(f"Call creation took: {(time.time()) - timer_before_calls:02f}s")
 
-        try:
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-            await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=0.5,
-            )
-        except Exception as e:
-            logger.warn(
-                f"Multicall first try failed! Error:\n {str(e)}.\n\nRetrying with fee estimation..."
-            )
-            all_calls = await asyncio.gather(
-                *[
-                    self._get_submit_or_refund_calls(
-                        request=request,
-                        check_fees=True,
-                    )
-                    for request in vrf_requests
-                ]
-            )
-            all_calls = flatten_list(all_calls)
-            invocation = await self.account.execute_v1(  # type: ignore[union-attr]
-                calls=all_calls,
-                max_fee=self.execution_config.max_fee,
-            )
-            await self.full_node_client.wait_for_tx(
-                tx_hash=invocation.transaction_hash,
-                check_interval=0.5,
-            )
-
+        invocation = await self.randomness.multicall(
+            prepared_calls=all_calls,
+            execution_config=self.execution_config,
+        )
+        await self.full_node_client.wait_for_tx(
+            tx_hash=invocation.hash,
+            check_interval=0.5,
+        )
         return invocation
 
     async def estimate_gas_submit_random_op(
@@ -242,7 +225,7 @@ class RandomnessMixin:
         self,
         caller_address: Address,
         request_id: int,
-        block_id: Optional[BlockId] = "latest",
+        block_id: Optional[BlockId] = "pending",
     ) -> RequestStatus:
         """
         Query the status of a request given the caller address and request ID.
@@ -443,6 +426,7 @@ class RandomnessMixin:
         private_key: int,
         ignore_request_threshold: int = 3,
         requests_events: Optional[List[RandomnessRequest]] = None,
+        whitelisted_addresses: Set[Address] = set(),
     ) -> None:
         """
         Handle randomness requests.
@@ -509,13 +493,18 @@ class RandomnessMixin:
             sk=felt_to_secret_key(private_key),
         )
 
-        invoke_tx = await self.submit_random_multicall(vrf_submit_requests)
+        timer_send_tx = time.time()
+        invoke_tx = await self.submit_random_multicall(
+            vrf_requests=vrf_submit_requests,
+            whitelisted_addresses=whitelisted_addresses,
+        )
+        logger.info(f"Send tx took: {(time.time()) - timer_send_tx:02f}s")
         if not invoke_tx:
             logger.error(f"⛔ VRF Submission for {len(events)} failed!")
         else:
             logger.info(
                 f"✅ Submitted the VRF responses for {len(events)} requests:"
-                f" {hex(invoke_tx.transaction_hash)}"
+                f" {hex(invoke_tx.hash)}"
             )
 
     async def fetch_block_hashes(

@@ -189,7 +189,7 @@ class StressTester:
                 admin_address=admin_address,
                 private_key=private_key,
                 check_requests_interval=1,
-                ignore_request_threshold=5,
+                ignore_request_threshold=10,
             )
         )
         return vrf_listener_task

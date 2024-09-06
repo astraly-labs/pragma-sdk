@@ -19,14 +19,6 @@ from benchmark.client import ExtendedPragmaClient
 TTW_BETWEEN_REQ_CHECK = 0.5
 
 
-def hash2emoji(h):
-    if h[:2] != "0x":
-        h = "0x" + h
-    offset = int(h[0:4], 0)
-    unicode = b"\U" + b"000" + str(hex(0x1F466 + offset))[2:].encode()
-    return unicode.decode("unicode_escape")
-
-
 @dataclass
 class RequestInfo:
     sent_tx: TypeSentTransaction
@@ -54,24 +46,17 @@ async def create_request(
     """
     Create a VRF request with the provided user using the example_contract as callback.
     """
-    invocation = None
-    while invocation is None:
-        try:
-            invocation = await user.request_random(
-                VRFRequestParams(
-                    seed=1,
-                    callback_address=example_contract.address,
-                    callback_fee_limit=590182509732,
-                    publish_delay=0,
-                    num_words=1,
-                    calldata=[0x1234, 0x1434, 314141, 13401234],
-                )
-            )
-            await invocation.wait_for_acceptance(check_interval=1)
-        except Exception:
-            print("🤨 Sent VRF request failed.. retrying..")
-            invocation = None
-            pass
+    invocation = await user.request_random(
+        VRFRequestParams(
+            seed=1,
+            callback_address=example_contract.address,
+            callback_fee_limit=707039073456120,
+            publish_delay=0,
+            num_words=1,
+            calldata=[0x1234, 0x1434, 314141, 13401234],
+        )
+    )
+    await invocation.wait_for_acceptance(check_interval=1)
     return RequestInfo(
         sent_tx=invocation,
         request_time=time.time(),
@@ -94,8 +79,11 @@ async def check_request_status(
             request_id=request_info.request_id,
             block_id="pending",
         )
-        print(f"{hash2emoji(hex(user.account.address))} #{request_info.request_id} is {status}")
-        if (status == RequestStatus.FULFILLED) or (status == RequestStatus.REFUNDED):
+        if status in [
+            RequestStatus.FULFILLED,
+            RequestStatus.REFUNDED,
+            RequestStatus.OUT_OF_GAS,
+        ]:
             request_info.fulfillment_time = time.time()
             break
         await asyncio.sleep(TTW_BETWEEN_REQ_CHECK)

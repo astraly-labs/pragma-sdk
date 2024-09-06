@@ -72,32 +72,75 @@ async def _deploy_everything(
         oracle_address = deploy_oracle_result.deployed_contract.address
 
     # Deploy Randomness
-    deploy_result = await Contract.deploy_contract_v1(
-        class_hash="0x2e167703c1deef69c6c5076133d3491fc75d1d1f486e6a8375712d28ff10fa4",
-        account=deployer,
-        abi=ABIS["pragma_Randomness"],
-        constructor_args=[
-            deployer.address,
-            deployer.signer.public_key,
-            int(FEE_TOKEN_ADDRESS, 16),
-            oracle_address,
-        ],
-        auto_estimate=True,
-        cairo_version=1,
-    )
-    await deploy_result.wait_for_acceptance()
+    try:
+        compiled_contract = read_contract("pragma_Randomness.sierra.json", directory=None)
+        compiled_contract_casm = read_contract("pragma_Randomness.casm.json", directory=None)
+        declare_result = await Contract.declare_v2(
+            account=deployer,
+            compiled_contract=compiled_contract,
+            compiled_contract_casm=compiled_contract_casm,
+            auto_estimate=True,
+        )
+        await declare_result.wait_for_acceptance()
+        deploy_result = await declare_result.deploy_v1(
+            constructor_args=[
+                deployer.address,
+                deployer.signer.public_key,
+                int(FEE_TOKEN_ADDRESS, 16),
+                deploy_oracle_result.deployed_contract.address,
+            ],
+            auto_estimate=True,
+        )
+        await deploy_result.wait_for_acceptance()
+    except Exception:
+        deploy_result = await Contract.deploy_contract_v1(
+            class_hash="0x2e167703c1deef69c6c5076133d3491fc75d1d1f486e6a8375712d28ff10fa4",
+            account=deployer,
+            abi=ABIS["pragma_Randomness"],
+            constructor_args=[
+                deployer.address,
+                deployer.signer.public_key,
+                int(FEE_TOKEN_ADDRESS, 16),
+                oracle_address,
+            ],
+            auto_estimate=True,
+            cairo_version=1,
+        )
+        await deploy_result.wait_for_acceptance()
 
     # Deploy Randomness Example
-    deploy_example_result = await Contract.deploy_contract_v1(
-        class_hash="0x2f8197e47fa9776db20a22e009fdeee079f0387cbc823fad5bf0d8e285e81a7",
-        account=deployer,
-        abi=ABIS["pragma_ExampleRandomness"],
-        constructor_args=[
-            deploy_result.deployed_contract.address,
-        ],
-        auto_estimate=True,
-        cairo_version=1,
-    )
-    await deploy_example_result.wait_for_acceptance()
+    try:
+        compiled_example_contract = read_contract(
+            "pragma_ExampleRandomness.sierra.json", directory=None
+        )
+        compiled_example_contract_casm = read_contract(
+            "pragma_ExampleRandomness.casm.json", directory=None
+        )
+        declare_example_result = await Contract.declare_v2(
+            account=deployer,
+            compiled_contract=compiled_example_contract,
+            compiled_contract_casm=compiled_example_contract_casm,
+            auto_estimate=True,
+        )
+        await declare_example_result.wait_for_acceptance()
+        deploy_example_result = await declare_example_result.deploy_v1(
+            constructor_args=[
+                deploy_result.deployed_contract.address,
+            ],
+            auto_estimate=True,
+        )
+        await deploy_example_result.wait_for_acceptance()
+    except Exception:
+        deploy_example_result = await Contract.deploy_contract_v1(
+            class_hash="0x2f8197e47fa9776db20a22e009fdeee079f0387cbc823fad5bf0d8e285e81a7",
+            account=deployer,
+            abi=ABIS["pragma_ExampleRandomness"],
+            constructor_args=[
+                deploy_result.deployed_contract.address,
+            ],
+            auto_estimate=True,
+            cairo_version=1,
+        )
+        await deploy_example_result.wait_for_acceptance()
 
     return deploy_result, deploy_example_result, deploy_oracle_result

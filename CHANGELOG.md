@@ -6,14 +6,7 @@
 
 ### Fix
 
-- **stable_but_slow_vrf**: Revert + Tweak old stable vrf
-- **stable_but_slow_vrf**: removed keys
-- **stable_but_slow_vrf**: Todo stuff
-- **stable_but_slow_vrf**: Indexing without apibara
-- **stable_but_slow_vrf**: Fix test
-- **stable_but_slow_vrf**: check interval
-- **estimate_fee_fix**: fix (#196)
-- **merkle_maker**: module name
+- Stable vrf
 - remove useless params (#192)
 - update lock files in ci (#190)
 
