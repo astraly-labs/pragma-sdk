@@ -4,4 +4,6 @@ health_check_path: "/"
 container_environment:
   - region: "eu-west-3"
   - prefix: "/conf/{{ SERVICE_NAME }}/{{ RUN_ENV }}"
-  - keys: ""
+  - keys:
+      - INFISCAL_ENV
+      - INFISCAL_APP_PATH
