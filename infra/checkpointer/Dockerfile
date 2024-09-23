@@ -18,6 +18,9 @@ RUN apt-get update && \
     gcc \
     libgmp3-dev \
     pipx
+RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
+'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
+&& apt-get update && apt-get install -y infisical
 
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/
@@ -28,7 +31,9 @@ RUN poetry env use 3.12
 RUN poetry install
 
 FROM base as final
+COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/checkpointer/config/ /opt/checkpointer/config/
+COPY infra/checkpointer/entrypoint.sh /opt/checkpointer/
 WORKDIR /opt/checkpointer
-ENTRYPOINT /opt/checkpointer/.venv/bin/python3.12 checkpointer/main.py -c ${CONFIG_PATH} -n ${NETWORK} --oracle-address ${ORACLE_ADDRESS} --admin-address ${ADMIN_ADDRESS} --private-key ${PRIVATE_KEY} -t ${CHECK_INTERVAL} --rpc-url ${RPC_URL}
+ENTRYPOINT ["bash","/opt/checkpointer/entrypoint.sh"]
