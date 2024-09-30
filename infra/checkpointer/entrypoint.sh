@@ -1,5 +1,5 @@
-#!/bin/bash -x
-set -euo pipefail
+#!/bin/bash
+set -euox pipefail
 export INFISICAL_TOKEN=$(infisical login --method=universal-auth --client-id=${INFISICAL_CLIENT_ID} --client-secret=${INFISICAL_CLIENT_SECRET} --silent --plain)
 infisical export  --projectId=${INFISCAL_PROJECT_ID} --env=${INFISCAL_ENV}  --path=${INFISCAL_APP_PATH} > .env
 source .env
