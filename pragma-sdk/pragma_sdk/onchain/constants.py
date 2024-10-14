@@ -9,7 +9,7 @@ CHAIN_IDS: Dict[Network, StarknetChainId] = {
     "devnet": StarknetChainId.MAINNET,
     "mainnet": StarknetChainId.MAINNET,
     "sepolia": StarknetChainId.SEPOLIA,
-    "madara_test": 93395501017206423887893332,
+    "madara_test": 6120767554663640178324841317716,
 }
 
 CHAIN_ID_TO_NETWORK = {v: k for k, v in CHAIN_IDS.items()}
@@ -40,8 +40,12 @@ CONTRACT_ADDRESSES = {
         summary_stats_address=2384164285657453557205017005077409893704644163574788258484357745200820117852,
     ),
     "madara_test": ContractAddresses(
-        publisher_registry_address=461356997534138225460795749068013349309509634922228310871652186075935126849,
-        oracle_proxy_addresss=2598637178162175124540269278489155568057234289210572147052744598475407626026,
+        publisher_registry_address=int(
+            "0x136c93a454973507c96d5933304bc40ce54e61aa1ce88642a2812657ba142a5", 16
+        ),
+        oracle_proxy_addresss=int(
+            "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8", 16
+        ),
         summary_stats_address=0,
     ),
 }
