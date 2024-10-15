@@ -46,7 +46,9 @@ CONTRACT_ADDRESSES = {
         oracle_proxy_addresss=int(
             "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8", 16
         ),
-        summary_stats_address=0,
+        summary_stats_address=int(
+            "0x3da8b711d0974aa1ba2564738e74384210a505f8b5deaa3d07045f973d5555c", 16
+        ),
     ),
 }
 
