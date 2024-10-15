@@ -185,7 +185,7 @@ def _create_client(
     "-n",
     "--network",
     required=True,
-    type=click.Choice(["sepolia", "mainnet", "madara_test"], case_sensitive=False),
+    type=click.Choice(["sepolia", "mainnet", "pragma_devnet"], case_sensitive=False),
     help="At which network the price corresponds.",
 )
 @click.option(
