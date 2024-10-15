@@ -5,10 +5,5 @@ container_environment:
   - region: "eu-west-3"
   - prefix: "/conf/{{ SERVICE_NAME }}/{{ RUN_ENV }}"
   - keys:
-      - CONFIG_PATH
-      - NETWORK
-      - ORACLE_ADDRESS
-      - ADMIN_ADDRESS
-      - PRIVATE_KEY
-      - CHECK_INTERVAL
-      - RPC_URL
+      - INFISICAL_ENV
+      - INFISICAL_APP_PATH
