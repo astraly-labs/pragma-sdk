@@ -1,3 +1,14 @@
+## v2.1.3 (2024-10-15)
+
+### Feat
+
+- pragma devnet config
+- add support for pragma_devnet chain (#207)
+
+### Fix
+
+- Mandatory VRF request fees estimation (#205)
+
 ## v2.1.2 (2024-09-04)
 
 ### Feat
