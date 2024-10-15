@@ -43,7 +43,7 @@ Options:
   --log-level [DEBUG|INFO|WARNING|ERROR|CRITICAL]
                                   Logging level.
   
-  -n, --network [sepolia|mainnet]
+  -n, --network [sepolia|mainnet|pragma_devnet]
                                   On which networks the checkpoints will be
                                   set. Defaults to SEPOLIA.  [required]
   

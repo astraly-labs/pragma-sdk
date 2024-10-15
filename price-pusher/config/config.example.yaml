@@ -1,8 +1,6 @@
 - pairs:
     spot:
-      - STRK/USD
       - BTC/USD
       - ETH/USD
-      - LORDS/USD
-  time_difference: 120
+  time_difference: 60
   price_deviation: 0.0025

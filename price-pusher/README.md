@@ -20,7 +20,7 @@ Options:
                                   Where the prices will be published.
                                   [required]
 
-  -n, --network [sepolia|mainnet]
+  -n, --network [sepolia|mainnet|devnet|pragma_devnet]
                                   At which network the price corresponds.
                                   [required]
 

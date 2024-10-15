@@ -28,6 +28,7 @@ NetworkName = Literal[
     "devnet",
     "mainnet",
     "sepolia",
+    "pragma_devnet",
 ]
 
 Network = HttpUrl | NetworkName
