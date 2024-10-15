@@ -2,5 +2,5 @@
     spot:
       - BTC/USD
       - ETH/USD
-  time_difference: 2
+  time_difference: 60
   price_deviation: 0.0025
