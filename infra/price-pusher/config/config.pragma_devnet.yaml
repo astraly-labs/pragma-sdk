@@ -13,12 +13,3 @@
       - DAI/USD
   time_difference: 120
   price_deviation: 0.0025
-
-- pairs:
-    future:
-      - BTC/USD
-      - ETH/USD
-      - BTC/USDT
-      - ETH/USDT
-  time_difference: 600
-  price_deviation: 0.05
