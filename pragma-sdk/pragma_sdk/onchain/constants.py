@@ -41,13 +41,13 @@ CONTRACT_ADDRESSES = {
     ),
     "pragma_devnet": ContractAddresses(
         publisher_registry_address=int(
-            "0x136c93a454973507c96d5933304bc40ce54e61aa1ce88642a2812657ba142a5", 16
+            "0x73463f28c1627f28bd65da24eabad485fac76c0cb6f9638814af5732ab61635", 16
         ),
         oracle_proxy_addresss=int(
-            "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8", 16
+            "0x7ed4f0171a29815651d276fbdabf4773485cebf1feb5640942be74380bc7572", 16
         ),
         summary_stats_address=int(
-            "0x3da8b711d0974aa1ba2564738e74384210a505f8b5deaa3d07045f973d5555c", 16
+            "0x2b2389d8bb8512607e08feb08005786537dff2de464efef40ec32e7a3191162", 16
         ),
     ),
 }
