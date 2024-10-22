@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "nostra-lp-pricer"
+version = "0.1.0"
+description = "LP pricer for Nostra"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12.4,<3.13"
+pydantic = "^2.7.4"
+pragma-sdk = { path = "../pragma-sdk", develop = true }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
