@@ -16,7 +16,6 @@ from pragma_sdk.common.types.entry import Entry, GenericEntry
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
 from pragma_sdk.onchain.constants import DERIBIT_MERKLE_FEED_KEY
-from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types import Network
 
 from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
@@ -40,7 +39,6 @@ class DeribitOptionsFetcher(FetcherInterfaceT):
     publisher: str
     pairs: List[Pair]
     headers: Dict[Any, Any]
-    _client: PragmaOnChainClient
     _latest_data: Optional[LatestData] = None
 
     SOURCE: str = "DERIBIT"

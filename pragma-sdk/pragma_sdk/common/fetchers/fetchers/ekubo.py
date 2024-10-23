@@ -25,7 +25,6 @@ from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.utils import u256_parts_to_int
 
-from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types.types import Network
 
 logger = get_pragma_sdk_logger()
@@ -50,7 +49,6 @@ class EkuboStatus(IntEnum):
 class EkuboFetcher(FetcherInterfaceT):
     SOURCE: str = "EKUBO"
 
-    _client = PragmaOnChainClient
     pairs: List[Pair]
     publisher: str
     price_fetcher_contract: int
@@ -76,13 +74,14 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Fetches the data from the fetcher and returns a list of Entry objects.
         """
-        pairs = [self.hop_handler.get_hop_pair(pair) for pair in self.pairs]
+        pairs = [self.hop_handler.get_hop_pair(pair) or pair for pair in self.pairs]
         groupped_pairs = self._group_pairs_by_quote(pairs)
         entries = []
         for quote_currency, base_currencies in groupped_pairs.items():
-            res = await self._call_get_prices(quote_currency, base_currencies)
+            response = await self._call_get_prices(quote_currency, base_currencies)
+            print(response)
             new_entries = self._parse_response_into_entries(
-                quote_currency, base_currencies, res
+                quote_currency, base_currencies, response
             )
             entries.extend(new_entries)
         return entries  # type: ignore[call-overload]
@@ -106,11 +105,11 @@ class EkuboFetcher(FetcherInterfaceT):
                 MIN_TOKENS,
             ],
         )
-        res = await rpc_client.call_contract(
+        response = await rpc_client.call_contract(
             call=call,
             block_hash="pending",
         )
-        return res
+        return response
 
     def _parse_response_into_entries(
         self, quote: Currency, bases: List[Currency], res: List[int]
@@ -166,6 +165,8 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Handle price available status (3)
         """
+        if pair == Pair.from_tickers("EKUBO", "USDC"):
+            print(res[current_idx + 1], res[current_idx + 2])
         raw_price = u256_parts_to_int(
             low=res[current_idx + 1], high=res[current_idx + 2]
         )
@@ -190,9 +191,9 @@ class EkuboFetcher(FetcherInterfaceT):
         Handle error statuses (0, 1, 2)
         """
         error_messages = {
-            EkuboStatus.NOT_INITIALIZED: f"Price feed not initialized for {pair} from Ekubo",
-            EkuboStatus.INSUFFICIENT_LIQUIDITY: f"Insufficient liquidity for {pair} from Ekubo",
-            EkuboStatus.PERIOD_TOO_LONG: f"Period too long for {pair} from Ekubo",
+            EkuboStatus.NOT_INITIALIZED: f"Price feed not initialized for {pair} in Ekubo",
+            EkuboStatus.INSUFFICIENT_LIQUIDITY: f"Insufficient liquidity for {pair} in Ekubo",
+            EkuboStatus.PERIOD_TOO_LONG: f"Period too long for {pair}",
         }
         return PublisherFetchError(error_messages[status]), 1
 
@@ -239,3 +240,26 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def format_url(self, pair: Pair) -> str:
         raise NotImplementedError("`format_url` is not needed for the Ekubo Fetcher.")
+
+
+import aiohttp
+import asyncio
+
+
+async def main():
+    ekubo = EkuboFetcher(
+        pairs=[
+            Pair.from_tickers("EKUBO", "USD"),
+        ],
+        publisher="ADEL",
+        network="mainnet",
+    )
+
+    async with aiohttp.ClientSession() as session:
+        entries = await ekubo.fetch(session)
+        print(entries)
+        print("✅ Ok!")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
