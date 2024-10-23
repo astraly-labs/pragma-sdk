@@ -69,7 +69,8 @@ class EkuboFetcher(FetcherInterfaceT):
         super().__init__(pairs, publisher, api_key, network)
 
     async def fetch(
-        self, session: ClientSession
+        self,
+        session: ClientSession,
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Fetches the data from the fetcher and returns a list of Entry objects.
@@ -87,7 +88,9 @@ class EkuboFetcher(FetcherInterfaceT):
         return entries  # type: ignore[call-overload]
 
     async def _call_get_prices(
-        self, quote: Currency, bases: List[Currency]
+        self,
+        quote: Currency,
+        bases: List[Currency],
     ) -> List[int]:
         """
         Calls the get_prices function from the Price Fetcher contract and returns
@@ -112,7 +115,10 @@ class EkuboFetcher(FetcherInterfaceT):
         return response
 
     def _parse_response_into_entries(
-        self, quote: Currency, bases: List[Currency], res: List[int]
+        self,
+        quote: Currency,
+        bases: List[Currency],
+        res: List[int],
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Parse response data into a list of entries or errors.
@@ -170,8 +176,7 @@ class EkuboFetcher(FetcherInterfaceT):
         raw_price = u256_parts_to_int(
             low=res[current_idx + 1], high=res[current_idx + 2]
         )
-        decimals = (pair.base_currency.decimals + pair.quote_currency.decimals) / 2
-        price_in_usd = (raw_price / (2**128)) * (10**decimals)
+        price_in_usd = self._compute_price_in_usd(raw_price, pair)
 
         entry = SpotEntry(
             pair_id=pair.id,
@@ -198,17 +203,20 @@ class EkuboFetcher(FetcherInterfaceT):
         return PublisherFetchError(error_messages[status]), 1
 
     def _compute_price_in_usd(
-        self, raw_price: int, base: Currency, quote: Currency
+        self,
+        raw_price: int,
+        pair: Pair,
     ) -> int:
         """
         Converts a Raw price returned from the Ekubo Price Fetcher contract into a
         price in $.
         """
-        decimals = (base.decimals + quote.decimals) / 2
+        decimals = (pair.base_currency.decimals + pair.quote_currency.decimals) / 2
         return (raw_price / (2**128)) * (10**decimals)
 
     def _group_pairs_by_quote(
-        self, pairs: List[Pair]
+        self,
+        pairs: List[Pair],
     ) -> Dict[Currency, List[Currency]]:
         """
         Groups a list of Pair by their quote currency.
@@ -234,7 +242,9 @@ class EkuboFetcher(FetcherInterfaceT):
         return grouped_pairs
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession
+        self,
+        pair: Pair,
+        session: ClientSession,
     ) -> Entry | PublisherFetchError:
         raise NotImplementedError("`fetch_pair` is not needed for the Ekubo Fetcher.")
 
