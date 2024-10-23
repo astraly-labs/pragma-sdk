@@ -6,6 +6,9 @@ import asyncio
 import time
 
 class PoolDataFetcher:
+    """
+    Interface to periodically fetch and store data in the Doubly Ended Queue (Deque), see data_store.py for reference
+    """
     def __init__(self, pool_store: PoolDataStore, pool_contract: PoolContract, fetch_interval: int):
         self.pool_store = pool_store
         self.pool_contract = pool_contract

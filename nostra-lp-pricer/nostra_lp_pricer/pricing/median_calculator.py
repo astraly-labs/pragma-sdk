@@ -15,7 +15,7 @@ class MedianCalculator:
         self.push_interval = push_interval
 
     async def calculate_and_push_median(self, tokens: Tuple[int, int]):
-        """Periodically calculates and pushes median data to the on-chain contract."""
+        """Periodically calculates and pushes the lp price to the on-chain contract."""
         while True:
             try:
                 median_supply = self.pool_store.calculate_median_supply()
@@ -28,6 +28,8 @@ class MedianCalculator:
                     tokens, median_reserves, median_supply
                 )
                 print(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
+
+                # TODO: add the deployed contract and push the price there
             except Exception as e:
                 print(f"Error pushing data to contract: {e}")
             await asyncio.sleep(self.push_interval)

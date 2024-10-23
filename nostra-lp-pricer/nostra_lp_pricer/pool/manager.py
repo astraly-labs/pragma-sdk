@@ -6,6 +6,9 @@ import asyncio
 import json
 
 class PoolManager:
+    """
+    Interface to load the configuration from the yaml file (the list of pool addresses and the lp pricer contract)
+    """
     def __init__(self, network: Network, config_file: str):
         self.network = network
         self.config_file = config_file

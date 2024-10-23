@@ -6,6 +6,11 @@ from typing import Deque, Dict, Tuple
 
 # Stores the deque for total supply and reserves for each pool
 class PoolDataStore:
+    """
+    Implementation of a double ended queue. Deque is preferred over a list because quicker 
+    append and pop operations from both the ends of the container. In our case, it allows us to remove stale data 
+    (over 10 minutes)
+    """
     def __init__(self, max_age: int):
         self.total_supply: Deque[Dict] = deque()
         self.reserves: Deque[Dict] = deque()

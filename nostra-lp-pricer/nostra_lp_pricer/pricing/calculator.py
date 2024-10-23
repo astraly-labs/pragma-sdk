@@ -7,12 +7,14 @@ from pragma_sdk.onchain.abis.abi import ABIS, get_erc20_abi
 from nostra_lp_pricer.types import Reserves, TARGET_DECIMALS
 
 class PoolPriceCalculator:
+
     def __init__(self, pool: PoolContract, oracle: Oracle):
         self.pool = pool
         self.oracle = oracle
 
     async def compute_lp_price(self, tokens: Tuple[int, int], reserves: Reserves, total_supply: int) -> int:
-        """Computes the LP price based on reserves and total supply."""
+        """Computes the LP price based on reserves and total supply. Takes into consideration the decimals 
+        of the fetched prices"""
 
         token_0_contract = get_contract(self.pool.network, tokens[0], get_erc20_abi(), cairo_version=0)
         token_1_contract = get_contract(self.pool.network, tokens[1], get_erc20_abi(), cairo_version=0)

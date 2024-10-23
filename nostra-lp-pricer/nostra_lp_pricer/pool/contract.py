@@ -5,6 +5,9 @@ from typing import Dict
 
 
 class PoolContract:
+    """
+    Interface to query basic configuration parameter from a given pool contract
+    """
     def __init__(self, network: Network, address: str):
         self.network = network
         self.address = address

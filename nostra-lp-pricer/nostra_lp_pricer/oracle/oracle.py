@@ -8,6 +8,9 @@ from pragma_sdk.common.types.types import DataTypes
 from typing import Tuple
 
 class Oracle:
+    """
+    Oracle class, used to fetch the token prices, decimals and build an asset pair out of a given currency
+    """
     def __init__(self, network: Network):
         self.network = network
        
