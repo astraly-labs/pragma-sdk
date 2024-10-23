@@ -171,8 +171,6 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Handle price available status (3)
         """
-        if pair == Pair.from_tickers("EKUBO", "USDC"):
-            print(res[current_idx + 1], res[current_idx + 2])
         raw_price = u256_parts_to_int(
             low=res[current_idx + 1], high=res[current_idx + 2]
         )
