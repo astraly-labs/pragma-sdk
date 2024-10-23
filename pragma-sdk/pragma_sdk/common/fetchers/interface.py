@@ -39,9 +39,7 @@ class FetcherInterfaceT(abc.ABC):
 
     @classmethod
     def get_client(cls, network: Network = "mainnet") -> PragmaOnChainClient:
-        if cls._client is None:
-            cls._client = PragmaOnChainClient(network=network)
-        return cls._client
+        return PragmaOnChainClient(network=network)
 
     @abc.abstractmethod
     async def fetch(

@@ -21,7 +21,7 @@ STARKSCAN_URLS: Dict[Network, str] = {
 
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
-        "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+        "https://mainnet-pragma.karnot.xyz",
     ],
     "sepolia": [
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
