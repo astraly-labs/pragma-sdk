@@ -1,0 +1,34 @@
+
+from nostra_lp_pricer.pool.data_store import PoolDataStore
+from nostra_lp_pricer.pool.contract import PoolContract
+from typing import Tuple
+from nostra_lp_pricer.pricing.calculator import PoolPriceCalculator 
+from nostra_lp_pricer.oracle.oracle import Oracle
+import asyncio
+import time
+
+class MedianCalculator:
+    def __init__(self, pool_store: PoolDataStore, pool_contract: PoolContract, oracle: Oracle, push_interval: int):
+        self.pool_store = pool_store
+        self.pool_contract = pool_contract
+        self.oracle = oracle
+        self.push_interval = push_interval
+
+    async def calculate_and_push_median(self, tokens: Tuple[int, int]):
+        """Periodically calculates and pushes median data to the on-chain contract."""
+        while True:
+            try:
+                median_supply = self.pool_store.calculate_median_supply()
+                median_reserves = self.pool_store.calculate_median_reserves()
+
+                print(f"Calculated median - Supply: {median_supply}, Reserves: {median_reserves}")
+
+                # Compute LP price and push data (currently placeholder)
+                lp_price = await PoolPriceCalculator(self.pool_contract, self.oracle).compute_lp_price(
+                    tokens, median_reserves, median_supply
+                )
+                print(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
+            except Exception as e:
+                print(f"Error pushing data to contract: {e}")
+            await asyncio.sleep(self.push_interval)
+

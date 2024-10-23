@@ -65,11 +65,11 @@ def get_account(network: Network,address: Optional[int]=None, private_key: Optio
         signer=signer,
         )
 
-def get_contract(network: Network,contract_name: int, address: Optional[int]=None, private_key: Optional[int]=None ) -> Contract:
+def get_contract(network: Network,contract_name: int, abi: dict,  cairo_version: Optional[int] = 1,address: Optional[int]=None, private_key: Optional[int]=None ) -> Contract:
     provider = get_account(network, address, private_key)
     return Contract(
             address=contract_name,
-            abi=POOL_ABI,
+            abi=abi,
             provider=provider,
-            cairo_version=1,
+            cairo_version=cairo_version,
         )
