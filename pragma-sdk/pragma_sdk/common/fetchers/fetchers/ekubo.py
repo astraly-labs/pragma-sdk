@@ -23,7 +23,7 @@ from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.common.utils import u256_parts_to_int
+from pragma_sdk.common.utils import uint256_to_int
 
 from pragma_sdk.onchain.types.types import Network
 
@@ -171,9 +171,7 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Handle price available status (3)
         """
-        raw_price = u256_parts_to_int(
-            low=res[current_idx + 1], high=res[current_idx + 2]
-        )
+        raw_price = uint256_to_int(low=res[current_idx + 1], high=res[current_idx + 2])
         price_in_usd = self._compute_price_in_usd(raw_price, pair)
 
         entry = SpotEntry(
