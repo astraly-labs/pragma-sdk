@@ -12,7 +12,6 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
-from pragma_sdk.onchain.client import PragmaOnChainClient
 
 logger = get_pragma_sdk_logger()
 
@@ -27,7 +26,6 @@ class DexscreenerFetcher(FetcherInterfaceT):
 
     publisher: str
     pairs: List[Pair]
-    _client: PragmaOnChainClient
 
     hop_handler = HopHandler(
         hopped_currencies={

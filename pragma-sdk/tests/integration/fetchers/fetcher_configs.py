@@ -256,29 +256,6 @@ ONCHAIN_FETCHER_CONFIGS = {
             ),
         ],
     },
-    "EkuboFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "ekubo.json",
-        "fetcher_class": EkuboFetcher,
-        "name": "Ekubo",
-        "expected_result": [
-            SpotEntry(
-                "LUSD/USD",
-                1001354537000,
-                12345,
-                "EKUBO",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-            SpotEntry(
-                "WBTC/USD",
-                5763275533000,
-                12345,
-                "EKUBO",
-                PUBLISHER_NAME,
-                volume=0,
-            ),
-        ],
-    },
     "DexscreenerFetcher": {
         "mock_file": MOCK_DIR / "responses" / "dexscreener.json",
         "fetcher_class": DexscreenerFetcher,
@@ -297,6 +274,32 @@ ONCHAIN_FETCHER_CONFIGS = {
                 56845000000,
                 12345,
                 "DEXSCREENER",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+        ],
+    },
+}
+
+RPC_FETCHER_CONFIGS = {
+    "EkuboFetcher": {
+        "mock_file": MOCK_DIR / "responses" / "ekubo.json",
+        "fetcher_class": EkuboFetcher,
+        "name": "Ekubo",
+        "expected_result": [
+            SpotEntry(
+                "LUSD/USD",
+                5522096,
+                12345,
+                "EKUBO",
+                PUBLISHER_NAME,
+                volume=0,
+            ),
+            SpotEntry(
+                "WBTC/USD",
+                6664870762713,
+                12345,
+                "EKUBO",
                 PUBLISHER_NAME,
                 volume=0,
             ),
