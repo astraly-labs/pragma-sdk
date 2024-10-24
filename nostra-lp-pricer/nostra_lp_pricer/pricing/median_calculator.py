@@ -7,6 +7,10 @@ from nostra_lp_pricer.oracle.oracle import Oracle
 from nostra_lp_pricer.pool.data_fetcher import PricePusher
 import asyncio
 import time
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class MedianCalculator:
     def __init__(self, pool_store: PoolDataStore, pool_contract: PoolContract, oracle: Oracle, price_pusher: PricePusher, push_interval: int):
@@ -23,7 +27,7 @@ class MedianCalculator:
                 median_supply = self.pool_store.calculate_median_supply()
                 median_reserves = self.pool_store.calculate_median_reserves()
 
-                print(f"Calculated median - Supply: {median_supply}, Reserves: {median_reserves}")
+                logger.info(f"Calculated median - Supply: {median_supply}, Reserves: {median_reserves}")
 
                 # Compute LP price and push data (currently placeholder)
                 lp_price = await PoolPriceCalculator(self.pool_contract, self.oracle).compute_lp_price(
@@ -32,10 +36,10 @@ class MedianCalculator:
 
                 invocation = await self.price_pusher.push_price(int(self.pool_contract.address,16), lp_price)
                 await invocation.wait_for_acceptance()
-                print(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
+                logger.info(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
 
                 # TODO: add the deployed contract and push the price there
             except Exception as e:
-                print(f"Error pushing data to contract: {e}")
+                logger.error(f"Error pushing data to contract: {e}")
             await asyncio.sleep(self.push_interval)
 

@@ -1,7 +1,10 @@
 
 from nostra_lp_pricer.types import Network, Reserves, POOL_ABI
 from nostra_lp_pricer.client import get_contract
-from typing import Dict
+from typing import Dict, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PoolContract:
@@ -31,21 +34,37 @@ class PoolContract:
                 "token_1": token_1
             }
         except Exception as e:
-            print(f"Error fetching contract data from {self.address}: {e}")
+            logger.error(f"Error fetching contract data from {self.address}: {e}")
             return {"address": self.address, "error": str(e)}
 
     async def get_reserves(self) -> Reserves:
         """Fetches reserves from the pool."""
-        return await self.contract.functions['get_reserves'].call()
+        try:
+            return await self.contract.functions['get_reserves'].call()
+        except Exception as e:
+            logger.error(f"Error fetching reserves for pool {self.address}: {e}")
+            return {"error": str(e)}
 
-    async def get_total_supply(self) -> int:
+    async def get_total_supply(self) -> Optional[int]:
         """Fetches the total supply from the pool."""
-        return await self.contract.functions['total_supply'].call()
+        try:
+            return await self.contract.functions['total_supply'].call()
+        except Exception as e:
+            logger.error(f"Error fetching total supply for pool {self.address}: {e}")
+            return None
 
-    async def get_token_0(self) -> int:
+    async def get_token_0(self) -> Optional[int]:
         """Fetches the token 0 address from the pool."""
-        return await self.contract.functions['token_0'].call()
+        try:
+            return await self.contract.functions['token_0'].call()
+        except Exception as e:
+            logger.error(f"Error fetching token_0 for pool {self.address}: {e}")
+            return None
     
-    async def get_token_1(self) -> int: 
+    async def get_token_1(self) -> Optional[int]: 
         """Fetches the token 1 address from the pool."""
-        return await self.contract.functions['token_1'].call()
+        try:
+            return await self.contract.functions['token_1'].call()
+        except Exception as e:
+            logger.error(f"Error fetching token_1 for pool {self.address}: {e}")
+            return None

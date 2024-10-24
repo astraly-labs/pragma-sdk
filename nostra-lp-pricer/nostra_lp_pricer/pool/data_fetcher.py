@@ -8,6 +8,10 @@ from starknet_py.contract import InvokeResult
 from typing import List
 import asyncio
 import time
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PoolDataFetcher:
     """
@@ -21,14 +25,16 @@ class PoolDataFetcher:
     async def fetch_and_store_data(self):
         """Periodically fetches and stores data."""
         while True:
-            try:
-                total_supply = await self.pool_contract.get_total_supply()
-                reserves = await self.pool_contract.get_reserves()
+            total_supply = await self.pool_contract.get_total_supply()
+            reserves = await self.pool_contract.get_reserves()
+
+            if total_supply is not None and "error" not in reserves:
                 self.pool_store.append_total_supply(total_supply[0])
                 self.pool_store.append_reserves(reserves[0])
-                print(f"Stored new data for pool at {time.time()}, with total supply: {total_supply[0]} and reserves: {reserves[0]}")
-            except Exception as e:
-                print(f"Error fetching data: {e}")
+                logger.info(f"Stored new data for pool at {time.time()}, with total supply: {total_supply[0]} and reserves: {reserves[0]}")
+            else:
+                logger.info(f"Error fetching data for pool at {self.pool_contract.address}: {total_supply.get('error')}, {reserves.get('error')}")
+
             await asyncio.sleep(self.fetch_interval)
 
 
@@ -79,6 +85,6 @@ class PricePusher:
         if not_registered_addresses:
             invocation = await self.add_pools(not_registered_addresses)
             await invocation.wait_for_acceptance()
-            print(f"Registered missing pools: {not_registered_addresses}")
+            logger.info(f"Registered missing pools: {not_registered_addresses}")
         else:
-            print("No new pools to register.")
+            logger.info("No new pools to register.")

@@ -31,13 +31,14 @@ async def main():
     for pool_contract in pool_contracts:
         token_0 = await pool_contract.get_token_0()
         token_1 =  await pool_contract.get_token_1()
-        pool_store = pool_stores[pool_contract.address]
-        data_fetcher = PoolDataFetcher(pool_store, pool_contract, FETCH_INTERVAL)
-        oracle = Oracle(network)
-        median_calculator = MedianCalculator(pool_store, pool_contract,oracle,price_pusher, PUSH_INTERVAL)
-        # Fetch data every minute and calculate/push every minute as well
-        tasks.append(data_fetcher.fetch_and_store_data())
-        tasks.append(median_calculator.calculate_and_push_median((token_0[0], token_1[0])))
+        if token_0 is not None and token_1 is not None:
+            pool_store = pool_stores[pool_contract.address]
+            data_fetcher = PoolDataFetcher(pool_store, pool_contract, FETCH_INTERVAL)
+            oracle = Oracle(network)
+            median_calculator = MedianCalculator(pool_store, pool_contract,oracle,price_pusher, PUSH_INTERVAL)
+            # Fetch data every minute and calculate/push every minute as well
+            tasks.append(data_fetcher.fetch_and_store_data())
+            tasks.append(median_calculator.calculate_and_push_median((token_0[0], token_1[0])))
 
     await asyncio.gather(*tasks)
 
