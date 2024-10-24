@@ -5,13 +5,12 @@ from nostra_lp_pricer.pool.contract import PoolContract
 from nostra_lp_pricer.pool.data_fetcher import PoolDataFetcher, PricePusher
 from nostra_lp_pricer.pricing.median_calculator import MedianCalculator
 from nostra_lp_pricer.oracle.oracle import Oracle
-from nostra_lp_pricer.types import FETCH_INTERVAL,PUSH_INTERVAL
+from nostra_lp_pricer.types import FETCH_INTERVAL,PUSH_INTERVAL, PERIOD
 
 # Main entry function
 async def main():
     # File paths
     input_yaml = "addresses.yaml"  # Input YAML file containing the list of pool addresses
-    output_json = "pool_configs.json"   # Output JSON file to store the pool configurations
     network = "sepolia"
 
 
@@ -21,12 +20,11 @@ async def main():
     price_pusher = pool_manager._load_pricer()
 
     onchain_registered_pools= await price_pusher.get_registered_pools()
-    print("onchain pools", onchain_registered_pools)
     await price_pusher.register_missing_pools(pool_manager, onchain_registered_pools[0])
 
 
      # Initialize pool data stores (assuming 10-minute data storage)
-    pool_stores = {pool.address: PoolDataStore(max_age=600) for pool in pool_contracts}
+    pool_stores = {pool.address: PoolDataStore(max_age=PERIOD) for pool in pool_contracts}
 
 
     tasks = []
