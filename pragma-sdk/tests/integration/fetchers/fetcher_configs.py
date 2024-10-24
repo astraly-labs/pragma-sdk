@@ -289,7 +289,7 @@ RPC_FETCHER_CONFIGS = {
         "expected_result": [
             SpotEntry(
                 "LUSD/USD",
-                552209637,
+                5522096,
                 12345,
                 "EKUBO",
                 PUBLISHER_NAME,
@@ -297,7 +297,7 @@ RPC_FETCHER_CONFIGS = {
             ),
             SpotEntry(
                 "WBTC/USD",
-                666487076271340,
+                6664870762713,
                 12345,
                 "EKUBO",
                 PUBLISHER_NAME,

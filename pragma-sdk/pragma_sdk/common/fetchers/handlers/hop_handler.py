@@ -65,8 +65,8 @@ class HopHandler:
             from_currency: str, to_currency: str
         ) -> tuple[Pair, float]:
             pair = Pair.from_tickers(to_currency, from_currency)
-            raw_price = (await client.get_spot(pair.id)).price
-            price = int(raw_price) / int(10 ** int(pair.base_currency.decimals))
+            response = await client.get_spot(pair.id)
+            price = int(response.price) / int(10 ** int(response.decimals))
             return pair, price
 
         tasks = [
