@@ -63,6 +63,7 @@ CONTRACTS_NAMES = [
     "pragma_YieldCurve",
     "pragma_Randomness",
     "pragma_ExampleRandomness",
+    "pragma_Pool",
 ]
 ABIS = {
     contract_name: json.loads(get_abi(contract_name))

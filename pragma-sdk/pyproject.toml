@@ -26,6 +26,7 @@ requests-mock = "^1.11.0"
 pydantic = "^2.7.4"
 python-dotenv = "^1.0.0"
 pyyaml = "^6.0.1"
+redis = {version = "^5.0.7", extras = ["hiredis"]}
 
 [tool.poetry.extras]
 docs = ["sphinx", "enum-tools", "furo", "pallets-sphinx-themes"]
