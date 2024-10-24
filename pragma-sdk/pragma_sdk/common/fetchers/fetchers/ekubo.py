@@ -29,11 +29,16 @@ from pragma_sdk.onchain.types.types import Network
 
 logger = get_pragma_sdk_logger()
 
+# Below is the list of parameters related to the Price Fetcher contract from Ekubo, i.e:
+#   * the contract,
+#   * the selector,
+#   * the period, (i.e now() - period_as_seconds = the data we consider for the price)
+#   * min tokens
+
 PRICE_FETCHER_CONTRACT: Dict[Network, str] = {
     "sepolia": "0x04613bee55d8a37adfa249b24c6b13451dedf7cf4f02d01de859579119de3add",
     "mainnet": "0x04946fb4ad5237d97bbb1256eba2080c4fe1de156da6a7f83e3b4823bb6d7da1",
 }
-
 GET_PRICES_SELECTOR = get_selector_from_name("get_prices")
 PERIOD = 3600  # one hour
 MIN_TOKENS = 0
@@ -78,20 +83,33 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Fetches the data from the fetcher and returns a list of Entry objects.
         """
-        pairs = [self.hop_handler.get_hop_pair(pair) or pair for pair in self.pairs]
+        pairs: List[Tuple[Pair, bool]] = self._get_pairs_after_hop()
+        hop_prices = (
+            await self.hop_handler.get_hop_prices(self.client)
+            if any([has_been_hopped for _, has_been_hopped in pairs])
+            else None
+        )
+
+        # We make N calls per N unique quote assets. To do so, we group
+        # the pairs by their quote currencies.
         groupped_pairs = self._group_pairs_by_quote(pairs)
+
         entries = []
-        for quote_currency, base_currencies in groupped_pairs.items():
-            response = await self._call_get_prices(quote_currency, base_currencies)
+        for quote, base_currencies in groupped_pairs.items():
+            response = await self._call_get_prices(quote, base_currencies)
             new_entries = await self._parse_response_into_entries(
-                quote_currency, base_currencies, response
+                quote=quote,
+                bases=base_currencies,
+                res=response,
+                hop_prices=hop_prices,
             )
             entries.extend(new_entries)
+
         return entries  # type: ignore[call-overload]
 
     async def _call_get_prices(
         self,
-        quote: Currency,
+        quote: Tuple[Currency, bool],
         bases: List[Currency],
     ) -> List[int]:
         """
@@ -103,7 +121,7 @@ class EkuboFetcher(FetcherInterfaceT):
             to_addr=self.price_fetcher_contract,
             selector=GET_PRICES_SELECTOR,
             calldata=[
-                quote.starknet_address,
+                quote[0].starknet_address,
                 len(bases),
                 *[c.starknet_address for c in bases],
                 PERIOD,
@@ -118,9 +136,10 @@ class EkuboFetcher(FetcherInterfaceT):
 
     async def _parse_response_into_entries(
         self,
-        quote: Currency,
+        quote: Tuple[Currency, bool],
         bases: List[Currency],
         res: List[int],
+        hop_prices: Optional[Dict[Pair, float]],
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Parse response data into a list of entries or errors.
@@ -138,28 +157,38 @@ class EkuboFetcher(FetcherInterfaceT):
             ]
 
         entries: List[Entry | PublisherFetchError | BaseException] = []
+
         current_idx = 1
         current_base_idx = 0
         while current_base_idx < num_responses and current_idx < len(res):
             base = bases[current_base_idx]
-            pair = Pair.from_tickers(base.id, quote.id)
+            pair = Pair.from_tickers(base.id, quote[0].id)
             status = EkuboStatus(res[current_idx])
 
-            if status == EkuboStatus.PRICE_AVAILABLE:
-                if current_idx + 2 >= len(res):
-                    return [
-                        BaseException(
-                            "Incomplete price data in the Price Fetcher response."
-                        )
-                    ]
+            match status:
+                case EkuboStatus.PRICE_AVAILABLE:
+                    if current_idx + 2 >= len(res):
+                        return [
+                            BaseException(
+                                "Incomplete price data in the Price Fetcher response."
+                            )
+                        ]
 
-                entry, idx_increment = await self._handle_price_status(
-                    current_idx, res, pair
-                )
-                entries.append(entry)
-            else:
-                error, idx_increment = self._handle_error_status(status, pair)
-                entries.append(error)
+                    entry, idx_increment = await self._handle_price_status(
+                        current_idx=current_idx,
+                        res=res,
+                        pair=pair,
+                        is_hopped_pair=quote[1],
+                        hop_prices=hop_prices,
+                    )
+                    entries.append(entry)
+
+                case _:
+                    publisher_error, idx_increment = self._handle_error_status(
+                        status=status,
+                        pair=pair,
+                    )
+                    entries.append(publisher_error)
 
             current_idx += idx_increment
             current_base_idx += 1
@@ -171,15 +200,29 @@ class EkuboFetcher(FetcherInterfaceT):
         current_idx: int,
         res: List[int],
         pair: Pair,
+        is_hopped_pair: bool,
+        hop_prices: Optional[Dict[Pair, float]],
     ) -> Tuple[SpotEntry, int]:
         """
-        Handle price available status (3)
+        Handle the sub-array of the Ekubo Response when the response was 3, i.e
+        PRICE_AVAILABLE.
+
+        The steps are:
+            * 1. Convert the UINT256 price from Ekubo to int,
+            * 2. Convert this cairo price to a correct price for the pair,
+            * 3. If the pair has been hopped, convert it back to the original pair,
+            * 4. Create the new Entry.
+
+        At the end, we return the created Entry and the number of elements used
+        in the Cairo response.
         """
         raw_price = uint256_to_int(low=res[current_idx + 1], high=res[current_idx + 2])
-        price = self._compute_price(raw_price, pair)
+        price = self._convert_raw_cairo_price(pair, raw_price)
 
-        if pair.quote_currency.id in self.hop_handler.hopped_currencies.values():
-            price, pair = await self._adapt_back_hopped_pair(price, pair)
+        if is_hopped_pair:
+            if hop_prices is None:
+                raise ValueError("Hopped prices are None. Should never happen.")
+            pair, price = await self._adapt_back_hopped_pair(hop_prices, pair, price)
         else:
             price = price * 10**pair.quote_currency.decimals
 
@@ -196,29 +239,44 @@ class EkuboFetcher(FetcherInterfaceT):
         return entry, 3
 
     async def _adapt_back_hopped_pair(
-        self, price: float, pair: Pair
-    ) -> Tuple[float, Pair]:
-        hop: Tuple[Optional[str], Optional[str]] = (None, None)
+        self,
+        hop_prices: Dict[Pair, float],
+        pair: Pair,
+        price: float,
+    ) -> Tuple[Pair, float]:
+        """
+        If a hop occured for the given pair, we enter this function.
+
+        For example, if we just fetched the price of the pair BTC/USDC
+        but we know that a hop occured with USD, we convert it back
+        to BTC/USD.
+
+        To do so, we use the hop_prices of USDC/USD and compute
+        the conversion between the two pairs.
+        """
         for asset, hopped_to in self.hop_handler.hopped_currencies.items():
             if hopped_to == pair.quote_currency.id:
-                hop = (asset, hopped_to)
+                hop: Tuple[str, str] = (asset, hopped_to)
                 break
-        if hop[0] is None or hop[1] is None:
-            raise ValueError("Should never happen since we hopped in the first place.")
 
-        hop_price = await self.get_stable_price(hop[1])
         new_pair = Pair.from_tickers(pair.base_currency.id, hop[0])
+        hop_quote_pair = Pair.from_tickers(pair.quote_currency.id, hop[0])
+        hop_price = hop_prices.get(hop_quote_pair)
+
+        if hop_price is None:
+            raise ValueError("Could not find hop price. Should never happen.")
 
         return (
-            price * hop_price * 10**new_pair.quote_currency.decimals,
             new_pair,
+            price * hop_price * 10**new_pair.quote_currency.decimals,
         )
 
     def _handle_error_status(
         self, status: EkuboStatus, pair: Pair
     ) -> Tuple[PublisherFetchError, int]:
         """
-        Handle error statuses (0, 1, 2) & returns the associated PublisherFetchError
+        Handle error statuses (0, 1, 2) - i.e, return the correct PublisherFetchError
+        with the right message.
         """
         error_messages = {
             EkuboStatus.NOT_INITIALIZED: f"Price feed not initialized for {pair} in Ekubo",
@@ -227,18 +285,33 @@ class EkuboFetcher(FetcherInterfaceT):
         }
         return PublisherFetchError(error_messages[status]), 1
 
-    def _compute_price(self, raw_price: int, pair: Pair) -> float:
+    def _convert_raw_cairo_price(self, pair: Pair, raw_price: int) -> float:
         """
-        Converts a Raw price returned from the Ekubo Price Fetcher contract.
+        Converts a Raw price returned from the Ekubo Price Fetcher contract to
+        a price with the right decimals depending on the pair.
         """
         decimals = abs(pair.quote_currency.decimals - pair.base_currency.decimals)
         price: float = (raw_price / (2**128)) * (10**decimals)
         return price
 
+    def _get_pairs_after_hop(self) -> List[Tuple[Pair, bool]]:
+        """
+        Returns the Fetcher pairs after hopping and a boolean flag for each
+        allowing us to know if at least one pair was hopped.
+        """
+        new_pairs = []
+        for pair in self.pairs:
+            hopped_pair = self.hop_handler.get_hop_pair(pair)
+            if hopped_pair is None:
+                new_pairs.append((pair, False))
+            else:
+                new_pairs.append((hopped_pair, True))
+        return new_pairs
+
     def _group_pairs_by_quote(
         self,
-        pairs: List[Pair],
-    ) -> Dict[Currency, List[Currency]]:
+        pairs: List[Tuple[Pair, bool]],
+    ) -> Dict[Tuple[Currency, bool], List[Currency]]:
         """
         Groups a list of Pair by their quote currency.
 
@@ -249,17 +322,22 @@ class EkuboFetcher(FetcherInterfaceT):
 
         We will get:
         {
-            USD: [BTC, ETH],
-            ETH: [DOGE]
+            (USD, false): [BTC, ETH],
+            (ETH, false): [DOGE]
         }
+
         all elements being of type `Currency`.
+
+        The boolean in the key will be True if the quote currency was hopped,
+        else false.
         """
-        grouped_pairs: Dict[Currency, List[Currency]] = {}
-        for pair in pairs:
+        grouped_pairs: Dict[Tuple[Currency, bool], List[Currency]] = {}
+        for pair, is_hopped in pairs:
             quote_currency = pair.quote_currency
-            if quote_currency not in grouped_pairs:
-                grouped_pairs[quote_currency] = []
-            grouped_pairs[quote_currency].append(pair.base_currency)
+            key = (quote_currency, is_hopped)
+            if key not in grouped_pairs:
+                grouped_pairs[key] = []
+            grouped_pairs[key].append(pair.base_currency)
         return grouped_pairs
 
     async def fetch_pair(
@@ -271,3 +349,29 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def format_url(self, pair: Pair) -> str:
         raise NotImplementedError("`format_url` is not needed for the Ekubo Fetcher.")
+
+
+# import aiohttp
+# import asyncio
+
+
+# async def main():
+#     ekubo = EkuboFetcher(
+#         pairs=[
+#             Pair.from_tickers("EKUBO", "USD"),
+#             Pair.from_tickers("ETH", "USD"),
+#             Pair.from_tickers("LORDS", "USD"),
+#             Pair.from_tickers("EKUBO", "USDC"),
+#         ],
+#         publisher="ADEL",
+#         network="mainnet",
+#     )
+
+#     async with aiohttp.ClientSession() as session:
+#         entries = await ekubo.fetch(session)
+#         print(entries)
+#         print("✅ Ok!")
+
+
+# if __name__ == "__main__":
+#     asyncio.run(main())

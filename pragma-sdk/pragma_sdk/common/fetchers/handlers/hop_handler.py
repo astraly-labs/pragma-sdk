@@ -1,9 +1,15 @@
+import asyncio
+
+from dataclasses import field
+
 from typing import Dict, Optional
+from pydantic.dataclasses import dataclass
+
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.configs.asset_config import AssetConfig
-from pydantic.dataclasses import dataclass
-from dataclasses import field
+
+from pragma_sdk.onchain.client import PragmaOnChainClient
 
 
 @dataclass
@@ -35,3 +41,44 @@ class HopHandler:
             pair.base_currency,
             Currency.from_asset_config(AssetConfig.from_ticker(new_currency_id)),
         )
+
+    async def get_hop_prices(self, client: PragmaOnChainClient) -> Dict[Pair, float]:
+        """
+        For each hopped currencies, compute the price between the two currencies.
+
+        For example, if our hopped currencies are:
+        {
+            "USD": "USDC",
+            "ETH": "STETH",
+        }
+
+        We will return:
+        {
+            Pair("USDC/USD"): price,
+            Pair("STETH/ETH"): price,
+        }
+        """
+
+        async def fetch_single_price(
+            from_currency: str, to_currency: str
+        ) -> tuple[Pair, float]:
+            pair = Pair.from_tickers(to_currency, from_currency)
+            raw_price = (await client.get_spot(pair.id)).price
+            price = int(raw_price) / int(10 ** int(pair.base_currency.decimals))
+            return pair, price
+
+        tasks = [
+            fetch_single_price(from_currency, to_currency)
+            for from_currency, to_currency in self.hopped_currencies.items()
+        ]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        prices: Dict[Pair, float] = {}
+        for result in results:
+            if isinstance(result, Exception):
+                raise result
+            pair, price = result  # type: ignore[misc]
+            prices[pair] = price
+
+        return prices
