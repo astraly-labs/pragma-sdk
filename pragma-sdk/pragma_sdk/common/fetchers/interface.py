@@ -61,9 +61,9 @@ class FetcherInterfaceT(abc.ABC):
         ...
 
     def get_client(self, network: Network = "mainnet") -> PragmaOnChainClient:
-        if self.client is None:
-            self.client = PragmaOnChainClient(network=network)
-        return self.client
+        if self._client is None:
+            self._client = PragmaOnChainClient(network=network)
+        return self._client
 
     async def get_stable_price(self, stable_asset: str) -> float:
         """
