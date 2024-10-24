@@ -214,7 +214,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 raise ValueError("Hopped prices are None. Should never happen.")
             pair, price = await self._adapt_back_hopped_pair(hop_prices, pair, price)
 
-        price_int = int(price * 10**pair.quote_currency.decimals)
+        price_int = int(price * 10 ** pair.decimals())
         logger.debug("Fetched price %d for %s from Ekubo", price_int, pair)
 
         entry = SpotEntry(
@@ -327,7 +327,8 @@ class EkuboFetcher(FetcherInterfaceT):
             key = (quote_currency, is_hopped)
             if key not in grouped_pairs:
                 grouped_pairs[key] = []
-            grouped_pairs[key].append(pair.base_currency)
+            if pair.base_currency != key[0]:
+                grouped_pairs[key].append(pair.base_currency)
         return grouped_pairs
 
     async def fetch_pair(
