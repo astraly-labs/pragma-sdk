@@ -260,7 +260,7 @@ class SpotEntry(Entry):
             f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
             f"price={self.price}, timestamp={self.base.timestamp}, "
             f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}, volume={self.volume})")'
+            f'publisher="{felt_to_str(self.base.publisher)}", volume={self.volume}))'
         )
 
     def __hash__(self) -> int:

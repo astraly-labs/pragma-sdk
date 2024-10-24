@@ -1,11 +1,14 @@
-from unittest import mock
 import unittest
-
 import aiohttp
 import pytest
+
+from unittest import mock
 from aioresponses import aioresponses
 
 from pragma_sdk.common.exceptions import PublisherFetchError
+from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+
+from tests.integration.fixtures.fetchers import get_mock_data
 from tests.integration.constants import (
     SAMPLE_PAIRS,
     STABLE_MOCK_PRICE,
@@ -13,13 +16,13 @@ from tests.integration.constants import (
 from tests.integration.fetchers.fetcher_configs import (
     PUBLISHER_NAME,
 )
-from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from tests.integration.utils import are_entries_list_equal
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
-async def test_async_fetcher(fetcher_config, mock_data):
+async def test_async_fetcher(fetcher_config):
+    mock_data = get_mock_data(fetcher_config)
     with aioresponses() as mock:
         fetcher: FetcherInterfaceT = fetcher_config["fetcher_class"](
             SAMPLE_PAIRS, PUBLISHER_NAME

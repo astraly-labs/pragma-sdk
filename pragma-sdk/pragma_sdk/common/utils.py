@@ -12,6 +12,13 @@ T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def uint256_to_int(low: int, high: int) -> int:
+    """
+    Re-assemble a uint256 number from two parts low & high.
+    """
+    return low + high * 2**128
+
+
 def str_to_felt(text: str) -> int:
     """
     Convert a string to a felt.
