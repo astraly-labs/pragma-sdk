@@ -27,7 +27,8 @@ async def main():
     tasks = []
     for pool_contract in pool_contracts:
         token_0 = await pool_contract.get_token_0()
-        token_1 =  (1624100674296754861677825500123506918235737071717125508854198179337424532205,)
+        token_1 =  await pool_contract.get_token_1()
+        print(token_1)
         pool_store = pool_stores[pool_contract.address]
         data_fetcher = PoolDataFetcher(pool_store, pool_contract, FETCH_INTERVAL)
         oracle = Oracle(network)

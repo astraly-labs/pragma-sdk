@@ -34,7 +34,7 @@ class PoolDataStore:
 
     def calculate_median_supply(self) -> int:
         # Compute the median for the total supply
-        return median(item["value"] for item in self.total_supply)
+        return int(median(item["value"] for item in self.total_supply))
 
     def calculate_median_reserves(self) -> Tuple[int, int]:
         if not self.reserves:
@@ -48,5 +48,5 @@ class PoolDataStore:
         median_reserve_0 = median(reserve_0_values)
         median_reserve_1 = median(reserve_1_values)
 
-        return (median_reserve_0, median_reserve_1)
+        return (int(median_reserve_0), int(median_reserve_1))
         
