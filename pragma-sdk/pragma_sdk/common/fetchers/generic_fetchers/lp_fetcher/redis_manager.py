@@ -64,7 +64,7 @@ class LpRedisManager:
         response = self.client.json().get(key, "$")
         if response is None:
             return None
-        return response[0]
+        return response
 
     def _store_reserves(
         self,
@@ -77,7 +77,7 @@ class LpRedisManager:
 
         if latest_value is None:
             latest_value = []
-        elif len(latest_value) > LISTS_MAX_VALUES:
+        elif len(latest_value) >= LISTS_MAX_VALUES:
             latest_value.pop(0)
         latest_value.append(reserves)
 
@@ -98,7 +98,7 @@ class LpRedisManager:
 
         if latest_value is None:
             latest_value = []
-        elif len(latest_value) > LISTS_MAX_VALUES:
+        elif len(latest_value) >= LISTS_MAX_VALUES:
             latest_value.pop(0)
         latest_value.append(total_supply)
 
@@ -166,7 +166,7 @@ class LpRedisManager:
         if not result:
             return []
 
-        # If we have a single result and n=1, wrap it in a list
+        # If we have a single result and n=1, wrap it in a listc
         if not isinstance(result, list):
             return [result] if result else []
 
