@@ -542,7 +542,7 @@ class GenericEntry(Entry):
 
     def __repr__(self) -> str:
         return (
-            f'GenericEntry(key="{felt_to_str(self.key)}", '
+            f'GenericEntry(key="{self.key}", '
             f"value={self.value}, "
             f"timestamp={self.base.timestamp}, "
             f'source="{felt_to_str(self.base.source)}", '

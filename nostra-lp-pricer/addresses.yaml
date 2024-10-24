@@ -1,7 +1,0 @@
-pool_addresses:
-  - '0x0175cc05e2e7c56a02dcbd804309fce485180fbcd99754d701dbcfc83de9a4b2'
-  - '0x068cfffac83830edbc3da6f13a9aa19266b3f5b677a57c58d7742087cf439fdd'
-
-lp_pricer_address: 
-  sepolia: '0x02cf48d1236479f08221d5d6ef0838b325dbeb396f625c85aa6e4182a64571e7'
-  mainnet: '0x13212..12321'

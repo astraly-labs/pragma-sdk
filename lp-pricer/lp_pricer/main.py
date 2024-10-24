@@ -5,10 +5,10 @@ import logging
 from pydantic import HttpUrl
 from typing import Optional
 
-from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.fetcher import LPFetcher
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.redis_manager import LpRedisManager
+from pragma_sdk.common.exceptions import PublisherFetchError
 
 from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient
@@ -21,7 +21,8 @@ from lp_pricer.configs.pools_config import PoolsConfig
 logger = logging.getLogger(__name__)
 
 TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
-DELAY_BETWEEN_PUBLISH_IN_SECONDS = 180 # 3 minutes
+DELAY_BETWEEN_PUBLISH_IN_SECONDS = 20  # 3 minutes
+
 
 async def main(
     pools_config: PoolsConfig,
@@ -50,17 +51,26 @@ async def main(
         network=network,
         pairs=pools_config.get_all_pools(),
         publisher=publisher_name,
-        redis_manager=redis_manager
+        redis_manager=redis_manager,
     )
     fetcher_client.add_fetcher(lp_fetcher)
 
-    while True:
-        entries = await fetcher_client.fetch()
-        pragma_client.publish_many(entries)
-        await asyncio.sleep(DELAY_BETWEEN_PUBLISH_IN_SECONDS)
-
     logger.info(f"🧩 Starting the LP pricer for {network}...\n")
-    await publisher.publish_forever()
+    while True:
+        entries = await fetcher_client.fetch(return_exceptions=True)
+        valid_entries = 0
+        for entry in entries:
+            if isinstance(entry, PublisherFetchError):
+                logger.error(f"⛔ {entry}")
+            else:
+                valid_entries += 1
+
+        if valid_entries > 0:
+            logger.info(f"📨 Publishing LP prices for {valid_entries} pools...")
+            invokes = await pragma_client.publish_many(entries)
+            await invokes[-1].wait_for_acceptance()
+
+        await asyncio.sleep(DELAY_BETWEEN_PUBLISH_IN_SECONDS)
 
 
 @click.command()
