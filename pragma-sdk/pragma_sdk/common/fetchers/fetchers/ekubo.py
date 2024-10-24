@@ -97,6 +97,7 @@ class EkuboFetcher(FetcherInterfaceT):
         entries = []
         for quote, base_currencies in groupped_pairs.items():
             response = await self._call_get_prices(quote, base_currencies)
+            print(response)
             new_entries = await self._parse_response_into_entries(
                 quote=quote,
                 bases=base_currencies,
@@ -253,6 +254,8 @@ class EkuboFetcher(FetcherInterfaceT):
 
         To do so, we use the hop_prices of USDC/USD and compute
         the conversion between the two pairs.
+
+        At the end, we return the original Pair before hop and the price.
         """
         for asset, hopped_to in self.hop_handler.hopped_currencies.items():
             if hopped_to == pair.quote_currency.id:
@@ -349,29 +352,3 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def format_url(self, pair: Pair) -> str:
         raise NotImplementedError("`format_url` is not needed for the Ekubo Fetcher.")
-
-
-# import aiohttp
-# import asyncio
-
-
-# async def main():
-#     ekubo = EkuboFetcher(
-#         pairs=[
-#             Pair.from_tickers("EKUBO", "USD"),
-#             Pair.from_tickers("ETH", "USD"),
-#             Pair.from_tickers("LORDS", "USD"),
-#             Pair.from_tickers("EKUBO", "USDC"),
-#         ],
-#         publisher="ADEL",
-#         network="mainnet",
-#     )
-
-#     async with aiohttp.ClientSession() as session:
-#         entries = await ekubo.fetch(session)
-#         print(entries)
-#         print("✅ Ok!")
-
-
-# if __name__ == "__main__":
-#     asyncio.run(main())

@@ -6,6 +6,8 @@ from aioresponses import aioresponses
 
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+
+from tests.integration.fixtures.fetchers import get_mock_data
 from tests.integration.constants import (
     SAMPLE_FUTURE_PAIRS,
 )
@@ -17,9 +19,8 @@ from tests.integration.utils import are_entries_list_equal
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
-async def test_async_future_fetcher(
-    future_fetcher_config, mock_future_data, other_mock_endpoints
-):
+async def test_async_future_fetcher(future_fetcher_config, other_mock_endpoints):
+    mock_data = get_mock_data(future_fetcher_config)
     with aioresponses() as mock:
         fetcher: FetcherInterfaceT = future_fetcher_config["fetcher_class"](
             SAMPLE_FUTURE_PAIRS, PUBLISHER_NAME
@@ -29,7 +30,7 @@ async def test_async_future_fetcher(
         for asset in SAMPLE_FUTURE_PAIRS:
             base_asset = asset.base_currency
             url = fetcher.format_url(asset)
-            mock.get(url, status=200, payload=mock_future_data[base_asset.id])
+            mock.get(url, status=200, payload=mock_data[base_asset.id])
 
         if other_mock_endpoints:
             for endpoint in other_mock_endpoints:

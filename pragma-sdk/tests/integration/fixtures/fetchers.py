@@ -6,6 +6,7 @@ from tests.integration.fetchers.fetcher_configs import (
     FETCHER_CONFIGS,
     FUTURE_FETCHER_CONFIGS,
     ONCHAIN_FETCHER_CONFIGS,
+    RPC_FETCHER_CONFIGS,
     PUBLISHER_NAME,
 )
 from tests.integration.constants import SAMPLE_PAIRS
@@ -13,21 +14,10 @@ from tests.integration.constants import SAMPLE_PAIRS
 logger = get_pragma_sdk_logger()
 
 
-@pytest.fixture
-def mock_data(fetcher_config):
-    with open(fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
-        return json.load(filepath)
-
-
+# Spot fetchers
 @pytest.fixture(params=FETCHER_CONFIGS.values())
 def fetcher_config(request):
     return request.param
-
-
-@pytest.fixture
-def mock_future_data(future_fetcher_config):
-    with open(future_fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
-        return json.load(filepath)
 
 
 @pytest.fixture(params=FUTURE_FETCHER_CONFIGS.values())
@@ -40,9 +30,13 @@ def onchain_fetcher_config(request):
     return request.param
 
 
-@pytest.fixture
-def onchain_mock_data(onchain_fetcher_config):
-    with open(onchain_fetcher_config["mock_file"], "r", encoding="utf-8") as filepath:
+@pytest.fixture(params=RPC_FETCHER_CONFIGS.values())
+def rpc_fetcher_config(request):
+    return request.param
+
+
+def get_mock_data(cfg):
+    with open(cfg["mock_file"], "r", encoding="utf-8") as filepath:
         return json.load(filepath)
 
 
