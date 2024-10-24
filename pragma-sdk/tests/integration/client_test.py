@@ -261,7 +261,7 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
         invocations = await pragma_client.publish_many(
             [spot_entry_future],
         )
-        invocations[-1].wait_for_acceptance()
+        await invocations[-1].wait_for_acceptance()
     except TransactionRevertedError as err:
         err_msg = "Timestamp is in the future"
         if err_msg not in err.message:
