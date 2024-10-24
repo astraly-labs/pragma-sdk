@@ -4,14 +4,16 @@ from nostra_lp_pricer.pool.contract import PoolContract
 from typing import Tuple
 from nostra_lp_pricer.pricing.calculator import PoolPriceCalculator 
 from nostra_lp_pricer.oracle.oracle import Oracle
+from nostra_lp_pricer.pool.data_fetcher import PricePusher
 import asyncio
 import time
 
 class MedianCalculator:
-    def __init__(self, pool_store: PoolDataStore, pool_contract: PoolContract, oracle: Oracle, push_interval: int):
+    def __init__(self, pool_store: PoolDataStore, pool_contract: PoolContract, oracle: Oracle, price_pusher: PricePusher, push_interval: int):
         self.pool_store = pool_store
         self.pool_contract = pool_contract
         self.oracle = oracle
+        self.price_pusher = price_pusher
         self.push_interval = push_interval
 
     async def calculate_and_push_median(self, tokens: Tuple[int, int]):
@@ -27,6 +29,9 @@ class MedianCalculator:
                 lp_price = await PoolPriceCalculator(self.pool_contract, self.oracle).compute_lp_price(
                     tokens, median_reserves, median_supply
                 )
+
+                invocation = await self.price_pusher.push_price(int(self.pool_contract.address,16), lp_price)
+                await invocation.wait_for_acceptance()
                 print(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
 
                 # TODO: add the deployed contract and push the price there

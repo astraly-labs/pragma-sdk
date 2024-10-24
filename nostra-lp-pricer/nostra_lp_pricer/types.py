@@ -3,6 +3,7 @@ from pragma_sdk.onchain.abis.abi import get_abi
 import json
 
 POOL_ABI =  json.loads(get_abi("pragma_Pool"))
+PRICER_ABI = json.loads(get_abi("pragma_LightPoolRegistry"))
 FETCH_INTERVAL: int= 10
 PUSH_INTERVAL: int = 10
 TARGET_DECIMALS: int = 18

@@ -2,6 +2,7 @@ import yaml
 from nostra_lp_pricer.types import Network
 from typing import List, Dict
 from nostra_lp_pricer.pool.contract import PoolContract
+from nostra_lp_pricer.pool.data_fetcher import PricePusher
 import asyncio
 import json
 
@@ -20,6 +21,14 @@ class PoolManager:
             config = yaml.safe_load(file)
             pool_addresses = config.get("pool_addresses", [])
         return [PoolContract(self.network, address) for address in pool_addresses]
+
+    def _load_pricer(self) -> PricePusher: 
+        """Load the pricer address from the YAML configuration and initialize the PricerPusher object"""
+        with open(self.config_file, "r") as file: 
+            config = yaml.safe_load(file)
+            pricer_address = config.get("lp_pricer_address", {}).get(self.network)
+        return PricePusher(self.network, pricer_address)
+
 
     async def fetch_all_pools(self) -> List[Dict]:
         """Fetches data from all pools asynchronously."""
