@@ -4,8 +4,8 @@ from typing import List, Any
 
 from redis import Redis
 
-from pragma_sdk.onchain.types.types import NetworkName
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.lp_contract import Reserves
+from pragma_sdk.onchain.types import Network
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class LpRedisManager:
 
     def store_pool_data(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         reserves: Reserves,
         total_supply: int,
@@ -56,7 +56,7 @@ class LpRedisManager:
 
     def _get(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         key: str,
     ) -> Any:
@@ -68,7 +68,7 @@ class LpRedisManager:
 
     def _store_reserves(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         reserves: Reserves,
     ) -> bool:
@@ -89,7 +89,7 @@ class LpRedisManager:
 
     def _store_total_supply(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         total_supply: int,
     ) -> bool:
@@ -110,7 +110,7 @@ class LpRedisManager:
 
     def get_latest_n_reserves(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         n: int = 1,
     ) -> List[Reserves]:
@@ -144,7 +144,7 @@ class LpRedisManager:
 
     def get_latest_n_total_supply(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         n: int = 1,
     ) -> List[int]:
@@ -175,7 +175,7 @@ class LpRedisManager:
 
     def _get_key(
         self,
-        network: NetworkName,
+        network: Network,
         pool_address: str,
         key: str,
     ) -> str:

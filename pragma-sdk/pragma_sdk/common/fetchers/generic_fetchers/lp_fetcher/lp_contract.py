@@ -1,6 +1,6 @@
 import logging
 
-from typing import Union, Dict, Optional, Tuple
+from typing import Optional, Tuple, cast
 
 from starknet_py.net.full_node_client import FullNodeClient
 from pragma_sdk.common.types.types import Address
@@ -25,19 +25,19 @@ class LpContract:
             cairo_version=1,
         )
 
-    async def get_reserves(self) -> Union[Reserves, Dict[str, str]]:
+    async def get_reserves(self) -> Reserves:
         """Fetches reserves from the pool."""
         response = await self.contract.functions["get_reserves"].call(
             block_hash="pending"
         )
-        return response[0]
+        return cast(Reserves, response[0])
 
     async def get_total_supply(self) -> int:
         """Fetches the total supply from the pool."""
         response = await self.contract.functions["total_supply"].call(
             block_hash="pending"
         )
-        return response[0]
+        return int(response[0])
 
     async def get_token_0(self) -> Contract:
         """Fetches the token 0 address from the pool."""

@@ -40,7 +40,7 @@ class LPFetcher(FetcherInterfaceT):
 
     network: Network
     publisher: str
-    pairs: List[Address]
+    pairs: List[Address]  # type: ignore[assignment]
     lp_contracts: Dict[Address, LpContract]
     redis_manager: LpRedisManager
 
@@ -54,7 +54,7 @@ class LPFetcher(FetcherInterfaceT):
         api_key: Optional[str] = None,
         network: Network = "mainnet",
     ):
-        super().__init__(pairs, publisher, api_key, network)
+        super().__init__(pairs, publisher, api_key, network)  # type: ignore[arg-type]
         self.network = network
         self.redis_manager = redis_manager
         self.lp_contracts: Dict[Address, LpContract] = dict()
@@ -64,7 +64,7 @@ class LPFetcher(FetcherInterfaceT):
                 lp_address=address,
             )
 
-    async def fetch(
+    async def fetch(  # type: ignore[assignment]
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
@@ -78,11 +78,13 @@ class LPFetcher(FetcherInterfaceT):
         ]
         entries = await asyncio.gather(*tasks, return_exceptions=True)
         logger.info(entries)
-        return entries
+        return entries  # type: ignore[override]
 
     async def fetch_pair(
-        self, pair: Address, session: ClientSession
-    ) -> GenericEntry | PublisherFetchError:
+        self,
+        pair: Address,  # type: ignore[override]
+        session: ClientSession, 
+    ) -> Entry | PublisherFetchError:
         """
         Fetches the data for a specific pool address from the fetcher and returns a Generic object.
         """
@@ -154,7 +156,7 @@ class LPFetcher(FetcherInterfaceT):
 
         token_0_reserves = [x[0] for x in history_reserves]
         token_1_reserves = [x[1] for x in history_reserves]
-        return (median(token_0_reserves), median(token_1_reserves))
+        return (int(median(token_0_reserves)), int(median(token_1_reserves)))
 
     async def get_median_total_supply(
         self, lp_contract: LpContract
@@ -175,7 +177,7 @@ class LPFetcher(FetcherInterfaceT):
                 "Can't compute Lp Price - not enough history for the Pool total supply."
             )
 
-        total_supply = median(history_total_supply)
+        total_supply = int(median(history_total_supply))
         return total_supply
 
     async def compute_lp_price(
