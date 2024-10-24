@@ -67,7 +67,7 @@ async def main(
 
         if valid_entries > 0:
             logger.info(f"📨 Publishing LP prices for {valid_entries} pools...")
-            invokes = await pragma_client.publish_many(entries)
+            invokes = await pragma_client.publish_many(entries)  # type:ignore[arg-type]
             await invokes[-1].wait_for_acceptance()
 
         await asyncio.sleep(DELAY_BETWEEN_PUBLISH_IN_SECONDS)

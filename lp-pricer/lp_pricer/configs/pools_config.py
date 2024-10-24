@@ -9,7 +9,7 @@ class PoolsConfig(BaseModel):
     pool_addresses: List[str]
 
     @classmethod
-    def from_yaml(cls, path: str) -> List["PoolsConfig"]:
+    def from_yaml(cls, path: str) -> "PoolsConfig":
         with open(path, "r") as file:
             pools_config = yaml.safe_load(file)
         return cls(**pools_config)
