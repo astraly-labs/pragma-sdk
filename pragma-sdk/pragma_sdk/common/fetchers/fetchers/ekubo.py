@@ -32,7 +32,7 @@ PRICE_FETCHER_CONTRACT: Dict[Network, str] = {
 }
 GET_PRICES_SELECTOR = get_selector_from_name("get_prices")
 PERIOD = 3600  # one hour
-MIN_TOKENS = 0
+MIN_TOKENS = int(1e18)
 
 
 class EkuboStatus(IntEnum):
