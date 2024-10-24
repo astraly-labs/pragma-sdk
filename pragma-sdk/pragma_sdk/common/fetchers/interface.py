@@ -37,10 +37,6 @@ class FetcherInterfaceT(abc.ABC):
         if api_key:
             self.headers["X-Api-Key"] = api_key
 
-    @classmethod
-    def get_client(cls, network: Network = "mainnet") -> PragmaOnChainClient:
-        return PragmaOnChainClient(network=network)
-
     @abc.abstractmethod
     async def fetch(
         self, session: ClientSession
@@ -63,6 +59,11 @@ class FetcherInterfaceT(abc.ABC):
     def format_url(self, pair: Pair) -> str:
         """Formats the URL for the fetcher, used in `fetch_pair` to get the data."""
         ...
+
+    def get_client(self, network: Network = "mainnet") -> PragmaOnChainClient:
+        if self.client is None:
+            self.client = PragmaOnChainClient(network=network)
+        return self.client
 
     async def get_stable_price(self, stable_asset: str) -> float:
         """
