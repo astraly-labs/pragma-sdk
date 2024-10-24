@@ -251,13 +251,12 @@ class EkuboFetcher(FetcherInterfaceT):
                 hop: Tuple[str, str] = (asset, hopped_to)
                 break
 
-        new_pair = Pair.from_tickers(pair.base_currency.id, hop[0])
         hop_quote_pair = Pair.from_tickers(pair.quote_currency.id, hop[0])
         hop_price = hop_prices.get(hop_quote_pair)
-
         if hop_price is None:
             raise ValueError("Could not find hop price. Should never happen.")
 
+        new_pair = Pair.from_tickers(pair.base_currency.id, hop[0])
         return (
             new_pair,
             price * hop_price * 10**new_pair.quote_currency.decimals,
@@ -288,8 +287,12 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def _get_pairs_after_hop(self) -> List[Tuple[Pair, bool]]:
         """
-        Returns the Fetcher pairs after hopping and a boolean flag for each
-        allowing us to know if at least one pair was hopped.
+        Returns the Fetcher pairs after the work of the Hop Handler.
+        Each pair is associated with a boolean flag allowing us to know if
+        the pair has been hopped.
+
+        This flag is used later when grouping currencies, so we can attach this
+        boolean to each hopped quote currencies and after reconstruct the original pair.
         """
         new_pairs = []
         for pair in self.pairs:
