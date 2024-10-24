@@ -29,7 +29,7 @@ from pragma_sdk.onchain.types.types import Network
 
 logger = get_pragma_sdk_logger()
 
-PRICE_FETCHER_CONTRACT = {
+PRICE_FETCHER_CONTRACT: Dict[Network, str] = {
     "sepolia": "0x04613bee55d8a37adfa249b24c6b13451dedf7cf4f02d01de859579119de3add",
     "mainnet": "0x04946fb4ad5237d97bbb1256eba2080c4fe1de156da6a7f83e3b4823bb6d7da1",
 }
@@ -52,7 +52,7 @@ class EkuboFetcher(FetcherInterfaceT):
     pairs: List[Pair]
     publisher: str
     price_fetcher_contract: int
-    hop_handler: Optional[HopHandler] = HopHandler(
+    hop_handler: HopHandler = HopHandler(
         hopped_currencies={
             "USD": "USDC",
         }
@@ -65,7 +65,10 @@ class EkuboFetcher(FetcherInterfaceT):
         api_key: Optional[str] = None,
         network: Network = "mainnet",
     ):
-        self.price_fetcher_contract = int(PRICE_FETCHER_CONTRACT[network], 16)
+        price_fetcher_contract = PRICE_FETCHER_CONTRACT.get(network)
+        if price_fetcher_contract is None:
+            raise ValueError(f"Ekubo Price Fetcher not available for {network}")
+        self.price_fetcher_contract = int(price_fetcher_contract, 16)
         super().__init__(pairs, publisher, api_key, network)
 
     async def fetch(
@@ -107,7 +110,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 MIN_TOKENS,
             ],
         )
-        response = await rpc_client.call_contract(
+        response: list[int] = await rpc_client.call_contract(
             call=call,
             block_hash="pending",
         )
@@ -134,7 +137,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 )
             ]
 
-        entries = []
+        entries: List[Entry | PublisherFetchError | BaseException] = []
         current_idx = 1
         current_base_idx = 0
         while current_base_idx < num_responses and current_idx < len(res):
@@ -173,7 +176,7 @@ class EkuboFetcher(FetcherInterfaceT):
         Handle price available status (3)
         """
         raw_price = uint256_to_int(low=res[current_idx + 1], high=res[current_idx + 2])
-        price = self._compute_price_in_usd(raw_price, pair)
+        price = self._compute_price(raw_price, pair)
 
         if pair.quote_currency.id in self.hop_handler.hopped_currencies.values():
             price, pair = await self._adapt_back_hopped_pair(price, pair)
@@ -193,14 +196,14 @@ class EkuboFetcher(FetcherInterfaceT):
         return entry, 3
 
     async def _adapt_back_hopped_pair(
-        self, price: int, pair: Pair
+        self, price: float, pair: Pair
     ) -> Tuple[float, Pair]:
-        hop = (None, None)
+        hop: Tuple[Optional[str], Optional[str]] = (None, None)
         for asset, hopped_to in self.hop_handler.hopped_currencies.items():
             if hopped_to == pair.quote_currency.id:
                 hop = (asset, hopped_to)
                 break
-        if hop == (None, None):
+        if hop[0] is None or hop[1] is None:
             raise ValueError("Should never happen since we hopped in the first place.")
 
         hop_price = await self.get_stable_price(hop[1])
@@ -212,7 +215,7 @@ class EkuboFetcher(FetcherInterfaceT):
         )
 
     def _handle_error_status(
-        self, status: EkuboStatus, pair: Pair, è
+        self, status: EkuboStatus, pair: Pair
     ) -> Tuple[PublisherFetchError, int]:
         """
         Handle error statuses (0, 1, 2) & returns the associated PublisherFetchError
@@ -224,12 +227,13 @@ class EkuboFetcher(FetcherInterfaceT):
         }
         return PublisherFetchError(error_messages[status]), 1
 
-    def _compute_price_in_usd(self, raw_price: int, pair: Pair) -> float:
+    def _compute_price(self, raw_price: int, pair: Pair) -> float:
         """
-        Converts a Raw price returned from the Ekubo Price Fetcher contract into a price in $.
+        Converts a Raw price returned from the Ekubo Price Fetcher contract.
         """
         decimals = abs(pair.quote_currency.decimals - pair.base_currency.decimals)
-        return (raw_price / (2**128)) * (10**decimals)
+        price: float = (raw_price / (2**128)) * (10**decimals)
+        return price
 
     def _group_pairs_by_quote(
         self,
@@ -250,7 +254,7 @@ class EkuboFetcher(FetcherInterfaceT):
         }
         all elements being of type `Currency`.
         """
-        grouped_pairs = {}
+        grouped_pairs: Dict[Currency, List[Currency]] = {}
         for pair in pairs:
             quote_currency = pair.quote_currency
             if quote_currency not in grouped_pairs:
@@ -267,41 +271,3 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def format_url(self, pair: Pair) -> str:
         raise NotImplementedError("`format_url` is not needed for the Ekubo Fetcher.")
-
-
-import aiohttp
-import asyncio
-
-from pragma_sdk.common.fetchers.fetchers.dexscreener import DexscreenerFetcher
-
-
-async def main():
-    pairs = [
-        Pair.from_tickers("WBTC", "USD"),
-        Pair.from_tickers("EKUBO", "USD"),
-        Pair.from_tickers("LORDS", "USD"),
-        Pair.from_tickers("ETH", "USD"),
-        Pair.from_tickers("ZEND", "USD"),
-        Pair.from_tickers("EKUBO", "ETH"),
-    ]
-    ekubo = EkuboFetcher(
-        pairs=pairs,
-        publisher="ADEL",
-        network="mainnet",
-    )
-
-    dex = DexscreenerFetcher(pairs=pairs, publisher="ADEL", network="mainnet")
-
-    async with aiohttp.ClientSession() as session:
-        entries = await ekubo.fetch(session)
-        print(entries)
-        print("✅ Ok!")
-
-    async with aiohttp.ClientSession() as session:
-        entries = await dex.fetch(session)
-        print(entries)
-        print("✅ Ok!")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
