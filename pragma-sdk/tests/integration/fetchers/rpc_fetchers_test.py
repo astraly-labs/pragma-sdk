@@ -38,6 +38,8 @@ async def test_async_rpc_fetcher(rpc_fetcher_config):
         assert are_entries_list_equal(result, rpc_fetcher_config["expected_result"])
 
 
+# NOTE: This test work because we only have Ekubo as Rpc Fetcher for now.
+# NOTE: If you just added a new fetcher here and this fail, adapt/remove this test.
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
 @pytest.mark.asyncio
 async def test_publisher_error_async_rpc_fetcher(rpc_fetcher_config):
