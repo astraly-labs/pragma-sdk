@@ -97,7 +97,6 @@ class EkuboFetcher(FetcherInterfaceT):
         entries = []
         for quote, base_currencies in groupped_pairs.items():
             response = await self._call_get_prices(quote, base_currencies)
-            print(response)
             new_entries = await self._parse_response_into_entries(
                 quote=quote,
                 bases=base_currencies,
@@ -117,7 +116,6 @@ class EkuboFetcher(FetcherInterfaceT):
         Calls the get_prices function from the Price Fetcher contract and returns
         the response.
         """
-        rpc_client = self.get_client().full_node_client
         call = Call(
             to_addr=self.price_fetcher_contract,
             selector=GET_PRICES_SELECTOR,
@@ -129,7 +127,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 MIN_TOKENS,
             ],
         )
-        response: list[int] = await rpc_client.call_contract(
+        response: list[int] = await self.client.full_node_client.call_contract(
             call=call,
             block_hash="pending",
         )

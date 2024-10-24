@@ -59,6 +59,8 @@ class HopHandler:
         }
         """
 
+        # Sub-task that will be ran asynchronously, fetching a price for a given
+        # couple (from, to) currencies.
         async def fetch_single_price(
             from_currency: str, to_currency: str
         ) -> tuple[Pair, float]:
@@ -71,7 +73,6 @@ class HopHandler:
             fetch_single_price(from_currency, to_currency)
             for from_currency, to_currency in self.hopped_currencies.items()
         ]
-
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         prices: Dict[Pair, float] = {}
