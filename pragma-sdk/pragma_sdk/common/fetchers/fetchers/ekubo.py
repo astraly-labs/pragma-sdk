@@ -1,12 +1,3 @@
-"""
-get_prices(
-    quote=USDC,
-    base=[all_pairs]
-)
-price = U256(low=880723287046076025781423701156, high=0)
-usd = (price / (2**128)) * (10**DECIMALS)
-"""
-
 import time
 
 from typing import List, Optional, Dict, Tuple
