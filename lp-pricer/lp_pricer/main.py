@@ -20,7 +20,7 @@ from lp_pricer.configs.pools_config import PoolsConfig
 
 logger = logging.getLogger(__name__)
 
-DELAY_BETWEEN_PUBLISH_IN_SECONDS = 180  # 3 minutes
+DELAY_BETWEEN_PUBLISH_IN_SECONDS = 10  # 3 minutes
 
 
 async def main(
