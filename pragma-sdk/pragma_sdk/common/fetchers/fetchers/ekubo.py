@@ -213,10 +213,8 @@ class EkuboFetcher(FetcherInterfaceT):
             if hop_prices is None:
                 raise ValueError("Hopped prices are None. Should never happen.")
             pair, price = await self._adapt_back_hopped_pair(hop_prices, pair, price)
-        else:
-            price = price * 10**pair.quote_currency.decimals
 
-        price_int = int(price)
+        price_int = int(price * 10**pair.quote_currency.decimals)
         logger.debug("Fetched price %d for %s from Ekubo", price_int, pair)
 
         entry = SpotEntry(
@@ -257,10 +255,7 @@ class EkuboFetcher(FetcherInterfaceT):
             raise ValueError("Could not find hop price. Should never happen.")
 
         new_pair = Pair.from_tickers(pair.base_currency.id, hop[0])
-        return (
-            new_pair,
-            price * hop_price * 10**new_pair.quote_currency.decimals,
-        )
+        return (new_pair, price * hop_price)
 
     def _handle_error_status(
         self, status: EkuboStatus, pair: Pair
