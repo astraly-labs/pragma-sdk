@@ -5,4 +5,5 @@ container_environment:
   - region: "eu-west-3"
   - prefix: "/conf/{{ SERVICE_NAME }}/{{ RUN_ENV }}"
   - keys:
-      - ARGS
+      - INFISICAL_ENV
+      - INFISICAL_APP_PATH

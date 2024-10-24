@@ -19,15 +19,23 @@ RUN apt-get update && \
     libgmp3-dev \
     pipx
 
+RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
+'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
+&& apt-get update && apt-get install -y infisical
+    
+
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/
 COPY pragma-utils/ /opt/pragma-utils/
-COPY lp-pricer/ /opt/nostra-lp-pricer/
-WORKDIR /opt/nostra-lp-pricer
+COPY lp-pricer/ /opt/lp-pricer/
+WORKDIR /opt/lp-pricer
 RUN poetry env use 3.12
 RUN poetry install
 
 FROM base as final
-COPY --from=builder /opt/ opt/
-WORKDIR /opt/nostra-lp-pricer
-ENTRYPOINT /opt/nostra-lp-pricer/.venv/bin/python3.12 merkle_maker/main.py ${ARGS}
+COPY --from=builder /usr/bin/infisical /usr/bin/infisical
+COPY --from=builder /opt /opt
+COPY infra/nostra-lp-pricer/entrypoint.sh /opt/lp-pricer/
+COPY infra/nostra-lp-pricer/config/ /opt/lp-pricer/config/
+WORKDIR /opt/lp-pricer
+ENTRYPOINT ["bash","/opt/lp-pricer/entrypoint.sh"]
