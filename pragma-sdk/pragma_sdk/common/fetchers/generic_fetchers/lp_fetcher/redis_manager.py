@@ -102,10 +102,6 @@ class LpRedisManager:
         elif len(latest_value) >= LISTS_MAX_VALUES:
             latest_value.pop(0)
 
-        print("🥴🥴🥴🥴")
-        print(latest_value)
-        print(total_supply)
-
         latest_value.append(total_supply)
 
         res = self.client.json().set(key, "$", latest_value)
