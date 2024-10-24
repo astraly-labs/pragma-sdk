@@ -21,7 +21,7 @@ from lp_pricer.configs.pools_config import PoolsConfig
 logger = logging.getLogger(__name__)
 
 TIME_TO_WAIT_BETWEEN_BLOCK_NUMBER_POLLING = 1
-DELAY_BETWEEN_PUBLISH_IN_SECONDS = 20  # 3 minutes
+DELAY_BETWEEN_PUBLISH_IN_SECONDS = 180  # 3 minutes
 
 
 async def main(
