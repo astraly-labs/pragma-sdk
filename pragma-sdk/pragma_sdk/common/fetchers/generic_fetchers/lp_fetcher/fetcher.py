@@ -154,10 +154,9 @@ class LPFetcher(FetcherInterfaceT):
         self, lp_contract: LpContract
     ) -> int | PublisherFetchError:
         """
-        Stores the latest total supply and computes the median of the total supply
-        Works only if we have at least 10 data points of history stored in Redis.D
+        Stores the latest total supply and computes the median of the total supply.
+        Works only if we have at least 10 data points of history stored in Redis.
         """
-
         history_total_supply = self.redis_manager.get_latest_n_total_supply(
             network=self.network,
             pool_address=lp_contract.contract.address,
@@ -205,7 +204,7 @@ class LPFetcher(FetcherInterfaceT):
 
         # Calculate LP price with normalized values
         lp_price = (
-            reserves[0] * token_0_price + reserves[1] * token_1_price
+            (reserves[0] * token_0_price) + (reserves[1] * token_1_price)
         ) // total_supply
         return lp_price
 
