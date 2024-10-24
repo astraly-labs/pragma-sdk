@@ -23,8 +23,8 @@ logger = get_pragma_sdk_logger()
 # Below is the list of parameters related to the Price Fetcher contract from Ekubo, i.e:
 #   * the contract,
 #   * the selector,
-#   * the period, (i.e now() - period_as_seconds = the data we consider for the price)
-#   * min tokens
+#   * the period, i.e now() - period_as_seconds = the data we consider for the price
+#   * min tokens, i.e the minimum liquidity accepted for a pair
 
 PRICE_FETCHER_CONTRACT: Dict[Network, str] = {
     "sepolia": "0x04613bee55d8a37adfa249b24c6b13451dedf7cf4f02d01de859579119de3add",
