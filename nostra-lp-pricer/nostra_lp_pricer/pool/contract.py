@@ -1,7 +1,7 @@
 
 from nostra_lp_pricer.types import Network, Reserves, POOL_ABI
 from nostra_lp_pricer.client import get_contract
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class PoolContract:
             logger.error(f"Error fetching contract data from {self.address}: {e}")
             return {"address": self.address, "error": str(e)}
 
-    async def get_reserves(self) -> Reserves:
+    async def get_reserves(self) -> Union[Reserves, Dict[str, str]]:
         """Fetches reserves from the pool."""
         try:
             return await self.contract.functions['get_reserves'].call()

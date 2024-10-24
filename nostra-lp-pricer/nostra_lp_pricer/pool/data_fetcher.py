@@ -5,7 +5,7 @@ from nostra_lp_pricer.pool.contract import PoolContract
 from nostra_lp_pricer.client import get_contract
 from nostra_lp_pricer.types import PRICER_ABI
 from starknet_py.contract import InvokeResult
-from typing import List
+from typing import List,Union,Dict
 import asyncio
 import time
 import logging
@@ -47,24 +47,37 @@ class PricePusher:
         self.network = network
         self.contract = get_contract(network, int(address, 16), PRICER_ABI)
     
-    async def push_price(self, pool_address: int, price: int) -> InvokeResult: 
+    async def push_price(self, pool_address: int, price: int) -> Union[InvokeResult, Dict[str, str]]: 
         """Push the desired LP price onchain"""
-        invocation =  await self.contract.functions['push_price'].invoke(pool_address,price)
-        return invocation
-    
+        try: 
+            invocation =  await self.contract.functions['push_price'].invoke(pool_address,price)
+            return invocation
+        except Exception as e: 
+            logger.error(f"Error pushing price for pool: {pool_address}: {str(e)} ")
+            return {"error": str(e)}    
 
-    async def get_registered_pools(self) -> List[int]: 
+    async def get_registered_pools(self) -> Union[List[int], Dict[str, str]]: 
         """Get the list of registered pools on the onchain pricer"""
-        return await self.contract.functions["get_pools"].call()
+        try: 
+            return await self.contract.functions["get_pools"].call()
+        except Exception as e: 
+            logger.error(f"Error fetching the registered onchain pools: {str(e)}")
+            return {"error": str(e)}    
+
     
-    async def add_pools(self, pools: List[int]): 
+    async def add_pools(self, pools: List[int]) -> Union[InvokeResult, Dict[str, str]]: 
         """Add a list of pools to the pricer contract. Revert if one pool is already registered
         Args: 
             pools: The list of pools addresses to add(int)
         """
-        invocation = await self.contract.functions["add_pools"].invoke(pools)
-        return invocation
-
+        try:
+            invocation = await self.contract.functions["add_pools"].invoke(pools)
+            return invocation
+        except Exception as e: 
+            logger.error(f"Error adding pools: {str(e)} ")
+            return {"error": str(e)}    
+        
+    
     async def register_missing_pools(self, pool_manager, onchain_registered_pools):
         """
         Registers pools that are present in the configuration but not yet registered on-chain.

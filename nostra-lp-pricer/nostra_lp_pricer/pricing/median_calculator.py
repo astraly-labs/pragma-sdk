@@ -9,6 +9,12 @@ import asyncio
 import time
 import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,16 +35,21 @@ class MedianCalculator:
 
                 logger.info(f"Calculated median - Supply: {median_supply}, Reserves: {median_reserves}")
 
-                # Compute LP price and push data (currently placeholder)
+                # Compute LP price and push data
                 lp_price = await PoolPriceCalculator(self.pool_contract, self.oracle).compute_lp_price(
                     tokens, median_reserves, median_supply
                 )
 
-                invocation = await self.price_pusher.push_price(int(self.pool_contract.address,16), lp_price)
-                await invocation.wait_for_acceptance()
-                logger.info(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
+                invocation = await self.price_pusher.push_price(int(self.pool_contract.address, 16), lp_price)
+                
+                # Check if invocation is an error dictionary or InvokeResult
+                if isinstance(invocation, dict) and "error" in invocation:
+                    logger.error(f"Failed to push price: {invocation['error']}")
+                else:
+                    # It's an InvokeResult object
+                    await invocation.wait_for_acceptance()
+                    logger.info(f"Pushed median data to on-chain contract at {time.time()} with LP price {lp_price}")
 
-                # TODO: add the deployed contract and push the price there
             except Exception as e:
                 logger.error(f"Error pushing data to contract: {e}")
             await asyncio.sleep(self.push_interval)
