@@ -13,7 +13,6 @@ from pragma_sdk.common.fetchers.generic_fetchers.deribit.types import (
 )
 
 from pragma_sdk.onchain.types.types import NetworkName
-from pragma_sdk.common.types.types import Address
 
 from merkle_maker.serializers import serialize_merkle_tree
 

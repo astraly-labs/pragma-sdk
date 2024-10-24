@@ -83,7 +83,7 @@ class LPFetcher(FetcherInterfaceT):
     async def fetch_pair(
         self,
         pair: Address,  # type: ignore[override]
-        session: ClientSession, 
+        session: ClientSession,
     ) -> Entry | PublisherFetchError:
         """
         Fetches the data for a specific pool address from the fetcher and returns a Generic object.
