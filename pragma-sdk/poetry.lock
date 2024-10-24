@@ -303,17 +303,17 @@ lxml = ["lxml"]
 
 [[package]]
 name = "boto3"
-version = "1.35.47"
+version = "1.35.48"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.47-py3-none-any.whl", hash = "sha256:0b307f685875e9c7857ce21c0d3050d8d4f3778455a6852d5f98ac75194b400e"},
-    {file = "boto3-1.35.47.tar.gz", hash = "sha256:65b808e4cf1af8c2f405382d53656a0d92eee8f85c7388c43d64c7a5571b065f"},
+    {file = "boto3-1.35.48-py3-none-any.whl", hash = "sha256:60889bb6e21f0af662ac9404e00125d3b8a5808f190e89462e5ddf73604adfc1"},
+    {file = "boto3-1.35.48.tar.gz", hash = "sha256:5007a5cdd09e4db9309adf2ee090455a34ae639bd10a68a1fefca72cd77070fc"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.47,<1.36.0"
+botocore = ">=1.35.48,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -322,13 +322,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.47"
+version = "1.35.48"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.47-py3-none-any.whl", hash = "sha256:05f4493119a96799ff84d43e78691efac3177e1aec8840cca99511de940e342a"},
-    {file = "botocore-1.35.47.tar.gz", hash = "sha256:f8f703463d3cd8b6abe2bedc443a7ab29f0e2ff1588a2e83164b108748645547"},
+    {file = "botocore-1.35.48-py3-none-any.whl", hash = "sha256:34fa25fd717208b05745e60f271a39636108fa87a3512fbca18e7e6f787a3239"},
+    {file = "botocore-1.35.48.tar.gz", hash = "sha256:3e766cc251053c9ef98542fdf225381ed58531769c3811a6282bd7247f7e2bdf"},
 ]
 
 [package.dependencies]
@@ -1133,13 +1133,13 @@ testing = ["hatch", "pre-commit", "pytest", "tox"]
 
 [[package]]
 name = "fakeredis"
-version = "2.25.1"
+version = "2.26.0"
 description = "Python implementation of redis API, can be used for testing purposes."
 optional = false
 python-versions = "<4.0,>=3.7"
 files = [
-    {file = "fakeredis-2.25.1-py3-none-any.whl", hash = "sha256:d08dcbaceae0804db4644fa634106e3c42d76fe4d11aea2949eda768df0c6450"},
-    {file = "fakeredis-2.25.1.tar.gz", hash = "sha256:e9e73bacf412d1d942ee7f80525dc188182158e82d41be57eb9c4e71f7474ac8"},
+    {file = "fakeredis-2.26.0-py3-none-any.whl", hash = "sha256:b9d5428efeb0b064b6340e2ea1c9842393fd49e92598852b64437ffb1f6ae686"},
+    {file = "fakeredis-2.26.0.tar.gz", hash = "sha256:6396bfbbf8aea94edba61365f52521491a5565349a7cdc420f8f3ad8f5183ba5"},
 ]
 
 [package.dependencies]
@@ -1974,13 +1974,13 @@ files = [
 
 [[package]]
 name = "pallets-sphinx-themes"
-version = "2.2.0"
+version = "2.3.0"
 description = "Sphinx themes for Pallets and related projects."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pallets_sphinx_themes-2.2.0-py3-none-any.whl", hash = "sha256:f121c8d008f696177210c636593b80840505b2c9199223e818aff99d37f9f3f1"},
-    {file = "pallets_sphinx_themes-2.2.0.tar.gz", hash = "sha256:e2c65822ad9f043b13b503f2f00a9a5181bc7a8d288fe23c1393ab62aa9af7b8"},
+    {file = "pallets_sphinx_themes-2.3.0-py3-none-any.whl", hash = "sha256:7ed13de3743c462c2804e2aa63d96cc9ffa82cb76d0251cea03de9bcd9f8dbec"},
+    {file = "pallets_sphinx_themes-2.3.0.tar.gz", hash = "sha256:6293ced11a1d5d3de7268af1acd60428732b5a9e6051a47a596c6d9a083e60d9"},
 ]
 
 [package.dependencies]
@@ -3590,4 +3590,4 @@ docs = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "9c57140c78c155457a2dea5706ce27d6ab54ab7f29c8ad6523e6be2af4aaec43"
+content-hash = "224a37b48416ced2dd30e3bc5e88449eeeaeb0de4bcb3b16988ef02f95a462eb"

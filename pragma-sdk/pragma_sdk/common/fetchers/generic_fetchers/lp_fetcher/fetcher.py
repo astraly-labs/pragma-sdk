@@ -122,19 +122,11 @@ class LPFetcher(FetcherInterfaceT):
     async def store_latest_values(self, lp_contract: LpContract) -> bool:
         latest_reserves = await lp_contract.get_reserves()
         latest_total_supply = await lp_contract.get_total_supply()
-        return all(
-            [
-                self.redis_manager._store_reserves(
-                    network=self.network,
-                    pool_address=lp_contract.contract.address,
-                    reserves=latest_reserves,
-                ),
-                self.redis_manager._store_total_supply(
-                    network=self.network,
-                    pool_address=lp_contract.contract.address,
-                    total_supply=latest_total_supply,
-                ),
-            ]
+        return self.redis_manager.store_pool_data(
+            network=self.network,
+            pool_address=lp_contract.contract.address,
+            reserves=latest_reserves,
+            total_supply=latest_total_supply,
         )
 
     async def get_median_reserves(

@@ -1,6 +1,6 @@
 import logging
 
-from typing import List, Any
+from typing import List
 
 from redis import Redis
 
@@ -12,14 +12,16 @@ logger = logging.getLogger(__name__)
 LISTS_MAX_VALUES = 480
 
 
+LISTS_MAX_VALUES = 480
+
+
 class LpRedisManager:
     """
-    Class responsible of storing the
+    Class responsible of storing LP data using Redis Lists for chronological order.
 
     The current layout is:
-
         ├── mainnet
-        │   └── 0x068cfffac83830edbc3da6f13a9aa19266b3f5b677a57c58d7742087cf439fdd
+        │   └── 0x068c...
         │       ├── reserves: [reserves_0, reserves_1, ..., reserves_N]
         │       └── total_supply: [total_supply_0, total_supply_1, ..., total_supply_N]
         └── sepolia
@@ -39,76 +41,24 @@ class LpRedisManager:
         reserves: Reserves,
         total_supply: int,
     ) -> bool:
-        return all(
-            [
-                self._store_reserves(
-                    network,
-                    pool_address,
-                    reserves,
-                ),
-                self._store_total_supply(
-                    network,
-                    pool_address,
-                    total_supply,
-                ),
-            ]
-        )
+        """Store pool data using Redis Lists maintaining insertion order."""
+        try:
+            with self.client.pipeline() as pipe:
+                # Store reserves
+                reserves_key = self._get_key(network, pool_address, "reserves")
+                pipe.lpush(reserves_key, self._pack_reserves(reserves))
+                pipe.ltrim(reserves_key, 0, LISTS_MAX_VALUES - 1)
 
-    def _get(
-        self,
-        network: Network,
-        pool_address: str,
-        key: str,
-    ) -> Any:
-        key = self._get_key(network, pool_address, key)
-        response = self.client.json().get(key, "$")
-        if response is None:
-            return None
-        return response[0]
+                # Store total supply
+                total_supply_key = self._get_key(network, pool_address, "total_supply")
+                pipe.lpush(total_supply_key, str(total_supply))
+                pipe.ltrim(total_supply_key, 0, LISTS_MAX_VALUES - 1)
 
-    def _store_reserves(
-        self,
-        network: Network,
-        pool_address: str,
-        reserves: Reserves,
-    ) -> bool:
-        key = self._get_key(network, pool_address, "reserves")
-        latest_value = self._get(network, pool_address, "reserves")
-
-        if latest_value is None:
-            latest_value = []
-        elif len(latest_value) >= LISTS_MAX_VALUES:
-            latest_value.pop(0)
-
-        latest_value.append(reserves)
-
-        res = self.client.json().set(key, "$", latest_value)
-
-        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
-        # see: https://redis.io/docs/latest/develop/data-types/json/
-        return bool(res)
-
-    def _store_total_supply(
-        self,
-        network: Network,
-        pool_address: str,
-        total_supply: int,
-    ) -> bool:
-        key = self._get_key(network, pool_address, "total_supply")
-        latest_value = self._get(network, pool_address, "total_supply")
-
-        if latest_value is None:
-            latest_value = []
-        elif len(latest_value) >= LISTS_MAX_VALUES:
-            latest_value.pop(0)
-
-        latest_value.append(total_supply)
-
-        res = self.client.json().set(key, "$", latest_value)
-
-        # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:
-        # see: https://redis.io/docs/latest/develop/data-types/json/
-        return bool(res)
+                results = pipe.execute()
+                return all(r is not None for r in results)
+        except Exception as e:
+            logger.error(f"Error storing pool data: {e}")
+            return False
 
     def get_latest_n_reserves(
         self,
@@ -117,32 +67,15 @@ class LpRedisManager:
         n: int = 1,
     ) -> List[Reserves]:
         """
-        Get the latest N reserve entries for a specific pool.
-
-        Args:
-            network: The network name
-            pool_address: The pool address
-            n: Number of latest entries to retrieve (default=1)
-
-        Returns:
-            List of the latest N reserve entries. Returns empty list if no data found.
-            The most recent entry is at index 0.
+        Get the latest N reserve entries in chronological order (newest first).
         """
         if n < 1:
             raise ValueError("n must be a positive integer")
-        if n > LISTS_MAX_VALUES:
-            n = LISTS_MAX_VALUES
+        n = min(n, LISTS_MAX_VALUES)
 
         key = self._get_key(network, pool_address, "reserves")
-        result = self.client.json().get(key)
-
-        if not result:
-            return []
-
-        if not isinstance(result, list):
-            return [result] if result else []
-
-        return result[max(-n, -len(result)) :][::-1]
+        results: List[bytes] = self.client.lrange(key, 0, n - 1)  # type: ignore[assignment]
+        return [self._unpack_reserves(r.decode()) for r in results]
 
     def get_latest_n_total_supply(
         self,
@@ -151,29 +84,16 @@ class LpRedisManager:
         n: int = 1,
     ) -> List[int]:
         """
-        Get the latest N total supply entries for a specific pool.
-
-        Args:
-            network: The network name
-            pool_address: The pool address
-            n: Number of latest entries to retrieve (default=1)
-
-        Returns:
-            List of the latest N total supply entries. Returns empty list if no data found.
-            The most recent entry is at index 0.
+        Get the latest N total supply entries in chronological order (newest first).
         """
+        if n < 1:
+            raise ValueError("n must be a positive integer")
+        n = min(n, LISTS_MAX_VALUES)
+
         key = self._get_key(network, pool_address, "total_supply")
-        result = self.client.json().get(key)
+        results: List[bytes] = self.client.lrange(key, 0, n - 1)  # type: ignore[assignment]
 
-        if not result:
-            return []
-
-        # If we have a single result and n=1, wrap it in a listc
-        if not isinstance(result, list):
-            return [result] if result else []
-
-        # Return up to n most recent entries, most recent first
-        return result[max(-n, -len(result)) :][::-1]
+        return [int(v.decode()) for v in results]
 
     def _get_key(
         self,
@@ -181,4 +101,14 @@ class LpRedisManager:
         pool_address: str,
         key: str,
     ) -> str:
-        return f"{network}/{pool_address}/{key}"
+        """Generate Redis key using proper Redis key naming conventions."""
+        return f"{network}:{pool_address}:{key}"
+
+    def _pack_reserves(self, reserves: Reserves) -> str:
+        """Pack two integers into a compact string representation."""
+        return f"{reserves[0]}:{reserves[1]}"
+
+    def _unpack_reserves(self, packed: str) -> Reserves:
+        """Unpack string representation back into two integers."""
+        r0, r1 = packed.split(":")
+        return (int(r0), int(r1))
