@@ -94,7 +94,6 @@ class LPFetcher(FetcherInterfaceT):
 
         if not await self.store_latest_values(lp_contract=lp_contract):
             raise ValueError("Could not store latest values into Redis!")
-        logger.info("👷 Stored the latest Pool values into Redis.")
 
         reserves = await self.get_median_reserves(lp_contract=lp_contract)
         if isinstance(reserves, PublisherFetchError):
