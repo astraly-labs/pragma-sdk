@@ -120,8 +120,8 @@
   ticker: '1000SATS'
   coingecko_id: '1000sats-ordinals'
 
-- name: 'Ekubo'
+- name: 'OKB'
   decimals: 18
   ticker: 'OKB'
   coingecko_id: 'okb'
-  starknet_address: '0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87'
+  ethereum_address: '0x75231f58b43240c9718dd58b4967c5114342a86c'
