@@ -103,3 +103,9 @@
   ticker: 'EKUBO'
   coingecko_id: 'ekubo-protocol'
   starknet_address: '0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87'
+
+- name: 'Nostra Staked STRK'
+  decimals: 18
+  ticker: 'nstSTRK'
+  coingecko_id: 'nostra-staked-strk'
+  starknet_address: '0x04619e9ce4109590219c5263787050726be63382148538f3f936c22aa87d2fc2'

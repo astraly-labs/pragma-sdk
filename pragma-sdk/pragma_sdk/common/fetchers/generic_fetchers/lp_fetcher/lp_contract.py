@@ -16,6 +16,7 @@ class LpContract:
     contract: Contract
     _token_0: Optional[Contract] = None
     _token_1: Optional[Contract] = None
+    _decimals: Optional[int] = None
 
     def __init__(self, client: FullNodeClient, lp_address: Address):
         self.contract = Contract(
@@ -39,8 +40,17 @@ class LpContract:
         )
         return int(response[0])
 
+    async def get_decimals(self) -> int:
+        """Returns the decimals of the pool."""
+        if self._decimals is None:
+            response = await self.contract.functions["decimals"].call(
+                block_hash="pending"
+            )
+            self._decimals = int(response[0])
+        return self._decimals
+
     async def get_token_0(self) -> Contract:
-        """Fetches the token 0 address from the pool."""
+        """Returns the token 0 address from the pool."""
         if self._token_0 is None:
             token_0_address = await self.contract.functions["token_0"].call(
                 block_hash="pending"
@@ -54,7 +64,7 @@ class LpContract:
         return self._token_0
 
     async def get_token_1(self) -> Contract:
-        """Fetches the token 1 address from the pool."""
+        """Returns the token 1 address from the pool."""
         if self._token_1 is None:
             token_1_address = await self.contract.functions["token_1"].call(
                 block_hash="pending"

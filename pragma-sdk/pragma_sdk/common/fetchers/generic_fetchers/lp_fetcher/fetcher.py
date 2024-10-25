@@ -23,8 +23,6 @@ from pragma_sdk.onchain.types import Contract
 
 from pragma_sdk.onchain.types import Network
 
-TARGET_DECIMALS = 18
-
 # We are storing into Redis the history of Reserves & Supply every 3 minutes.
 # So we know that 10 data points means that we published for at least 30 minutes.
 # This is the minimum number of points decided so that the computations make sense.
@@ -63,6 +61,35 @@ class LPFetcher(FetcherInterfaceT):
                 client=self.client.full_node_client,
                 lp_address=address,
             )
+
+    async def _validate_pools(self) -> None:
+        """
+        Must be called after the Fetcher init.
+        We check that all Lp Contracts are indeed supported by the Oracle.
+        """
+        for lp_address, lp_contract in self.lp_contracts.items():
+            is_valid = await self._are_currencies_registered(lp_contract)
+            if not is_valid:
+                logger.error(
+                    f"🙅‍♀ The underlying assets of the pool {lp_address} are not"
+                    " supported by Pragma Oracle. The pool will not be priced."
+                )
+                del self.lp_contracts[lp_address]
+
+    async def _are_currencies_registered(
+        self,
+        lp_contract: LpContract,
+    ) -> bool:
+        """
+        Returns true if the underlying assets of a Pool are correctly registered on the Oracle.
+        """
+        token_0 = await lp_contract.get_token_0()
+        token_0_symbol = await token_0.functions["symbol"].call()
+        token_1 = await lp_contract.get_token_1()
+        token_1_symbol = await token_1.functions["symbol"].call()
+        return (await self.client.is_currency_registered(token_0_symbol[0])) and (
+            await self.client.is_currency_registered(token_1_symbol[0])
+        )
 
     async def fetch(  # type: ignore[assignment]
         self, session: ClientSession
@@ -103,12 +130,17 @@ class LPFetcher(FetcherInterfaceT):
         if isinstance(total_supply, PublisherFetchError):
             return total_supply
 
+        decimals = await lp_contract.get_decimals()
+
         lp_price = await self.compute_lp_price(
             token_0=token_0,
             token_1=token_1,
             reserves=reserves,
             total_supply=total_supply,
+            decimals=decimals,
         )
+        if isinstance(lp_price, PublisherFetchError):
+            return lp_price
 
         return GenericEntry(
             key=pair,
@@ -176,30 +208,33 @@ class LPFetcher(FetcherInterfaceT):
         token_1: Contract,
         reserves: Reserves,
         total_supply: int,
-    ) -> int:
+        decimals: int,
+    ) -> int | PublisherFetchError:
         """
         Computes the LP price based on reserves and total supply.
         Takes into consideration the decimals of the fetched prices.
         """
+        response = await self.get_token_price_and_decimals(token_0)
+        if isinstance(response, PublisherFetchError):
+            return response
+        (token_0_price, token_0_decimals) = response
 
-        (token_0_price, token_0_decimals) = await self.get_token_price_and_decimals(
-            token_0
-        )
-        (token_1_price, token_1_decimals) = await self.get_token_price_and_decimals(
-            token_1
-        )
+        response = await self.get_token_price_and_decimals(token_1)
+        if isinstance(response, PublisherFetchError):
+            return response
+        (token_1_price, token_1_decimals) = response
 
-        # Adjust token 0 price to TARGET_DECIMALS (18)
-        if token_0_decimals < TARGET_DECIMALS:
-            token_0_price = token_0_price * 10 ** (TARGET_DECIMALS - token_0_decimals)
-        elif token_0_decimals > TARGET_DECIMALS:
-            token_0_price = token_0_price // 10 ** (token_0_decimals - TARGET_DECIMALS)
+        # Adjust token 0 price to decimals (18)
+        if token_0_decimals < decimals:
+            token_0_price = token_0_price * 10 ** (decimals - token_0_decimals)
+        elif token_0_decimals > decimals:
+            token_0_price = token_0_price // 10 ** (token_0_decimals - decimals)
 
-        # Adjust token 1 price to TARGET_DECIMALS (18)
-        if token_1_decimals < TARGET_DECIMALS:
-            token_1_price = token_1_price * 10 ** (TARGET_DECIMALS - token_1_decimals)
-        elif token_1_decimals > TARGET_DECIMALS:
-            token_1_price = token_1_price // 10 ** (token_1_decimals - TARGET_DECIMALS)
+        # Adjust token 1 price to decimals (18)
+        if token_1_decimals < decimals:
+            token_1_price = token_1_price * 10 ** (decimals - token_1_decimals)
+        elif token_1_decimals > decimals:
+            token_1_price = token_1_price // 10 ** (token_1_decimals - decimals)
 
         # Calculate LP price with normalized values
         lp_price = (
@@ -207,13 +242,19 @@ class LPFetcher(FetcherInterfaceT):
         ) // total_supply
         return lp_price
 
-    async def get_token_price_and_decimals(self, token: Contract) -> Tuple[int, int]:
+    async def get_token_price_and_decimals(
+        self, token: Contract
+    ) -> Tuple[int, int] | PublisherFetchError:
         """Fetches the token price from the oracle."""
         token_pair = await self.get_token_pair(token)
         oracle_response = await self.client.get_spot(
             pair_id=str_to_felt(token_pair),
             block_id="pending",
         )
+        if oracle_response.price == 0 and oracle_response.last_updated_timestamp == 0:
+            return PublisherFetchError(
+                f"No prices found for pair {token_pair}. " "Can't compute the LP price."
+            )
         return (oracle_response.price, oracle_response.decimals)
 
     async def get_token_pair(self, token: Contract) -> str:

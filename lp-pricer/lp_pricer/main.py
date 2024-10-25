@@ -52,6 +52,7 @@ async def main(
         publisher=publisher_name,
         redis_manager=redis_manager,
     )
+    await lp_fetcher._validate_pools()
     fetcher_client.add_fetcher(lp_fetcher)
 
     logger.info(f"🧩 Starting the LP pricer for {network}...\n")
