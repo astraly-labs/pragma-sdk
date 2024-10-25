@@ -67,7 +67,9 @@ class LPFetcher(FetcherInterfaceT):
         Must be called after the Fetcher init.
         We check that all Lp Contracts are indeed supported by the Oracle.
         """
-        for lp_address, lp_contract in self.lp_contracts.items():
+        lp_addresses = list(self.lp_contracts.keys())
+        for lp_address in lp_addresses:
+            lp_contract = self.lp_contracts[lp_address]
             is_valid = await self._are_currencies_registered(lp_contract)
             if not is_valid:
                 logger.error(
