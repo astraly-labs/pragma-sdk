@@ -103,3 +103,25 @@
   ticker: 'EKUBO'
   coingecko_id: 'ekubo-protocol'
   starknet_address: '0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87'
+
+- name: 'Toncoin'
+  decimals: 9
+  ticker: 'TON'
+  coingecko_id: 'the-open-network'
+  ethereum_address: '0x582d872a1b094fc48f5de31d3b73f2d9be47def1'
+
+- name: 'Jito'
+  decimals: 9
+  ticker: 'JTO'
+  coingecko_id: 'jito-governance-token'
+
+- name: '1000SATS'
+  decimals: 8
+  ticker: '1000SATS'
+  coingecko_id: '1000sats-ordinals'
+
+- name: 'Ekubo'
+  decimals: 18
+  ticker: 'OKB'
+  coingecko_id: 'okb'
+  starknet_address: '0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87'
