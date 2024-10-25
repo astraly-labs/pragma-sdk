@@ -85,10 +85,12 @@ class LPFetcher(FetcherInterfaceT):
         """
         token_0 = await lp_contract.get_token_0()
         token_0_symbol = await token_0.functions["symbol"].call()
+        token_0_symbol = felt_to_str(token_0_symbol[0])
         token_1 = await lp_contract.get_token_1()
         token_1_symbol = await token_1.functions["symbol"].call()
-        return (await self.client.is_currency_registered(token_0_symbol[0])) and (
-            await self.client.is_currency_registered(token_1_symbol[0])
+        token_1_symbol = felt_to_str(token_1_symbol[0])
+        return (await self.client.is_currency_registered(token_0_symbol)) and (
+            await self.client.is_currency_registered(token_1_symbol)
         )
 
     async def fetch(  # type: ignore[assignment]
