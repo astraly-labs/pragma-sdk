@@ -219,34 +219,61 @@ class LPFetcher(FetcherInterfaceT):
         response = await self.get_token_price_and_decimals(token_0)
         if isinstance(response, PublisherFetchError):
             return response
-        (token_0_price, token_0_decimals) = response
+        (token_0_price, token_0_decimals, token_0_price_decimals) = response
 
         response = await self.get_token_price_and_decimals(token_1)
         if isinstance(response, PublisherFetchError):
             return response
-        (token_1_price, token_1_decimals) = response
+        (token_1_price, token_1_decimals, token_1_price_decimals) = response
 
-        # Adjust token 0 price to decimals (18)
-        if token_0_decimals < decimals:
-            token_0_price = token_0_price * 10 ** (decimals - token_0_decimals)
-        elif token_0_decimals > decimals:
-            token_0_price = token_0_price // 10 ** (token_0_decimals - decimals)
+        (token_0_price, reserve_0) = self.adjust_decimals(
+            token_0_price,
+            reserves[0],
+            token_0_decimals,
+            token_0_price_decimals,
+            decimals,
+        )
+        (token_1_price, reserve_1) = self.adjust_decimals(
+            token_1_price,
+            reserves[1],
+            token_1_decimals,
+            token_1_price_decimals,
+            decimals,
+        )
+        # Reconstruct the reserves with the newly adjusted reserved
+        reserves: Reserves = (reserve_0, reserve_1)  # type: ignore[no-redef]
 
-        # Adjust token 1 price to decimals (18)
-        if token_1_decimals < decimals:
-            token_1_price = token_1_price * 10 ** (decimals - token_1_decimals)
-        elif token_1_decimals > decimals:
-            token_1_price = token_1_price // 10 ** (token_1_decimals - decimals)
-
-        # Calculate LP price with normalized values
         lp_price = (
             (reserves[0] * token_0_price) + (reserves[1] * token_1_price)
         ) // total_supply
         return lp_price
 
+    def adjust_decimals(
+        self,
+        price: int,
+        reserve: int,
+        decimals: int,
+        price_decimals: int,
+        target_decimals: int,
+    ) -> Tuple[int, int]:
+        """
+        Adjust the decimals of the prices and the reserves to the target decimals.
+        """
+        if price_decimals < target_decimals:
+            price = price * 10 ** (target_decimals - price_decimals)
+        elif price_decimals > target_decimals:
+            price = price // 10 ** (price_decimals - target_decimals)
+
+        if decimals < target_decimals:
+            reserve = reserve // 10 ** (target_decimals - decimals)
+        elif decimals > target_decimals:
+            reserve = reserve // 10 ** (decimals - target_decimals)
+
+        return (price, reserve)
+
     async def get_token_price_and_decimals(
         self, token: Contract
-    ) -> Tuple[int, int] | PublisherFetchError:
+    ) -> Tuple[int, int, int] | PublisherFetchError:
         """Fetches the token price from the oracle."""
         token_pair = await self.get_token_pair(token)
         oracle_response = await self.client.get_spot(
@@ -257,7 +284,8 @@ class LPFetcher(FetcherInterfaceT):
             return PublisherFetchError(
                 f"No prices found for pair {token_pair}. " "Can't compute the LP price."
             )
-        return (oracle_response.price, oracle_response.decimals)
+        token_decimals = await token.functions["decimals"].call()
+        return (oracle_response.price, token_decimals[0], oracle_response.decimals)
 
     async def get_token_pair(self, token: Contract) -> str:
         """Gets the token/USD pair symbol."""
