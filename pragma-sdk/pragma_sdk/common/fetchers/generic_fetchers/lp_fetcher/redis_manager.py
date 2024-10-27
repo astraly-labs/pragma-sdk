@@ -9,10 +9,13 @@ from pragma_sdk.onchain.types import Network
 
 logger = logging.getLogger(__name__)
 
+# Maximum number of values
 LISTS_MAX_VALUES = 480
 
-
-LISTS_MAX_VALUES = 480
+# The data will be erased after 1 hour.
+# We use it to automatically prune data that is too old. Used because if the publisher
+# crash for some hours and restart, we don't want to compute prices on outdated data.
+DEFAULT_TIME_TO_LIVE = 3600
 
 
 class LpRedisManager:
@@ -29,10 +32,11 @@ class LpRedisManager:
     """
 
     client: Redis
-    time_to_expire: int
+    time_to_live: int
 
-    def __init__(self, host: str, port: str):
+    def __init__(self, host: str, port: str, time_to_tive: int = DEFAULT_TIME_TO_LIVE):
         self.client = Redis(host=host, port=port)
+        self.time_to_live = time_to_tive
 
     def store_pool_data(
         self,
@@ -48,11 +52,13 @@ class LpRedisManager:
                 reserves_key = self._get_key(network, pool_address, "reserves")
                 pipe.lpush(reserves_key, self._pack_reserves(reserves))
                 pipe.ltrim(reserves_key, 0, LISTS_MAX_VALUES - 1)
+                pipe.expire(reserves_key, self.time_to_live)
 
                 # Store total supply
                 total_supply_key = self._get_key(network, pool_address, "total_supply")
                 pipe.lpush(total_supply_key, str(total_supply))
                 pipe.ltrim(total_supply_key, 0, LISTS_MAX_VALUES - 1)
+                pipe.expire(total_supply_key, self.time_to_live)
 
                 results = pipe.execute()
                 return all(r is not None for r in results)
@@ -94,6 +100,17 @@ class LpRedisManager:
         results: List[bytes] = self.client.lrange(key, 0, n - 1)  # type: ignore[assignment]
 
         return [int(v.decode()) for v in results]
+
+    def get_ttl(
+        self,
+        network: Network,
+        pool_address: str,
+        key: str,
+    ) -> int:
+        """Get remaining time to live for a specific key in seconds."""
+        full_key = self._get_key(network, pool_address, key)
+        ttl: int = self.client.ttl(full_key)  # type: ignore[assignment]
+        return ttl
 
     def _get_key(
         self,
