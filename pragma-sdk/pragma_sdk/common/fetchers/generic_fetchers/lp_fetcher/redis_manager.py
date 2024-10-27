@@ -101,17 +101,6 @@ class LpRedisManager:
 
         return [int(v.decode()) for v in results]
 
-    def get_ttl(
-        self,
-        network: Network,
-        pool_address: str,
-        key: str,
-    ) -> int:
-        """Get remaining time to live for a specific key in seconds."""
-        full_key = self._get_key(network, pool_address, key)
-        ttl: int = self.client.ttl(full_key)  # type: ignore[assignment]
-        return ttl
-
     def _get_key(
         self,
         network: Network,
