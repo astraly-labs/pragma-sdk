@@ -62,7 +62,7 @@ class LPFetcher(FetcherInterfaceT):
                 lp_address=address,
             )
 
-    async def _validate_pools(self) -> None:
+    async def validate_pools(self) -> None:
         """
         Must be called after the Fetcher init.
         We check that all Lp Contracts are indeed supported by the Oracle.
@@ -123,20 +123,20 @@ class LPFetcher(FetcherInterfaceT):
         token_0 = await lp_contract.get_token_0()
         token_1 = await lp_contract.get_token_1()
 
-        if not await self.store_latest_values(lp_contract=lp_contract):
+        if not await self._store_latest_values(lp_contract=lp_contract):
             raise ValueError("Could not store latest values into Redis!")
 
-        reserves = await self.get_median_reserves(lp_contract=lp_contract)
+        reserves = await self._get_median_reserves(lp_contract=lp_contract)
         if isinstance(reserves, PublisherFetchError):
             return reserves
 
-        total_supply = await self.get_median_total_supply(lp_contract=lp_contract)
+        total_supply = await self._get_median_total_supply(lp_contract=lp_contract)
         if isinstance(total_supply, PublisherFetchError):
             return total_supply
 
         decimals = await lp_contract.get_decimals()
 
-        lp_price = await self.compute_lp_price(
+        lp_price = await self._compute_lp_price(
             token_0=token_0,
             token_1=token_1,
             reserves=reserves,
@@ -154,7 +154,10 @@ class LPFetcher(FetcherInterfaceT):
             publisher=self.publisher,
         )
 
-    async def store_latest_values(self, lp_contract: LpContract) -> bool:
+    async def _store_latest_values(self, lp_contract: LpContract) -> bool:
+        """
+        Store the latest reserves and total supply into redis.
+        """
         latest_reserves = await lp_contract.get_reserves()
         latest_total_supply = await lp_contract.get_total_supply()
         return self.redis_manager.store_pool_data(
@@ -164,7 +167,7 @@ class LPFetcher(FetcherInterfaceT):
             total_supply=latest_total_supply,
         )
 
-    async def get_median_reserves(
+    async def _get_median_reserves(
         self, lp_contract: LpContract
     ) -> Reserves | PublisherFetchError:
         """
@@ -185,7 +188,7 @@ class LPFetcher(FetcherInterfaceT):
         token_1_reserves = [x[1] for x in history_reserves]
         return (int(median(token_0_reserves)), int(median(token_1_reserves)))
 
-    async def get_median_total_supply(
+    async def _get_median_total_supply(
         self, lp_contract: LpContract
     ) -> int | PublisherFetchError:
         """
@@ -206,7 +209,7 @@ class LPFetcher(FetcherInterfaceT):
         total_supply = int(median(history_total_supply))
         return total_supply
 
-    async def compute_lp_price(
+    async def _compute_lp_price(
         self,
         token_0: Contract,
         token_1: Contract,
@@ -218,25 +221,25 @@ class LPFetcher(FetcherInterfaceT):
         Computes the LP price based on reserves and total supply.
         Takes into consideration the decimals of the fetched prices.
         """
-        response = await self.get_token_price_and_decimals(token_0)
+        response = await self._get_token_price_and_decimals(token_0)
         if isinstance(response, PublisherFetchError):
             return response
         (token_0_price, token_0_decimals, token_0_price_decimals) = response
 
-        response = await self.get_token_price_and_decimals(token_1)
+        response = await self._get_token_price_and_decimals(token_1)
         if isinstance(response, PublisherFetchError):
             return response
         (token_1_price, token_1_decimals, token_1_price_decimals) = response
 
         # Scale the token prices & reserves to the pool decimals
-        (token_0_price, reserve_0) = self.adjust_decimals(
+        (token_0_price, reserve_0) = self._adjust_decimals(
             token_0_price,
             reserves[0],
             token_0_decimals,
             token_0_price_decimals,
             decimals,
         )
-        (token_1_price, reserve_1) = self.adjust_decimals(
+        (token_1_price, reserve_1) = self._adjust_decimals(
             token_1_price,
             reserves[1],
             token_1_decimals,
@@ -253,7 +256,7 @@ class LPFetcher(FetcherInterfaceT):
         ) // total_supply
         return lp_price
 
-    def adjust_decimals(
+    def _adjust_decimals(
         self,
         price: int,
         reserve: int,
@@ -276,11 +279,16 @@ class LPFetcher(FetcherInterfaceT):
 
         return (price, reserve)
 
-    async def get_token_price_and_decimals(
+    async def _get_token_price_and_decimals(
         self, token: Contract
     ) -> Tuple[int, int, int] | PublisherFetchError:
-        """Fetches the token price from the oracle."""
-        token_pair = await self.get_token_pair(token)
+        """
+        For a given token contract, return:
+            * the price in USD for the token,
+            * the decimals of the token,
+            * the decimals of the USD price.
+        """
+        token_pair = await self._get_pair_usd_quoted(token)
         oracle_response = await self.client.get_spot(
             pair_id=str_to_felt(token_pair),
             block_id="pending",
@@ -292,11 +300,16 @@ class LPFetcher(FetcherInterfaceT):
         token_decimals = await token.functions["decimals"].call()
         return (oracle_response.price, token_decimals[0], oracle_response.decimals)
 
-    async def get_token_pair(self, token: Contract) -> str:
-        """Gets the token/USD pair symbol."""
+    async def _get_pair_usd_quoted(self, token: Contract) -> str:
+        """
+        For the given token contract, fetch the symbol and returns the token quoted
+        to USD as a `Pair`.
+        """
         token_symbol = await token.functions["symbol"].call()
         return felt_to_str(token_symbol[0]) + "/USD"
 
     def format_url(self, pair: Pair) -> str:
-        """Formats the URL for the fetcher, used in `fetch_pair` to get the data."""
+        """
+        Not used in this fetcher! But needed to comply with the Fetcher interface.
+        """
         raise NotImplementedError("Not needed for LPFetcher.")
