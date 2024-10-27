@@ -24,7 +24,7 @@ current_file_directory = Path(__file__).parent
 repo_root = find_repo_root(current_file_directory).parent
 
 SUBMODULE_DIR = repo_root / "pragma-oracle"
-CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "pragma-oracle" / "target/dev"
+CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "pragma-oracle" / "target" / "dev"
 DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
 

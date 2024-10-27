@@ -18,7 +18,7 @@ def find_repo_root(start_directory: Path) -> Path:
 CURRENT_FILE_DIRECTORY = Path(__file__).parent
 REPO_ROOT = find_repo_root(CURRENT_FILE_DIRECTORY).parent
 SUBMODULE_DIR = REPO_ROOT / "pragma-oracle"
-CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "pragma-oracle" / "target/dev"
+CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "pragma-oracle" / "target" / "dev"
 
 
 def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
