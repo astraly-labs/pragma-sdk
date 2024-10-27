@@ -45,8 +45,8 @@ jobs:
         id: cache-contracts
         uses: actions/cache@v3
         with:
-          path: ./pragma-oracle/target
-          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/src', 'poetry.lock') }}
+          path: ./pragma-oracle/pragma-oracle/target
+          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/pragma-oracle/src', 'poetry.lock') }}
 
       - uses: software-mansion/setup-scarb@v1
         with:
@@ -54,7 +54,7 @@ jobs:
 
       - name: Compile contracts
         if: steps.cache-contracts.outputs.cache-hit != 'true'
-        working-directory: ./pragma-oracle
+        working-directory: ./pragma-oracle/pragma-oracle
         run: |
           scarb -V
           scarb build
@@ -62,9 +62,9 @@ jobs:
       - name: Check ABIs are up-to-date
         run: |
           # Find and compare *.sierra.json files in both directories
-          for file in $(find ./pragma-oracle/target/dev -type f -name "*.sierra.json"); do
+          for file in $(find ./pragma-oracle/pragma-oracle/target/dev -type f -name "*.sierra.json"); do
             # Extract the relative path of the file for comparison
-            rel_path=${file#./pragma-oracle/target/dev}
+            rel_path=${file#./pragma-oracle/pragma-oracle/target/dev}
             # Use diff to compare the file with its counterpart in the SDK directory
             diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1) 
           done
