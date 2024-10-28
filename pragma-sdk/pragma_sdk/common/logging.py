@@ -24,7 +24,7 @@ class PragmaLogger:
             if not logger.handlers:
                 stream_handler = logging.StreamHandler(stdout)
                 formatter = logging.Formatter(
-                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    "[%(asctime)s] %(levelname)s:%(name)s.%(module)s:%(message)s"
                 )
                 stream_handler.setFormatter(formatter)
                 logger.addHandler(stream_handler)
