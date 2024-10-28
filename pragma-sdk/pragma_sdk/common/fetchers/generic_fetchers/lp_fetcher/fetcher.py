@@ -228,7 +228,7 @@ class LPFetcher(FetcherInterfaceT):
         reserves: Reserves,
         total_supply: int,
         decimals: int,
-    ) -> int | PublisherFetchError:
+    ) -> float | PublisherFetchError:
         """
         Computes the LP price based on reserves and total supply.
         Takes into consideration the decimals of the fetched prices.
@@ -244,14 +244,14 @@ class LPFetcher(FetcherInterfaceT):
         (token_1_price, token_1_decimals, token_1_price_decimals) = response
 
         # Scale the token prices & reserves to the pool decimals
-        (token_0_price, reserve_0) = self._adjust_decimals(
+        (scaled_token_0_price, reserve_0) = self._adjust_decimals(
             token_0_price,
             reserves[0],
             token_0_decimals,
             token_0_price_decimals,
             decimals,
         )
-        (token_1_price, reserve_1) = self._adjust_decimals(
+        (scaled_token_1_price, reserve_1) = self._adjust_decimals(
             token_1_price,
             reserves[1],
             token_1_decimals,
@@ -259,13 +259,10 @@ class LPFetcher(FetcherInterfaceT):
             decimals,
         )
 
-        # Reconstruct the reserves with the newly adjusted reserved
-        reserves: Reserves = (reserve_0, reserve_1)  # type: ignore[no-redef]
-
         # Compute the LP price
         lp_price = (
-            (reserves[0] * token_0_price) + (reserves[1] * token_1_price)
-        ) // total_supply
+            (reserve_0 * scaled_token_0_price) + (reserve_1 * scaled_token_1_price)
+        ) / total_supply
         return lp_price
 
     def _adjust_decimals(
@@ -275,19 +272,19 @@ class LPFetcher(FetcherInterfaceT):
         decimals: int,
         price_decimals: int,
         target_decimals: int,
-    ) -> Tuple[int, int]:
+    ) -> Tuple[float, float]:
         """
         Adjust the decimals of the prices and the reserves to the target decimals.
         """
         if price_decimals < target_decimals:
             price = price * 10 ** (target_decimals - price_decimals)
         elif price_decimals > target_decimals:
-            price = price // 10 ** (price_decimals - target_decimals)
+            price = price / 10 ** (price_decimals - target_decimals)
 
         if decimals < target_decimals:
             reserve = reserve * 10 ** (target_decimals - decimals)
         elif decimals > target_decimals:
-            reserve = reserve // 10 ** (decimals - target_decimals)
+            reserve = reserve / 10 ** (decimals - target_decimals)
 
         return (price, reserve)
 
