@@ -69,20 +69,26 @@ class LPFetcher(FetcherInterfaceT):
         """
         lp_addresses = list(self.lp_contracts.keys())
         for lp_address in lp_addresses:
-            lp_contract = self.lp_contracts[lp_address]
-            pool_is_valid = (await lp_contract.is_valid()) and (
-                await self._are_currencies_registered(lp_contract)
-            )
-            if not pool_is_valid:
-                del self.lp_contracts[lp_address]
-                self.pairs.remove(lp_address)
+            await self.validate_pool(lp_address)
+            
+
+    async def validate_pool(self, lp_address: Address) -> bool:
+        """
+        Checks if a pool is valid and removes it from the list if it is not.
+        """
+        lp_contract = self.lp_contracts[lp_address]
+        pool_is_valid = (await lp_contract.is_valid()) and (
+            await self._are_currencies_registered(lp_contract)
+        )
+        if not pool_is_valid:
+            del self.lp_contracts[lp_address]
 
     async def _are_currencies_registered(
         self,
         lp_contract: LpContract,
     ) -> bool:
         """
-        Returns true if the underlying assets of a Pool are correctly registered on the Oracle.
+        Returns true if the underlying assets of a Pool are correctly registered on-chain on the Oracle.
         """
         token_0 = await lp_contract.get_token_0()
         token_0_symbol = await token_0.functions["symbol"].call()
@@ -287,7 +293,7 @@ class LPFetcher(FetcherInterfaceT):
         return (price, reserve)
 
     async def _get_token_price_and_decimals(
-        self, token: Contract
+        self, token: Contract, block_id: str = "pending"
     ) -> Tuple[int, int, int] | PublisherFetchError:
         """
         For a given token contract, return:
@@ -298,7 +304,7 @@ class LPFetcher(FetcherInterfaceT):
         token_pair = await self._get_pair_usd_quoted(token)
         oracle_response = await self.client.get_spot(
             pair_id=str_to_felt(token_pair),
-            block_id="pending",
+            block_id=block_id,
         )
         if oracle_response.price == 0 and oracle_response.last_updated_timestamp == 0:
             return PublisherFetchError(

@@ -46,6 +46,7 @@ async def main(
     publisher_address: str,
     private_key: PrivateKey,
     rpc_url: Optional[HttpUrl] = None,
+    publish_delay: int = DELAY_BETWEEN_PUBLISH_IN_SECONDS,
 ) -> None:
     logger.info("🔨 Setting up clients and Redis connection...")
     pragma_client = PragmaOnChainClient(
@@ -55,7 +56,7 @@ async def main(
         account_private_key=private_key,
     )
 
-    # TODO(akhercha): see with Hithem & handle production mode
+    # TODO(akhercha): Handle production mode
     # https://redis.io/docs/latest/develop/connect/clients/python/
     redis_host, redis_port = redis_host.split(":")
     redis_manager = LpRedisManager(host=redis_host, port=redis_port)
@@ -89,7 +90,7 @@ async def main(
             except Exception as e:
                 logger.error(e)
 
-        await asyncio.sleep(DELAY_BETWEEN_PUBLISH_IN_SECONDS)
+        await asyncio.sleep(publish_delay)
 
 
 @click.command()
@@ -159,6 +160,13 @@ async def main(
         "or keystore:PATH/TO/THE/KEYSTORE:PASSWORD"
     ),
 )
+@click.option(
+    "--publish-delay",
+    type=click.INT,
+    required=False,
+    default=DELAY_BETWEEN_PUBLISH_IN_SECONDS,
+    help="Delay between each publish in seconds.",
+)
 def cli_entrypoint(
     log_level: str,
     config_file: str,
@@ -168,6 +176,7 @@ def cli_entrypoint(
     publisher_name: str,
     publisher_address: str,
     raw_private_key: str,
+    publish_delay: int,
 ) -> None:
     """
     Lp Pricer entry point.
@@ -184,6 +193,7 @@ def cli_entrypoint(
             publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
             private_key=private_key,
+            publish_delay=publish_delay,
         )
     )
 
