@@ -70,8 +70,6 @@ def forked_client(network_config: Dict[str, Any]) -> PragmaOnChainClient:
         str(1),
         "--seed",
         str(1),
-        "--chain-id",
-        network.upper(),
     ]
     if block_number is not None:
         command.extend(["--fork-block-number", str(block_number)])

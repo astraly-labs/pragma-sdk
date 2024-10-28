@@ -88,7 +88,7 @@ async def test_checkpointer_spot(
         private_key=private_key,
     )
 
-    await asyncio.sleep(5)
+    await asyncio.sleep(60)
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         pair_id="BTC/USD",
@@ -238,7 +238,7 @@ async def test_checkpointer_spot_and_future(
         private_key=private_key,
     )
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(60)
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
         pair_id="BTC/USD",

@@ -630,3 +630,17 @@ class OracleMixin:
         diff = int(time.time()) - max_timestamp
 
         return diff
+
+    async def is_currency_registered(
+        self,
+        currency_id: str,
+        block_id: Optional[BlockId] = "latest",
+    ) -> bool:
+        """
+        Check if a currency is registered on the Oracle.
+        """
+        (currency_info,) = await self.oracle.functions["get_currency"].call(
+            str_to_felt(currency_id),
+            block_number=block_id,
+        )
+        return bool(currency_info["id"] != 0)

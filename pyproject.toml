@@ -37,6 +37,8 @@ version_files = [
   "merkle-maker/VERSION",
   "merkle-maker/pyproject.toml:^version",
   "merkle-maker/merkle_maker/__init__.py:^__version",
+  "lp-pricer/pyproject.toml:^version",
+  "lp-pricer/merkle_maker/__init__.py:^__version",
 ]
 update_changelog_on_bump = true
 changelog_incremental = true

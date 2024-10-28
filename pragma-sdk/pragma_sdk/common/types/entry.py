@@ -542,11 +542,11 @@ class GenericEntry(Entry):
 
     def __repr__(self) -> str:
         return (
-            f'GenericEntry(key="{felt_to_str(self.key)}", '
-            f"value={self.value}, "
-            f"timestamp={self.base.timestamp}, "
+            f'GenericEntry(key="{self.key}", '
+            f'value="{self.value}", '
+            f'timestamp="{self.base.timestamp}", '
             f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}, '
+            f'publisher="{felt_to_str(self.base.publisher)}")'
         )
 
     def __hash__(self) -> int:

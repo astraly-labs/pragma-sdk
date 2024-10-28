@@ -33,7 +33,7 @@ repo_root = find_repo_root(current_file_directory).parent
 SUBMODULE_DIR = repo_root / "pragma-oracle"
 MOCK_DIR = repo_root / "pragma-sdk/tests/integration" / "mock"
 
-CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "target/dev"
+CONTRACTS_COMPILED_DIR = SUBMODULE_DIR / "pragma-oracle" / "target" / "dev"
 MOCK_COMPILED_DIR = MOCK_DIR / "compiled_contracts"
 DEPLOYMENTS_DIR = SUBMODULE_DIR / "deployments"
 
