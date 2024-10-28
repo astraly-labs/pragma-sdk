@@ -70,14 +70,10 @@ class LPFetcher(FetcherInterfaceT):
         lp_addresses = list(self.lp_contracts.keys())
         for lp_address in lp_addresses:
             lp_contract = self.lp_contracts[lp_address]
-            is_valid = (await lp_contract.is_valid()) and (
+            pool_is_valid = (await lp_contract.is_valid()) and (
                 await self._are_currencies_registered(lp_contract)
             )
-            if not is_valid:
-                logger.error(
-                    f"⛔ The underlying assets of the pool {hex(lp_address)} are not"
-                    " supported by Pragma Oracle. The pool will not be priced."
-                )
+            if not pool_is_valid:
                 del self.lp_contracts[lp_address]
 
     async def _are_currencies_registered(
@@ -93,9 +89,17 @@ class LPFetcher(FetcherInterfaceT):
         token_1 = await lp_contract.get_token_1()
         token_1_symbol = await token_1.functions["symbol"].call()
         token_1_symbol = felt_to_str(token_1_symbol[0])
-        return (await self.client.is_currency_registered(token_0_symbol)) and (
+
+        are_supported = (await self.client.is_currency_registered(token_0_symbol)) and (
             await self.client.is_currency_registered(token_1_symbol)
         )
+
+        if not are_supported:
+            logger.error(
+                f"⛔ The underlying assets of the pool {hex(lp_contract.contract.address)} are not"
+                " supported by Pragma Oracle. The pool will not be priced."
+            )
+        return are_supported
 
     async def fetch(  # type: ignore[assignment]
         self, session: ClientSession
