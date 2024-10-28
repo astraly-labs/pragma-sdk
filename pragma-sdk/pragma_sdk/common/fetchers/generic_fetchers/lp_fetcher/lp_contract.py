@@ -1,13 +1,13 @@
-import logging
-
 from typing import Optional, Tuple, cast
 
 from starknet_py.net.full_node_client import FullNodeClient
+
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.types import Address
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.onchain.abis.abi import ABIS, get_erc20_abi
 
-logger = logging.getLogger(__name__)
+logger = get_pragma_sdk_logger()
 
 Reserves = Tuple[int, int]
 
@@ -25,6 +25,26 @@ class LpContract:
             provider=client,
             cairo_version=1,
         )
+
+    async def is_valid(self) -> bool:
+        """
+        Validate that the current contract is valid and usable.
+        We query every functions to make sure that it exists on-chain.
+        """
+        try:
+            _ = await self.get_reserves()
+            _ = await self.get_total_supply()
+            _ = await self.get_decimals()
+            _ = await self.get_token_0()
+            _ = await self.get_token_1()
+        except Exception as _:
+            logger.error(
+                f"⛔ The contract {hex(self.contract.address)} is not a valid pool. "
+                "Ignoring - it won't be priced."
+            )
+            return False
+
+        return True
 
     async def get_reserves(self) -> Reserves:
         """Fetches reserves from the pool."""
