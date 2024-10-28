@@ -69,10 +69,9 @@ class LPFetcher(FetcherInterfaceT):
         """
         lp_addresses = list(self.lp_contracts.keys())
         for lp_address in lp_addresses:
-            await self.validate_pool(lp_address)
-            
+            await self._validate_pool(lp_address)
 
-    async def validate_pool(self, lp_address: Address) -> bool:
+    async def _validate_pool(self, lp_address: Address) -> None:
         """
         Checks if a pool is valid and removes it from the list if it is not.
         """

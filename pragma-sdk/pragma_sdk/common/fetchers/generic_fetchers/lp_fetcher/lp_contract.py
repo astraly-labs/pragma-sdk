@@ -1,6 +1,7 @@
-from typing import Optional, Tuple, cast
+from typing import Optional, Tuple, cast, List
 
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.hash.selector import get_selector_from_name
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.types import Address
@@ -11,6 +12,15 @@ logger = get_pragma_sdk_logger()
 
 Reserves = Tuple[int, int]
 
+REQUIRED_POOL_FUNCTIONS: List[int] = [
+    get_selector_from_name("get_reserves"),
+    get_selector_from_name("total_supply"),
+    get_selector_from_name("decimals"),
+    get_selector_from_name("token_0"),
+    get_selector_from_name("token_1"),
+]
+
+# The address is the same for mainnet/sepolia
 MULTICALL_CONTRACT_ADDRESS = int(
     "0x05754af3760f3356da99aea5c3ec39ccac7783d925a19666ebbeca58ff0087f4", 16
 )
@@ -22,7 +32,9 @@ class LpContract:
     _token_1: Optional[Contract] = None
     _decimals: Optional[int] = None
 
-    def __init__(self, client: FullNodeClient, lp_address: Address, block_hash="pending"):
+    def __init__(
+        self, client: FullNodeClient, lp_address: Address, block_hash="pending"
+    ):
         self.contract = Contract(
             address=lp_address,
             abi=ABIS["pragma_Pool"],
@@ -42,20 +54,13 @@ class LpContract:
                 address=MULTICALL_CONTRACT_ADDRESS,
             )
             calls = [
-                self.contract.functions["get_reserves"].prepare_call(),
-                self.contract.functions["total_supply"].prepare_call(),
-                self.contract.functions["decimals"].prepare_call(),
-                self.contract.functions["token_0"].prepare_call(),
-                self.contract.functions["token_1"].prepare_call(),
-            ]
-            calls = [
                 {
                     "to": self.contract.address,
-                    "selector": call.selector,
+                    "selector": selector,
                     "data_offset": 0,
                     "data_len": 0,
                 }
-                for call in calls
+                for selector in REQUIRED_POOL_FUNCTIONS
             ]
             _ = await multicaller.functions["aggregate"].call(calls, [])
         except Exception as _:

@@ -68,7 +68,10 @@ async def main(
         publisher=publisher_name,
         redis_manager=redis_manager,
     )
-    await lp_fetcher.validate_pools()
+    await lp_fetcher.validate_pools()  # removes in place the invalid pools
+    if len(lp_fetcher.lp_contracts) == 0:
+        logger.error("⛔ No valid pools to price. Exiting.")
+        exit(1)
     fetcher_client.add_fetcher(lp_fetcher)
 
     logger.info(f"🧩 Starting the LP pricer for {network}...\n")
