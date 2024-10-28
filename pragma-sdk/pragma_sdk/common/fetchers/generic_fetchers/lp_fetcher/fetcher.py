@@ -75,6 +75,7 @@ class LPFetcher(FetcherInterfaceT):
             )
             if not pool_is_valid:
                 del self.lp_contracts[lp_address]
+                self.pairs.remove(lp_address)
 
     async def _are_currencies_registered(
         self,

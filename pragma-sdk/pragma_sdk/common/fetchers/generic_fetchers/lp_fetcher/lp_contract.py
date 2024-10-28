@@ -11,6 +11,10 @@ logger = get_pragma_sdk_logger()
 
 Reserves = Tuple[int, int]
 
+MULTICALL_CONTRACT_ADDRESS = int(
+    "0x05754af3760f3356da99aea5c3ec39ccac7783d925a19666ebbeca58ff0087f4", 16
+)
+
 
 class LpContract:
     contract: Contract
@@ -32,11 +36,27 @@ class LpContract:
         We query every functions to make sure that it exists on-chain.
         """
         try:
-            _ = await self.get_reserves()
-            _ = await self.get_total_supply()
-            _ = await self.get_decimals()
-            _ = await self.get_token_0()
-            _ = await self.get_token_1()
+            multicaller = await Contract.from_address(
+                provider=self.contract.client,
+                address=MULTICALL_CONTRACT_ADDRESS,
+            )
+            calls = [
+                self.contract.functions["get_reserves"].prepare_call(),
+                self.contract.functions["total_supply"].prepare_call(),
+                self.contract.functions["decimals"].prepare_call(),
+                self.contract.functions["token_0"].prepare_call(),
+                self.contract.functions["token_1"].prepare_call(),
+            ]
+            calls = [
+                {
+                    "to": self.contract.address,
+                    "selector": call.selector,
+                    "data_offset": 0,
+                    "data_len": 0,
+                }
+                for call in calls
+            ]
+            _ = await multicaller.functions["aggregate"].call(calls, [])
         except Exception as _:
             logger.error(
                 f"⛔ The contract {hex(self.contract.address)} is not a valid pool. "

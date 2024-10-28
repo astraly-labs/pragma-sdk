@@ -3,7 +3,8 @@ import click
 import logging
 
 from pydantic import HttpUrl
-from typing import Optional
+from typing import Optional, List
+from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.fetcher import LPFetcher
@@ -20,7 +21,21 @@ from lp_pricer.configs.pools_config import PoolsConfig
 
 logger = logging.getLogger(__name__)
 
+# This constant is tied to the `MINIMUM_DATA_POINTS` constant in the SDK.
+# We should not update it alone! And this should not be configurable, since
+# we want 10 data points to be equals to 30 minutes.
 DELAY_BETWEEN_PUBLISH_IN_SECONDS = 180  # 3 minutes
+
+
+async def wait_for_txs_acceptance(invocations: List[InvokeResult]):
+    """
+    Wait for all the transactions in the passed list to be accepted on-chain.
+    Raises an error if one transaction is not accepted.
+    """
+    for invocation in invocations:
+        nonce = invocation.invoke_transaction.nonce
+        logger.info(f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted...")
+        await invocation.wait_for_acceptance(check_interval=1)
 
 
 async def main(
@@ -69,8 +84,8 @@ async def main(
             logger.info(f"📨 Publishing LP prices for {valid_entries} pools...")
             try:
                 invokes = await pragma_client.publish_many(entries)  # type:ignore[arg-type]
-                await invokes[-1].wait_for_acceptance()
-                logger.info("✅ Published!")
+                await wait_for_txs_acceptance(invokes)
+                logger.info("✅ Published complete!")
             except Exception as e:
                 logger.error(e)
 
