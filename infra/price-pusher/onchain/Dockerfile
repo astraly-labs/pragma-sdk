@@ -18,6 +18,9 @@ RUN apt-get update && \
     gcc \
     libgmp3-dev \
     pipx
+RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
+'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
+&& apt-get update && apt-get install -y infisical
 
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/
@@ -28,7 +31,9 @@ RUN poetry env use 3.12
 RUN poetry install
 
 FROM base as final
+COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
+COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
 WORKDIR /opt/price-pusher
-ENTRYPOINT /opt/price-pusher/.venv/bin/python3.12 price_pusher/main.py -c ${CONFIG_PATH} -t ${TARGET} -n ${NETWORK} -p ${PRIVATE_KEY} --publisher-name ${PUBLISHER_NAME} --publisher-address ${PUBLISHER_ADDRESS} --rpc-url ${RPC_URL}
+ENTRYPOINT ["bash","/opt/checkpointer/entrypoint.sh"]
