@@ -36,4 +36,4 @@ COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
 COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
 WORKDIR /opt/price-pusher
-ENTRYPOINT ["bash","/opt/checkpointer/entrypoint.sh"]
+ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]
