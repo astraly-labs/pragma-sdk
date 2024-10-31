@@ -87,6 +87,9 @@ class EkuboFetcher(FetcherInterfaceT):
 
         entries = []
         for quote, base_currencies in groupped_pairs.items():
+            if quote[0].starknet_address == 0:
+                entries.extend(self._get_no_quote_errors(quote, base_currencies))
+                continue
             response = await self._call_get_prices(quote, base_currencies)
             new_entries = await self._parse_response_into_entries(
                 quote=quote,
@@ -97,6 +100,20 @@ class EkuboFetcher(FetcherInterfaceT):
             entries.extend(new_entries)
 
         return entries  # type: ignore[call-overload]
+
+    def _get_no_quote_errors(
+        self, quote: Tuple[Currency, bool], base_currencies: List[Currency]
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        """
+        Returns errors for the pairs that have a Quote currency without address.
+        """
+        return [
+            PublisherFetchError(
+                f"No data found for {Pair(quote[0], base)} from Ekubo:"
+                f' no onchain starknet address for "{quote[0].id}"'
+            )
+            for base in base_currencies
+        ]
 
     async def _call_get_prices(
         self,
