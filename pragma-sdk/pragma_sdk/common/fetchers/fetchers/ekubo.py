@@ -109,7 +109,7 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         return [
             PublisherFetchError(
-                f"No data found for {Pair(quote[0], base)} from Ekubo:"
+                f"No data found for {Pair(base, quote[0])} from Ekubo:"
                 f' no onchain starknet address for "{quote[0].id}"'
             )
             for base in base_currencies
