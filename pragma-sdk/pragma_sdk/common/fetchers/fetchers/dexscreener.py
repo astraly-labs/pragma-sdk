@@ -106,7 +106,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
         if pair.base_currency.starknet_address is not None:
             base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
         else:
-            base_address = f"{pair.base_currency.ethereum_address:#0{66}x}"
+            base_address = f"{pair.base_currency.ethereum_address:#0{42}x}"
         return f"{self.BASE_URL}/{base_address}"
 
     def _construct(self, pair: Pair, result: float, volume: float) -> SpotEntry:
