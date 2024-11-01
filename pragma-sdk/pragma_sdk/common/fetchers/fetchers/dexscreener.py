@@ -103,7 +103,10 @@ class DexscreenerFetcher(FetcherInterfaceT):
         """
         Format the URL to fetch in order to retrieve the price for a pair.
         """
-        base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
+        if pair.base_currency.starknet_address is not None:
+            base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
+        else:
+            base_address = f"{pair.base_currency.ethereum_address:#0{66}x}"
         return f"{self.BASE_URL}/{base_address}"
 
     def _construct(self, pair: Pair, result: float, volume: float) -> SpotEntry:
