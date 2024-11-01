@@ -62,7 +62,7 @@ class OkxFetcher(FetcherInterfaceT):
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
-        url = f"{self.BASE_URL}?instId={pair.base_currency.id}-{pair.quote_currency.id}-SWAP"
+        url = f"{self.BASE_URL}?instId={pair.base_currency.id}-{pair.quote_currency.id}"
         return url
 
     def _construct(self, pair: Pair, result: Any, usdt_price: float = 1) -> SpotEntry:
