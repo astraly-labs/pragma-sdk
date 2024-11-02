@@ -47,7 +47,8 @@ class DexscreenerFetcher(FetcherInterfaceT):
         """
         Fetch the price for a pair and return the SpotEntry.
 
-        NOTE: The currencies of the pair must have a starknet_address.
+        NOTE: The base currency being priced must have either a starknet_address
+        or an ethereum_address.
         """
         if pair.quote_currency.id != "USD":
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
@@ -110,10 +111,10 @@ class DexscreenerFetcher(FetcherInterfaceT):
         """
         Format the URL to fetch in order to retrieve the price for a pair.
         """
-        if pair.base_currency.starknet_address is not None:
-            base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
-        else:
+        if pair.base_currency.ethereum_address is not None:
             base_address = f"{pair.base_currency.ethereum_address:#0{42}x}"
+        else:
+            base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
         return f"{self.BASE_URL}/{base_address}"
 
     def _construct(self, pair: Pair, result: float, volume: float) -> SpotEntry:
