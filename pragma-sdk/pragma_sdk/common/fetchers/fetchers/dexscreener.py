@@ -51,6 +51,13 @@ class DexscreenerFetcher(FetcherInterfaceT):
         """
         if pair.quote_currency.id != "USD":
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
+        if (pair.base_currency.ethereum_address == 0) and (
+            pair.base_currency.starknet_address == 0
+        ):
+            return PublisherFetchError(
+                f"No on-chain address for {pair.base_currency.id}, "
+                "can't fetch from Dexscreener"
+            )
         return await self._fetch_dexscreener_price(pair, session)
 
     async def _fetch_dexscreener_price(
