@@ -181,7 +181,7 @@ class PragmaAPIClient(PragmaClient):
             "signature": [str(s) for s in sig],
             "entries": Entry.offchain_serialize_entries(entries),
         }
-        # print(data)
+        print(data)
 
         async with aiohttp.ClientSession() as session:
             start = time.time()
@@ -197,7 +197,7 @@ class PragmaAPIClient(PragmaClient):
                 logger.debug(f"Status Code: {status_code}")
                 logger.debug(f"Response Text: {response}")
                 raise PragmaAPIError("Unable to POST /v1/data")
-            
+
     async def get_entry(
         self,
         pair: str,
