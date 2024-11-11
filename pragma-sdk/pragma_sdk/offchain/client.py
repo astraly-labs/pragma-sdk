@@ -176,11 +176,12 @@ class PragmaAPIClient(PragmaClient):
         }
 
         sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
-        # Convert entries to JSON strin
+        # Convert entries to JSON string
         data = {
             "signature": [str(s) for s in sig],
             "entries": Entry.offchain_serialize_entries(entries),
         }
+        print(data)
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=data) as response_raw:
@@ -357,11 +358,9 @@ class PragmaAPIClient(PragmaClient):
 
     async def get_expiries_list(self, pair: Pair):
         """
-        Get volatility data for a pair in a given time range on the Pragma API.
+        Get expiries list for a future pair on the Pragma API.
 
         :param pair: Pair to get data for
-        :param start: Start timestamp
-        :param end: End timestamp
         """
 
         base_asset, quote_asset = get_cur_from_pair(f"{pair}")
