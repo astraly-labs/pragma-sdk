@@ -12,10 +12,13 @@ Here is step by step example:
 
 .. code-block:: python
 
-    from pragma_sdk.common.fetchers import FetcherClient
-    from pragma_sdk.common.fetchers.fetchers import BitstampFetcher, GateIOFetcher
+    import asyncio
+    from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
+    from pragma_sdk.common.fetchers.fetchers import BitstampFetcher
+    from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
     from pragma_sdk.common.types.pair import Pair
 
+    async def fetch_crypto_data():
     # 1. Create a list of pairs that you want to fetch
     pairs = [
         Pair.from_tickers("BTC","USD"),
@@ -24,7 +27,7 @@ Here is step by step example:
 
     # 2. Create your fetchers and add them to the FetcherClient
     bitstamp_fetcher = BitstampFetcher(pairs, "publisher_test")
-    gateio_fetcher = GateIOFetcher(pairs, "publisher_test")
+    gateio_fetcher = GateioFetcher(pairs, "publisher_test")
     fetchers = [
         bitstamp_fetcher,
         gateio_fetcher,
@@ -35,6 +38,14 @@ Here is step by step example:
 
     # 3. Fetch the data
     entries = await fc.fetch()
+    
+    print(entries)
+
+    async def main():
+        await fetch_crypto_data()
+
+    if __name__ == "__main__":
+        asyncio.run(main())
 
 .. hint::
 
