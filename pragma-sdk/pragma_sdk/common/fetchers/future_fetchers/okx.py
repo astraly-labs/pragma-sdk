@@ -83,7 +83,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
         return entries
 
     def format_url(self, pair: Pair) -> str:
-        url = f"{self.BASE_URL}?instType=FUTURES&uly={pair.base_currency.id}-{pair.quote_currency.id}"
+        url = f"{self.BASE_URL}?instType=SWAP&uly={pair.base_currency.id}-{pair.quote_currency.id}"
         return url
 
     def _construct(self, pair: Pair, data: Any, expiry_timestamp: int) -> FutureEntry:
