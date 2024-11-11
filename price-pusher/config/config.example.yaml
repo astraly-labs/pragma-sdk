@@ -1,15 +1,65 @@
 - pairs:
-    spot:
-      - BTC/USD
-      - BTC/EUR
-      - WBTC/USD
-      - WBTC/BTC
-      - STETH/USD
-      - ETH/USD
-      - WSTETH/USD
-      - STRK/USD
-      - USDC/USD
-      - USDT/USD
-      - DAI/USD
-  time_difference: 120
-  price_deviation: 0.0025
+    # spot:
+    #   - BTC/USD
+    #   - ETH/USD
+    #   - SOL/USD
+    #   - BNB/USD
+    #   - LTC/USD
+    #   - LINK/USD
+    #   - AVAX/USD
+    #   - MATIC/USD
+    #   - XRP/USD
+    #   - DOGE/USD
+    #   - 1000PEPE/USD
+    #   - AAVE/USD
+    #   - TRX/USD
+    #   - SUI/USD
+    #   - WIF/USD
+    #   - TIA/USD
+    #   - TON/USD
+    #   - LDO/USD
+    #   - ARB/USD
+    #   - OP/USD
+    #   - ORDI/USD
+    #   - JTO/USD
+    #   - JUP/USD
+    #   - UNI/USD
+    #   - OKB/USD
+    #   - ATOM/USD
+    #   - NEAR/USD
+    #   - 1000SATS/USD
+    #   - ONDO/USD
+
+    future:
+      - BTC/USDT
+      - ETH/USDT
+      # - SOL/USDT
+      # - BNB/USDT
+      # - LTC/USDT
+      # - LINK/USDT
+      # - AVAX/USDT
+      # - MATIC/USDT
+      # - XRP/USDT
+      # - DOGE/USDT
+      # - 1000PEPE/USDT
+      # - AAVE/USDT
+      # - TRX/USDT
+      # - SUI/USDT
+      # - WIF/USDT
+      # - TIA/USDT
+      # - TON/USDT
+      # - LDO/USDT
+      # - ARB/USDT
+      # - OP/USDT
+      # - ORDI/USDT
+      # - JTO/USDT
+      # - JUP/USDT
+      # - UNI/USDT
+      # - OKB/USDT
+      # - ATOM/USDT
+      # - NEAR/USDT
+      # - 1000SATS/USDT
+      # - ONDO/USDT
+
+  time_difference: 1
+  price_deviation: 0.025

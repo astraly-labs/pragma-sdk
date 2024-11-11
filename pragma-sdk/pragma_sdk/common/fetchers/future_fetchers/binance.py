@@ -41,7 +41,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         self, pair: Pair, session: ClientSession
     ) -> List[FutureEntry] | PublisherFetchError:
         filtered_data = []
-        url = self.format_url()
+        url = self.format_url(pair)
         selection = str(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -73,7 +73,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         return entries
 
     def format_url(self, pair: Optional[Pair] = None) -> str:
-        return self.BASE_URL
+        return self.BASE_URL + "?symbol=" + pair.base_currency.id + pair.quote_currency.id
 
     def _retrieve_volume(
         self, pair: Pair, volume_arr: List[Tuple[str, int]] | PublisherFetchError

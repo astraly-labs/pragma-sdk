@@ -14,7 +14,7 @@ from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.client import PragmaClient
-
+import time
 from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
 
 from pragma_sdk.offchain.exceptions import PragmaAPIError
@@ -181,20 +181,23 @@ class PragmaAPIClient(PragmaClient):
             "signature": [str(s) for s in sig],
             "entries": Entry.offchain_serialize_entries(entries),
         }
-        print(data)
+        # print(data)
 
         async with aiohttp.ClientSession() as session:
+            start = time.time()
             async with session.post(url, headers=headers, json=data) as response_raw:
                 status_code: int = response_raw.status
                 response: Dict = await response_raw.json()
                 if status_code == 200:
                     logger.debug(f"Success: {response}")
                     logger.debug("Publish successful")
+                    end = time.time()
+                    logger.info(f"Publishing took {end - start} seconds")
                     return response
                 logger.debug(f"Status Code: {status_code}")
                 logger.debug(f"Response Text: {response}")
                 raise PragmaAPIError("Unable to POST /v1/data")
-
+            
     async def get_entry(
         self,
         pair: str,
