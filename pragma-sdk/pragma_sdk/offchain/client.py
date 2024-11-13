@@ -14,7 +14,6 @@ from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.client import PragmaClient
-import time
 from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
 
 from pragma_sdk.offchain.exceptions import PragmaAPIError
@@ -174,7 +173,6 @@ class PragmaAPIClient(PragmaClient):
             "PRAGMA-SIGNATURE-EXPIRATION": str(expiry),
             "x-api-key": self.api_key,
         }
-
         sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
         # Convert entries to JSON string
         data = {

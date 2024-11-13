@@ -2,7 +2,7 @@ import json
 import time
 
 from datetime import datetime, timezone
-from typing import Any, List, Optional, Tuple
+from typing import Any, List
 
 from aiohttp import ClientSession
 
@@ -22,9 +22,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
     ) -> List[FutureEntry] | PublisherFetchError:
-        filtered_data = []
         url = self.format_url(pair)
-        selection = str(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Binance")
@@ -46,14 +44,14 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries: List[Entry | PublisherFetchError | BaseException] = []
         for pair in self.pairs:
-            future_entries = await self.fetch_pair(pair, session)
-            if isinstance(future_entries, list):
-                entries.extend(future_entries)
+            entries_or_error = await self.fetch_pair(pair, session)
+            if isinstance(entries_or_error, PublisherFetchError):
+                entries.append(entries_or_error)
             else:
-                entries.append(future_entries)
+                entries.extend(entries_or_error)
         return entries
 
-    def format_url(self, pair: Optional[Pair] = None) -> str:
+    def format_url(self, pair: Pair) -> str:
         return (
             self.BASE_URL + "?symbol=" + pair.base_currency.id + pair.quote_currency.id
         )
@@ -62,7 +60,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
         self,
         pair: Pair,
         data: Any,
-    ) -> List[FutureEntry]:
+    ) -> list[FutureEntry] | PublisherFetchError:
         decimals = pair.decimals()
         price = float(data["markPrice"])
         price_int = int(price * (10**decimals))
@@ -81,12 +79,14 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             else:
                 expiry_timestamp = int(0)
 
-        return FutureEntry(
-            pair_id=pair.id,
-            price=price_int,
-            volume=int(volume),
-            timestamp=int(time.time()),
-            source=self.SOURCE,
-            publisher=self.publisher,
-            expiry_timestamp=expiry_timestamp * 1000,
-        )
+        return [
+            FutureEntry(
+                pair_id=pair.id,
+                price=price_int,
+                volume=int(volume),
+                timestamp=int(time.time()),
+                source=self.SOURCE,
+                publisher=self.publisher,
+                expiry_timestamp=expiry_timestamp * 1000,
+            )
+        ]
