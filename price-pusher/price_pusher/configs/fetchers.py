@@ -16,7 +16,11 @@ from pragma_sdk.common.fetchers.fetchers import (
     EkuboFetcher,
     DexscreenerFetcher,
 )
-from pragma_sdk.common.fetchers.future_fetchers import BinanceFutureFetcher, ByBitFutureFetcher
+from pragma_sdk.common.fetchers.future_fetchers import (
+    BinanceFutureFetcher,
+    ByBitFutureFetcher,
+    OkxFutureFetcher,
+)
 
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
@@ -33,7 +37,11 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     DexscreenerFetcher,
 ]
 
-ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [BinanceFutureFetcher, ByBitFutureFetcher]
+ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
+    BinanceFutureFetcher,
+    ByBitFutureFetcher,
+    OkxFutureFetcher,
+]
 
 
 @dataclass
@@ -49,5 +57,7 @@ class FetcherWithApiKeyConfig:
 # Configuration for fetchers that may require API keys.
 FETCHERS_WITH_API_KEY: Dict[FetcherInterfaceT, FetcherWithApiKeyConfig] = {
     PropellerFetcher: FetcherWithApiKeyConfig(env_api_key="PROPELLER_API_KEY"),
-    DefillamaFetcher: FetcherWithApiKeyConfig(env_api_key="DEFI_LLAMA_API_KEY", optional=True),
+    DefillamaFetcher: FetcherWithApiKeyConfig(
+        env_api_key="DEFI_LLAMA_API_KEY", optional=True
+    ),
 }

@@ -59,15 +59,9 @@ class OkxFutureFetcher(FetcherInterfaceT):
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
             result_len = len(result["data"])
-            if result_len > 1:
+            if result_len >= 1:
                 for i in range(0, result_len):
-                    expiry_timestamp = await self.fetch_expiry_timestamp(
-                        pair, result["data"][i]["instId"], session
-                    )
-                    if not isinstance(expiry_timestamp, PublisherFetchError):
-                        future_entries.append(
-                            self._construct(pair, result["data"][i], expiry_timestamp)
-                        )
+                    future_entries.append(self._construct(pair, result["data"][i], 0))
             return future_entries
 
     async def fetch(
@@ -83,7 +77,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
         return entries
 
     def format_url(self, pair: Pair) -> str:
-        url = f"{self.BASE_URL}?instType=FUTURES&uly={pair.base_currency.id}-{pair.quote_currency.id}"
+        url = f"{self.BASE_URL}?instType=SWAP&uly={pair.base_currency.id}-{pair.quote_currency.id}"
         return url
 
     def _construct(self, pair: Pair, data: Any, expiry_timestamp: int) -> FutureEntry:

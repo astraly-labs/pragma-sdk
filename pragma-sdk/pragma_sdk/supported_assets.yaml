@@ -103,3 +103,140 @@
   ticker: 'EKUBO'
   coingecko_id: 'ekubo-protocol'
   starknet_address: '0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87'
+
+- name: 'Binance Coin'
+  decimals: 18
+  ticker: 'BNB'
+  coingecko_id: 'binancecoin'
+
+- name: 'Litecoin'
+  decimals: 8
+  ticker: 'LTC'
+  coingecko_id: 'litecoin'
+
+- name: 'Chainlink'
+  decimals: 18
+  ticker: 'LINK'
+  coingecko_id: 'chainlink'
+
+- name: 'Avalanche'
+  decimals: 18
+  ticker: 'AVAX'
+  coingecko_id: 'avalanche-2'
+
+- name: 'Polygon'
+  decimals: 18
+  ticker: 'MATIC'
+  coingecko_id: 'matic-network'
+
+- name: 'Ripple'
+  decimals: 6
+  ticker: 'XRP'
+  coingecko_id: 'ripple'
+
+- name: 'Dogecoin'
+  decimals: 8
+  ticker: 'DOGE'
+  coingecko_id: 'dogecoin'
+
+- name: '1000 Pepe'
+  decimals: 18
+  ticker: '1000PEPE'
+  coingecko_id: '1000-pepe'
+
+- name: 'Aave'
+  decimals: 18
+  ticker: 'AAVE'
+  coingecko_id: 'aave'
+
+- name: 'Tron'
+  decimals: 6
+  ticker: 'TRX'
+  coingecko_id: 'tron'
+
+- name: 'Sui'
+  decimals: 9
+  ticker: 'SUI'
+  coingecko_id: 'sui'
+
+- name: 'Wrapped IchiFarm'
+  decimals: 18
+  ticker: 'WIF'
+  coingecko_id: 'ichifarm-wrapped'
+
+- name: 'Celestia'
+  decimals: 18
+  ticker: 'TIA'
+  coingecko_id: 'celestia'
+
+- name: 'Toncoin'
+  decimals: 9
+  ticker: 'TON'
+  coingecko_id: 'the-open-network'
+  ethereum_address: '0x582d872a1b094fc48f5de31d3b73f2d9be47def1'
+
+- name: 'Jito'
+  decimals: 9
+  ticker: 'JTO'
+  coingecko_id: 'jito-governance-token'
+
+- name: '1000SATS'
+  decimals: 8
+  ticker: '1000SATS'
+  coingecko_id: '1000sats-ordinals'
+
+- name: 'Lido DAO'
+  decimals: 18
+  ticker: 'LDO'
+  coingecko_id: 'lido-dao'
+
+- name: 'Arbitrum'
+  decimals: 18
+  ticker: 'ARB'
+  coingecko_id: 'arbitrum'
+
+- name: 'Optimism'
+  decimals: 18
+  ticker: 'OP'
+  coingecko_id: 'optimism'
+
+- name: 'Ordinal Dogecoin'
+  decimals: 18
+  ticker: 'ORDI'
+  coingecko_id: 'ordinals-dogecoin'
+
+- name: 'Japan Token'
+  decimals: 18
+  ticker: 'JTO'
+  coingecko_id: 'japan-token'
+
+- name: 'Jupiter'
+  decimals: 9
+  ticker: 'JUP'
+  coingecko_id: 'jupiter'
+
+- name: 'Uniswap'
+  decimals: 18
+  ticker: 'UNI'
+  coingecko_id: 'uniswap'
+
+- name: 'OKB'
+  decimals: 18
+  ticker: 'OKB'
+  coingecko_id: 'okb'
+  ethereum_address: '0x75231f58b43240c9718dd58b4967c5114342a86c'
+
+- name: 'Cosmos'
+  decimals: 6
+  ticker: 'ATOM'
+  coingecko_id: 'cosmos'
+
+- name: 'Near'
+  decimals: 24
+  ticker: 'NEAR'
+  coingecko_id: 'near'
+
+- name: 'Ondo'
+  decimals: 18
+  ticker: 'ONDO'
+  coingecko_id: 'ondo'
