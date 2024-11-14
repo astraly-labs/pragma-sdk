@@ -4,7 +4,6 @@
       - BTC/EUR
       - WBTC/USD
       - WBTC/BTC
-      - STETH/USD
       - ETH/USD
       - WSTETH/USD
       - STRK/USD
@@ -16,12 +15,13 @@
 
 - pairs:
     spot:
+      - STETH/USD
       - LORDS/USD
       - ZEND/USD
       - NSTR/USD
       - EKUBO/USD
   time_difference: 600
-  price_deviation: 0.005
+  price_deviation: 0.025
 
 - pairs:
     future:
