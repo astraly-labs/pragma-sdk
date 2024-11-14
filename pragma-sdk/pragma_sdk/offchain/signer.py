@@ -26,31 +26,31 @@ def build_publish_message(
         },
         "types": {
             "StarknetDomain": [
-                {"name": "name", "type": "felt"},
-                {"name": "version", "type": "felt"},
-                {"name": "chainId", "type": "felt"},
-                {"name": "revision", "type": "felt"},
+                {"name": "name", "type": "shortstring"},
+                {"name": "version", "type": "shortstring"},
+                {"name": "chainId", "type": "shortstring"},
+                {"name": "revision", "type": "shortstring"},
             ],
             "Request": [
-                {"name": "action", "type": "felt"},
+                {"name": "action", "type": "shortstring"},
                 {"name": "entries", "type": "Entry*"},
             ],
             "Entry": [
                 {"name": "base", "type": "Base"},
-                {"name": "pair_id", "type": "felt"},
-                {"name": "price", "type": "felt"},
-                {"name": "volume", "type": "felt"},
+                {"name": "pair_id", "type": "shortstring"},
+                {"name": "price", "type": "u128"},
+                {"name": "volume", "type": "u128"},
             ],
             "Base": [
-                {"name": "publisher", "type": "felt"},
-                {"name": "source", "type": "felt"},
-                {"name": "timestamp", "type": "felt"},
+                {"name": "publisher", "type": "shortstring"},
+                {"name": "source", "type": "shortstring"},
+                {"name": "timestamp", "type": "timestamp"},
             ],
         },
     }
     if data_type == DataTypes.FUTURE:
         message["types"]["Entry"] += [  # type: ignore[index]
-            {"name": "expiration_timestamp", "type": "felt"},
+            {"name": "expiration_timestamp", "type": "timestamp"},
         ]
 
     return TypedData.from_dict(message)
