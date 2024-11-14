@@ -18,42 +18,39 @@ def build_publish_message(
     """
 
     message = {
-        # TODO: We want to update `revision` to `1` but that would require some changes
-        # in the `pragma-node` repository - where we check the signature.
-        # See: https://github.com/astraly-labs/pragma-sdk/issues/151
-        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "0"},
+        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "1"},
         "primaryType": "Request",
         "message": {
             "action": "Publish",
             "entries": Entry.serialize_entries(entries),
         },
         "types": {
-            "StarkNetDomain": [
-                {"name": "name", "type": "felt"},
-                {"name": "version", "type": "felt"},
-                {"name": "chainId", "type": "felt"},
-                {"name": "revision", "type": "felt"},
+            "StarknetDomain": [
+                {"name": "name", "type": "shortstring"},
+                {"name": "version", "type": "shortstring"},
+                {"name": "chainId", "type": "shortstring"},
+                {"name": "revision", "type": "shortstring"},
             ],
             "Request": [
-                {"name": "action", "type": "felt"},
+                {"name": "action", "type": "shortstring"},
                 {"name": "entries", "type": "Entry*"},
             ],
             "Entry": [
                 {"name": "base", "type": "Base"},
-                {"name": "pair_id", "type": "felt"},
-                {"name": "price", "type": "felt"},
-                {"name": "volume", "type": "felt"},
+                {"name": "pair_id", "type": "shortstring"},
+                {"name": "price", "type": "u128"},
+                {"name": "volume", "type": "u128"},
             ],
             "Base": [
-                {"name": "publisher", "type": "felt"},
-                {"name": "source", "type": "felt"},
-                {"name": "timestamp", "type": "felt"},
+                {"name": "publisher", "type": "shortstring"},
+                {"name": "source", "type": "shortstring"},
+                {"name": "timestamp", "type": "timestamp"},
             ],
         },
     }
     if data_type == DataTypes.FUTURE:
         message["types"]["Entry"] += [  # type: ignore[index]
-            {"name": "expiration_timestamp", "type": "felt"},
+            {"name": "expiration_timestamp", "type": "timestamp"},
         ]
 
     return TypedData.from_dict(message)

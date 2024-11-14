@@ -1,3 +1,21 @@
+## v2.4.0 (2024-11-15)
+
+### Fix
+
+- use better types for signer
+- starkex all assets + broken fetchers (#224)
+- bybit future api (#221)
+
+## v2.3.2 (2024-11-02)
+
+### Feat
+
+- lambda function (#216)
+
+### Fix
+
+- Ekubo fetcher for quote_address == 0 (#218)
+
 ## v2.3.0 (2024-10-29)
 
 ### Feat
