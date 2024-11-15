@@ -1,5 +1,6 @@
 - pairs:
     spot:
+      - EUR/USD
       - BTC/USD
       - ETH/USD
       - SOL/USD
