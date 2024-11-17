@@ -1,8 +1,8 @@
 - pairs:
     spot:
-      - EUR/USD
       - BTC/USD
       - ETH/USD
+      - ETH/STRK
       - SOL/USD
       - BNB/USD
       - LTC/USD
@@ -30,6 +30,7 @@
       - NEAR/USD
       - 1000SATS/USD
       - ONDO/USD
+      - STRK/USD
 
     future:
       - BTC/USDT
@@ -61,6 +62,7 @@
       - NEAR/USDT
       - 1000SATS/USDT
       - ONDO/USDT
+      - STRK/USD
 
   time_difference: 1
   price_deviation: 0.025
