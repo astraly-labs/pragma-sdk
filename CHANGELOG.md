@@ -1,3 +1,9 @@
+## v2.4.1 (2024-11-22)
+
+### Feat
+
+- add brother support + remove propeller fetcher (#227)
+
 ## v2.4.0 (2024-11-15)
 
 ### Fix
