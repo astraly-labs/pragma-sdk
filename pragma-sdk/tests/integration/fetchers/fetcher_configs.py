@@ -5,7 +5,6 @@ from pragma_sdk.common.fetchers.fetchers import (
     CoinbaseFetcher,
     OkxFetcher,
     EkuboFetcher,
-    PropellerFetcher,
     GeckoTerminalFetcher,
     DexscreenerFetcher,
 )
@@ -118,18 +117,6 @@ INDEX_FETCHER_CONFIGS = {
             int(2640240000000 * 0.5 + 167372000000 * 0.5),
             12345,
             "OKX",
-            PUBLISHER_NAME,
-        ),
-    },
-    "PropellerFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "propeller.json",
-        "fetcher_class": PropellerFetcher,
-        "name": "PROPELLER",
-        "expected_result": SpotEntry(
-            "INDEXNAME1",
-            int(4891252302700 * 0.5 + 0.5 * 262209039700),
-            12345,
-            "PROPELLER",
             PUBLISHER_NAME,
         ),
     },

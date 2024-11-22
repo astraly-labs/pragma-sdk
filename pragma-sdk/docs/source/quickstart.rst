@@ -122,7 +122,7 @@ An API key is currently needed to interact with the off-chain API. You can get o
     )
 
     # Get 1min OHLC data
-    entries = await poc.get_ohlc(
+    entries = await pac.get_ohlc(
         'BTC/USD', 
         None,
         Interval.ONE_MINUTE,

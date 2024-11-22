@@ -66,6 +66,10 @@ ASSET_MAPPING: Dict[str, Any] = {
     "DPI": ("eth", "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"),
     "MVI": ("eth", "0x72e364f2abdc788b7e918bc238b21f109cd634d7"),
     "NSTR": ("eth", "0x610dbd98a28ebba525e9926b6aaf88f9159edbfd"),
+    "BROTHER": (
+        "starknet-alpha",
+        "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
+    ),
 }
 
 
