@@ -50,7 +50,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
         NOTE: The base currency being priced must have either a starknet_address
         or an ethereum_address.
         """
-        if pair.quote_currency.id != "USD" and pair.quote_currency.id != "USDPLUS":
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
         if (pair.base_currency.ethereum_address == 0) and (
             pair.base_currency.starknet_address == 0

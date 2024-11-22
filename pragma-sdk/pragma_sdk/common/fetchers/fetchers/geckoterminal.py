@@ -83,7 +83,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> SpotEntry | PublisherFetchError:
-        if pair.quote_currency.id != "USD" and pair.quote_currency.id != "USDPLUS":
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return await self.operate_usd_hop(pair, session)
         pool = ASSET_MAPPING.get(pair.base_currency.id)
         if pool is None:

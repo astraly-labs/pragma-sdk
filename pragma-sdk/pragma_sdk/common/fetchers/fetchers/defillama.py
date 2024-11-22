@@ -26,7 +26,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair.base_currency.id}"
             )
-        if pair.quote_currency.id != "USD" and pair.quote_currency.id != "USDPLUS":
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return await self.operate_usd_hop(pair, session)
 
         url = self.format_url(pair)
