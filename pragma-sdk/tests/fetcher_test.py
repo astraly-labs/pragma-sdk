@@ -12,7 +12,14 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.utils import felt_to_str
 
+"""
+Smol script to test any fetcher easily
 
+e.g
+```
+python fetcher_test.py DefillamaFetcher BROTHER USDPLUS
+```
+"""
 async def test_fetcher(
     fetcher_class: Type[FetcherInterfaceT],
     base_currency: str,
