@@ -20,7 +20,7 @@
       - ZEND/USD
       - NSTR/USD
       - EKUBO/USD
-      - BROTHER/USD
+      - BROTHER/USDPLUS
   time_difference: 600
   price_deviation: 0.025
 
@@ -30,5 +30,5 @@
       - ETH/USD
       - BTC/USDT
       - ETH/USDT
-  time_difference: 600
+  time_difference: 3000
   price_deviation: 0.05

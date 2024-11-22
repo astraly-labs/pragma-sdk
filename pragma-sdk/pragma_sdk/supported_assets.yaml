@@ -40,6 +40,11 @@
   ticker: 'USD'
   abstract: true
 
+- name: 'US Dollar (18 decimals)'
+  decimals: 18
+  ticker: 'USDPLUS'
+  abstract: true
+
 - name: 'Euro'
   decimals: 8
   ticker: 'EUR'
