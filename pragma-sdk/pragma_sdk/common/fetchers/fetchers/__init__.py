@@ -3,7 +3,7 @@ from pragma_sdk.common.fetchers.fetchers.bitstamp import BitstampFetcher
 from pragma_sdk.common.fetchers.fetchers.bybit import BybitFetcher
 from pragma_sdk.common.fetchers.fetchers.coinbase import CoinbaseFetcher
 from pragma_sdk.common.fetchers.fetchers.defillama import DefillamaFetcher
-from pragma_sdk.common.fetchers.fetchers.gecko import GeckoTerminalFetcher
+from pragma_sdk.common.fetchers.fetchers.geckoterminal import GeckoTerminalFetcher
 from pragma_sdk.common.fetchers.fetchers.huobi import HuobiFetcher
 from pragma_sdk.common.fetchers.fetchers.indexcoop import IndexCoopFetcher
 from pragma_sdk.common.fetchers.fetchers.kucoin import KucoinFetcher

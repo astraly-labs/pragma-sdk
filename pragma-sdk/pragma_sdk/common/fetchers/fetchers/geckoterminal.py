@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
+import aiohttp
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
@@ -82,7 +83,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> SpotEntry | PublisherFetchError:
-        if pair.quote_currency.id != "USD":
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return await self.operate_usd_hop(pair, session)
         pool = ASSET_MAPPING.get(pair.base_currency.id)
         if pool is None:
