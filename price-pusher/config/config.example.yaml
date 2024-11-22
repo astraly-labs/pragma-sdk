@@ -1,5 +1,7 @@
 - pairs:
     spot:
+      - BTC/USD
+      - ETH/USD
       - BROTHER/USDPLUS
     
   time_difference: 1
