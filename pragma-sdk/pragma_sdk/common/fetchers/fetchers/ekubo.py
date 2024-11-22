@@ -49,9 +49,7 @@ class EkuboFetcher(FetcherInterfaceT):
     publisher: str
     price_fetcher_contract: int
     hop_handler: HopHandler = HopHandler(
-        hopped_currencies={
-            "USD": "USDC",
-        }
+        hopped_currencies={"USD": "USDC", "USDPLUS": "USDC"}
     )
 
     def __init__(
@@ -261,18 +259,29 @@ class EkuboFetcher(FetcherInterfaceT):
 
         At the end, we return the original Pair before hop and the price.
         """
-        for asset, hopped_to in self.hop_handler.hopped_currencies.items():
-            if hopped_to == pair.quote_currency.id:
-                hop: Tuple[str, str] = (asset, hopped_to)
-                break
+        # For USDPLUS, use USD prices directly
+        requested_quote = self.pairs[0].quote_currency.id
+        lookup_quote = "USD" if requested_quote == "USDPLUS" else requested_quote
 
-        hop_quote_pair = Pair.from_tickers(pair.quote_currency.id, hop[0])
+        hop_quote_pair = Pair.from_tickers(pair.quote_currency.id, lookup_quote)
         hop_price = hop_prices.get(hop_quote_pair)
-        if hop_price is None:
-            raise ValueError("Could not find hop price. Should never happen.")
 
-        new_pair = Pair.from_tickers(pair.base_currency.id, hop[0])
-        return (new_pair, price * hop_price)
+        if hop_price is None:
+            # Try reverse pair
+            reverse_pair = Pair.from_tickers(lookup_quote, pair.quote_currency.id)
+            reverse_price = hop_prices.get(reverse_pair)
+            if reverse_price:
+                hop_price = 1 / reverse_price
+            else:
+                raise ValueError(
+                    f"No valid hop price found for {hop_quote_pair} or {reverse_pair}"
+                )
+
+        # Create the final pair with the originally requested quote currency
+        new_pair = Pair.from_tickers(pair.base_currency.id, requested_quote)
+        final_price = price * hop_price
+
+        return (new_pair, final_price)
 
     def _handle_error_status(
         self, status: EkuboStatus, pair: Pair

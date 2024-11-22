@@ -176,7 +176,6 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
         self, pair: Pair, result: Any, hop_result: Optional[Any] = None
     ) -> SpotEntry:
         data = result["data"]["attributes"]
-        print(data)
         price = float(data["price_usd"])
         decimals = pair.decimals()
         if hop_result is not None:

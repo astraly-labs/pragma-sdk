@@ -12,6 +12,7 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.utils import felt_to_str
 
+
 async def test_fetcher(
     fetcher_class: Type[FetcherInterfaceT],
     base_currency: str,
@@ -45,7 +46,8 @@ async def test_fetcher(
     try:
         async with aiohttp.ClientSession() as session:
             start_time = datetime.now()
-            result = await fetcher.fetch_pair(pair, session)
+            results = await fetcher.fetch(session)
+            result = results[0]
             end_time = datetime.now()
 
             if isinstance(result, SpotEntry):
@@ -98,7 +100,8 @@ def main():
             module_name = module_name[:-7]
 
         fetcher_module = __import__(
-            f"pragma_sdk.common.fetchers.fetchers.{module_name}", fromlist=[args.fetcher]
+            f"pragma_sdk.common.fetchers.fetchers.{module_name}",
+            fromlist=[args.fetcher],
         )
         fetcher_class = getattr(fetcher_module, args.fetcher)
 
