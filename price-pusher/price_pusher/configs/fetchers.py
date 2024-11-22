@@ -12,7 +12,6 @@ from pragma_sdk.common.fetchers.fetchers import (
     KucoinFetcher,
     OkxFetcher,
     BinanceFetcher,
-    PropellerFetcher,
     EkuboFetcher,
     DexscreenerFetcher,
 )
@@ -32,7 +31,6 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     KucoinFetcher,
     BybitFetcher,
     BinanceFetcher,
-    PropellerFetcher,
     EkuboFetcher,
     DexscreenerFetcher,
 ]
@@ -56,7 +54,6 @@ class FetcherWithApiKeyConfig:
 
 # Configuration for fetchers that may require API keys.
 FETCHERS_WITH_API_KEY: Dict[FetcherInterfaceT, FetcherWithApiKeyConfig] = {
-    PropellerFetcher: FetcherWithApiKeyConfig(env_api_key="PROPELLER_API_KEY"),
     DefillamaFetcher: FetcherWithApiKeyConfig(
         env_api_key="DEFI_LLAMA_API_KEY", optional=True
     ),
