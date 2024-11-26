@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import List
 import logging
 
@@ -47,7 +48,7 @@ class FetcherClient:
 
     .. code-block:: python
 
-        await fc.fetch(timeout_duration=20)  # Denominated in seconds (default=10)
+        await fc.fetch(timeout_duration=20)  # Denominated in seconds
     """
 
     __fetchers: List[FetcherInterfaceT] = []
@@ -90,18 +91,58 @@ class FetcherClient:
         :param timeout_duration: Timeout duration for each fetcher
         :return: List of fetched data
         """
+        start_time = time.time()
         tasks = []
+
+        # Create a timeout for both connection and individual operations
         timeout = aiohttp.ClientTimeout(
-            total=timeout_duration
-        )  # 20 seconds per request
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            for fetcher in self.fetchers:
-                data = fetcher.fetch(session)
-                tasks.append(data)
+            total=None,  # No timeout for the entire session
+            connect=timeout_duration,
+            sock_read=timeout_duration,
+            sock_connect=timeout_duration,
+        )
+
+        async with aiohttp.ClientSession(
+            timeout=timeout, connector=aiohttp.TCPConnector(limit=0)
+        ) as session:
+            tasks = []
+            for idx, fetcher in enumerate(self.fetchers):
+
+                async def wrapped_fetch(f, i):
+                    try:
+                        # Add timeout to the individual fetch operation
+                        async with asyncio.timeout(timeout_duration):
+                            fetch_start = time.time()
+                            result = await f.fetch(session)
+                            fetch_time = time.time() - fetch_start
+                            logger.debug(
+                                f"Fetcher {i} ({f.__class__.__name__}) completed in {fetch_time:.2f}s"
+                            )
+                            return result
+                    except asyncio.TimeoutError:
+                        logger.error(
+                            f"Fetcher {i} ({f.__class__.__name__}) timed out after {timeout_duration}s"
+                        )
+                        return PublisherFetchError(f"Timeout after {timeout_duration}s")
+                    except Exception as e:
+                        logger.error(
+                            f"Fetcher {i} ({f.__class__.__name__}) failed: {str(e)}"
+                        )
+                        raise
+
+                tasks.append(wrapped_fetch(fetcher, idx))
+
+            gather_start = time.time()
             result = await asyncio.gather(*tasks, return_exceptions=return_exceptions)
-            result = [val for subl in result for val in subl]  # type: ignore[misc,union-attr]
+            logger.info(f"Gathered all results in {time.time() - gather_start:.2f}s")
+
+            result = [r if isinstance(r, list) else [r] for r in result]
+            result = [val for subl in result for val in subl]  # flatten
+
             if filter_exceptions:
                 result = [
                     subl for subl in result if not isinstance(subl, BaseException)
                 ]
-            return result  # type: ignore[union-attr, misc, return-value]
+            return result
+
+        await asyncio.sleep(0)  # Graceful shutdown

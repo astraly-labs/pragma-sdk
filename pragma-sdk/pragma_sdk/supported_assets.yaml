@@ -10,7 +10,7 @@
   starknet_address: '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7'
 
 - name: 'Solana'
-  decimals: 18
+  decimals: 9
   ticker: 'SOL'
   coingecko_id: 'solana'
 
@@ -70,6 +70,11 @@
   coingecko_id: 'wrapped-bitcoin'
   starknet_address: '0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac'
   ethereum_address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+
+- name: 'Bitcoin Cash'
+  decimals: 8
+  ticker: 'BCH'
+  coingecko_id: 'bitcoin-cash'
 
 - name: 'Wrapped Lido Staked Ether'
   decimals: 18
@@ -134,8 +139,13 @@
   ticker: 'MATIC'
   coingecko_id: 'matic-network'
 
+- name: 'Worldcoin'
+  decimals: 18
+  ticker: 'WLD'
+  coingecko_id: 'worldcoin-wld'
+
 - name: 'Ripple'
-  decimals: 6
+  decimals: 15
   ticker: 'XRP'
   coingecko_id: 'ripple'
 
@@ -145,7 +155,7 @@
   coingecko_id: 'dogecoin'
 
 - name: '1000 Pepe'
-  decimals: 18
+  decimals: 15
   ticker: '1000PEPE'
   coingecko_id: '1000-pepe'
 
@@ -164,10 +174,10 @@
   ticker: 'SUI'
   coingecko_id: 'sui'
 
-- name: 'Wrapped IchiFarm'
-  decimals: 18
+- name: 'dogwifhat'
+  decimals: 6
   ticker: 'WIF'
-  coingecko_id: 'ichifarm-wrapped'
+  coingecko_id: 'dogwifcoin'
 
 - name: 'Celestia'
   decimals: 18
@@ -205,15 +215,20 @@
   ticker: 'OP'
   coingecko_id: 'optimism'
 
-- name: 'Ordinal Dogecoin'
-  decimals: 18
-  ticker: 'ORDI'
-  coingecko_id: 'ordinals-dogecoin'
+- name: 'Aptos'
+  decimals: 8
+  ticker: 'APT'
+  coingecko_id: 'aptos'
 
-- name: 'Japan Token'
+- name: 'Ordinals'
+  decimals: 8
+  ticker: 'ORDI'
+  coingecko_id: 'ordinals'
+
+- name: 'Filecoin'
   decimals: 18
-  ticker: 'JTO'
-  coingecko_id: 'japan-token'
+  ticker: 'FIL'
+  coingecko_id: 'filecoin'
 
 - name: 'Jupiter'
   decimals: 9
@@ -230,6 +245,24 @@
   ticker: 'OKB'
   coingecko_id: 'okb'
   ethereum_address: '0x75231f58b43240c9718dd58b4967c5114342a86c'
+
+- name: 'ApeCoin'
+  decimals: 18
+  ticker: 'APE'
+  coingecko_id: 'apecoin'
+  ethereum_address: '0x4d224452801aced8b2f0aebe155379bb5d594381'
+
+- name: 'Shiba Inu'
+  decimals: 18
+  ticker: 'SHIB'
+  coingecko_id: 'shiba-inu'
+  ethereum_address: '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce'
+
+- name: 'Curve DAO'
+  decimals: 18
+  ticker: 'CRV'
+  coingecko_id: 'curve-dao-token'
+  ethereum_address: '0xd533a949740bb3306d119cc777fa900ba034cd52'
 
 - name: 'Cosmos'
   decimals: 6
@@ -251,3 +284,38 @@
   ticker: 'BROTHER'
   coingecko_id: 'starknet-brother'
   starknet_address: '0x03b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee'
+
+- name: 'Cardano'
+  decimals: 6
+  ticker: 'ADA'
+  coingecko_id: 'cardano'
+
+- name: 'Popcat'
+  decimals: 9
+  ticker: 'POPCAT'
+  coingecko_id: 'popcat'
+
+- name: 'Sei'
+  decimals: 6
+  ticker: 'SEI'
+  coingecko_id: 'sei-network'
+
+- name: 'Fantom'
+  decimals: 18
+  ticker: 'FTM'
+  coingecko_id: 'fantom'
+
+- name: 'Goatseus Maximus'
+  decimals: 6
+  ticker: 'GOAT'
+  coingecko_id: 'goatseus-maximus'
+
+- name: 'Moo Deng'
+  decimals: 6
+  ticker: 'MOODENG'
+  coingecko_id: 'moo-deng'
+
+- name: 'Bonk'
+  decimals: 5
+  ticker: 'BONK'
+  coingecko_id: 'bonk'

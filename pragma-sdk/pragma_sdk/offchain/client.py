@@ -179,7 +179,7 @@ class PragmaAPIClient(PragmaClient):
             "signature": [str(s) for s in sig],
             "entries": Entry.offchain_serialize_entries(entries),
         }
-        print(data)
+        # print(data)
 
         async with aiohttp.ClientSession() as session:
             start = time.time()

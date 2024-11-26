@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 
@@ -21,7 +22,7 @@ class BinanceFutureFetcher(FetcherInterfaceT):
 
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
-    ) -> List[FutureEntry] | PublisherFetchError:
+    ) -> FutureEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -42,14 +43,10 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        entries: List[Entry | PublisherFetchError | BaseException] = []
+        entries = []
         for pair in self.pairs:
-            entries_or_error = await self.fetch_pair(pair, session)
-            if isinstance(entries_or_error, PublisherFetchError):
-                entries.append(entries_or_error)
-            else:
-                entries.extend(entries_or_error)
-        return entries
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
         return (
@@ -79,14 +76,12 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             else:
                 expiry_timestamp = int(0)
 
-        return [
-            FutureEntry(
-                pair_id=pair.id,
-                price=price_int,
-                volume=int(volume),
-                timestamp=int(time.time()),
-                source=self.SOURCE,
-                publisher=self.publisher,
-                expiry_timestamp=expiry_timestamp * 1000,
-            )
-        ]
+        return FutureEntry(
+            pair_id=pair.id,
+            price=price_int,
+            volume=int(volume),
+            timestamp=int(time.time()),
+            source=self.SOURCE,
+            publisher=self.publisher,
+            expiry_timestamp=expiry_timestamp * 1000,
+        )
