@@ -215,6 +215,11 @@
   ticker: 'OP'
   coingecko_id: 'optimism'
 
+- name: 'Aptos'
+  decimals: 8
+  ticker: 'APT'
+  coingecko_id: 'aptos'
+
 - name: 'Ordinals'
   decimals: 8
   ticker: 'ORDI'
