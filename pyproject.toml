@@ -14,7 +14,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2.4.4"
+version = "2.4.5"
 tag_format = "v$version"
 version_files = [
   "VERSION",
