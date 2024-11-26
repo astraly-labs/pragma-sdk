@@ -54,7 +54,5 @@ class FetcherWithApiKeyConfig:
 
 # Configuration for fetchers that may require API keys.
 FETCHERS_WITH_API_KEY: Dict[FetcherInterfaceT, FetcherWithApiKeyConfig] = {
-    DefillamaFetcher: FetcherWithApiKeyConfig(
-        env_api_key="DEFI_LLAMA_API_KEY", optional=True
-    ),
+    DefillamaFetcher: FetcherWithApiKeyConfig(env_api_key="DEFI_LLAMA_API_KEY", optional=True),
 }

@@ -20,6 +20,8 @@ e.g
 python fetcher_test.py DefillamaFetcher BROTHER USDPLUS
 ```
 """
+
+
 async def test_fetcher(
     fetcher_class: Type[FetcherInterfaceT],
     base_currency: str,
