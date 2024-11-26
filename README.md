@@ -33,6 +33,14 @@ Our services used to publish data etc...:
 - <a href="./checkpointer">Checkpointer</a>
 - <a href="./merkle-maker">Merkle Maker</a>
 
+## Releasing a new version
+
+```bash
+cz bump --increment <patch|minor|major>
+cd pragma-sdk && poetry publish --build && cd -
+sh scripts/poetry_lock_update.sh
+```
+
 ## Contributing
 
 See the [CONTRIBUTING](./CONTRIBUTING.md) guide.
