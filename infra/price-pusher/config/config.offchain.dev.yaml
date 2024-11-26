@@ -31,6 +31,24 @@
       - 1000SATS/USD
       - ONDO/USD
       - STRK/USD
+      - BCH/USD    
+      - WBTC/USD   
+      - WSTETH/USD 
+      - STETH/USD  
+      - NSTR/USD   
+      - LORDS/USD  
+      - ZEND/USD   
+      - EKUBO/USD  
+      - SHIB/USD   
+      - CRV/USD    
+      - BROTHER/USD
+      - POPCAT/USD 
+      - SEI/USD    
+      - FTM/USD    
+      - GOAT/USD   
+      - MOODENG/USD
+      - BONK/USD   
+      - LUSD/USD   
 
     future:
       - BTC/USDT
@@ -63,6 +81,23 @@
       - 1000SATS/USDT
       - ONDO/USDT
       - STRK/USD
+      - BCH/USDT   
+      - WBTC/USDT  
+      - WSTETH/USDT
+      - STETH/USDT 
+      - NSTR/USDT  
+      - LORDS/USDT 
+      - ZEND/USDT  
+      - EKUBO/USDT 
+      - SHIB/USDT  
+      - CRV/USDT   
+      - POPCAT/USDT
+      - SEI/USDT   
+      - FTM/USDT   
+      - GOAT/USDT  
+      - MOODENG/USDT
+      - BONK/USDT  
+      - LUSD/USDT  
 
   time_difference: 1
   price_deviation: 0.025
