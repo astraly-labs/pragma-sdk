@@ -41,7 +41,7 @@
       - EKUBO/USD  
       - SHIB/USD   
       - CRV/USD    
-      - BROTHER/USD
+      - BROTHER/USDPLUS
       - POPCAT/USD 
       - SEI/USD    
       - FTM/USD    
@@ -80,15 +80,9 @@
       - NEAR/USDT
       - 1000SATS/USDT
       - ONDO/USDT
-      - STRK/USD
+      - STRK/USDT
       - BCH/USDT   
-      - WBTC/USDT  
       - WSTETH/USDT
-      - STETH/USDT 
-      - NSTR/USDT  
-      - LORDS/USDT 
-      - ZEND/USDT  
-      - EKUBO/USDT 
       - SHIB/USDT  
       - CRV/USDT   
       - POPCAT/USDT
@@ -97,7 +91,6 @@
       - GOAT/USDT  
       - MOODENG/USDT
       - BONK/USDT  
-      - LUSD/USDT  
 
   time_difference: 1
   price_deviation: 0.025
