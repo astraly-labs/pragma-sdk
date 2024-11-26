@@ -115,7 +115,7 @@ class FetcherClient:
                             fetch_start = time.time()
                             result = await f.fetch(session)
                             fetch_time = time.time() - fetch_start
-                            logger.info(
+                            logger.debug(
                                 f"Fetcher {i} ({f.__class__.__name__}) completed in {fetch_time:.2f}s"
                             )
                             return result
