@@ -95,6 +95,11 @@
   coingecko_id: 'nostra'
   starknet_address: '0x00c530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007'
 
+- name: 'Endur xSTRK'
+  decimals: 18
+  ticker: 'xSTRK'
+  starknet_address: '0x028d709c875C0CEAc3dCE7065beC5328186Dc89FE254527084D1689910954B0a'
+
 - name: 'Lords'
   decimals: 18
   ticker: 'LORDS'
