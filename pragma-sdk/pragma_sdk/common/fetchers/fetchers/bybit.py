@@ -128,7 +128,6 @@ class BybitFetcher(FetcherInterfaceT):
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())
-        print(configuration_decimals)
         decimals = (
             pair.decimals()
             if configuration_decimals is None
