@@ -58,7 +58,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
                 or result["msg"] == "Instrument ID does not exist"
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
-            return self._construct(pair, result["data"][0], 0)
+            return self._construct(pair, result["data"][0], 0,configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None  
@@ -75,7 +75,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
     def _construct(self, pair: Pair, data: Any, expiry_timestamp: int, configuration_decimals: Optional[int] = None) -> FutureEntry:
         decimals = pair.decimals() if configuration_decimals is None else configuration_decimals
         price = float(data["last"])
-        price_int = int(price * (10**decimals))
+        price_int = int(price * (10**decimals)) 
         volume = float(data["volCcy24h"])
 
         logger.debug("Fetched price future %d for %s from OKX", price_int, pair.id)
