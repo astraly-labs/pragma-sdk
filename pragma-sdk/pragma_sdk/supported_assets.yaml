@@ -97,7 +97,7 @@
 
 - name: 'Endur xSTRK'
   decimals: 18
-  ticker: 'xSTRK'
+  ticker: 'XSTRK'
   starknet_address: '0x028d709c875C0CEAc3dCE7065beC5328186Dc89FE254527084D1689910954B0a'
 
 - name: 'Lords'
