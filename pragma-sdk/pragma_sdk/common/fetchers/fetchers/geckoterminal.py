@@ -33,9 +33,13 @@ ASSET_MAPPING: Dict[str, Any] = {
         "starknet-alpha",
         "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     ),
-    "xSTRK": (
+    "XSTRK": (
         "starknet-alpha",
         "0x028d709c875C0CEAc3dCE7065beC5328186Dc89FE254527084D1689910954B0a",
+    ),
+    "SSTRK": (
+        "starknet-alpha",
+        "0x0356f304b154d29d2a8fe22f1cb9107a9b564a733cf6b4cc47fd121ac1af90c9",
     ),
     "ZEND": (
         "starknet-alpha",
@@ -95,6 +99,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 f"Unknown price pair, do not know how to query GeckoTerminal for {pair.base_currency}"
             )
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
+        
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(
