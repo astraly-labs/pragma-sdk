@@ -48,7 +48,10 @@ class FetcherInterfaceT(abc.ABC):
 
     @abc.abstractmethod
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> Entry | PublisherFetchError:
         """
         Fetches the data for a specific pair from the fetcher and returns a SpotEntry object.

@@ -30,9 +30,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.dexscreener.com/latest/dex/tokens"
 
     async def fetch(
-        self,
-        session: ClientSession,
-        configuration_decimals: Optional[int] = None
+        self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Fetch prices from all pairs from Dexscreener.
@@ -43,7 +41,10 @@ class DexscreenerFetcher(FetcherInterfaceT):
         return list(await asyncio.gather(*entries, return_exceptions=True))  # type: ignore[call-overload]
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         """
         Fetch the price for a pair and return the SpotEntry.
@@ -60,13 +61,15 @@ class DexscreenerFetcher(FetcherInterfaceT):
                 f"No on-chain address for {pair.base_currency.id}, "
                 "can't fetch from Dexscreener"
             )
-        return await self._fetch_dexscreener_price(pair, session, configuration_decimals)
+        return await self._fetch_dexscreener_price(
+            pair, session, configuration_decimals
+        )
 
     async def _fetch_dexscreener_price(
         self,
         pair: Pair,
         session: ClientSession,
-        configuration_decimals: Optional[int] = None
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         """
         Query the dexscreener API and construct the SpotEntry.
@@ -86,7 +89,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
             pair=pair,
             result=float(pair_data["priceUsd"]),
             volume=float(pair_data["volume"]["h24"]),
-            configuration_decimals=configuration_decimals
+            configuration_decimals=configuration_decimals,
         )
 
     async def _query_dexscreener(
@@ -120,8 +123,18 @@ class DexscreenerFetcher(FetcherInterfaceT):
             base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
         return f"{self.BASE_URL}/{base_address}"
 
-    def _construct(self, pair: Pair, result: float, volume: float, configuration_decimals: Optional[int] = None) -> SpotEntry:
-        price_int = int(result * (10 ** pair.decimals())) if configuration_decimals is None else int(result * (10 ** configuration_decimals))
+    def _construct(
+        self,
+        pair: Pair,
+        result: float,
+        volume: float,
+        configuration_decimals: Optional[int] = None,
+    ) -> SpotEntry:
+        price_int = (
+            int(result * (10 ** pair.decimals()))
+            if configuration_decimals is None
+            else int(result * (10**configuration_decimals))
+        )
         logger.debug("Fetched price %d for %s from Dexscreener", price_int, pair)
         return SpotEntry(
             pair_id=pair.id,

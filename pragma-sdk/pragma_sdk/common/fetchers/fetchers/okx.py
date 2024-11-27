@@ -26,7 +26,11 @@ class OkxFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, usdt_price: float = 1, configuration_decimals: Optional[int] = None   
+        self,
+        pair: Pair,
+        session: ClientSession,
+        usdt_price: float = 1,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         url = self.format_url(new_pair)
@@ -48,7 +52,7 @@ class OkxFetcher(FetcherInterfaceT):
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
 
-            return self._construct(pair, result, usdt_price, configuration_decimals )
+            return self._construct(pair, result, usdt_price, configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
@@ -57,7 +61,9 @@ class OkxFetcher(FetcherInterfaceT):
         usdt_price = await self.get_stable_price("USDT")
         for pair in self.pairs:
             entries.append(
-                asyncio.ensure_future(self.fetch_pair(pair, session, usdt_price, configuration_decimals))
+                asyncio.ensure_future(
+                    self.fetch_pair(pair, session, usdt_price, configuration_decimals)
+                )
             )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
@@ -65,12 +71,22 @@ class OkxFetcher(FetcherInterfaceT):
         url = f"{self.BASE_URL}?instId={pair.base_currency.id}-{pair.quote_currency.id}-SWAP"
         return url
 
-    def _construct(self, pair: Pair, result: Any, usdt_price: float = 1, configuration_decimals: Optional[int] = None) -> SpotEntry:
+    def _construct(
+        self,
+        pair: Pair,
+        result: Any,
+        usdt_price: float = 1,
+        configuration_decimals: Optional[int] = None,
+    ) -> SpotEntry:
         data = result["data"][0]
 
         timestamp = int(time.time())
         price = float(data["last"]) / usdt_price
-        price_int = int(price * (10 ** pair.decimals())) if configuration_decimals is None else int(price * (10 ** configuration_decimals))
+        price_int = (
+            int(price * (10 ** pair.decimals()))
+            if configuration_decimals is None
+            else int(price * (10**configuration_decimals))
+        )
         volume = float(data["volCcy24h"])
 
         logger.debug("Fetched price %d for %s from OKX", price_int, pair)

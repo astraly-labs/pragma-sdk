@@ -18,7 +18,10 @@ class BitstampFetcher(FetcherInterfaceT):
     SOURCE: str = "BITSTAMP"
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
@@ -31,7 +34,10 @@ class BitstampFetcher(FetcherInterfaceT):
         self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = [
-            asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)) for pair in self.pairs
+            asyncio.ensure_future(
+                self.fetch_pair(pair, session, configuration_decimals)
+            )
+            for pair in self.pairs
         ]
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
@@ -39,10 +45,16 @@ class BitstampFetcher(FetcherInterfaceT):
         url = f"{self.BASE_URL}/{pair.base_currency.id.lower()}{pair.quote_currency.id.lower()}"
         return url
 
-    def _construct(self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None
+    ) -> SpotEntry:
         timestamp = int(time.time())
         price = float(result["last"])
-        price_int = int(price * (10 ** pair.decimals())) if configuration_decimals is None else int(price * (10 ** configuration_decimals))
+        price_int = (
+            int(price * (10 ** pair.decimals()))
+            if configuration_decimals is None
+            else int(price * (10**configuration_decimals))
+        )
 
         logger.debug("Fetched price %d for %s from Bitstamp", price_int, pair)
 

@@ -28,7 +28,10 @@ class IndexCoopFetcher(FetcherInterfaceT):
     SOURCE: str = "INDEXCOOP"
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
@@ -42,14 +45,18 @@ class IndexCoopFetcher(FetcherInterfaceT):
                 parsed_data = json.loads(response_text)
                 logger.warning("Unexpected content type received: %s", content_type)
 
-            return self._construct(pair, parsed_data, configuration_decimals    )
+            return self._construct(pair, parsed_data, configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)))
+            entries.append(
+                asyncio.ensure_future(
+                    self.fetch_pair(pair, session, configuration_decimals)
+                )
+            )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
@@ -79,10 +86,16 @@ class IndexCoopFetcher(FetcherInterfaceT):
             for symbol, quantities in quantities.items()
         ]
 
-    def _construct(self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None
+    ) -> SpotEntry:
         timestamp = int(time.time())
         price = result["navPrice"]
-        decimals = pair.decimals() if configuration_decimals is None else configuration_decimals
+        decimals = (
+            pair.decimals()
+            if configuration_decimals is None
+            else configuration_decimals
+        )
         price_int = int(price * (10**decimals))
         volume = int(float(result["volume24h"]) * (10**decimals))
 

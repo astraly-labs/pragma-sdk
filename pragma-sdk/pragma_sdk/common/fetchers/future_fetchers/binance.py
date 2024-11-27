@@ -21,7 +21,10 @@ class BinanceFutureFetcher(FetcherInterfaceT):
     SOURCE: str = "BINANCE"
 
     async def fetch_pair(  # type: ignore[override]
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> FutureEntry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
@@ -41,11 +44,15 @@ class BinanceFutureFetcher(FetcherInterfaceT):
             return self._construct(pair, result, configuration_decimals)
 
     async def fetch(
-        self, session: ClientSession, configuration_decimals: Optional[int] = None  
+        self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)))
+            entries.append(
+                asyncio.ensure_future(
+                    self.fetch_pair(pair, session, configuration_decimals)
+                )
+            )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
@@ -55,11 +62,15 @@ class BinanceFutureFetcher(FetcherInterfaceT):
 
     def _construct(
         self,
-        pair: Pair, 
+        pair: Pair,
         data: Any,
         configuration_decimals: Optional[int] = None,
     ) -> list[FutureEntry] | PublisherFetchError:
-        decimals = pair.decimals() if configuration_decimals is None else configuration_decimals
+        decimals = (
+            pair.decimals()
+            if configuration_decimals is None
+            else configuration_decimals
+        )
         price = float(data["markPrice"])
         price_int = int(price * (10**decimals))
         volume = 0  # TODO: Implement volume

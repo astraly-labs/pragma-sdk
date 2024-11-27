@@ -13,7 +13,6 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 logger = logging.getLogger(__name__)
 
 
-
 @add_sync_methods
 class FetcherClient:
     """

@@ -66,9 +66,7 @@ class EkuboFetcher(FetcherInterfaceT):
         super().__init__(pairs, publisher, api_key, network)
 
     async def fetch(
-        self,
-        session: ClientSession,
-        configuration_decimals: Optional[int] = None
+        self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Fetches the data from the fetcher and returns a list of Entry objects.
@@ -95,7 +93,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 bases=base_currencies,
                 res=response,
                 hop_prices=hop_prices,
-                configuration_decimals=configuration_decimals
+                configuration_decimals=configuration_decimals,
             )
             entries.extend(new_entries)
 
@@ -147,7 +145,7 @@ class EkuboFetcher(FetcherInterfaceT):
         bases: List[Currency],
         res: List[int],
         hop_prices: Optional[Dict[Pair, float]],
-        configuration_decimals: Optional[int] = None
+        configuration_decimals: Optional[int] = None,
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Parse response data into a list of entries or errors.
@@ -188,7 +186,7 @@ class EkuboFetcher(FetcherInterfaceT):
                         pair=pair,
                         is_hopped_pair=quote[1],
                         hop_prices=hop_prices,
-                        configuration_decimals=configuration_decimals
+                        configuration_decimals=configuration_decimals,
                     )
                     entries.append(entry)
 
@@ -211,7 +209,7 @@ class EkuboFetcher(FetcherInterfaceT):
         pair: Pair,
         is_hopped_pair: bool,
         hop_prices: Optional[Dict[Pair, float]],
-        configuration_decimals: Optional[int] = None
+        configuration_decimals: Optional[int] = None,
     ) -> Tuple[SpotEntry, int]:
         """
         Handle the sub-array of the Ekubo Response when the response was 3, i.e
@@ -234,7 +232,11 @@ class EkuboFetcher(FetcherInterfaceT):
                 raise ValueError("Hopped prices are None. Should never happen.")
             pair, price = await self._adapt_back_hopped_pair(hop_prices, pair, price)
 
-        price_int = int(price * 10 ** pair.decimals()) if configuration_decimals is None else int(price * 10 ** configuration_decimals)
+        price_int = (
+            int(price * 10 ** pair.decimals())
+            if configuration_decimals is None
+            else int(price * 10**configuration_decimals)
+        )
         logger.debug("Fetched price %d for %s from Ekubo", price_int, pair)
 
         entry = SpotEntry(

@@ -31,7 +31,11 @@ class BinanceFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None, usdt_price: float = 1,
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
+        usdt_price: float = 1,
     ) -> Entry | PublisherFetchError:
         new_pair = self.hop_handler.get_hop_pair(pair) or pair
         url = self.format_url(new_pair)
@@ -42,7 +46,12 @@ class BinanceFetcher(FetcherInterfaceT):
             result = await resp.json()
             if "code" in result:
                 return await self.operate_usdt_hop(pair, session)
-            return self._construct(pair=pair, result=result, configuration_decimals=configuration_decimals, usdt_price=usdt_price)
+            return self._construct(
+                pair=pair,
+                result=result,
+                configuration_decimals=configuration_decimals,
+                usdt_price=usdt_price,
+            )
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
@@ -52,7 +61,11 @@ class BinanceFetcher(FetcherInterfaceT):
         for pair in self.pairs:
             if pair not in EXCEPTION_LIST:
                 entries.append(
-                    asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals,usdt_price))
+                    asyncio.ensure_future(
+                        self.fetch_pair(
+                            pair, session, configuration_decimals, usdt_price
+                        )
+                    )
                 )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
@@ -61,7 +74,10 @@ class BinanceFetcher(FetcherInterfaceT):
         return url
 
     async def operate_usdt_hop(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         url_pair1 = self.format_url(
             Pair(
@@ -97,7 +113,12 @@ class BinanceFetcher(FetcherInterfaceT):
                     f"No data found for {pair} from Binance - hop failed for {pair.quote_currency.id}"
                 )
 
-        return self._construct(pair=pair, result=pair2_usdt, configuration_decimals=configuration_decimals, hop_result=pair1_usdt)
+        return self._construct(
+            pair=pair,
+            result=pair2_usdt,
+            configuration_decimals=configuration_decimals,
+            hop_result=pair1_usdt,
+        )
 
     def _construct(
         self,
@@ -116,7 +137,11 @@ class BinanceFetcher(FetcherInterfaceT):
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())
-        price_int = int(price * (10 ** pair.decimals())) if configuration_decimals is None else int(price * (10 ** configuration_decimals))
+        price_int = (
+            int(price * (10 ** pair.decimals()))
+            if configuration_decimals is None
+            else int(price * (10**configuration_decimals))
+        )
 
         logger.debug("Fetched price %d for %s from Binance", price_int, pair)
 

@@ -19,7 +19,10 @@ class DefillamaFetcher(FetcherInterfaceT):
     SOURCE: str = "DEFILLAMA"
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         pair_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         if pair_id is None:
@@ -42,7 +45,10 @@ class DefillamaFetcher(FetcherInterfaceT):
         self, session: ClientSession, configuration_decimals: Optional[int] = None
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = [
-            asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)) for pair in self.pairs
+            asyncio.ensure_future(
+                self.fetch_pair(pair, session, configuration_decimals)
+            )
+            for pair in self.pairs
         ]
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
@@ -52,7 +58,10 @@ class DefillamaFetcher(FetcherInterfaceT):
         return url
 
     async def operate_usd_hop(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None  
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry | PublisherFetchError:
         coingecko_id_1 = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         coingeck_id_2 = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
@@ -85,7 +94,11 @@ class DefillamaFetcher(FetcherInterfaceT):
         return self._construct(pair, result_base, result_quote, configuration_decimals)
 
     def _construct(
-        self, pair: Pair, result: Any, hop_result: Optional[Any] = None, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        result: Any,
+        hop_result: Optional[Any] = None,
+        configuration_decimals: Optional[int] = None,
     ) -> SpotEntry:
         base_id = AssetConfig.get_coingecko_id_from_ticker(pair.base_currency.id)
         timestamp = int(time.time())
@@ -94,10 +107,18 @@ class DefillamaFetcher(FetcherInterfaceT):
             quote_id = AssetConfig.get_coingecko_id_from_ticker(pair.quote_currency.id)
             price = result["coins"][f"coingecko:{base_id}"]["price"]
             hop_price = hop_result["coins"][f"coingecko:{quote_id}"]["price"]
-            price_int = int((price / hop_price) * (10**decimals)) if configuration_decimals is None else int((price / hop_price) * (10**configuration_decimals))
+            price_int = (
+                int((price / hop_price) * (10**decimals))
+                if configuration_decimals is None
+                else int((price / hop_price) * (10**configuration_decimals))
+            )
         else:
             price = result["coins"][f"coingecko:{base_id}"]["price"]
-            price_int = int(price * (10**decimals)) if configuration_decimals is None else int(price * (10**configuration_decimals))
+            price_int = (
+                int(price * (10**decimals))
+                if configuration_decimals is None
+                else int(price * (10**configuration_decimals))
+            )
 
         logger.debug("Fetched price %d for %s from Defillama", price_int, pair)
 

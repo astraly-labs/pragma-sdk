@@ -18,7 +18,10 @@ class UpbitFetcher(FetcherInterfaceT):
     SOURCE: str = "UPBIT"
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, configuration_decimals: Optional[int] = None
+        self,
+        pair: Pair,
+        session: ClientSession,
+        configuration_decimals: Optional[int] = None,
     ) -> Entry | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
@@ -32,7 +35,11 @@ class UpbitFetcher(FetcherInterfaceT):
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)))
+            entries.append(
+                asyncio.ensure_future(
+                    self.fetch_pair(pair, session, configuration_decimals)
+                )
+            )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
@@ -41,11 +48,17 @@ class UpbitFetcher(FetcherInterfaceT):
         )
         return url
 
-    def _construct(self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, configuration_decimals: Optional[int] = None
+    ) -> SpotEntry:
         data = result[0]
         timestamp = int(time.time())
         price = float(data["trade_price"])
-        price_int = int(price * (10 ** pair.decimals())) if configuration_decimals is None else int(price * (10 ** configuration_decimals))
+        price_int = (
+            int(price * (10 ** pair.decimals()))
+            if configuration_decimals is None
+            else int(price * (10**configuration_decimals))
+        )
         volume = float(data["trade_volume"])
 
         logger.debug("Fetched price %d for %s from Upbit", price_int, pair)
