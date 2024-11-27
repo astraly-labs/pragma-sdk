@@ -45,7 +45,7 @@ class IndexCoopFetcher(FetcherInterfaceT):
                 parsed_data = json.loads(response_text)
                 logger.warning("Unexpected content type received: %s", content_type)
 
-            return self._construct(pair, parsed_data, configuration_decimals)
+            return self._construct(pair, parsed_data, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None

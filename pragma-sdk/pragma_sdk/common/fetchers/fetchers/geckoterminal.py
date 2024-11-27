@@ -112,7 +112,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                     f"No data found for {pair} from GeckoTerminal"
                 )
 
-        return self._construct(pair, result, configuration_decimals)
+        return self._construct(pair, result, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
@@ -183,7 +183,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {pair} from GeckoTerminal"
                 )
-        return self._construct(pair, result, hop_result, configuration_decimals)
+        return self._construct(pair, result, hop_result, configuration_decimals=configuration_decimals)
 
     def _construct(
         self,

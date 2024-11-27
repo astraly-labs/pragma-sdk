@@ -52,7 +52,7 @@ class OkxFetcher(FetcherInterfaceT):
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
 
-            return self._construct(pair, result, usdt_price, configuration_decimals)
+            return self._construct(pair, result, usdt_price, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None

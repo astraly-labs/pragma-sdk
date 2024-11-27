@@ -39,7 +39,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             result = await resp.json()
             if not result["coins"]:
                 return PublisherFetchError(f"No data found for {pair} from Defillama")
-        return self._construct(pair, result, configuration_decimals)
+        return self._construct(pair, result, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
@@ -91,7 +91,7 @@ class DefillamaFetcher(FetcherInterfaceT):
                 return PublisherFetchError(
                     f"No data found for {pair} from Defillama -  usd hop failed for {pair.quote_currency.id}"
                 )
-        return self._construct(pair, result_base, result_quote, configuration_decimals)
+        return self._construct(pair, result_base, result_quote, configuration_decimals=configuration_decimals)
 
     def _construct(
         self,

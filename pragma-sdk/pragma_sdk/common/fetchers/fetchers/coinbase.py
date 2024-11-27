@@ -29,7 +29,7 @@ class CoinbaseFetcher(FetcherInterfaceT):
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Coinbase")
             result = await resp.json()
-            return self._construct(pair, result, configuration_decimals)
+            return self._construct(pair, result, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None

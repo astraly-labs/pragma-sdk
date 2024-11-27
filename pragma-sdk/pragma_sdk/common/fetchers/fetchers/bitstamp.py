@@ -28,7 +28,7 @@ class BitstampFetcher(FetcherInterfaceT):
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Bitstamp")
 
-            return self._construct(pair, await resp.json(), configuration_decimals)
+            return self._construct(pair, await resp.json(), configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None

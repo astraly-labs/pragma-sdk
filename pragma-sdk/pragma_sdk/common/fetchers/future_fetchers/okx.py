@@ -61,7 +61,7 @@ class OkxFutureFetcher(FetcherInterfaceT):
                 or result["msg"] == "Instrument ID does not exist"
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
-            return self._construct(pair, result["data"][0], 0, configuration_decimals)
+            return self._construct(pair, result["data"][0], 0, configuration_decimals=configuration_decimals)
 
     async def fetch(
         self, session: ClientSession, configuration_decimals: Optional[int] = None
