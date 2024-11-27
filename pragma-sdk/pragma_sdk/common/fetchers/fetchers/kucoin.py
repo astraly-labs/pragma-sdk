@@ -45,7 +45,7 @@ class KucoinFetcher(FetcherInterfaceT):
     ) -> List[Entry | PublisherFetchError | BaseException]:
         entries = []
         for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals)))
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session, configuration_decimals=configuration_decimals)))
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
