@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Coroutine, Dict, List, Optional, Sequence
+from typing import Callable, Coroutine, Dict, List, Optional, Sequence, cast
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
@@ -83,7 +83,6 @@ class OracleMixin:
         future_entries = []
         generic_entries = []
 
-        # Single pass through entries with direct decimal adjustment
         DECIMAL_ADJUSTMENT = 10**10  # Constant for 18 -> 8 decimal conversion
         for entry in entries:
             if isinstance(entry, SpotEntry):
@@ -108,18 +107,22 @@ class OracleMixin:
                         expiration_timestamp=entry.expiration_timestamp,
                     )
                 )
-            else:  # GenericEntry
+            else:  # GenericEntry does not requires conversion
                 generic_entries.append(entry)
 
         # Batch publish all entries
         invocations = []
         if spot_entries:
             invocations.extend(
-                await self._publish_entries(spot_entries, DataTypes.SPOT)
+                await self._publish_entries(
+                    cast(List[Entry], spot_entries), DataTypes.SPOT
+                )
             )
         if future_entries:
             invocations.extend(
-                await self._publish_entries(future_entries, DataTypes.FUTURE)
+                await self._publish_entries(
+                    cast(List[Entry], future_entries), DataTypes.FUTURE
+                )
             )
         if generic_entries:
             invocations.extend(
