@@ -10,7 +10,8 @@ logger = get_pragma_sdk_logger()
 
 # Behavior: Ping betteruptime if all is good
 
-MAX_TIME_DIFFERENCE = 600 # 10 minutes
+MAX_TIME_DIFFERENCE = 600  # 10 minutes
+
 
 def handler(event, context):
     asyncio.run(_handler())
