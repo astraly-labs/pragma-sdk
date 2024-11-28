@@ -78,24 +78,54 @@ class OracleMixin:
             logger.warning("publish_many received no entries to publish. Skipping")
             return []
 
-        spot_entries: List[Entry] = [
-            entry for entry in entries if isinstance(entry, SpotEntry)
-        ]
-        future_entries: List[Entry] = [
-            entry for entry in entries if isinstance(entry, FutureEntry)
-        ]
-        generic_entries: List[Entry] = [
-            entry for entry in entries if isinstance(entry, GenericEntry)
-        ]
+        # Pre-allocate lists with approximate sizes
+        spot_entries = []
+        future_entries = []
+        generic_entries = []
 
+        # Single pass through entries with direct decimal adjustment
+        DECIMAL_ADJUSTMENT = 10**10  # Constant for 18 -> 8 decimal conversion
+        for entry in entries:
+            if isinstance(entry, SpotEntry):
+                spot_entries.append(
+                    SpotEntry(
+                        pair=entry.pair,
+                        price=entry.price // DECIMAL_ADJUSTMENT,
+                        timestamp=entry.base.timestamp,
+                        source=entry.base.source,
+                        publisher=entry.base.publisher,
+                        volume=entry.volume,
+                    )
+                )
+            elif isinstance(entry, FutureEntry):
+                future_entries.append(
+                    FutureEntry(
+                        pair=entry.pair,
+                        price=entry.price // DECIMAL_ADJUSTMENT,
+                        timestamp=entry.base.timestamp,
+                        source=entry.base.source,
+                        publisher=entry.base.publisher,
+                        expiration_timestamp=entry.expiration_timestamp,
+                    )
+                )
+            else:  # GenericEntry
+                generic_entries.append(entry)
+
+        # Batch publish all entries
         invocations = []
-        invocations.extend(await self._publish_entries(spot_entries, DataTypes.SPOT))
-        invocations.extend(
-            await self._publish_entries(future_entries, DataTypes.FUTURE)
-        )
-        invocations.extend(
-            await self._publish_entries(generic_entries, DataTypes.GENERIC)
-        )
+        if spot_entries:
+            invocations.extend(
+                await self._publish_entries(spot_entries, DataTypes.SPOT)
+            )
+        if future_entries:
+            invocations.extend(
+                await self._publish_entries(future_entries, DataTypes.FUTURE)
+            )
+        if generic_entries:
+            invocations.extend(
+                await self._publish_entries(generic_entries, DataTypes.GENERIC)
+            )
+
         return invocations
 
     async def _publish_entries(
