@@ -88,7 +88,7 @@ class OracleMixin:
             if isinstance(entry, SpotEntry):
                 spot_entries.append(
                     SpotEntry(
-                        pair=entry.pair,
+                        pair_id=entry.pair_id,
                         price=entry.price // DECIMAL_ADJUSTMENT,
                         timestamp=entry.base.timestamp,
                         source=entry.base.source,
@@ -99,12 +99,12 @@ class OracleMixin:
             elif isinstance(entry, FutureEntry):
                 future_entries.append(
                     FutureEntry(
-                        pair=entry.pair,
+                        pair_id=entry.pair_id,
                         price=entry.price // DECIMAL_ADJUSTMENT,
                         timestamp=entry.base.timestamp,
                         source=entry.base.source,
                         publisher=entry.base.publisher,
-                        expiration_timestamp=entry.expiration_timestamp,
+                        expiry_timestamp=entry.expiry_timestamp,
                     )
                 )
             else:  # GenericEntry does not requires conversion
