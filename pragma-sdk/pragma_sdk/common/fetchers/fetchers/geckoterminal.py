@@ -41,6 +41,10 @@ ASSET_MAPPING: Dict[str, Any] = {
         "starknet-alpha",
         "0x0356f304b154d29d2a8fe22f1cb9107a9b564a733cf6b4cc47fd121ac1af90c9",
     ),
+    "KSTRK": (
+        "starknet-alpha",
+        "0x045cd05ee2caaac3459b87e5e2480099d201be2f62243f839f00e10dde7f500c",
+    ),
     "ZEND": (
         "starknet-alpha",
         "0x00585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34",
