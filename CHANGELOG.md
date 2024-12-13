@@ -1,3 +1,9 @@
+## v2.4.8 (2024-12-13)
+
+### Feat
+
+- **poller_refresh_interval**: Added a CLI parameter for the poller refresh interval
+
 ## v2.4.7 (2024-12-03)
 
 ### Feat
