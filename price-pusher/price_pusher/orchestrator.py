@@ -21,6 +21,10 @@ class Orchestrator:
     """
 
     poller: PricePoller
+    # Time between poller refresh. Defaults to 5 seconds.
+    # Make sure it's high enough - else we might get rate limited by public APIs.
+    poller_refresh_interval: int
+
     listeners: List[PriceListener]
     pusher: PricePusher
     # Contains the latest spot/future prices for each sources
@@ -32,11 +36,14 @@ class Orchestrator:
         poller: PricePoller,
         listeners: List[PriceListener],
         pusher: PricePusher,
+        poller_refresh_interval: int = 5,
     ) -> None:
-        # Init class properties.
         self.poller = poller
         self.listeners = listeners
         self.pusher = pusher
+
+        # Time between poller refresh
+        self.poller_refresh_interval = poller_refresh_interval
 
         # Contains the latest prices for each sources
         self.latest_prices: LatestOrchestratorPairPrices = {}
@@ -73,8 +80,8 @@ class Orchestrator:
         """
         while True:
             await self.poller.poll_prices()
-            # Wait 5 seconds before requerying public APIs (rate limits).
-            await asyncio.sleep(5)
+            # Wait some time before requerying public APIs (rate limits).
+            await asyncio.sleep(self.poller_refresh_interval)
 
     async def _listener_services(self) -> None:
         """

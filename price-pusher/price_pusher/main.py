@@ -38,6 +38,7 @@ async def main(
     private_key: PrivateKey,
     publisher_name: str,
     publisher_address: str,
+    poller_refresh_interval: int,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
     api_key: Optional[str] = None,
@@ -75,6 +76,7 @@ async def main(
     pusher = PricePusher(client=pragma_client)
     orchestrator = Orchestrator(
         poller=poller,
+        poller_refresh_interval=poller_refresh_interval,
         listeners=_create_listeners(price_configs, target, pragma_client),
         pusher=pusher,
     )
@@ -243,7 +245,14 @@ def _create_client(
     "--enable-strk-fees",
     type=click.BOOL,
     required=False,
-    help="enable_strk_fees option for the onchain client",
+    help="Pay fees using STRK for on chain queries.",
+)
+@click.option(
+    "--poller-refresh-interval",
+    type=click.IntRange(min=5),
+    required=False,
+    default=5,
+    help="Interval in seconds between poller refreshes. Default to 5 seconds.",
 )
 def cli_entrypoint(
     config_file: str,
@@ -259,6 +268,7 @@ def cli_entrypoint(
     max_fee: Optional[int],
     pagination: Optional[int],
     enable_strk_fees: Optional[bool],
+    poller_refresh_interval: int,
 ) -> None:
     if target == "offchain":
         if not api_key or not api_base_url:
@@ -312,6 +322,7 @@ def cli_entrypoint(
             max_fee=max_fee,
             pagination=pagination,
             enable_strk_fees=enable_strk_fees,
+            poller_refresh_interval=poller_refresh_interval,
         )
     )
 
