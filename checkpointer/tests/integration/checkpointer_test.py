@@ -70,7 +70,7 @@ async def test_checkpointer_spot(
     # Publish one entry to BTC/USD
     btc_spot_entry = SpotEntry(
         pair_id="BTC/USD",
-        price=4242424242,
+        price=42424242420000000000,
         timestamp=4242424242,
         source="BINANCE",
         publisher=PUBLISHER_NAME,
@@ -96,9 +96,8 @@ async def test_checkpointer_spot(
         aggregation_mode=AggregationMode.MEDIAN,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424242
+    assert latest_checkpoint.value == 42424242420000000000
     assert latest_checkpoint.num_sources_aggregated == 1
-
     main_task.cancel()
 
 
@@ -125,7 +124,7 @@ async def test_checkpointer_future(
     btc_entries = [
         FutureEntry(
             pair_id="BTC/USD",
-            price=4242424240,
+            price=4242424240000000000,
             timestamp=4242424242,
             source="BINANCE",
             publisher=PUBLISHER_NAME,
@@ -133,7 +132,7 @@ async def test_checkpointer_future(
         ),
         FutureEntry(
             pair_id="BTC/USD",
-            price=4242424248,
+            price=42424242480000000000,
             timestamp=4242424243,
             source="BYBIT",
             publisher=PUBLISHER_NAME,
@@ -141,7 +140,7 @@ async def test_checkpointer_future(
         ),
         FutureEntry(
             pair_id="BTC/USD",
-            price=4242424242,
+            price=42424242420000000000,
             timestamp=4242424248,
             source="BYBIT",
             publisher=PUBLISHER_NAME,
@@ -173,7 +172,7 @@ async def test_checkpointer_future(
         expiration_timestamp=0,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424244
+    assert latest_checkpoint.value == 42424242440000000000
     assert latest_checkpoint.num_sources_aggregated == 2
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
@@ -182,7 +181,7 @@ async def test_checkpointer_future(
         expiration_timestamp=1784261474,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424242
+    assert latest_checkpoint.value == 42424242420000000000
     assert latest_checkpoint.num_sources_aggregated == 1
 
     main_task.cancel()
@@ -210,14 +209,14 @@ async def test_checkpointer_spot_and_future(
     # Publish one spot & future entry for BTC/USD
     btc_spot_entry = SpotEntry(
         pair_id="BTC/USD",
-        price=4242424242,
+        price=42424242420000000000,
         timestamp=4242424242,
         source="BINANCE",
         publisher=PUBLISHER_NAME,
     )
     btc_future_entry = FutureEntry(
         pair_id="BTC/USD",
-        price=4242424248,
+        price=42424242480000000000,
         timestamp=4242424243,
         source="BINANCE",
         publisher=PUBLISHER_NAME,
@@ -246,7 +245,7 @@ async def test_checkpointer_spot_and_future(
         aggregation_mode=AggregationMode.MEDIAN,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424242
+    assert latest_checkpoint.value == 42424242420000000000
     assert latest_checkpoint.num_sources_aggregated == 1
 
     latest_checkpoint = await pragma_client.get_latest_checkpoint(
@@ -256,7 +255,7 @@ async def test_checkpointer_spot_and_future(
         expiration_timestamp=0,
     )
     assert latest_checkpoint.timestamp > 0
-    assert latest_checkpoint.value == 4242424248
+    assert latest_checkpoint.value == 42424242480000000000
     assert latest_checkpoint.num_sources_aggregated == 1
 
     main_task.cancel()
