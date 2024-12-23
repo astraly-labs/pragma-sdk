@@ -38,7 +38,9 @@ async def deploy_randomness_contracts(
     return (
         deploy_result.deployed_contract,
         deploy_example_result.deployed_contract,
-        deploy_oracle_result.deployed_contract if deploy_oracle_result else oracle_contract,
+        deploy_oracle_result.deployed_contract
+        if deploy_oracle_result
+        else oracle_contract,
     )
 
 
@@ -73,8 +75,12 @@ async def _deploy_everything(
 
     # Deploy Randomness
     try:
-        compiled_contract = read_contract("pragma_Randomness.sierra.json", directory=None)
-        compiled_contract_casm = read_contract("pragma_Randomness.casm.json", directory=None)
+        compiled_contract = read_contract(
+            "pragma_Randomness.sierra.json", directory=None
+        )
+        compiled_contract_casm = read_contract(
+            "pragma_Randomness.casm.json", directory=None
+        )
         declare_result = await Contract.declare_v2(
             account=deployer,
             compiled_contract=compiled_contract,

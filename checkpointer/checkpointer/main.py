@@ -43,9 +43,13 @@ async def main(
         while True:
             tasks = []
             if pairs_config.spot:
-                tasks.append(_set_checkpoints(pragma_client, pairs_config, DataTypes.SPOT))
+                tasks.append(
+                    _set_checkpoints(pragma_client, pairs_config, DataTypes.SPOT)
+                )
             if pairs_config.future:
-                tasks.append(_set_checkpoints(pragma_client, pairs_config, DataTypes.FUTURE))
+                tasks.append(
+                    _set_checkpoints(pragma_client, pairs_config, DataTypes.FUTURE)
+                )
             await asyncio.gather(*tasks)
             await asyncio.sleep(set_checkpoint_interval)
     except asyncio.CancelledError:
@@ -101,7 +105,9 @@ def _log_handled_pairs(pairs_config: PairsConfig, set_checkpoint_interval: int) 
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
+    ),
     help="Logging level.",
 )
 @click.option(

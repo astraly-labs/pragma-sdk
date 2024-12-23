@@ -91,7 +91,7 @@ class FetcherClient:
         :param timeout_duration: Timeout duration for each fetcher
         :return: List of fetched data
         """
-        start_time = time.time()
+        start_time = time.time()  # noqa: F841
         tasks = []
 
         # Create a timeout for both connection and individual operations

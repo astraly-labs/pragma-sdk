@@ -7,7 +7,10 @@ from pydantic import HttpUrl
 from pragma_sdk.onchain.constants import RPC_URLS
 
 from benchmark.devnet.container import DEVNET_PORT
-from benchmark.config.accounts_config import AccountsConfig, DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG
+from benchmark.config.accounts_config import (
+    AccountsConfig,
+    DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG,
+)
 from benchmark.stress.stress_tester import StressTester
 
 

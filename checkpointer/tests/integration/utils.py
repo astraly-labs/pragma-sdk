@@ -20,7 +20,7 @@ def read_contract(file_name: str, *, directory: Optional[Path] = None) -> str:
     return (directory / file_name).read_text("utf-8")
 
 
-def are_entries_list_equal[T](a: List[T], b: List[T]) -> bool:
+def are_entries_list_equal[T](a: List[T], b: List[T]) -> bool:  # type: ignore
     """
     Check if two lists of entries are equal no matter the order.
 

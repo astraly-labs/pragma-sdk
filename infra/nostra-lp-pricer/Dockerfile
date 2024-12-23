@@ -22,7 +22,7 @@ RUN apt-get update && \
 RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
 && apt-get update && apt-get install -y infisical
-    
+
 
 RUN pipx install poetry
 COPY pragma-sdk/ /opt/pragma-sdk/

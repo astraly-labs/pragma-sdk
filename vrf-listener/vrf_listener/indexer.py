@@ -93,5 +93,7 @@ class Indexer:
                 events = block.events
                 for event in events:
                     data = list(map(felt.to_int, event.event.data))
-                    data = data[:EVENT_INDEX_TO_SPLIT] + [data[EVENT_INDEX_TO_SPLIT + 1 :]]
+                    data = data[:EVENT_INDEX_TO_SPLIT] + [
+                        data[EVENT_INDEX_TO_SPLIT + 1 :]
+                    ]
                     await self.requests_queue.put(RandomnessRequest(*data))

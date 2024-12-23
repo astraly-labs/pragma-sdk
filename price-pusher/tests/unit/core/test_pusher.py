@@ -61,8 +61,10 @@ async def test_update_price_feeds_failure(price_pusher, mock_client, caplog):
     mock_client.publish_entries.assert_called_once_with(entries)
 
     assert any(
-        "processing 1 new asset(s) to push..." in record.message for record in caplog.records
+        "processing 1 new asset(s) to push..." in record.message
+        for record in caplog.records
     )
     assert any(
-        "could not publish entrie(s): Test Exception" in record.message for record in caplog.records
+        "could not publish entrie(s): Test Exception" in record.message
+        for record in caplog.records
     )

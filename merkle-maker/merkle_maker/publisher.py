@@ -5,7 +5,9 @@ from typing import Never, List
 from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import (
+    DeribitOptionsFetcher,
+)
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.types.types import NetworkName
@@ -50,7 +52,9 @@ class MerkleFeedPublisher:
         self.fetcher_client = fetcher_client
         self.redis_manager = redis_manager
         self.block_interval = block_interval
-        self.time_to_wait_between_block_number_polling = time_to_wait_between_block_number_polling
+        self.time_to_wait_between_block_number_polling = (
+            time_to_wait_between_block_number_polling
+        )
 
     @property
     def deribit_fetcher(self) -> DeribitOptionsFetcher:
@@ -116,7 +120,9 @@ class MerkleFeedPublisher:
             self.network, current_block, latest_data
         )
         if not success_store:
-            raise RuntimeError(f"Could not store data for block {current_block} to Redis.")
+            raise RuntimeError(
+                f"Could not store data for block {current_block} to Redis."
+            )
         else:
             logger.info("... stored!")
 
@@ -141,7 +147,9 @@ class MerkleFeedPublisher:
         """
         Check if the current block is already processed.
         """
-        latest_published_block = self.redis_manager.get_latest_published_block(self.network)
+        latest_published_block = self.redis_manager.get_latest_published_block(
+            self.network
+        )
         if latest_published_block is None:
             return True
         return block_number > latest_published_block

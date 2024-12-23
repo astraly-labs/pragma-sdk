@@ -46,7 +46,9 @@ async def address_and_private_key(
 
 
 @pytest.fixture(scope="function")
-def account(address_and_private_key: Tuple[str, str], client: FullNodeClient) -> Account:
+def account(
+    address_and_private_key: Tuple[str, str], client: FullNodeClient
+) -> Account:
     """
     Returns a new Account created with FullNodeClient.
     """

@@ -16,6 +16,5 @@ echo "Running on following projects: ${_projects}"
 for p in $_projects
 do
   cd "${DIR}/../${p}" || exit
-  (pyenv local && poetry env use $(which python)) || poetry env use 3.12
-  poetry update && poetry install --sync
+  uv lock --upgrade
 done

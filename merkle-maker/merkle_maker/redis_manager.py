@@ -185,7 +185,9 @@ class RedisManager:
                     return False
         return True
 
-    def _store_current_block_number(self, network: NetworkName, block_number: int) -> bool:
+    def _store_current_block_number(
+        self, network: NetworkName, block_number: int
+    ) -> bool:
         key = f"{network}/latest_published_block"
         res = self.client.set(key, block_number)
         # .set() returns a bool but is marked as Any by Mypy so we explicitely cast:

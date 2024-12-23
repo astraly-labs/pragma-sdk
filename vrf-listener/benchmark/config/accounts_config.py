@@ -26,7 +26,9 @@ class AccountsConfig(BaseModel):
     def validate_single_admin(cls, accounts):
         admin_count = sum(1 for account in accounts if account.is_admin)
         if admin_count != 1:
-            raise ValueError(f"⛔ There must be exactly one admin account. Found {admin_count}.")
+            raise ValueError(
+                f"⛔ There must be exactly one admin account. Found {admin_count}."
+            )
         return accounts
 
     @classmethod
@@ -53,7 +55,9 @@ class AccountsConfig(BaseModel):
         network: Literal["devnet", "mainnet", "sepolia"],
     ) -> (Account, AccountConfig):
         admin_cfg = self.get_admin_account_config()
-        chain = StarknetChainId.SEPOLIA if network == "sepolia" else StarknetChainId.MAINNET
+        chain = (
+            StarknetChainId.SEPOLIA if network == "sepolia" else StarknetChainId.MAINNET
+        )
         return (
             Account(
                 address=admin_cfg.account_address,
@@ -145,4 +149,6 @@ DEVNET_PREDEPLOYED_ACCOUNTS: List[AccountConfig] = [
     ),
 ]
 
-DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG = AccountsConfig(accounts=DEVNET_PREDEPLOYED_ACCOUNTS)
+DEVNET_PREDEPLOYED_ACCOUNTS_CONFIG = AccountsConfig(
+    accounts=DEVNET_PREDEPLOYED_ACCOUNTS
+)

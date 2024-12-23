@@ -16,7 +16,9 @@ def setup_logging(logger: Logger, log_level: str) -> None:
         raise ValueError(f"Invalid log level: {log_level}")
 
     # Configure formatting
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s:%(name)s.%(module)s:%(message)s")
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(levelname)s:%(name)s.%(module)s:%(message)s"
+    )
 
     # Configure handlers
     for handler in logger.handlers:

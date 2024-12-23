@@ -54,7 +54,9 @@ class PricePusher(IPricePusher):
         Push the entries passed as parameter with the internal pragma client.
         """
         try:
-            logger.info(f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push...")
+            logger.info(
+                f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push..."
+            )
 
             if self.is_publishing_on_chain:
                 async with self.onchain_lock:

@@ -76,7 +76,9 @@ def sample_merkle_tree(sample_option_data: OptionData) -> MerkleTree:
 
 
 def test_store_block_data(
-    redis_manager: RedisManager, sample_merkle_tree: MerkleTree, sample_options: CurrenciesOptions
+    redis_manager: RedisManager,
+    sample_merkle_tree: MerkleTree,
+    sample_options: CurrenciesOptions,
 ):
     latest_data = LatestData(merkle_tree=sample_merkle_tree, options=sample_options)
     assert redis_manager.store_block_data(MAINNET, CURRENT_BLOCK, latest_data)
@@ -99,11 +101,15 @@ def test_get_option(redis_manager: RedisManager, sample_options: CurrenciesOptio
     assert result.current_timestamp == sample_options["BTC"][0].current_timestamp
     assert result.base_currency == sample_options["BTC"][0].base_currency
 
-    redis_manager.client.delete(f"{MAINNET}/{CURRENT_BLOCK}/options/BTC-27DEC24-20000-P")
+    redis_manager.client.delete(
+        f"{MAINNET}/{CURRENT_BLOCK}/options/BTC-27DEC24-20000-P"
+    )
     assert redis_manager.get_option(MAINNET, CURRENT_BLOCK, instrument) is None
 
 
-def test_get_all_options(redis_manager: RedisManager, sample_options: CurrenciesOptions):
+def test_get_all_options(
+    redis_manager: RedisManager, sample_options: CurrenciesOptions
+):
     redis_manager._store_options(MAINNET, CURRENT_BLOCK, sample_options)
 
     result = redis_manager.get_all_options(MAINNET, CURRENT_BLOCK)
@@ -118,7 +124,9 @@ def test_get_all_options(redis_manager: RedisManager, sample_options: Currencies
     if keys_to_delete:
         redis_manager.client.delete(*keys_to_delete)
 
-    assert redis_manager.get_option(MAINNET, CURRENT_BLOCK, "BTC-27DEC24-20000-P") is None
+    assert (
+        redis_manager.get_option(MAINNET, CURRENT_BLOCK, "BTC-27DEC24-20000-P") is None
+    )
     assert redis_manager.get_all_options(MAINNET, CURRENT_BLOCK) is None
 
 
