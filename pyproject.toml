@@ -1,16 +1,39 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "pragma-monorepo"
 version = "2.3.0"
 description = "Monorepo container"
 license = "MIT"
-authors = ["0xevolve <matthias@pragma.build>"]
+authors = [
+  {name = "0xevolve", email = "matthias@pragma.build"}
+]
 readme = "README.md"
-include = ["VERSION", "README.md"]
-package-mode = false
+requires-python = ">=3.11,<3.13"
 
-[build-system]
-requires = ["poetry_core>=1.8.0"]
-build-backend = "poetry.core.masonry.api"
+
+[project.optional-dependencies]
+optional = [
+    "poethepoet >=0.21.1",
+    "ruff >=0.4",
+    "dunamai >= 1.7.0",
+    "commitizen >=2.20.3"
+]
+
+
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# to exclude unnecessary files and directories from the distribution
+include = [
+    '/README.md',
+    '/scripts',
+    'VERSION',
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["pragma-sdk", "pragma-utils", "price-pusher", "vrf-listener", "checkpointer", "merkle-maker", "lp-pricer"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -47,15 +70,6 @@ bump_message = "bump: $current_version → $new_version"
 
 [tool.poe.tasks]
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.13"
-
-[tool.poetry.dev-dependencies]
-poethepoet = "^0.21.1"
-ruff = "^0.4"
-dunamai = "^1.7.0"
-commitizen = "^2.20.3"
 
 [tool.ruff]
 exclude = [
