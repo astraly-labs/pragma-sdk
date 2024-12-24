@@ -18,16 +18,8 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "pragma-sdk",
     "pragma-utils",
-    "click>=8.0.1",
-    "starknet.py==0.23.0",
-    "typer==0.6.1",
-    "deprecated>=1.2.14",
-    "aioresponses>=0.7.4",
-    "requests-mock>=1.11.0",
+    "click>=8.1.0",
     "pydantic>=2.7.4",
-    "python-dotenv>=1.0.0",
-    "pyyaml>=6.0.1",
-    "redis[hiredis]>=5.0.7",
     "asgiref>=3.4.1",
 ]
 

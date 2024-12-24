@@ -17,11 +17,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dynamic = ["version"]
-
-[tool.hatch.version]
-path = "pragma_sdk/__init__.py"
-
 dependencies = [
     "starknet.py==0.23.0",
     "typer==0.6.1",
@@ -33,6 +28,11 @@ dependencies = [
     "pyyaml>=6.0.1",
     "redis[hiredis]>=5.0.7",
 ]
+
+dynamic = ["version"]
+
+[tool.hatch.version]
+path = "pragma_sdk/__init__.py"
 
 [project.urls]
 Homepage = "https://pragma.build"
