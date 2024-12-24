@@ -24,6 +24,8 @@ from tests.integration.constants import CURRENCIES, USD_PAIRS
 from tests.integration.utils import read_contract, wait_for_acceptance
 
 
+pytestmark = pytest.mark.asyncio
+
 PUBLISHER_NAME = "PRAGMA"
 
 ETH_PAIR = Pair.from_tickers("ETH", "USD")
@@ -36,7 +38,7 @@ SOURCE_3 = "SOURCE_3"
 
 @pytest_asyncio.fixture(scope="module")
 async def declare_deploy_oracle(
-    account: Account,
+    account: Account, event_loop
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract_registry = read_contract(
         "pragma_PublisherRegistry.sierra.json", directory=None
