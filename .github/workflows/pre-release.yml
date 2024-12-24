@@ -19,15 +19,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: CfirTsabari/actions-pipx@v1
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v5
+
+      - name: set up python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-      - run: pipx inject poetry poetry-monorepo-dependency-plugin
-      - run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
-      - run: poetry config pypi-token.test-pypi ${{ secrets.TEST_PYPI_API_TOKEN }}
-      - run: poetry build -f sdist
-      - run: poetry publish -r test-pypi --skip-existing
+
+      - name: install
+        run: pip install -U build
+
+      - name: check version
+        id: check-tag
+        uses: samuelcolvin/check-python-version@v4.1
+        with:
+          version_file_path: pragma_sdk/__init__.py
+
+      - name: build
+        run: python -m build
+
+      - name: Upload package to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.12.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.PYPI_API_TOKEN }}

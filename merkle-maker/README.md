@@ -7,7 +7,7 @@ Service used to publish the latest Merkle Feed onchain and the associated data o
 The service is ran through the CLI, to have more information you can use the `--help` command:
 
 ```bash
-.venv ❯ poetry run merkle_maker --help
+.venv ❯ uv run merkle_maker --help
 
 Usage: merkle_maker [OPTIONS]
 
@@ -48,7 +48,7 @@ Options:
 For example:
 
 ```sh
-poetry run merkle_maker --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS -p plain:$PUBLISHER_PV_KEY
+uv run merkle_maker --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS -p plain:$PUBLISHER_PV_KEY
 ```
 
 Will start publishing a new Merkle Feed onchain through a GenericEntry every blocks and store the data used in a Redis database, by default to `localhost:6379`

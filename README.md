@@ -35,11 +35,11 @@ Our services used to publish data etc...:
 
 ## Releasing a new version
 
-```bash
-cz bump --increment <patch|minor|major>
-cd pragma-sdk && poetry publish --build && cd -
-sh scripts/poetry_lock_update.sh
-```
+Use a tool to search inside each `__init__.py` file for the version number and update it.
+
+Then, Create a github release with the new version number and the changelog.
+
+Finally, push a new tag with the new version number.
 
 ## Contributing
 

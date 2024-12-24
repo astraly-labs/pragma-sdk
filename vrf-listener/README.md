@@ -54,7 +54,7 @@ Options:
 For example:
 
 ```sh
-poetry run vrf_listener --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY -w $ADDR_1 -w $ADDR_2 # ...
+uv run vrf_listener --vrf-address $PRAGMA_VRF_CONTRACT --admin-address $PRAGMA_ORACLE_ADMIN --private-key plain:$PRAGMA_ADMIN_PV_KEY -w $ADDR_1 -w $ADDR_2 # ...
 ```
 
 Will start listening for VRF requests on Sepolia every 10 seconds since block 0.

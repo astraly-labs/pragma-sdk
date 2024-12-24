@@ -6,9 +6,9 @@
 ```shell
 git clone git@github.com:astraly-labs/pragma-sdk.git
 ```
-2. Install dependencies with Poetry:
+1. Install dependencies with uv:
 ```shell
-sh scripts/poetry_install.sh
+sh scripts/uv_install.sh
 ```
 
 It will create a `.venv` virtualenv for each package of our monorepo that you can later activate, for example for the sdk:

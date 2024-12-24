@@ -68,5 +68,5 @@ Options:
 For example:
 
 ```sh
-poetry run checkpointer -c config/config.example.yaml --oracle-address $PRAGMA_ORACLE_ADDRESS --admin-address $PRAGMA_ADMIN_ACCOUNT -p plain:$MY_PRIVATE_KEY
+uv run checkpointer -c config/config.example.yaml --oracle-address $PRAGMA_ORACLE_ADDRESS --admin-address $PRAGMA_ADMIN_ACCOUNT -p plain:$MY_PRIVATE_KEY
 ```
