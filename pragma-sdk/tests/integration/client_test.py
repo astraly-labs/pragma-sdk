@@ -38,7 +38,7 @@ SOURCE_3 = "SOURCE_3"
 
 @pytest_asyncio.fixture(scope="module")
 async def declare_deploy_oracle(
-    account: Account, event_loop
+    account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract_registry = read_contract(
         "pragma_PublisherRegistry.sierra.json", directory=None
