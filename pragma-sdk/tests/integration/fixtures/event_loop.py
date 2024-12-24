@@ -1,12 +1,10 @@
 # This fixture was added to enable using async fixtures
 import asyncio
+import pytest_asyncio
 
-import pytest
 
-
-@pytest.fixture(scope="module")
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
+@pytest_asyncio.fixture(scope="module")
+async def event_loop():
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
