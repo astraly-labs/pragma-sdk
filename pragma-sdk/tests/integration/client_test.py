@@ -24,6 +24,8 @@ from tests.integration.constants import CURRENCIES, USD_PAIRS
 from tests.integration.utils import read_contract, wait_for_acceptance
 
 
+pytestmark = pytest.mark.asyncio
+
 PUBLISHER_NAME = "PRAGMA"
 
 ETH_PAIR = Pair.from_tickers("ETH", "USD")
