@@ -26,10 +26,6 @@ dynamic = ["version"]
 [tool.hatch.version]
 path = "checkpointer/__init__.py"
 
-[tool.uv.sources]
-pragma_sdk = { workspace = true}
-pragma_utils = { workspace = true}
-
 [project.urls]
 homepage = "https://pragma.build"
 repository = "https://github.com/Astraly-Labs/pragma-sdk"
@@ -38,6 +34,12 @@ documentation = "https://docs.pragma.build"
 [project.scripts]
 checkpointer = 'checkpointer.main:cli_entrypoint'
 
+[tool.uv.sources]
+pragma_sdk = { path = "../pragma-sdk" }
+pragma_utils = { path = "../pragma-utils" }
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [dependency-groups]
 dev = [

@@ -10,17 +10,6 @@ readme = "README.md"
 requires-python = ">=3.11,<3.13"
 
 
-[tool.uv.workspace]
-members = [
-    "pragma-sdk",
-    "pragma-utils",
-    "price-pusher",
-    "vrf-listener",
-    "checkpointer",
-    "merkle-maker",
-    "lp-pricer",
-]
-
 [tool.uv]
 dev-dependencies = [
     "poethepoet >=0.21.1",
@@ -30,7 +19,6 @@ dev-dependencies = [
     "pre-commit >=4.0.0"
 ]
 package = false
-
 
 [tool.poe.tasks]
 update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"

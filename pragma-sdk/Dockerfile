@@ -5,14 +5,15 @@ FROM python:3.12-slim-bullseye AS base
 RUN apt-get update && apt-get install -y gcc python-dev libgmp3-dev curl && apt-get clean
 RUN python -m pip install --upgrade pip
 
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="${PATH}:/root/.local/bin"
+RUN apt-get update && \
+    pipx
 
 # Defaults
 WORKDIR /app/
+
+RUN pipx install uv
 COPY ./pragma-sdk /app/
-RUN poetry install
+RUN uv sync --all-extras
 
 FROM base as test
 # If you have additional test dependencies, install them here.
