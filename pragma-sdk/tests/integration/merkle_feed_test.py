@@ -73,7 +73,7 @@ async def declare_deploy_oracle(
     # Deploy Oracle
     all_currencies = CURRENCIES[:40]
     all_pairs = USD_PAIRS[:20]
-    
+
     currencies = [currency.to_dict() for currency in all_currencies]
     pairs = [pair.to_dict() for pair in all_pairs]
 
