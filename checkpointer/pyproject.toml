@@ -17,8 +17,9 @@ classifiers = [
 dependencies = [
   "pragma-sdk",
   "pragma-utils",
-  "click",
-  "pydantic",
+  "click>=8.0.1",
+  "pydantic>=2.10.0",
+  "python-dotenv>=1.0.0",
 ]
 
 dynamic = ["version"]

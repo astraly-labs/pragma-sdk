@@ -16,6 +16,7 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    "starknet.py==0.23.0",
     "pragma-sdk",
     "pragma-utils",
     "click>=8.1.0",
@@ -23,6 +24,7 @@ dependencies = [
     "pydantic>=2.7.4",
     "apibara==0.8.0",
     "pymongo==4.8.0",
+    "asgiref>=3.8.0",
 ]
 
 dynamic = ["version"]

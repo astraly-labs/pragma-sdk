@@ -20,6 +20,7 @@ dependencies = [
     "pragma-utils",
     "click>=8.1.0",
     "pydantic>=2.7.4",
+    "asgiref>=3.4.1",
 ]
 
 dynamic = ["version"]
