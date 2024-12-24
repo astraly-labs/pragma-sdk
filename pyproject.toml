@@ -21,7 +21,7 @@ dev-dependencies = [
 package = false
 
 [tool.poe.tasks]
-update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"
+update_abis = "find ./pragma-oracle/pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"
 
 [tool.ruff]
 exclude = [
