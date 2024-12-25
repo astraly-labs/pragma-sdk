@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 ENV PATH="/root/.local/bin:${PATH}"
 
-FROM base as builder
+FROM base AS builder
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -23,7 +23,7 @@ COPY vrf-listener/ /opt/vrf-listener/
 WORKDIR /opt/vrf-listener
 RUN uv sync --all-extras
 
-FROM base as final
+FROM base AS final
 COPY --from=builder /opt /opt
 WORKDIR /opt/vrf-listener
 ENTRYPOINT ["/opt/vrf-listener/.venv/bin/python3.12", "vrf_listener/main.py"]

@@ -29,7 +29,7 @@ jobs:
 
       - name: Extract package version
         run: |
-          export PACKAGE_VERSION=$(grep 'version = "' ./${{ matrix.package }}/pyproject.toml | grep -m 1 -e '[0-9][0-9a-zA-Z]*[-.a-z0-9]*' -o)
+          export PACKAGE_VERSION=$(grep -o '".*"' ./${{ matrix.package }}/${{ matrix.package }}/__init__.py | tr -d '"')
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo $PACKAGE_VERSION
 

@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 ENV PATH="/root/.local/bin:${PATH}"
 
-FROM base as builder
+FROM base AS builder
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -23,7 +23,7 @@ COPY price-pusher/ /opt/price-pusher/
 WORKDIR /opt/price-pusher
 RUN uv sync --all-extras
 
-FROM base as final
+FROM base AS final
 COPY --from=builder /opt /opt
 VOLUME price-pusher/config /opt/price-pusher/config/
 WORKDIR /opt/price-pusher
