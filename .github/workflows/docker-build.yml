@@ -29,7 +29,8 @@ jobs:
 
       - name: Extract package version
         run: |
-          export PACKAGE_VERSION=$(grep -o '".*"' ./${{ matrix.package }}/${{ matrix.package }}/__init__.py | tr -d '"')
+          PKG_PATH=$(echo ${{ matrix.package }} | tr '-' '_')
+          export PACKAGE_VERSION=$(grep -o '".*"' ./${{ matrix.package }}/$PKG_PATH/__init__.py | tr -d '"')
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo $PACKAGE_VERSION
 
