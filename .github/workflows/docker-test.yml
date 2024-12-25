@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         package:
-          [pragma-sdk, price-pusher, vrf-listener, checkpointer, merkle-maker]
+          [pragma-sdk, price-pusher, vrf-listener, checkpointer]
     runs-on: ubuntu-latest
     permissions:
       checks: write
