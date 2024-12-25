@@ -30,3 +30,4 @@ jobs:
         uses: docker/build-push-action@v4.2.1
         with:
           context: .
+          file: ./${{ matrix.package }}/Dockerfile
