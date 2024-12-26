@@ -98,7 +98,9 @@ def _create_pragma_client(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
+    ),
     help="Logging level.",
 )
 @click.option(
@@ -199,7 +201,9 @@ def cli_entrypoint(
     whitelisted_addresses = hex_addresses_list_to_addresses_set(whitelisted)
 
     if isinstance(private_key, tuple):
-        raise click.UsageError("⛔ KeyStores aren't supported as private key for the vrf-listener!")
+        raise click.UsageError(
+            "⛔ KeyStores aren't supported as private key for the vrf-listener!"
+        )
 
     if index_with_apibara and apibara_api_key is None:
         raise click.UsageError(

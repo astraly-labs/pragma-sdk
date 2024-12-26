@@ -46,7 +46,9 @@ def mock_pusher():
 
 @pytest.fixture
 def orchestrator(mock_poller, mock_listener, mock_pusher):
-    return Orchestrator(poller=mock_poller, listeners=[mock_listener], pusher=mock_pusher)
+    return Orchestrator(
+        poller=mock_poller, listeners=[mock_listener], pusher=mock_pusher
+    )
 
 
 @pytest.mark.asyncio
@@ -66,7 +68,9 @@ async def test_run_forever(orchestrator):
 
 @pytest.mark.asyncio
 async def test_poller_service(orchestrator, mock_poller):
-    orchestrator._poller_service_task = asyncio.create_task(orchestrator._poller_service())
+    orchestrator._poller_service_task = asyncio.create_task(
+        orchestrator._poller_service()
+    )
     await asyncio.sleep(1)
     assert mock_poller.poll_prices.call_count > 0
     orchestrator._poller_service_task.cancel()
@@ -84,7 +88,9 @@ async def test_listener_services(orchestrator, mock_listener):
 @pytest.mark.asyncio
 async def test_start_listener(orchestrator, mock_listener):
     orchestrator._handle_listener = AsyncMock()
-    start_listener_task = asyncio.create_task(orchestrator._start_listener(mock_listener))
+    start_listener_task = asyncio.create_task(
+        orchestrator._start_listener(mock_listener)
+    )
     await asyncio.sleep(1)
     start_listener_task.cancel()
     orchestrator._handle_listener.assert_called_with(mock_listener)
@@ -106,7 +112,9 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
     mock_listener.notification_event.wait.side_effect = [None, asyncio.CancelledError()]
 
     # Run the _handle_listener method
-    handle_listener_task = asyncio.create_task(orchestrator._handle_listener(mock_listener))
+    handle_listener_task = asyncio.create_task(
+        orchestrator._handle_listener(mock_listener)
+    )
 
     # Let the task run for a bit
     await asyncio.sleep(1)
@@ -120,7 +128,8 @@ async def test_handle_listener(orchestrator, mock_listener, caplog):
 
     # Check logs
     assert any(
-        "💡 Notification received from LISTENER" in record.message for record in caplog.records
+        "💡 Notification received from LISTENER" in record.message
+        for record in caplog.records
     )
 
     # Check if the correct entries were pushed to the queue

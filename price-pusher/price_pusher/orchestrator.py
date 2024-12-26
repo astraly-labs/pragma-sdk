@@ -126,7 +126,9 @@ class Orchestrator:
             await self.pusher.update_price_feeds(entries_to_push)
             self.push_queue.task_done()
 
-    def _flush_entries_for_assets(self, pairs_per_type: Dict[DataTypes, List[Pair]]) -> List[Entry]:
+    def _flush_entries_for_assets(
+        self, pairs_per_type: Dict[DataTypes, List[Pair]]
+    ) -> List[Entry]:
         """
         Retrieves the prices for the assets that needs to be pushed & remove them from
         the latest_prices dict.
@@ -155,7 +157,11 @@ class Orchestrator:
                         all_entries = []
                         for source in self.latest_prices[pair_id][data_type]:
                             all_entries.extend(
-                                list(self.latest_prices[pair_id][data_type][source].values())
+                                list(
+                                    self.latest_prices[pair_id][data_type][
+                                        source
+                                    ].values()
+                                )
                             )
                         entries_to_push.extend(all_entries)
 

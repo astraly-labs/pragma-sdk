@@ -17,7 +17,9 @@ class SpotPairConfig:
 @dataclass(frozen=True)
 class FuturePairConfig:
     pair: Pair
-    expiry: datetime = field(default_factory=lambda: datetime.fromtimestamp(0, ZoneInfo("UTC")))
+    expiry: datetime = field(
+        default_factory=lambda: datetime.fromtimestamp(0, ZoneInfo("UTC"))
+    )
 
 
 class PairsConfig(BaseModel):
@@ -44,7 +46,9 @@ class PairsConfig(BaseModel):
                 raise ValueError(f"⛔ Could not create Pair object for {base}/{quote}")
 
             if info.field_name == "future":
-                expiry = datetime.fromtimestamp(raw_pair.get("expiry", 0), tz=ZoneInfo("UTC"))
+                expiry = datetime.fromtimestamp(
+                    raw_pair.get("expiry", 0), tz=ZoneInfo("UTC")
+                )
                 pairs.append(FuturePairConfig(pair=pair, expiry=expiry))
             else:
                 pairs.append(SpotPairConfig(pair=pair))

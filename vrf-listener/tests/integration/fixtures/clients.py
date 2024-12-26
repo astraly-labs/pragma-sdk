@@ -55,7 +55,9 @@ async def declare_deploy_randomness(
     account: Account,
 ) -> Tuple[DeclareResult, DeployResult]:
     compiled_contract = read_contract("pragma_Randomness.sierra.json", directory=None)
-    compiled_contract_casm = read_contract("pragma_Randomness.casm.json", directory=None)
+    compiled_contract_casm = read_contract(
+        "pragma_Randomness.casm.json", directory=None
+    )
 
     compiled_example_contract = read_contract(
         "pragma_ExampleRandomness.sierra.json", directory=None
@@ -64,7 +66,9 @@ async def declare_deploy_randomness(
         "pragma_ExampleRandomness.casm.json", directory=None
     )
 
-    compiled_oracle_mock_contract = read_contract("pragma_MockOracle.sierra.json", directory=None)
+    compiled_oracle_mock_contract = read_contract(
+        "pragma_MockOracle.sierra.json", directory=None
+    )
     compiled_oracle_mock_contract_casm = read_contract(
         "pragma_MockOracle.casm.json", directory=None
     )

@@ -18,5 +18,7 @@ def flatten_list[T](to_flatten: List[Union[T, List[T]]]) -> List[T]:
     Flatten a list that contains items and list of items into a list of items.
     """
     return [
-        val for item in to_flatten for val in (item if isinstance(item, (list, tuple)) else [item])
+        val
+        for item in to_flatten
+        for val in (item if isinstance(item, (list, tuple)) else [item])
     ]

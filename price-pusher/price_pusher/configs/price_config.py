@@ -76,7 +76,11 @@ def get_unique_pairs_from_config_list(
     if pair_type not in [DataTypes.SPOT, DataTypes.FUTURE]:
         raise ValueError("pair_type must be either DataTypes.SPOT or DataTypes.FUTURE")
 
-    return {pair for config in price_configs for pair in config.get_all_assets().get(pair_type, [])}
+    return {
+        pair
+        for config in price_configs
+        for pair in config.get_all_assets().get(pair_type, [])
+    }
 
 
 def get_unique_spot_pairs_from_config_list(

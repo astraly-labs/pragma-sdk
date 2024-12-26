@@ -8,7 +8,9 @@ from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.fetcher import LPFetcher
-from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.redis_manager import LpRedisManager
+from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.redis_manager import (
+    LpRedisManager,
+)
 from pragma_sdk.common.exceptions import PublisherFetchError
 
 from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
@@ -34,7 +36,9 @@ async def wait_for_txs_acceptance(invocations: List[InvokeResult]):
     """
     for invocation in invocations:
         nonce = invocation.invoke_transaction.nonce
-        logger.info(f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted...")
+        logger.info(
+            f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted..."
+        )
         await invocation.wait_for_acceptance(check_interval=1)
 
 

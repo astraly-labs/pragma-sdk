@@ -133,7 +133,9 @@ def _create_client(
     """
     if target == "onchain":
         execution_config = ExecutionConfig(
-            pagination=pagination if pagination is not None else ExecutionConfig.pagination,
+            pagination=pagination
+            if pagination is not None
+            else ExecutionConfig.pagination,
             max_fee=max_fee if max_fee is not None else ExecutionConfig.max_fee,
             enable_strk_fees=enable_strk_fees
             if enable_strk_fees is not None
@@ -149,9 +151,13 @@ def _create_client(
         )
     elif target == "offchain":
         if not api_key:
-            raise click.BadParameter("Argument api-key can't be None if offchain is selected")
+            raise click.BadParameter(
+                "Argument api-key can't be None if offchain is selected"
+            )
         if not api_base_url:
-            raise click.BadParameter("Argument api-base-url can't be None if offchain is selected")
+            raise click.BadParameter(
+                "Argument api-base-url can't be None if offchain is selected"
+            )
         return PragmaAPIClient(
             account_contract_address=publisher_address,
             account_private_key=private_key,
@@ -173,7 +179,9 @@ def _create_client(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
+    ),
     help="Logging level.",
 )
 @click.option(
@@ -222,7 +230,9 @@ def _create_client(
     required=True,
     help="Your publisher address.",
 )
-@click.option("--api-base-url", type=click.STRING, required=False, help="Pragma API base URL")
+@click.option(
+    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
+)
 @click.option(
     "--api-key",
     type=click.STRING,
@@ -294,7 +304,9 @@ def cli_entrypoint(
 
     if target == "onchain":
         if rpc_url and not rpc_url.startswith("http"):
-            raise click.UsageError('⛔ "rpc_url" format is incorrect. It must start with http(...)')
+            raise click.UsageError(
+                '⛔ "rpc_url" format is incorrect. It must start with http(...)'
+            )
 
     # Update the logger level of the pragma_sdk package
     sdk_logger = get_pragma_sdk_logger()

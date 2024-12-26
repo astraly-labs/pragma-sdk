@@ -1,4 +1,3 @@
----
 name: Task - Lint, Format & Typecheck
 
 on:
@@ -6,52 +5,25 @@ on:
   workflow_call:
 
 env:
-  PYTHON_VERSION: 3.12.4
+  PYTHON_VERSION: 3.12
 
 jobs:
-  lint-format-typecheck:
-    continue-on-error: true
+  lint:
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        package:
-          [
-            pragma-utils,
-            pragma-sdk,
-            price-pusher,
-            vrf-listener,
-            checkpointer,
-            merkle-maker,
-            lp-pricer,
-          ]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
-      - uses: CfirTsabari/actions-pipx@v1
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12.4
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
+          enable-cache: true
+
       - name: Install dependencies
-        run: |
-          cd ${{ matrix.package }}
-          poetry install
-      - name: Check poetry.lock
-        run: |
-          cd ${{ matrix.package }}
-          poetry lock --check
-      - name: Run lint
-        run: |
-          cd ${{ matrix.package }}
-          poetry run poe lint
-      - name: Run format
-        run: |
-          cd ${{ matrix.package }}
-          poetry run poe format_check
-      - name: Run typecheck
-        run: |
-          cd ${{ matrix.package }}
-          poetry run poe typecheck
+        run: uv sync --python ${{ env.PYTHON_VERSION }} --all-extras
+
+      - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --verbose
+        env:
+          SKIP: no-commit-to-branch

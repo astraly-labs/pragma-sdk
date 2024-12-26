@@ -1,8 +1,6 @@
 #!/bin/sh
 # This script reflects the latest changes of pyproject.toml
-#  into both the poetry.lock file and the virtualenv.
-#  by running `poetry update && poetry install --sync`
-# It first configures poetry to use the right python for creation of the virtual env
+
 set -x
 set -u
 set -e
@@ -16,6 +14,5 @@ echo "Running on following projects: ${_projects}"
 for p in $_projects
 do
   cd "${DIR}/../${p}" || exit
-  (pyenv local && poetry env use $(which python)) || poetry env use 3.12
-  poetry update && poetry install --sync
+  uv lock --upgrade
 done

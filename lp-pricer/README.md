@@ -7,7 +7,7 @@ Service used to price Defi Pools using the `LpFetcher` from the SDK.
 The service is ran through the CLI, to have more information you can use the `--help` command:
 
 ```bash
-.venv ❯ poetry run lp_pricer --help
+.venv ❯ uv run lp_pricer --help
 
 Usage: lp_pricer [OPTIONS]
 
@@ -46,7 +46,7 @@ Options:
 For example:
 
 ```sh
-poetry run lp_pricer -c ./config/config.example.yaml --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS -p plain:$PUBLISHER_PV_KEY
+uv run lp_pricer -c ./config/config.example.yaml --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS -p plain:$PUBLISHER_PV_KEY
 ```
 
 Will start storing reserves & supply for the provided pools until there is enough to price them and will push the prices on chain.

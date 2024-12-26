@@ -50,7 +50,9 @@ class StressTester:
 
         # 1. Deploy vrf etc etc
         print("\n🧩 Deploying VRF contracts...")
-        (deployer, deployer_info) = self.config.get_admin_account(full_node, self.network)
+        (deployer, deployer_info) = self.config.get_admin_account(
+            full_node, self.network
+        )
         randomness_contracts = await deploy_randomness_contracts(
             network=self.network,
             deployer=deployer,
@@ -125,7 +127,9 @@ class StressTester:
 
             # 1. deploy vrf etc etc
             print("\n🧩 Deploying VRF contracts...")
-            (deployer, deployer_info) = self.config.get_admin_account(full_node, self.network)
+            (deployer, deployer_info) = self.config.get_admin_account(
+                full_node, self.network
+            )
             randomness_contracts = await deploy_randomness_contracts(
                 network=self.network,
                 deployer=deployer,
@@ -254,7 +258,9 @@ class StressTester:
         """
         pass
 
-    async def _fund_users_using_admin(self, admin: Account, users: List[AccountConfig]) -> None:
+    async def _fund_users_using_admin(
+        self, admin: Account, users: List[AccountConfig]
+    ) -> None:
         """
         Using the admin account of the Accounts configuration, sends 0.1 eth
         to each account present in the list of users.
@@ -273,9 +279,13 @@ class StressTester:
             admin.address,
             block_hash="pending",
         )
-        minimum_balance_accepted = (300000000000000000 * len(users)) + 300000000000000000
+        minimum_balance_accepted = (
+            300000000000000000 * len(users)
+        ) + 300000000000000000
         if minimum_balance_accepted > admin_balance:
-            raise ValueError(f"😹🫵 Admin is too poor. Need at least {minimum_balance_accepted}")
+            raise ValueError(
+                f"😹🫵 Admin is too poor. Need at least {minimum_balance_accepted}"
+            )
 
         # Sends 0.1 eth to each user
         for user in users:
@@ -293,7 +303,11 @@ class StressTester:
         """
         Using all the users, check their balance & send everything to the admin.
         """
-        chain = StarknetChainId.SEPOLIA if self.network == "sepolia" else StarknetChainId.MAINNET
+        chain = (
+            StarknetChainId.SEPOLIA
+            if self.network == "sepolia"
+            else StarknetChainId.MAINNET
+        )
 
         for user_cfg in users:
             user_account = Account(

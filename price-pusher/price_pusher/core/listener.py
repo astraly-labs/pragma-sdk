@@ -75,7 +75,9 @@ class IPriceListener(ABC):
     async def _does_oracle_needs_update(self) -> bool: ...
 
     @abstractmethod
-    def _new_price_is_deviating(self, pair_id: str, new_price: int, oracle_price: int) -> bool: ...
+    def _new_price_is_deviating(
+        self, pair_id: str, new_price: int, oracle_price: int
+    ) -> bool: ...
 
     @abstractmethod
     def _oracle_entry_is_outdated(
@@ -210,13 +212,18 @@ class PriceListener(IPriceListener):
 
         match data_type:
             case DataTypes.SPOT:
-                entries = [entry for entry in self.orchestrator_prices[pair_id][data_type].values()]
+                entries = [
+                    entry
+                    for entry in self.orchestrator_prices[pair_id][data_type].values()
+                ]
 
             case DataTypes.FUTURE:
                 entries = []
                 for source in self.orchestrator_prices[pair_id][data_type]:
                     if expiry in self.orchestrator_prices[pair_id][data_type][source]:
-                        entries.append(self.orchestrator_prices[pair_id][data_type][source][expiry])
+                        entries.append(
+                            self.orchestrator_prices[pair_id][data_type][source][expiry]
+                        )
 
         return max(entries, key=lambda entry: entry.get_timestamp(), default=None)
 
@@ -307,7 +314,9 @@ class PriceListener(IPriceListener):
         orchestrator_median_price = statistics.median(
             [entry.price for entry in list(orchestrator_entries.values())]
         )
-        if self._new_price_is_deviating(pair_id, orchestrator_median_price, oracle_entry.price):
+        if self._new_price_is_deviating(
+            pair_id, orchestrator_median_price, oracle_entry.price
+        ):
             return True
 
     def _does_oracle_future_entry_needs_update(
@@ -334,23 +343,34 @@ class PriceListener(IPriceListener):
                         future_prices.append(future_entry.price)
 
             orchestrator_median_price = statistics.median(future_prices)
-            if self._new_price_is_deviating(pair_id, orchestrator_median_price, o_entry.price):
+            if self._new_price_is_deviating(
+                pair_id, orchestrator_median_price, o_entry.price
+            ):
                 return True
 
     def _future_entries_are_outdated(
-        self, pair_id: str, data_type: DataTypes, entries: Dict[ExpiryTimestamp, FutureEntry]
+        self,
+        pair_id: str,
+        data_type: DataTypes,
+        entries: Dict[ExpiryTimestamp, FutureEntry],
     ) -> bool:
         """
         Compare each timestamp future price together & returns True if one of them is
         outdated.
         """
         for expiry, oracle_entry in entries.items():
-            orchestrator_entry = self._get_latest_orchestrator_entry(pair_id, data_type, expiry)
-            if self._oracle_entry_is_outdated(pair_id, oracle_entry, orchestrator_entry):
+            orchestrator_entry = self._get_latest_orchestrator_entry(
+                pair_id, data_type, expiry
+            )
+            if self._oracle_entry_is_outdated(
+                pair_id, oracle_entry, orchestrator_entry
+            ):
                 return True
         return False
 
-    def _new_price_is_deviating(self, pair_id: str, new_price: int, oracle_price: int) -> bool:
+    def _new_price_is_deviating(
+        self, pair_id: str, new_price: int, oracle_price: int
+    ) -> bool:
         """
         Check if a new price is in the bounds allowed by the configuration.
         """
@@ -393,7 +413,9 @@ class PriceListener(IPriceListener):
         """
         Sends a notification.
         """
-        logger.info(f"🏓 LISTENER: [{self.id}] sending notification to the Orchestrator!")
+        logger.info(
+            f"🏓 LISTENER: [{self.id}] sending notification to the Orchestrator!"
+        )
         self.notification_event.set()
 
     def _log_listener_spawning(self) -> None:

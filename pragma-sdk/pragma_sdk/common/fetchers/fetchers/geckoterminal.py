@@ -3,7 +3,6 @@ import time
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
-import aiohttp
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.types.currency import Currency
@@ -103,7 +102,7 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
                 f"Unknown price pair, do not know how to query GeckoTerminal for {pair.base_currency}"
             )
         url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
-        
+
         async with session.get(url, headers=self.headers) as resp:
             if resp.status == 404:
                 return PublisherFetchError(

@@ -4,7 +4,7 @@ Installation
 To use pragma-sdk, ``ecdsa, fastecdsa, sympy`` dependencies are required. Depending on the operating system,
 different installation steps must be performed.
 
-We highly recommend using `Poetry <https://python-poetry.org/>`_ to manage your project dependencies.
+We highly recommend using `uv <https://docs.astral.sh/uv/>`_ to manage your project dependencies.
 
 Linux
 -----
@@ -14,7 +14,7 @@ Linux
     sudo apt install -y libgmp3-dev
     pip install pragma-sdk
     # or
-    poetry add pragma-sdk
+    uv add pragma-sdk
 
 MacOS
 -----

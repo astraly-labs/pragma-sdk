@@ -10,7 +10,8 @@ SourceName = str
 ExpiryTimestamp = str
 FuturePrices = Dict[ExpiryTimestamp, Entry]
 LatestOrchestratorPairPrices = Dict[
-    PairId, Dict[DataTypes, Union[Dict[SourceName, Entry], Dict[SourceName, FuturePrices]]]
+    PairId,
+    Dict[DataTypes, Union[Dict[SourceName, Entry], Dict[SourceName, FuturePrices]]],
 ]
 LatestOraclePairPrices = Dict[PairId, Dict[DataTypes, Entry]]
 Target = Literal["onchain", "offchain"]

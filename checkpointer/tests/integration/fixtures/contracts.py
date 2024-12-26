@@ -47,8 +47,11 @@ async def declare_deploy_oracle(
     await declare_result.wait_for_acceptance()
 
     # Deploy Oracle
-    currencies = [currency.to_dict() for currency in CURRENCIES]
-    pairs = [pair.to_dict() for pair in USD_PAIRS]
+    all_currencies = CURRENCIES[:40]
+    all_pairs = USD_PAIRS[:20]
+
+    currencies = [currency.to_dict() for currency in all_currencies]
+    pairs = [pair.to_dict() for pair in all_pairs]
 
     deploy_result = await declare_result.deploy_v1(
         constructor_args=[

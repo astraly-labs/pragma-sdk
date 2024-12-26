@@ -73,6 +73,8 @@ class ChainRequestHandler(IRequestHandler):
         except Exception:
             try:
                 logger.warning(f"🤔 Fetching price for {pair_id} failed. Retrying...")
-                return await retry_async(fetch_action, retries=5, delay_in_s=5, logger=logger)
+                return await retry_async(
+                    fetch_action, retries=5, delay_in_s=5, logger=logger
+                )
             except Exception as e:
                 raise ValueError(f"Retries for fetching {pair_id} still failed: {e}")

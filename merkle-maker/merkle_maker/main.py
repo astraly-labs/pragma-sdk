@@ -7,7 +7,9 @@ from typing import Optional
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
-from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import DeribitOptionsFetcher
+from pragma_sdk.common.fetchers.generic_fetchers.deribit.fetcher import (
+    DeribitOptionsFetcher,
+)
 
 from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient

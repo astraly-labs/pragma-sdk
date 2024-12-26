@@ -132,7 +132,9 @@ async def spam_reqs_with_user(
     results = []
 
     # Start the request creator and status checker tasks
-    creator_task = asyncio.create_task(request_creator(user, example_contract, txs_per_user, queue))
+    creator_task = asyncio.create_task(
+        request_creator(user, example_contract, txs_per_user, queue)
+    )
     checker_task = asyncio.create_task(status_checker(user, queue, results))
 
     # Wait for both tasks to complete
