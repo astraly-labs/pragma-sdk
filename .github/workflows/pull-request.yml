@@ -24,7 +24,3 @@ jobs:
   build_containers:
     name: Build Docker Image
     uses: ./.github/workflows/docker-test.yml
-
-  test_pypi_publish:
-    name: Upload package to Test PyPI
-    uses: ./.github/workflows/test-publish.yml

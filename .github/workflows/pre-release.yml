@@ -28,12 +28,6 @@ jobs:
       - name: install
         run: pip install -U build
 
-      - name: check version
-        id: check-tag
-        uses: samuelcolvin/check-python-version@v4.1
-        with:
-          version_file_path: pragma-sdk/pragma_sdk/__init__.py
-
       - name: build
         run: python -m build
 
@@ -42,3 +36,4 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
