@@ -29,5 +29,7 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: pragma-sdk/dist
+          attestations: false
           password: ${{ secrets.PYPI_API_KEY }}
           skip-existing: true
