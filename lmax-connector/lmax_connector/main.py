@@ -32,7 +32,38 @@ class LmaxFixApplication(fix.Application):
         self.session_ready.clear()
 
     def fromAdmin(self, message, sessionID):
-        pass
+        """Log admin messages received from LMAX"""
+        msgType = fix.MsgType()
+        message.getHeader().getField(msgType)
+        
+        if msgType.getValue() == fix.MsgType_Reject:
+            refMsgType = fix.RefMsgType()
+            message.getField(refMsgType)
+            refSeqNum = fix.RefSeqNum()
+            message.getField(refSeqNum)
+            text = fix.Text()
+            message.getField(text)
+            logger.error(f"Message Rejected - Type: {refMsgType.getValue()}, SeqNum: {refSeqNum.getValue()}, Text: {text.getValue()}")
+        elif msgType.getValue() == fix.MsgType_Logon:
+            logger.info("Received Logon message")
+        elif msgType.getValue() == fix.MsgType_Heartbeat:
+            logger.debug("Received Heartbeat")
+        else:
+            logger.info(f"Admin Message - Type: {msgType.getValue()}, Content: {message.toString()}")
+
+    def toAdmin(self, message, sessionID):
+        """Log admin messages sent to LMAX"""
+        msgType = fix.MsgType()
+        message.getHeader().getField(msgType)
+        
+        if msgType.getValue() == fix.MsgType_Logon:
+            logger.info(f"Sending Logon message: {message.toString()}")
+        else:
+            logger.debug(f"Sending admin message: {message.toString()}")
+
+    def onError(self, sessionID):
+        """Log FIX session errors"""
+        logger.error(f"FIX Session Error for {sessionID}")
 
     def fromApp(self, message, sessionID):
         msgType = fix.MsgType()
@@ -41,6 +72,12 @@ class LmaxFixApplication(fix.Application):
         if msgType.getValue() == fix.MsgType_MarketDataSnapshotFullRefresh:
             logger.debug("Received market data snapshot")
             self._handle_market_data(message)
+        else:
+            logger.info(f"Received application message - Type: {msgType.getValue()}, Content: {message.toString()}")
+
+    def toApp(self, message, sessionID):
+        """Log outgoing application messages"""
+        logger.info(f"Sending application message: {message.toString()}")
 
     def _handle_market_data(self, message):
         symbol = fix.Symbol()
@@ -79,29 +116,28 @@ class LmaxFixApplication(fix.Application):
             if symbol in self.market_data_ready:
                 self.market_data_ready[symbol].set()
 
-    def toAdmin(self, message, sessionID):
-        pass
-
-    def toApp(self, message, sessionID):
-        pass
-
 class LmaxConnector:
     def __init__(self, pragma_client: PragmaAPIClient):
         self.pragma_client = pragma_client
         self.running = True
-        self.fix_settings = f"""
-[DEFAULT]
+        
+        # Create config directory if it doesn't exist
+        os.makedirs("config", exist_ok=True)
+        
+        # Write FIX settings to file
+        self.fix_config_path = "config/fix_settings.cfg"
+        fix_settings = f"""[DEFAULT]
 ConnectionType=initiator
 ReconnectInterval=60
 FileStorePath=store
 FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
-UseDataDictionary=Y
-DataDictionary=FIX44.xml
+UseDataDictionary=N
 ValidateUserDefinedFields=N
 ValidateIncomingMessage=N
 RefreshOnLogon=Y
+SocketUseSSL=Y
 
 [SESSION]
 BeginString=FIX.4.4
@@ -109,13 +145,18 @@ SenderCompID={os.getenv('LMAX_SENDER_COMP_ID')}
 TargetCompID={os.getenv('LMAX_TARGET_COMP_ID')}
 SocketConnectHost={os.getenv('LMAX_HOST')}
 SocketConnectPort={os.getenv('LMAX_PORT')}
-HeartBtInt=30
-"""
+Password={os.getenv('LMAX_PASSWORD')}
+HeartBtInt=30"""
+
+        logger.info(f"Using FIX settings:\n{fix_settings}")
+        with open(self.fix_config_path, "w") as f:
+            f.write(fix_settings)
+            
         self.application = LmaxFixApplication()
         self.init_fix()
 
     def init_fix(self):
-        settings = fix.SessionSettings(self.fix_settings)
+        settings = fix.SessionSettings(self.fix_config_path)
         store_factory = fix.FileStoreFactory(settings)
         log_factory = fix.FileLogFactory(settings)
         self.initiator = fix.SocketInitiator(
@@ -183,6 +224,22 @@ HeartBtInt=30
         self.running = False
         if hasattr(self, 'initiator'):
             self.initiator.stop()
+        # Clean up config file
+        if os.path.exists(self.fix_config_path):
+            os.remove(self.fix_config_path)
+
+async def shutdown(sig, loop, connector):
+    logger.info(f"Received exit signal {sig.name}...")
+    connector.stop()
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    logger.info(f"Cancelling {len(tasks)} outstanding tasks")
+    try:
+        await asyncio.gather(*tasks, return_exceptions=True)
+    except asyncio.CancelledError:
+        pass
+    finally:
+        loop.call_soon_threadsafe(loop.stop)
 
 async def main():
     logger.info("Starting LMAX Connector service...")
@@ -222,21 +279,14 @@ async def main():
         # Start pushing prices
         logger.info("Starting price push loop...")
         await connector.push_prices(pair)
+    except asyncio.CancelledError:
+        logger.info("Service shutdown requested")
     except Exception as e:
         logger.error(f"Fatal error: {str(e)}")
         raise
     finally:
         logger.info("Stopping connector...")
         connector.stop()
-
-async def shutdown(sig, loop, connector):
-    logger.info(f"Received exit signal {sig.name}...")
-    connector.stop()
-    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-    [task.cancel() for task in tasks]
-    logger.info(f"Cancelling {len(tasks)} outstanding tasks")
-    await asyncio.gather(*tasks, return_exceptions=True)
-    loop.stop()
 
 if __name__ == "__main__":
     asyncio.run(main()) 
