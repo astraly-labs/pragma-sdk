@@ -5,6 +5,7 @@ import time
 from typing import Optional
 import quickfix as fix
 from dotenv import load_dotenv
+import shutil
 
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
@@ -33,33 +34,45 @@ class LmaxFixApplication(fix.Application):
 
     def fromAdmin(self, message, sessionID):
         """Log admin messages received from LMAX"""
-        msgType = fix.MsgType()
-        message.getHeader().getField(msgType)
-        
-        if msgType.getValue() == fix.MsgType_Reject:
-            refMsgType = fix.RefMsgType()
-            message.getField(refMsgType)
-            refSeqNum = fix.RefSeqNum()
-            message.getField(refSeqNum)
-            text = fix.Text()
-            message.getField(text)
-            logger.error(f"Message Rejected - Type: {refMsgType.getValue()}, SeqNum: {refSeqNum.getValue()}, Text: {text.getValue()}")
-        elif msgType.getValue() == fix.MsgType_Logon:
-            logger.info("Received Logon message")
-        elif msgType.getValue() == fix.MsgType_Heartbeat:
-            logger.debug("Received Heartbeat")
-        else:
-            logger.info(f"Admin Message - Type: {msgType.getValue()}, Content: {message.toString()}")
+        try:
+            msgType = fix.MsgType()
+            message.getHeader().getField(msgType)
+            
+            logger.debug(f"Received admin message: {message.toString()}")
+            
+            if msgType.getValue() == fix.MsgType_Reject:
+                refMsgType = fix.RefMsgType()
+                message.getField(refMsgType)
+                refSeqNum = fix.RefSeqNum()
+                message.getField(refSeqNum)
+                text = fix.Text()
+                message.getField(text)
+                logger.error(f"Message Rejected - Type: {refMsgType.getValue()}, SeqNum: {refSeqNum.getValue()}, Text: {text.getValue()}")
+            elif msgType.getValue() == fix.MsgType_Logon:
+                logger.info("Received Logon message")
+            elif msgType.getValue() == fix.MsgType_Heartbeat:
+                logger.debug("Received Heartbeat")
+        except Exception as e:
+            logger.error(f"Error processing admin message: {str(e)}, Message: {message.toString()}")
 
     def toAdmin(self, message, sessionID):
         """Log admin messages sent to LMAX"""
-        msgType = fix.MsgType()
-        message.getHeader().getField(msgType)
-        
-        if msgType.getValue() == fix.MsgType_Logon:
-            logger.info(f"Sending Logon message: {message.toString()}")
-        else:
-            logger.debug(f"Sending admin message: {message.toString()}")
+        try:
+            msgType = fix.MsgType()
+            message.getHeader().getField(msgType)
+            
+            if msgType.getValue() == fix.MsgType_Logon:
+                # Required fields for LMAX logon
+                message.setField(fix.EncryptMethod(0))  # No encryption
+                message.setField(fix.HeartBtInt(30))
+                message.setField(fix.Username(self.username))  # Tag 553
+                message.setField(fix.Password(self.password))  # Tag 554
+                message.setField(fix.ResetSeqNumFlag(True))  # Tag 141
+                logger.info(f"Sending Logon message: {message.toString()}")
+            else:
+                logger.debug(f"Sending admin message: {message.toString()}")
+        except Exception as e:
+            logger.error(f"Error preparing admin message: {str(e)}")
 
     def onError(self, sessionID):
         """Log FIX session errors"""
@@ -121,8 +134,13 @@ class LmaxConnector:
         self.pragma_client = pragma_client
         self.running = True
         
-        # Create config directory if it doesn't exist
+        # Create required directories
         os.makedirs("config", exist_ok=True)
+        os.makedirs("store", exist_ok=True)
+        os.makedirs("log", exist_ok=True)
+        
+        # Copy data dictionary
+        dict_path = "config/FIX44.xml"
         
         # Write FIX settings to file
         self.fix_config_path = "config/fix_settings.cfg"
@@ -143,9 +161,10 @@ SocketUseSSL=Y
 BeginString=FIX.4.4
 SenderCompID={os.getenv('LMAX_SENDER_COMP_ID')}
 TargetCompID={os.getenv('LMAX_TARGET_COMP_ID')}
-SocketConnectHost={os.getenv('LMAX_HOST')}
-SocketConnectPort={os.getenv('LMAX_PORT')}
+SocketConnectHost=127.0.0.1
+SocketConnectPort=40003
 Password={os.getenv('LMAX_PASSWORD')}
+ResetOnLogon=Y
 HeartBtInt=30"""
 
         logger.info(f"Using FIX settings:\n{fix_settings}")
@@ -159,35 +178,58 @@ HeartBtInt=30"""
         settings = fix.SessionSettings(self.fix_config_path)
         store_factory = fix.FileStoreFactory(settings)
         log_factory = fix.FileLogFactory(settings)
-        self.initiator = fix.SocketInitiator(
-            self.application,
-            store_factory,
-            settings,
-            log_factory
-        )
-        self.initiator.start()
+        
+        # Initialize application with credentials
+        self.application.username = os.getenv('LMAX_SENDER_COMP_ID')
+        self.application.password = os.getenv('LMAX_PASSWORD')
+        
+        # Start initiator
+        try:
+            self.initiator = fix.SocketInitiator(
+                self.application,
+                store_factory,
+                settings,
+                log_factory
+            )
+            self.initiator.start()
+            logger.info("FIX initiator started successfully")
+        except Exception as e:
+            logger.error(f"Failed to start FIX initiator: {str(e)}")
+            raise
 
     async def subscribe_market_data(self, pair: Pair):
         await self.application.session_ready.wait()
         
-        symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
-        self.application.market_data_ready[symbol] = asyncio.Event()
-        
+        # Create market data request based on LMAX example
         message = fix.Message()
         header = message.getHeader()
         header.setField(fix.MsgType(fix.MsgType_MarketDataRequest))
         
-        message.setField(fix.MDReqID("1"))
-        message.setField(fix.SubscriptionRequestType('1'))  # Snapshot + Updates
-        message.setField(fix.MarketDepth(0))
+        # Required fields as per LMAX example
+        message.setField(fix.MDReqID("EUR/USD"))  # Unique request ID
+        message.setField(fix.SubscriptionRequestType('1'))  # 1 = SNAPSHOTUPDATE
+        message.setField(fix.MarketDepth(0))  # Full book
+        message.setField(fix.MDUpdateType(0))  # Full refresh
+        message.setField(fix.NoMDEntryTypes(2))
         
+        # Add entry types group
         group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
-        group.setField(fix.MDEntryType(fix.MDEntryType_BID))
+        group.setField(fix.MDEntryType('0'))  # Bid
         message.addGroup(group)
-        group.setField(fix.MDEntryType(fix.MDEntryType_OFFER))
+        group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
+        group.setField(fix.MDEntryType('1'))  # Offer
         message.addGroup(group)
         
-        message.setField(fix.Symbol(symbol))
+        # Add instrument group
+        message.setField(fix.NoRelatedSym(1))
+        message.setField(fix.Symbol("4001"))  # EUR/USD instrument ID
+        message.setField(fix.SecurityType("8"))  # FX
+        
+        logger.info(f"Sending market data request: {message.toString()}")
+        try:
+            fix.Session.sendToTarget(message)
+        except fix.RuntimeError as e:
+            logger.error(f"Failed to send market data request: {str(e)}")
 
     async def push_prices(self, pair: Pair):
         symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
