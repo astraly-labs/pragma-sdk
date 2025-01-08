@@ -10,7 +10,7 @@ from pragma_sdk.common.types.pair import Pair
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
-from price_pusher.types import LatestOrchestratorPairPrices
+from price_pusher.price_types import LatestOrchestratorPairPrices
 
 logger = logging.getLogger(__name__)
 
