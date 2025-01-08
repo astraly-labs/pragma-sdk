@@ -1,75 +1,84 @@
 # LMAX Connector
 
-A service that connects to LMAX Exchange via FIX 4.4 protocol and pushes EUR/USD price data to the Pragma Oracle.
-
-## Features
-
-- Connects to LMAX Exchange using FIX 4.4 protocol
-- Subscribes to EUR/USD market data
-- Pushes mid-price to Pragma Oracle
-- Graceful shutdown handling
-- Configurable via environment variables
+A service that connects to LMAX Exchange via FIX 4.4 protocol and pushes EUR/USD market data to Pragma.
 
 ## Prerequisites
 
-- Python 3.11 or higher
+- Python 3.11+
+- stunnel (for SSL/TLS connection to LMAX)
+- LMAX Exchange account credentials
 - uv for dependency management
-- LMAX Exchange credentials
-- Pragma Oracle API credentials
 
 ## Installation
 
-1. Clone the repository
-2. Install dependencies:
+1. Install stunnel:
+```bash
+# macOS
+brew install stunnel
+
+# Ubuntu/Debian
+apt-get install stunnel4
+```
+
+2. Install the package:
 ```bash
 uv pip install -e .
 ```
 
 ## Configuration
 
-1. Copy the example environment file:
+1. Copy `.env.example` to `.env` and fill in your credentials:
 ```bash
 cp .env.example .env
 ```
 
-2. Edit `.env` and fill in your credentials:
-- `LMAX_SENDER_COMP_ID`: Your LMAX FIX sender ID
-- `LMAX_TARGET_COMP_ID`: LMAX FIX target ID (usually LMXBLM)
-- `LMAX_HOST`: LMAX FIX host (usually fix-md.lmaxtrader.com)
-- `LMAX_PORT`: LMAX FIX port (usually 443)
-- `PRAGMA_API_KEY`: Your Pragma API key
-- `PRAGMA_PUBLISHER_ID`: Your Pragma publisher ID
-- `PRAGMA_API_BASE_URL`: Pragma API base url (dev/prod)
+2. Configure stunnel by modifying `stunnel.conf`:
+```ini
+; Stunnel configuration for LMAX FIX connection
+debug = 7
+socket = l:TCP_NODELAY=1
+socket = r:TCP_NODELAY=1
+fips = no
+
+[Production-MarketData]
+client = yes
+accept = 127.0.0.1:40003
+connect = fix-md.lmaxtrader.com:443
+sslVersion = TLSv1.2
+verify = 0
+delay = no
+TIMEOUTclose = 0
+```
 
 ## Running the Service
 
+1. Start stunnel:
+```bash
+cd lmax-connector
+stunnel stunnel.conf
+```
+
+2. Then, start the connector:
 ```bash
 python -m lmax_connector
 ```
 
 The service will:
-1. Connect to LMAX Exchange via FIX
+1. Connect to LMAX via FIX 4.4 protocol
 2. Subscribe to EUR/USD market data
-3. Push mid-prices to Pragma Oracle
-4. Handle graceful shutdown on SIGTERM/SIGINT
+3. Push prices to Pragma API
 
-## Development
+## Environment Variables
 
-### Running Tests
+- `LMAX_SENDER_COMP_ID`: Your LMAX username
+- `LMAX_TARGET_COMP_ID`: LMXBLM (for production)
+- `LMAX_PASSWORD`: Your LMAX password
+- `PRAGMA_API_KEY`: Your Pragma API key
+- `PRAGMA_ACCOUNT_PRIVATE_KEY`: Your Pragma account private key
+- `PRAGMA_ACCOUNT_CONTRACT_ADDRESS`: Your Pragma account contract address
 
-```bash
-poe test
-```
+## Troubleshooting
 
-### Code Style
-
-The project uses:
-- Ruff for code formatting and linting
-- MyPy for type checking
-
-Run all checks:
-```bash
-poe format  # Format code
-poe lint    # Run linter
-poe typecheck  # Run type checker
-``` 
+1. If you see SSL/TLS connection errors, make sure stunnel is running and the configuration is correct.
+2. If you see authentication errors, verify your LMAX credentials in the `.env` file.
+3. Check the logs in `log/` directory for detailed error messages. 
