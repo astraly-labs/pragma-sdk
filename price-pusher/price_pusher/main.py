@@ -26,7 +26,7 @@ from price_pusher.configs.price_config import (
     PriceConfig,
 )
 from price_pusher.orchestrator import Orchestrator
-from price_pusher.types import Target, Network
+from price_pusher.price_types import Target, Network
 
 logger = logging.getLogger(__name__)
 

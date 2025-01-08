@@ -14,7 +14,7 @@ from pragma_sdk.common.types.types import DataTypes
 from price_pusher.utils import exclude_none_and_exceptions, flatten_list
 from price_pusher.configs import PriceConfig
 from price_pusher.core.request_handlers.interface import IRequestHandler
-from price_pusher.types import (
+from price_pusher.price_types import (
     DurationInSeconds,
     LatestOraclePairPrices,
     LatestOrchestratorPairPrices,

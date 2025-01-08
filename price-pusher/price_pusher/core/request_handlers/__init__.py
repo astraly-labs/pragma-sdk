@@ -1,6 +1,6 @@
 from typing import Dict
 
-from price_pusher.types import Target
+from price_pusher.price_types import Target
 
 from .api import APIRequestHandler
 from .chain import ChainRequestHandler
