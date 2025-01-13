@@ -17,7 +17,7 @@ classifiers = [
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "pragma-sdk",
-    "quickfix>=1.15.1",
+    "quickfix-py>=0.0.2",
     "python-dotenv>=1.0.0",
 ]
 
@@ -36,7 +36,6 @@ path = "lmax_connector/__init__.py"
 
 [tool.uv.sources]
 pragma_sdk = { path = "../pragma-sdk" }
-quickfix = { path = "../../quickfix-1.15.1" }
 
 [tool.hatch.metadata]
 allow-direct-references = true
