@@ -21,8 +21,7 @@ RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
 COPY lmax-connector/ /opt/lmax-connector/
 WORKDIR /opt/lmax-connector
-
-RUN uv sync --all-extras
+RUN uv sync
 
 FROM base AS final
 RUN apt-get update && \
@@ -30,14 +29,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt /opt
-COPY stunnel.conf /etc/stunnel/stunnel.conf
 VOLUME /opt/lmax-connector/config/
 
 WORKDIR /opt/lmax-connector
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
-stunnel /etc/stunnel/stunnel.conf &\n\
+stunnel stunnel.conf &\n\
 sleep 2\n\
 exec /opt/lmax-connector/.venv/bin/python3.12 -m lmax_connector' > /start.sh && \
 chmod +x /start.sh
