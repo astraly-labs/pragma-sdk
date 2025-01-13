@@ -113,7 +113,8 @@ class LmaxFixApplication(fix.Application):
         message.getField(noMDEntries)
         
         for i in range(noMDEntries.getValue()):
-            group = fix.Group(fix.FIELD.NoMDEntries, fix.FIELD.MDEntryType)
+            # NoMDEntries is 268, MDEntryType is 269
+            group = fix.Group(268, 269)
             message.getGroup(i + 1, group)
             
             mdEntryType = fix.MDEntryType()
