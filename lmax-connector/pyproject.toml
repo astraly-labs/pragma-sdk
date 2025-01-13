@@ -89,4 +89,4 @@ source = ["lmax_connector"]
 
 [tool.coverage.report]
 omit = ["*_test.py", "tests/*"]
-skip_empty = true 
+skip_empty = true

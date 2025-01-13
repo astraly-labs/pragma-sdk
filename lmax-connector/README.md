@@ -81,4 +81,4 @@ The service will:
 
 1. If you see SSL/TLS connection errors, make sure stunnel is running and the configuration is correct.
 2. If you see authentication errors, verify your LMAX credentials in the `.env` file.
-3. Check the logs in `log/` directory for detailed error messages. 
+3. Check the logs in `log/` directory for detailed error messages.
