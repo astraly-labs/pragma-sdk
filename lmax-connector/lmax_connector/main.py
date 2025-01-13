@@ -40,15 +40,7 @@ class LmaxFixApplication(fix.Application):
             logger.debug(f"Received admin message: {message.toString()}")
 
             if msgType.getValue() == fix.MsgType_Reject:
-                refMsgType = fix.RefMsgType()
-                message.getField(refMsgType)
-                refSeqNum = fix.RefSeqNum()
-                message.getField(refSeqNum)
-                text = fix.Text()
-                message.getField(text)
-                logger.error(
-                    f"Message Rejected - Type: {refMsgType.getValue()}, SeqNum: {refSeqNum.getValue()}, Text: {text.getValue()}"
-                )
+                self._fromAdmin10(message)
             elif msgType.getValue() == fix.MsgType_Logon:
                 logger.info("Received Logon message")
             elif msgType.getValue() == fix.MsgType_Heartbeat:
@@ -58,6 +50,17 @@ class LmaxFixApplication(fix.Application):
                 f"Error processing admin message: {str(e)}, Message: {message.toString()}"
             )
 
+    def _fromAdmin10(self, message):
+        refMsgType = fix.RefMsgType()
+        message.getField(refMsgType)
+        refSeqNum = fix.RefSeqNum()
+        message.getField(refSeqNum)
+        text = fix.Text()
+        message.getField(text)
+        logger.error(
+            f"Message Rejected - Type: {refMsgType.getValue()}, SeqNum: {refSeqNum.getValue()}, Text: {text.getValue()}"
+        )
+
     def toAdmin(self, message, sessionID):
         """Log admin messages sent to LMAX"""
         try:
@@ -65,17 +68,20 @@ class LmaxFixApplication(fix.Application):
             message.getHeader().getField(msgType)
 
             if msgType.getValue() == fix.MsgType_Logon:
-                # Required fields for LMAX logon
-                message.setField(fix.EncryptMethod(0))  # No encryption
-                message.setField(fix.HeartBtInt(30))
-                message.setField(fix.Username(self.username))  # Tag 553
-                message.setField(fix.Password(self.password))  # Tag 554
-                message.setField(fix.ResetSeqNumFlag(True))  # Tag 141
-                logger.info(f"Sending Logon message: {message.toString()}")
+                self._toAdmin_9(message)
             else:
                 logger.debug(f"Sending admin message: {message.toString()}")
         except Exception as e:
             logger.error(f"Error preparing admin message: {str(e)}")
+
+    def _toAdmin_9(self, message):
+        # Required fields for LMAX logon
+        message.setField(fix.EncryptMethod(0))  # No encryption
+        message.setField(fix.HeartBtInt(30))
+        message.setField(fix.Username(self.username))  # Tag 553
+        message.setField(fix.Password(self.password))  # Tag 554
+        message.setField(fix.ResetSeqNumFlag(True))  # Tag 141
+        logger.info(f"Sending Logon message: {message.toString()}")
 
     def onError(self, sessionID):
         """Log FIX session errors"""
@@ -284,8 +290,7 @@ HeartBtInt=30"""
         logger.info(f"Starting price push loop for {symbol}")
         while self.running:
             try:
-                market_data = self.application.latest_market_data.get(symbol)
-                if market_data:
+                if market_data := self.application.latest_market_data.get(symbol):
                     bid, ask = market_data["bid"], market_data["ask"]
                     price = (bid + ask) / 2
                     timestamp = market_data["timestamp"]
