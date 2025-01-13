@@ -198,38 +198,51 @@ HeartBtInt=30"""
             raise
 
     async def subscribe_market_data(self, pair: Pair):
-        await self.application.session_ready.wait()
-        
-        # Create market data request based on LMAX example
-        message = fix.Message()
-        header = message.getHeader()
-        header.setField(fix.MsgType(fix.MsgType_MarketDataRequest))
-        
-        # Required fields as per LMAX example
-        message.setField(fix.MDReqID("EUR/USD"))  # Unique request ID
-        message.setField(fix.SubscriptionRequestType('1'))  # 1 = SNAPSHOTUPDATE
-        message.setField(fix.MarketDepth(0))  # Full book
-        message.setField(fix.MDUpdateType(0))  # Full refresh
-        message.setField(fix.NoMDEntryTypes(2))
-        
-        # Add entry types group
-        group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
-        group.setField(fix.MDEntryType('0'))  # Bid
-        message.addGroup(group)
-        group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
-        group.setField(fix.MDEntryType('1'))  # Offer
-        message.addGroup(group)
-        
-        # Add instrument group
-        message.setField(fix.NoRelatedSym(1))
-        message.setField(fix.Symbol("4001"))  # EUR/USD instrument ID
-        message.setField(fix.SecurityType("8"))  # FX
-        
-        logger.info(f"Sending market data request: {message.toString()}")
+        """Subscribe to market data for a specific pair"""
+        logger.info("Waiting for session to be ready...")
         try:
-            fix.Session.sendToTarget(message)
-        except fix.RuntimeError as e:
-            logger.error(f"Failed to send market data request: {str(e)}")
+            # Wait for session with timeout
+            ready = await asyncio.wait_for(self.application.session_ready.wait(), timeout=10.0)
+            if not ready:
+                raise Exception("Session not ready after timeout")
+            logger.info("Session ready, sending market data request")
+            
+            # Create market data request
+            message = fix.Message()
+            header = message.getHeader()
+            header.setField(fix.MsgType(fix.MsgType_MarketDataRequest))
+            
+            # Required fields as per LMAX example
+            message.setField(fix.MDReqID("EUR/USD"))  # Unique request ID
+            message.setField(fix.SubscriptionRequestType('1'))  # 1 = SNAPSHOTUPDATE
+            message.setField(fix.MarketDepth(0))  # Full book
+            message.setField(fix.MDUpdateType(0))  # Full refresh
+            message.setField(fix.NoMDEntryTypes(2))
+            
+            # Add entry types group
+            group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
+            group.setField(fix.MDEntryType('0'))  # Bid
+            message.addGroup(group)
+            group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
+            group.setField(fix.MDEntryType('1'))  # Offer
+            message.addGroup(group)
+            
+            # Add instrument group
+            message.setField(fix.NoRelatedSym(1))
+            message.setField(fix.Symbol("4001"))  # EUR/USD instrument ID
+            message.setField(fix.SecurityType("8"))  # FX
+            
+            logger.info(f"Sending market data request: {message.toString()}")
+            if not fix.Session.sendToTarget(message):
+                raise Exception("Failed to send market data request")
+            logger.info("Market data request sent successfully")
+            
+        except asyncio.TimeoutError:
+            logger.error("Timeout waiting for session to be ready")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to subscribe to market data: {str(e)}")
+            raise
 
     async def push_prices(self, pair: Pair):
         symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
