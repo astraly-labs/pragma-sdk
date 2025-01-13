@@ -290,8 +290,8 @@ HeartBtInt=30"""
                         publisher=os.getenv("PRAGMA_PUBLISHER_ID"),
                         volume=0,
                     )
-                    
-                    await self.pragma_client.push_entry(entry)
+
+                    await self.pragma_client.publish_entries([entry])
                     logger.info(f"Pushed {pair} price {price} to Pragma")
                 else:
                     logger.debug(f"No market data available for {symbol}")
