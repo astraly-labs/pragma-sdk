@@ -201,39 +201,49 @@ HeartBtInt=30"""
         """Subscribe to market data for a specific pair"""
         logger.info("Waiting for session to be ready...")
         try:
-            # Wait for session with timeout
-            ready = await asyncio.wait_for(self.application.session_ready.wait(), timeout=10.0)
+            # Wait for session with shorter timeout
+            ready = await asyncio.wait_for(self.application.session_ready.wait(), timeout=2.0)
             if not ready:
                 raise Exception("Session not ready after timeout")
-            logger.info("Session ready, sending market data request")
+            
+            # Get credentials
+            sender_comp_id = os.getenv('LMAX_SENDER_COMP_ID')
+            target_comp_id = os.getenv('LMAX_TARGET_COMP_ID')
             
             # Create market data request
             message = fix.Message()
             header = message.getHeader()
-            header.setField(fix.MsgType(fix.MsgType_MarketDataRequest))
             
-            # Required fields as per LMAX example
-            message.setField(fix.MDReqID("EUR/USD"))  # Unique request ID
-            message.setField(fix.SubscriptionRequestType('1'))  # 1 = SNAPSHOTUPDATE
-            message.setField(fix.MarketDepth(0))  # Full book
-            message.setField(fix.MDUpdateType(0))  # Full refresh
-            message.setField(fix.NoMDEntryTypes(2))
+            # Set header fields in order
+            header.setField(fix.BeginString("FIX.4.4"))
+            header.setField(fix.MsgType(fix.MsgType_MarketDataRequest))  # 'V'
+            header.setField(fix.SenderCompID(sender_comp_id))
+            header.setField(fix.TargetCompID(target_comp_id))
             
-            # Add entry types group
-            group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
-            group.setField(fix.MDEntryType('0'))  # Bid
-            message.addGroup(group)
-            group = fix.Group(fix.FIELD.NoMDEntryTypes, fix.FIELD.MDEntryType)
-            group.setField(fix.MDEntryType('1'))  # Offer
-            message.addGroup(group)
+            # Required fields for market data request in ascending tag order
+            message.setField(fix.MDReqID("1"))  # Tag 262
+            message.setField(fix.SubscriptionRequestType('1'))  # Tag 263
+            message.setField(fix.MarketDepth(1))  # Tag 264
+            message.setField(fix.NoMDEntryTypes(2))  # Tag 267
             
-            # Add instrument group
-            message.setField(fix.NoRelatedSym(1))
-            message.setField(fix.Symbol("4001"))  # EUR/USD instrument ID
-            message.setField(fix.SecurityType("8"))  # FX
+            # Add entry types group (267)
+            for entry_type in ['0', '1']:  # 0=Bid, 1=Offer
+                group = fix.Group(267, 269)
+                group.setField(fix.MDEntryType(entry_type))  # Tag 269
+                message.addGroup(group)
+            
+            # Add symbol group (146) after entry types
+            message.setField(fix.NoRelatedSym(1))  # Tag 146
+            symbol_group = fix.Group(146, 55)
+            symbol_group.setField(fix.Symbol("EUR/USD"))  # Tag 55
+            symbol_group.setField(fix.SecurityType("CURRENCY"))  # Tag 167
+            message.addGroup(symbol_group)
             
             logger.info(f"Sending market data request: {message.toString()}")
-            if not fix.Session.sendToTarget(message):
+            
+            # Create session ID for sending
+            session_id = fix.SessionID("FIX.4.4", sender_comp_id, target_comp_id)
+            if not fix.Session.sendToTarget(message, session_id):
                 raise Exception("Failed to send market data request")
             logger.info("Market data request sent successfully")
             
