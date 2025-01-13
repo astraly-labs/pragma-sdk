@@ -12,6 +12,7 @@ A service that connects to LMAX Exchange via FIX 4.4 protocol and pushes EUR/USD
 ## Installation
 
 1. Install stunnel:
+
 ```bash
 # macOS
 brew install stunnel
@@ -21,18 +22,21 @@ apt-get install stunnel4
 ```
 
 2. Install the package:
+
 ```bash
-uv pip install -e .
+uv sync
 ```
 
 ## Configuration
 
 1. Copy `.env.example` to `.env` and fill in your credentials:
+
 ```bash
 cp .env.example .env
 ```
 
 2. Configure stunnel by modifying `stunnel.conf`:
+
 ```ini
 ; Stunnel configuration for LMAX FIX connection
 debug = 7
@@ -53,17 +57,20 @@ TIMEOUTclose = 0
 ## Running the Service
 
 1. Start stunnel:
+
 ```bash
 cd lmax-connector
 stunnel stunnel.conf
 ```
 
 2. Then, start the connector:
+
 ```bash
 python -m lmax_connector
 ```
 
 The service will:
+
 1. Connect to LMAX via FIX 4.4 protocol
 2. Subscribe to EUR/USD market data
 3. Push prices to Pragma API
@@ -76,6 +83,20 @@ The service will:
 - `PRAGMA_API_KEY`: Your Pragma API key
 - `PRAGMA_ACCOUNT_PRIVATE_KEY`: Your Pragma account private key
 - `PRAGMA_ACCOUNT_CONTRACT_ADDRESS`: Your Pragma account contract address
+
+## Using Docker
+
+1. Build the Docker image:
+
+```bash
+docker build -t lmax-connector .
+```
+
+2. Run the Docker container:
+
+```bash
+docker run -v ./config:/opt/lmax-connector/config --env-file .env lmax-connector
+```
 
 ## Troubleshooting
 
