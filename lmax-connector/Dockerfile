@@ -13,6 +13,9 @@ FROM base AS builder
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     gcc \
+    g++ \
+    libssl-dev \
+    swig \
     libgmp3-dev \
     pipx \
     stunnel4
