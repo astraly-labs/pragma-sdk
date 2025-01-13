@@ -79,24 +79,34 @@ class LmaxFixApplication(fix.Application):
         logger.error(f"FIX Session Error for {sessionID}")
 
     def fromApp(self, message, sessionID):
-        msgType = fix.MsgType()
-        message.getHeader().getField(msgType)
-        
-        if msgType.getValue() == fix.MsgType_MarketDataSnapshotFullRefresh:
-            logger.debug("Received market data snapshot")
-            self._handle_market_data(message)
-        else:
-            logger.info(f"Received application message - Type: {msgType.getValue()}, Content: {message.toString()}")
+        try:
+            msgType = fix.MsgType()
+            message.getHeader().getField(msgType)
+            
+            if msgType.getValue() == fix.MsgType_MarketDataSnapshotFullRefresh:
+                logger.debug("Received market data snapshot")
+                try:
+                    self._handle_market_data(message)
+                except fix.FieldNotFound as e:
+                    logger.error(f"Field not found in market data message: {str(e)}")
+                except Exception as e:
+                    logger.error(f"Error handling market data: {str(e)}")
+            else:
+                logger.info(f"Received application message - Type: {msgType.getValue()}, Content: {message.toString()}")
+        except fix.FieldNotFound as e:
+            logger.error(f"Field not found in message header: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error processing application message: {str(e)}")
 
     def toApp(self, message, sessionID):
         """Log outgoing application messages"""
         logger.info(f"Sending application message: {message.toString()}")
 
     def _handle_market_data(self, message):
-        symbol = fix.Symbol()
-        message.getField(symbol)
-        symbol = symbol.getValue()
-        logger.debug(f"Processing market data for {symbol}")
+        security_id = fix.SecurityID()
+        message.getField(security_id)
+        security_id = security_id.getValue()
+        logger.debug(f"Processing market data for security ID {security_id}")
         
         bid = ask = None
         noMDEntries = fix.NoMDEntries()
@@ -120,6 +130,8 @@ class LmaxFixApplication(fix.Application):
                 logger.debug(f"Got ask: {ask}")
         
         if bid is not None and ask is not None:
+            # Use EUR/USD as the symbol since we know that's what 4001 represents
+            symbol = "EUR/USD"
             self.latest_market_data[symbol] = {
                 "bid": bid,
                 "ask": ask,
@@ -151,7 +163,8 @@ FileStorePath=store
 FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
-UseDataDictionary=N
+UseDataDictionary=Y
+DataDictionary=config/FIX44.xml
 ValidateUserDefinedFields=N
 ValidateIncomingMessage=N
 RefreshOnLogon=Y
@@ -231,14 +244,16 @@ HeartBtInt=30"""
                 group = fix.Group(267, 269)
                 group.setField(fix.MDEntryType(entry_type))  # Tag 269
                 message.addGroup(group)
-            
-            # Add symbol group (146) after entry types
+
+            # Set NoRelatedSym count
             message.setField(fix.NoRelatedSym(1))  # Tag 146
-            symbol_group = fix.Group(146, 55)
-            symbol_group.setField(fix.Symbol("EUR/USD"))  # Tag 55
-            symbol_group.setField(fix.SecurityType("CURRENCY"))  # Tag 167
-            message.addGroup(symbol_group)
-            
+
+            # Add instrument group
+            instrument_group = fix.Group(146, 48)  # 146 = NoRelatedSym, 48 = SecurityID
+            instrument_group.setField(fix.SecurityID("4001"))  # Tag 48 - EUR/USD LMAX ID
+            instrument_group.setField(fix.SecurityIDSource("8"))  # Tag 22, "8" = Exchange Symbol
+            message.addGroup(instrument_group)
+
             logger.info(f"Sending market data request: {message.toString()}")
             
             # Create session ID for sending
