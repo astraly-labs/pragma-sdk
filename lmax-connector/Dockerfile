@@ -17,6 +17,7 @@ RUN apt-get update && \
     libssl-dev \
     swig \
     libgmp3-dev \
+    pkg-config \
     pipx \
     stunnel4
 
