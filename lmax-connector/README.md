@@ -89,7 +89,7 @@ The service will:
 1. Build the Docker image:
 
 ```bash
-docker build -t lmax-connector .
+ddocker build -t lmax-connector:latest -f lmax-connector/Dockerfile .
 ```
 
 2. Run the Docker container:

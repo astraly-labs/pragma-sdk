@@ -39,7 +39,7 @@ WORKDIR /opt/lmax-connector
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
-stunnel stunnel.conf &\n\
+exec /usr/bin/stunnel stunnel.conf &\n\
 sleep 2\n\
 exec /opt/lmax-connector/.venv/bin/python3.12 -m lmax_connector' > /start.sh && \
 chmod +x /start.sh

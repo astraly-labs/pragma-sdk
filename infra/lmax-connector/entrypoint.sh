@@ -7,7 +7,8 @@ infisical export  --projectId=${INFISICAL_PROJECT_ID} --env=${INFISICAL_ENV}  --
 source .env
 
 # Execute Stunnel
-stunnel stunnel.conf &
+exec /usr/bin/stunnel stunnel.conf &
+
 sleep 5
 
 # Execute LMAX Connector
