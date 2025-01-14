@@ -7,7 +7,7 @@ infisical export  --projectId=${INFISICAL_PROJECT_ID} --env=${INFISICAL_ENV}  --
 source .env
 
 # Execute Stunnel
-exec /usr/bin/stunnel stunnel.conf &
+/usr/bin/stunnel stunnel.conf &
 
 sleep 5
 

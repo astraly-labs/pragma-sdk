@@ -32,6 +32,11 @@ WORKDIR /opt/lmax-connector
 RUN uv sync
 
 FROM base as final
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y stunnel4 && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/lmax-connector/entrypoint.sh /opt/lmax-connector/
