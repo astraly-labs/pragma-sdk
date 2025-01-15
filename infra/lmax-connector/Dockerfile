@@ -33,12 +33,11 @@ RUN uv sync
 
 FROM base as final
 
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y stunnel4 && \
-    rm -rf /var/lib/apt/lists/*
-
 COPY --from=builder /usr/bin/infisical /usr/bin/infisical
+COPY --from=builder /usr/bin/stunnel /usr/bin/stunnel
+COPY --from=builder /usr/lib /usr/lib
 COPY --from=builder /opt /opt
+COPY infra/lmax-connector/config/ /opt/lmax-connector/config/
 COPY infra/lmax-connector/entrypoint.sh /opt/lmax-connector/
 WORKDIR /opt/lmax-connector
 ENTRYPOINT ["bash","/opt/lmax-connector/entrypoint.sh"]
