@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
 RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
 COPY lmax-connector/ /opt/lmax-connector/
+COPY lmax-connector/config/Fix44.xml /opt/lmax-connector/config/FIX44.xml
 WORKDIR /opt/lmax-connector
 RUN uv sync
 
