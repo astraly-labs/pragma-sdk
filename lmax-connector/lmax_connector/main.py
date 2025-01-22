@@ -19,17 +19,24 @@ class LmaxFixApplication(fix.Application):
         self.latest_market_data = {}
         self.session_ready = asyncio.Event()
         self.market_data_ready = {}
+        self.last_subscription_time = 0  # Track when we last subscribed
 
     def onCreate(self, sessionID):
         logger.info("Session created: %s", sessionID)
 
     def onLogon(self, sessionID):
         logger.info("Logged on: %s", sessionID)
+        # Reset session ready event
+        self.session_ready.clear()  # Clear first to ensure any waiters see the new state
         self.session_ready.set()
+        # Force immediate resubscription after logon
+        self.last_subscription_time = 0
 
     def onLogout(self, sessionID):
         logger.info("Logged out: %s", sessionID)
         self.session_ready.clear()
+        # Clear last subscription time to force resubscription on next logon
+        self.last_subscription_time = 0
 
     def fromAdmin(self, message, sessionID):
         """Log admin messages received from LMAX"""
@@ -164,14 +171,11 @@ class LmaxConnector:
         os.makedirs("store", exist_ok=True)
         os.makedirs("log", exist_ok=True)
 
-        # Copy data dictionary
-        # dict_path = "config/FIX44.xml"
-
         # Write FIX settings to file
         self.fix_config_path = "config/fix_settings.cfg"
         fix_settings = f"""[DEFAULT]
 ConnectionType=initiator
-ReconnectInterval=60
+ReconnectInterval=2
 FileStorePath=store
 FileLogPath=log
 StartTime=00:00:00
@@ -182,6 +186,12 @@ ValidateUserDefinedFields=N
 ValidateIncomingMessage=N
 RefreshOnLogon=Y
 SocketUseSSL=Y
+LogoutTimeout=5
+ResetOnLogon=Y
+ResetOnLogout=Y
+ResetOnDisconnect=Y
+SendRedundantResendRequests=Y
+PersistMessages=Y
 
 [SESSION]
 BeginString=FIX.4.4
@@ -190,7 +200,6 @@ TargetCompID={os.getenv('LMAX_TARGET_COMP_ID')}
 SocketConnectHost=127.0.0.1
 SocketConnectPort=40003
 Password={os.getenv('LMAX_PASSWORD')}
-ResetOnLogon=Y
 HeartBtInt=30"""
 
         logger.info(f"Using FIX settings:\n{fix_settings}")
@@ -224,13 +233,6 @@ HeartBtInt=30"""
         """Subscribe to market data for a specific pair"""
         logger.info("Waiting for session to be ready...")
         try:
-            # Wait for session with shorter timeout
-            ready = await asyncio.wait_for(
-                self.application.session_ready.wait(), timeout=2.0
-            )
-            if not ready:
-                raise Exception("Session not ready after timeout")
-
             # Get credentials
             sender_comp_id = os.getenv("LMAX_SENDER_COMP_ID")
             target_comp_id = os.getenv("LMAX_TARGET_COMP_ID")
@@ -270,26 +272,103 @@ HeartBtInt=30"""
             )  # Tag 22, "8" = Exchange Symbol
             message.addGroup(instrument_group)
 
-            logger.info(f"Sending market data request: {message.toString()}")
-
             # Create session ID for sending
             session_id = fix.SessionID("FIX.4.4", sender_comp_id, target_comp_id)
-            if not fix.Session.sendToTarget(message, session_id):
-                raise Exception("Failed to send market data request")
-            logger.info("Market data request sent successfully")
 
-        except asyncio.TimeoutError:
-            logger.error("Timeout waiting for session to be ready")
-            raise
+            # Keep the subscription task alive and monitor session
+            resubscribe_interval = 30  # Resubscribe every 30 seconds
+            reconnect_delay = 2  # Wait 2 seconds between reconnection attempts
+            last_error_time = 0
+            error_threshold = 5  # Maximum number of errors in error_window
+            error_window = 60  # Time window for counting errors in seconds
+            error_count = 0
+            
+            while self.running:
+                try:
+                    current_time = time.time()
+                    
+                    # Reset error count if we're outside the error window
+                    if current_time - last_error_time > error_window:
+                        error_count = 0
+                    
+                    # Check if session is ready
+                    if not self.application.session_ready.is_set():
+                        logger.warning("Session disconnected, waiting for reconnection...")
+                        try:
+                            # Wait for session with timeout
+                            await asyncio.wait_for(
+                                self.application.session_ready.wait(), 
+                                timeout=5.0
+                            )
+                            logger.info("Session reconnected, forcing resubscription...")
+                            # Force immediate resubscription
+                            if not fix.Session.sendToTarget(message, session_id):
+                                raise Exception("Failed to send market data request after reconnection")
+                            self.application.last_subscription_time = current_time
+                            logger.info("Market data request sent successfully after reconnection")
+                        except asyncio.TimeoutError:
+                            logger.error("Timeout waiting for session reconnection")
+                            await asyncio.sleep(reconnect_delay)
+                            continue
+                        except Exception as e:
+                            logger.error(f"Error during reconnection: {str(e)}")
+                            error_count += 1
+                            last_error_time = current_time
+                            if error_count >= error_threshold:
+                                logger.error("Too many errors, restarting session...")
+                                self.initiator.stop()
+                                await asyncio.sleep(reconnect_delay)
+                                self.initiator.start()
+                                error_count = 0
+                            await asyncio.sleep(reconnect_delay)
+                            continue
+                    
+                    # Subscribe/resubscribe if needed
+                    if current_time - self.application.last_subscription_time >= resubscribe_interval:
+                        logger.info("Sending market data request...")
+                        try:
+                            if not fix.Session.sendToTarget(message, session_id):
+                                raise Exception("Failed to send market data request")
+                            self.application.last_subscription_time = current_time
+                            logger.info("Market data request sent successfully")
+                        except Exception as e:
+                            logger.error(f"Error sending market data request: {str(e)}")
+                            error_count += 1
+                            last_error_time = current_time
+                            if error_count >= error_threshold:
+                                logger.error("Too many errors, restarting session...")
+                                self.initiator.stop()
+                                await asyncio.sleep(reconnect_delay)
+                                self.initiator.start()
+                                error_count = 0
+                            await asyncio.sleep(reconnect_delay)
+                            continue
+                    
+                    await asyncio.sleep(1)
+                except Exception as e:
+                    logger.error(f"Error in subscription loop: {str(e)}")
+                    error_count += 1
+                    last_error_time = current_time
+                    await asyncio.sleep(reconnect_delay)
+
         except Exception as e:
-            logger.error(f"Failed to subscribe to market data: {str(e)}")
+            logger.error(f"Fatal error in market data subscription: {str(e)}")
             raise
 
     async def push_prices(self, pair: Pair):
         symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
         logger.info(f"Starting price push loop for {symbol}")
+        
+        # Create event for this symbol if it doesn't exist
+        if symbol not in self.application.market_data_ready:
+            self.application.market_data_ready[symbol] = asyncio.Event()
+        
         while self.running:
             try:
+                # Wait for new market data
+                await self.application.market_data_ready[symbol].wait()
+                self.application.market_data_ready[symbol].clear()  # Reset for next update
+                
                 if market_data := self.application.latest_market_data.get(symbol):
                     bid, ask = market_data["bid"], market_data["ask"]
                     price = (bid + ask) / 2
@@ -309,8 +388,6 @@ HeartBtInt=30"""
                     logger.info(f"Pushed {pair} price {price} to Pragma")
                 else:
                     logger.debug(f"No market data available for {symbol}")
-
-                await asyncio.sleep(1)  # Adjust frequency as needed
             except Exception as e:
                 logger.error(f"Error pushing price: {str(e)}")
                 await asyncio.sleep(5)  # Back off on error
@@ -369,13 +446,12 @@ async def main():
     logger.info("Registered shutdown handlers")
 
     try:
-        # Subscribe to market data
-        logger.info("Subscribing to market data...")
-        await connector.subscribe_market_data(pair)
-
-        # Start pushing prices
-        logger.info("Starting price push loop...")
-        await connector.push_prices(pair)
+        # Create tasks for subscription and price pushing
+        subscription_task = asyncio.create_task(connector.subscribe_market_data(pair))
+        push_task = asyncio.create_task(connector.push_prices(pair))
+        
+        # Wait for both tasks to complete or be cancelled
+        await asyncio.gather(subscription_task, push_task, return_exceptions=True)
     except asyncio.CancelledError:
         logger.info("Service shutdown requested")
     except Exception as e:
