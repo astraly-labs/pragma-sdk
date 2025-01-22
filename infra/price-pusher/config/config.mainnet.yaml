@@ -5,13 +5,12 @@
       - WBTC/USD
       - WBTC/BTC
       - ETH/USD
-      - WSTETH/USD
       - STRK/USD
       - USDC/USD
       - USDT/USD
       - DAI/USD
   time_difference: 600
-  price_deviation: 0.0025
+  price_deviation: 0.005
 
 - pairs:
     spot:
@@ -24,7 +23,8 @@
       - XSTRK/USD
       - SSTRK/USD
       - KSTRK/USD
-  time_difference: 600
+      - WSTETH/USD
+  time_difference: 1200
   price_deviation: 0.025
 
 - pairs:
@@ -33,5 +33,5 @@
       - ETH/USD
       - BTC/USDT
       - ETH/USDT
-  time_difference: 3000
+  time_difference: 5000
   price_deviation: 0.05
