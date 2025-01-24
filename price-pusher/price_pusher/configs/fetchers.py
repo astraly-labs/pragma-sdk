@@ -1,38 +1,29 @@
 from pydantic.dataclasses import dataclass
 from typing import Dict, List
 
+from pragma_sdk.common.fetchers.fetchers.coinbase import CoinbaseFetcher
+from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
+from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
+from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
-from pragma_sdk.common.fetchers.fetchers import (
-    BitstampFetcher,
-    BybitFetcher,
-    DefillamaFetcher,
-    GeckoTerminalFetcher,
-    HuobiFetcher,
-    KucoinFetcher,
-    OkxFetcher,
-    BinanceFetcher,
-    EkuboFetcher,
-    DexscreenerFetcher,
-)
-from pragma_sdk.common.fetchers.future_fetchers import (
-    BinanceFutureFetcher,
-    ByBitFutureFetcher,
-    OkxFutureFetcher,
-)
-
+from pragma_sdk.common.fetchers.fetchers import *
+from pragma_sdk.common.fetchers.future_fetchers import *
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BitstampFetcher,
     DefillamaFetcher,
     OkxFetcher,
-    GeckoTerminalFetcher,
     HuobiFetcher,
     KucoinFetcher,
     BybitFetcher,
     BinanceFetcher,
     EkuboFetcher,
     DexscreenerFetcher,
+    PythFetcher,
+    GateioFetcher,
+    CoinbaseFetcher,
+    UpbitFetcher,
 ]
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
