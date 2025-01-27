@@ -54,8 +54,9 @@ PYTH_FEED_IDS: Dict[str, str] = {
     "XEC/USD": "0x44622616f246ce5fc46cf9ebdb879b0c0157275510744cea824ad206e48390b3",
     "STRK/USD": "0x6a182399ff70ccf3e06024898942028204125a819e519a335ffa4579e66cd870",
     "WSTETH/USD": "0x6df640f3b8963d8f8358f791f352b8364513f6ab1cca5ed3f1f7b5448980e784",
-    "EUR/USD": "0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b"
+    "EUR/USD": "0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b",
 }
+
 
 class PythFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://hermes.pyth.network/v2/updates/price/latest"
@@ -76,7 +77,7 @@ class PythFetcher(FetcherInterfaceT):
     ) -> SpotEntry | PublisherFetchError:
         """Fetch price for a single pair."""
         url = self.format_url([feed_id])
-        
+
         async with session.get(url) as resp:
             if resp.status != 200:
                 return PublisherFetchError(f"Failed to fetch data for {pair} from Pyth")
@@ -87,11 +88,17 @@ class PythFetcher(FetcherInterfaceT):
 
             # Find the matching price feed from parsed results
             price_feed = next(
-                (feed for feed in result["parsed"] if feed["id"].replace("0x", "") == feed_id.replace("0x", "")),
-                None
+                (
+                    feed
+                    for feed in result["parsed"]
+                    if feed["id"].replace("0x", "") == feed_id.replace("0x", "")
+                ),
+                None,
             )
             if not price_feed:
-                return PublisherFetchError(f"No matching price feed found for {pair} from Pyth")
+                return PublisherFetchError(
+                    f"No matching price feed found for {pair} from Pyth"
+                )
 
             return self._construct(pair, price_feed)
 
@@ -107,11 +114,11 @@ class PythFetcher(FetcherInterfaceT):
                     PublisherFetchError(f"No Pyth feed ID found for pair {pair}")
                 )
                 continue
-                
+
             entries.append(
                 asyncio.ensure_future(self.fetch_pair(pair, session, feed_id))
             )
-        
+
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def _construct(self, pair: Pair, result: Any) -> SpotEntry:
@@ -122,12 +129,7 @@ class PythFetcher(FetcherInterfaceT):
         timestamp = int(price_data["publish_time"])
         price_int = int(price * (10 ** pair.decimals()))
 
-        logger.debug(
-            "Fetched price %d (±%f) for %s from Pyth",
-            price_int,
-            conf,
-            pair
-        )
+        logger.debug("Fetched price %d (±%f) for %s from Pyth", price_int, conf, pair)
 
         return SpotEntry(
             pair_id=pair.id,
