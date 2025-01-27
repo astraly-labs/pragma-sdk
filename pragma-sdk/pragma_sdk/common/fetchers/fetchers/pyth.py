@@ -15,13 +15,13 @@ logger = get_pragma_sdk_logger()
 PYTH_FEED_IDS: Dict[str, str] = {
     # Major cryptocurrencies
     "BTC/USD": "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
-    "ETH/USD": "0xc96458d393fe9deb7a7d63a0ac41e2898a67a7750dbd166673279e06c868df0a",
+    "ETH/USD": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
     "SOL/USD": "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
     "BNB/USD": "0x2f95862b045670cd22bee3114c39763a4a08beeb663b145d283c31d7d1101c4f",
     "XRP/USD": "0xec5d399846a9209f3fe5881d70aae9268c94339ff9817e8d18ff19fa05eea1c8",
     "ADA/USD": "0x2a01deaec9e51a579277b34b122399984d0bbf57e2458a7e42fecd2829867a0d",
-    "AVAX/USD": "0x93da3352f9f1d2dea5d94c6e3a0eeb9778d3b0ed9961c9b31033ce949c4d0ae",
-    "MATIC/USD": "0x5de33a9112c2b700b8d30b8a3402c103578ccfa2765696471cc672bd5cf6ac52",
+    "AVAX/USD": "0x93da3352f9f1d105fdfe4971cfa80e9dd777bfc5d0f683ebb6e1294b92137bb7",
+    "MATIC/USD": "0xffd11c5a1cfd42f80afb2df4d9f264c15f956d68153335374ec10722edd70472",
     "DOGE/USD": "0xdcef50dd0a4cd2dcc17e45df1676dcb336a11a61c69df7a0299b0150c672d25c",
     "TRX/USD": "0x67aed5a24fdad045475e7195c98a98aea119c763f272d4523f5bac93a4f33c2b",
     "LINK/USD": "0x8ac0c70fff57e9aefdf5edf44b51d62c2d433653cbb2cf5cc06bb115af04d221",
@@ -39,14 +39,14 @@ PYTH_FEED_IDS: Dict[str, str] = {
     "SEI/USD": "0x53614f1cb0c031d4af66c04cb9c756234adad0e1cee85303795091499a4084eb",
     "INJ/USD": "0x7a5bc1d2b56ad029048cd63964b3ad2776eadf812edc1a43a31406cb54bff592",
     "JTO/USD": "0x0a31cdb154c042b5a8d1329044acb02b7c0f0e4a96ef62cf4d3c2c8178c873d0",
-    "JUP/USD": "0x5883c8813030d36b769b709e7c4279f14e67b894bd4576e71c4e155b54571f2e",
+    "JUP/USD": "0x0a0408d619e9380abad35060f9192039ed5042fa6f82301d0e48bb52be830996",
     "TIA/USD": "0x09f7c1d7dfbb7df2b8fe3d3d87ee94a2259d212da4f30c1f0540d066dfa44723",
     "WLD/USD": "0xd6835ad1f773de4a378115eb6824bd0c0e42d84d1c84d9750e853fb6b6c7794a",
-    "BONK/USD": "0x72b021497d0595c354b79a19f2c792192d0e6606e76449b17e014ce2ece3d2af",
-    "FTM/USD": "0x5c6c0d2386e3352356c3ab84434fafb5ea067ac2678a38a338c4a69ddc4bdb0c",
+    "BONK/USD": "0x72b021217ca3fe68922a19aaf990109cb9d84e9ad004b4d2025ad6f529314419",
+    "FTM/USD": "0xb2748e718cf3a75b0ca099cb467aea6aa8f7d960b381b3970769b5a2d6be26dc",
     "SHIB/USD": "0xf0d57deca57b3da2fe63a493f4c25925fdfd8edf834b20f93e1f84dbd1504d4a",
     "CRV/USD": "0xa19d04ac696c7a6616d291c7e5d1377cc8be437c327b75adb5dc1bad745fcae8",
-    "LDO/USD": "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
+    "LDO/USD": "0xc63e2a7f37a04e5e614c07238bedb25dcc38927fba8fe890597a593c0b2fa4ad",
     "AAVE/USD": "0x2b9ab1e972a281585084148ba1389800799bd4be63b957507db1349314e47445",
     "APE/USD": "0x15add95022ae13563a11992e727c91bdb6b55bc183d9d747436c80a483d8c864",
     "TON/USD": "0x8963217838ab4cf5cadc172203c1f0b763fbaa45f346d8ee50ba994bbcac3026",
@@ -124,7 +124,7 @@ class PythFetcher(FetcherInterfaceT):
         conf = int(price_data["conf"]) / (10 ** abs(price_data["expo"]))
         timestamp = int(price_data["publish_time"])
         price_int = int(price * (10 ** pair.decimals()))
-
+        
         logger.debug("Fetched price %d (±%f) for %s from Pyth", price_int, conf, pair)
 
         return SpotEntry(
