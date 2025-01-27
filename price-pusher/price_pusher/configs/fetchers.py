@@ -7,8 +7,22 @@ from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
 from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 
-from pragma_sdk.common.fetchers.fetchers import *
-from pragma_sdk.common.fetchers.future_fetchers import *
+from pragma_sdk.common.fetchers.fetchers import (
+    BitstampFetcher,
+    DefillamaFetcher,
+    OkxFetcher,
+    HuobiFetcher,
+    KucoinFetcher,
+    BybitFetcher,
+    EkuboFetcher,
+    DexscreenerFetcher,
+    BinanceFetcher,
+)
+from pragma_sdk.common.fetchers.future_fetchers import (
+    BinanceFutureFetcher,
+    ByBitFutureFetcher,
+    OkxFutureFetcher,
+)
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BitstampFetcher,
