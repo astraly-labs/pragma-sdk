@@ -12,6 +12,8 @@ from pragma_sdk.common.fetchers.fetchers.ekubo import EkuboFetcher
 from pragma_sdk.common.fetchers.fetchers.mexc import MEXCFetcher
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
 from pragma_sdk.common.fetchers.fetchers.dexscreener import DexscreenerFetcher
+from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
+from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
 
 __all__ = [
     "BinanceFetcher",
@@ -28,4 +30,6 @@ __all__ = [
     "MEXCFetcher",
     "GateioFetcher",
     "DexscreenerFetcher",
+    "PythFetcher",
+    "UpbitFetcher",
 ]

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 async def main(
     pairs_config: PairsConfig,
-    network: Literal["mainnet", "sepolia", "pragma_devnet"],
+    network: Literal["mainnet", "sepolia"],
     oracle_address: str,
     admin_address: str,
     private_key: PrivateKey,

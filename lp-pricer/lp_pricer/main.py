@@ -123,7 +123,7 @@ async def main(
     required=True,
     default="sepolia",
     type=click.Choice(
-        ["sepolia", "mainnet", "devnet", "pragma_devnet"],
+        ["sepolia", "mainnet", "devnet"],
         case_sensitive=False,
     ),
     help="On which networks the checkpoints will be set.",

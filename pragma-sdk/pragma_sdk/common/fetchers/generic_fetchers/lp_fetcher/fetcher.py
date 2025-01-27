@@ -304,7 +304,7 @@ class LPFetcher(FetcherInterfaceT):
         )
         if oracle_response.price == 0 and oracle_response.last_updated_timestamp == 0:
             return PublisherFetchError(
-                f"No prices found for pair {token_pair}. " "Can't compute the LP price."
+                f"No prices found for pair {token_pair}. Can't compute the LP price."
             )
         token_decimals = await token.functions["decimals"].call()
         return (oracle_response.price, token_decimals[0], oracle_response.decimals)
