@@ -72,9 +72,12 @@ class PythFetcher(FetcherInterfaceT):
         return f"{self.BASE_URL}?{params}"
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, feed_id: str
+        self, pair: Pair, session: ClientSession, feed_id: Optional[str] = None
     ) -> SpotEntry | PublisherFetchError:
         """Fetch price for a single pair."""
+        if not feed_id:
+            return PublisherFetchError(f"No Pyth feed ID found for pair {pair}")
+
         url = self.format_url([feed_id])
 
         async with session.get(url) as resp:
@@ -108,12 +111,6 @@ class PythFetcher(FetcherInterfaceT):
         entries = []
         for pair in self.pairs:
             feed_id = self.get_feed_id(pair)
-            if not feed_id:
-                entries.append(
-                    PublisherFetchError(f"No Pyth feed ID found for pair {pair}")
-                )
-                continue
-
             entries.append(
                 asyncio.ensure_future(self.fetch_pair(pair, session, feed_id))
             )
