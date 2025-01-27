@@ -12,6 +12,11 @@ jobs:
   release:
     name: Pypi Publish
     runs-on: ubuntu-latest
+
+    # Use Permissions to access the repository
+    permissions:
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
