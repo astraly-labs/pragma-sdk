@@ -108,7 +108,6 @@ class PythFetcher(FetcherInterfaceT):
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """Fetch prices for all pairs."""
-        logger.info("AAAAAAA")
         entries = []
         for pair in self.pairs:
             entries.append(
