@@ -282,30 +282,37 @@ HeartBtInt=30"""
             error_threshold = 5  # Maximum number of errors in error_window
             error_window = 60  # Time window for counting errors in seconds
             error_count = 0
-            
+
             while self.running:
                 try:
                     current_time = time.time()
-                    
+
                     # Reset error count if we're outside the error window
                     if current_time - last_error_time > error_window:
                         error_count = 0
-                    
+
                     # Check if session is ready
                     if not self.application.session_ready.is_set():
-                        logger.warning("Session disconnected, waiting for reconnection...")
+                        logger.warning(
+                            "Session disconnected, waiting for reconnection..."
+                        )
                         try:
                             # Wait for session with timeout
                             await asyncio.wait_for(
-                                self.application.session_ready.wait(), 
-                                timeout=5.0
+                                self.application.session_ready.wait(), timeout=5.0
                             )
-                            logger.info("Session reconnected, forcing resubscription...")
+                            logger.info(
+                                "Session reconnected, forcing resubscription..."
+                            )
                             # Force immediate resubscription
                             if not fix.Session.sendToTarget(message, session_id):
-                                raise Exception("Failed to send market data request after reconnection")
+                                raise Exception(
+                                    "Failed to send market data request after reconnection"
+                                )
                             self.application.last_subscription_time = current_time
-                            logger.info("Market data request sent successfully after reconnection")
+                            logger.info(
+                                "Market data request sent successfully after reconnection"
+                            )
                         except asyncio.TimeoutError:
                             logger.error("Timeout waiting for session reconnection")
                             await asyncio.sleep(reconnect_delay)
@@ -322,9 +329,12 @@ HeartBtInt=30"""
                                 error_count = 0
                             await asyncio.sleep(reconnect_delay)
                             continue
-                    
+
                     # Subscribe/resubscribe if needed
-                    if current_time - self.application.last_subscription_time >= resubscribe_interval:
+                    if (
+                        current_time - self.application.last_subscription_time
+                        >= resubscribe_interval
+                    ):
                         logger.info("Sending market data request...")
                         try:
                             if not fix.Session.sendToTarget(message, session_id):
@@ -343,7 +353,7 @@ HeartBtInt=30"""
                                 error_count = 0
                             await asyncio.sleep(reconnect_delay)
                             continue
-                    
+
                     await asyncio.sleep(1)
                 except Exception as e:
                     logger.error(f"Error in subscription loop: {str(e)}")
@@ -358,17 +368,19 @@ HeartBtInt=30"""
     async def push_prices(self, pair: Pair):
         symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
         logger.info(f"Starting price push loop for {symbol}")
-        
+
         # Create event for this symbol if it doesn't exist
         if symbol not in self.application.market_data_ready:
             self.application.market_data_ready[symbol] = asyncio.Event()
-        
+
         while self.running:
             try:
                 # Wait for new market data
                 await self.application.market_data_ready[symbol].wait()
-                self.application.market_data_ready[symbol].clear()  # Reset for next update
-                
+                self.application.market_data_ready[
+                    symbol
+                ].clear()  # Reset for next update
+
                 if market_data := self.application.latest_market_data.get(symbol):
                     bid, ask = market_data["bid"], market_data["ask"]
                     price = (bid + ask) / 2
@@ -449,7 +461,7 @@ async def main():
         # Create tasks for subscription and price pushing
         subscription_task = asyncio.create_task(connector.subscribe_market_data(pair))
         push_task = asyncio.create_task(connector.push_prices(pair))
-        
+
         # Wait for both tasks to complete or be cancelled
         await asyncio.gather(subscription_task, push_task, return_exceptions=True)
     except asyncio.CancelledError:
