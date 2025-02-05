@@ -65,7 +65,9 @@ class PricePusher(IPricePusher):
                     await self.wait_for_publishing_acceptance(response)
             else:
                 start_t = time.time()
-                response = await self.client.publish_entries(entries)
+                response = await self.client.publish_entries(
+                    entries, publish_to_websocket=True
+                )
 
             end_t = time.time()
             logger.info(

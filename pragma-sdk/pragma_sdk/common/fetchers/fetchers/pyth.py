@@ -124,7 +124,7 @@ class PythFetcher(FetcherInterfaceT):
         conf = int(price_data["conf"]) / (10 ** abs(price_data["expo"]))
         timestamp = int(price_data["publish_time"])
         price_int = int(price * (10 ** pair.decimals()))
-        
+
         logger.debug("Fetched price %d (±%f) for %s from Pyth", price_int, conf, pair)
 
         return SpotEntry(
