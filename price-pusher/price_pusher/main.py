@@ -312,8 +312,11 @@ def cli_entrypoint(
             logger.warning(
                 '🤔 "enable_strk_fees" option has no use when the target is "offchain". Ignoring it.'
             )
-
-    if target == "onchain":
+    else:  # target == "onchain"
+        if websocket_url:
+            logger.warning(
+                '🤔 "websocket-url" option has no use when the target is "onchain". Ignoring it.'
+            )
         if rpc_url and not rpc_url.startswith("http"):
             raise click.UsageError(
                 '⛔ "rpc_url" format is incorrect. It must start with http(...)'
