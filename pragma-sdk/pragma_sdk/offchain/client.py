@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 import logging
 import aiohttp
@@ -8,12 +9,14 @@ from typing import Dict, List, Optional, Union, Any
 from requests import HTTPError
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.signer.stark_curve_signer import KeyPair, StarkCurveSigner
+import websockets
 
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry
 from pragma_sdk.common.types.types import AggregationMode, DataTypes
 from pragma_sdk.common.utils import add_sync_methods, get_cur_from_pair
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.client import PragmaClient
+from pragma_sdk.offchain.constants import WEBSOCKET_TIME_TO_EXPIRE
 from pragma_sdk.onchain.types.types import PublishEntriesOnChainResult
 
 from pragma_sdk.offchain.exceptions import PragmaAPIError
@@ -36,6 +39,7 @@ class PragmaAPIClient(PragmaClient):
     api_key: str
     account_private_key: Optional[int] = None
     offchain_signer: Optional[OffchainSigner] = None
+    websocket_url: Optional[str] = None
 
     def __init__(
         self,
@@ -43,9 +47,13 @@ class PragmaAPIClient(PragmaClient):
         account_contract_address: Optional[str | int],
         api_base_url: str,
         api_key: str,
+        websocket_url: Optional[str] = None,
     ):
         self.api_base_url = api_base_url
         self.api_key = api_key
+
+        if websocket_url is not None:
+            self.websocket_url = websocket_url
 
         if account_private_key is not None and account_contract_address is not None:
             if isinstance(account_private_key, str):
@@ -118,7 +126,7 @@ class PragmaAPIClient(PragmaClient):
         return EntryResult(pair_id=response["pair_id"], data=response["data"])
 
     async def publish_entries(
-        self, entries: List[Entry]
+        self, entries: List[Entry], publish_to_websocket: bool = False
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publishes spot and future entries to the Pragma API.
@@ -141,13 +149,22 @@ class PragmaAPIClient(PragmaClient):
 
         # execute both in parralel
         spot_response, future_response = await asyncio.gather(
-            self._create_entries(spot_entries, DataTypes.SPOT),
-            self._create_entries(future_entries, DataTypes.FUTURE),
+            self._create_entries(
+                spot_entries, DataTypes.SPOT, publish_to_websocket=publish_to_websocket
+            ),
+            self._create_entries(
+                future_entries,
+                DataTypes.FUTURE,
+                publish_to_websocket=publish_to_websocket,
+            ),
         )
         return spot_response, future_response
 
     async def _create_entries(
-        self, entries: List[Entry], data_type: DataTypes = DataTypes.SPOT
+        self,
+        entries: List[Entry],
+        data_type: DataTypes = DataTypes.SPOT,
+        publish_to_websocket: bool = False,
     ) -> Optional[Dict]:
         """
         Publishes entries to the Pragma API & returns the http response.
@@ -174,27 +191,117 @@ class PragmaAPIClient(PragmaClient):
             "x-api-key": self.api_key,
         }
         sig, _ = self.offchain_signer.sign_publish_message(entries, data_type)
-        # Convert entries to JSON string
-        data = {
-            "signature": [str(s) for s in sig],
-            "entries": Entry.offchain_serialize_entries(entries),
-        }
-        # print(data)
 
-        async with aiohttp.ClientSession() as session:
-            start = time.time()
-            async with session.post(url, headers=headers, json=data) as response_raw:
-                status_code: int = response_raw.status
-                response: Dict = await response_raw.json()
-                if status_code == 200:
-                    logger.debug(f"Success: {response}")
-                    logger.debug("Publish successful")
-                    end = time.time()
-                    logger.info(f"Publishing took {end - start} seconds")
-                    return response
-                logger.debug(f"Status Code: {status_code}")
-                logger.debug(f"Response Text: {response}")
-                raise PragmaAPIError("Unable to POST /v1/data")
+        # Convert entries to JSON string
+        data = (
+            {
+                "msg_type": "publish",
+                "signature": [str(s) for s in sig],
+                "entries": Entry.offchain_serialize_entries(entries),
+            }
+            if publish_to_websocket
+            else {
+                "signature": [str(s) for s in sig],
+                "entries": Entry.offchain_serialize_entries(entries),
+            }
+        )
+
+        if not publish_to_websocket:
+            # Publish via HTTP
+            async with aiohttp.ClientSession() as session:
+                start = time.time()
+                async with session.post(
+                    url, headers=headers, json=data
+                ) as response_raw:
+                    status_code: int = response_raw.status
+                    response: Dict = await response_raw.json()
+                    if status_code == 200:
+                        logger.debug(f"Success: {response}")
+                        logger.debug("Publish successful")
+                        end = time.time()
+                        logger.info(f"Publishing took {end - start} seconds")
+                        return response
+                    logger.debug(f"Status Code: {status_code}")
+                    logger.debug(f"Response Text: {response}")
+                    raise PragmaAPIError("Unable to POST /v1/data")
+        else:
+            # Connect to websocket and publish data
+            async with websockets.connect(self.websocket_url) as websocket:
+                try:
+                    return await self._publish_via_websocket(websocket, data)
+                except PragmaAPIError:
+                    # If publishing fails, try to login and publish again
+                    try:
+                        await self._login_via_websocket(
+                            websocket, data["entries"][0]["base"]["publisher"]
+                        )
+                        return await self._publish_via_websocket(websocket, data)
+                    except Exception as e:
+                        logger.error(f"Failed to publish after login attempt: {e}")
+                        raise PragmaAPIError(
+                            "Failed to publish via websocket after login"
+                        ) from e
+
+    async def _publish_via_websocket(self, websocket, data: dict) -> dict:
+        """Publish data through websocket connection.
+
+        Args:
+            websocket: The websocket connection
+            data: The data to publish
+
+        Returns:
+            dict: The response from the server
+
+        Raises:
+            PragmaAPIError: If publishing fails
+        """
+        try:
+            await websocket.send(json.dumps(data))
+            response = await websocket.recv()
+            response_dict = json.loads(response)
+
+            if response_dict.get("status") == "success":
+                logger.debug("Websocket publish successful")
+                return response_dict
+
+            raise PragmaAPIError("Publish failed: Invalid response status")
+        except Exception as e:
+            logger.error(f"Websocket publish failed: {e}")
+            raise PragmaAPIError("Failed to publish via websocket") from e
+
+    async def _login_via_websocket(self, websocket, publisher_name: str) -> None:
+        """Authenticate with the websocket server.
+
+        Args:
+            websocket: The websocket connection
+            publisher_name: Name of the publisher to authenticate as
+
+        Raises:
+            PragmaAPIError: If login fails
+        """
+        try:
+            expiration_timestamp = int(time.time()) + WEBSOCKET_TIME_TO_EXPIRE
+            login_sig, _ = self.offchain_signer.sign_login_message(
+                publisher_name, expiration_timestamp
+            )
+            login_data = {
+                "msg_type": "login",
+                "signature": [str(s) for s in login_sig],
+                "publisher_name": publisher_name,
+                "expiration_timestamp": expiration_timestamp,
+            }
+
+            await websocket.send(json.dumps(login_data))
+            response = await websocket.recv()
+            response_dict = json.loads(response)
+
+            if response_dict.get("status") != "success":
+                raise PragmaAPIError("Login failed: Invalid response status")
+
+            logger.debug("Websocket login successful")
+        except Exception as e:
+            logger.error(f"Websocket login failed: {e}")
+            raise PragmaAPIError("Failed to login via websocket") from e
 
     async def get_entry(
         self,

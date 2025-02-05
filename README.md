@@ -36,6 +36,10 @@ Our services used to publish data etc...:
 - <a href="./checkpointer">Checkpointer</a>
 - <a href="./merkle-maker">Merkle Maker</a>
 
+## Local Development
+
+When developing locally and making changes to the main `pragma-sdk` package make sure to apply your changes by running `uv sync --reinstall`.
+
 ## Releasing a new version
 
 We provide a version management script to help maintain consistent versioning across all packages.

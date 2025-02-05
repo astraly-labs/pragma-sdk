@@ -41,6 +41,7 @@ async def main(
     poller_refresh_interval: int,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
+    websocket_url: Optional[str] = None,
     api_key: Optional[str] = None,
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
@@ -58,6 +59,7 @@ async def main(
         private_key=private_key,
         rpc_url=rpc_url,
         api_base_url=api_base_url,
+        websocket_url=websocket_url,
         api_key=api_key,
         max_fee=max_fee,
         pagination=pagination,
@@ -112,6 +114,7 @@ def _create_client(
     private_key: PrivateKey,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
+    websocket_url: Optional[str] = None,
     api_key: Optional[str] = None,
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
@@ -163,6 +166,7 @@ def _create_client(
             account_private_key=private_key,
             api_key=api_key,
             api_base_url=api_base_url,
+            websocket_url=websocket_url,
         )
     else:
         raise ValueError(f"Invalid target: {target}")
@@ -234,6 +238,12 @@ def _create_client(
     "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
 )
 @click.option(
+    "--websocket-url",
+    type=click.STRING,
+    required=False,
+    help="Pragma WebSocket URL used to publish offchain",
+)
+@click.option(
     "--api-key",
     type=click.STRING,
     required=False,
@@ -274,6 +284,7 @@ def cli_entrypoint(
     publisher_name: str,
     publisher_address: str,
     api_base_url: Optional[str],
+    websocket_url: Optional[str],
     api_key: Optional[str],
     max_fee: Optional[int],
     pagination: Optional[int],
@@ -329,6 +340,7 @@ def cli_entrypoint(
             publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
             api_base_url=api_base_url,
+            websocket_url=websocket_url,
             api_key=api_key,
             rpc_url=rpc_url,
             max_fee=max_fee,

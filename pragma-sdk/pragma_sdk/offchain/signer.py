@@ -15,6 +15,7 @@ def build_publish_message(
     see https://community.starknet.io/t/snip-off-chain-signatures-a-la-eip712 for reference
 
     :param entries: List of SpotEntry objects
+    :return: The typed data message
     """
 
     message = {
@@ -56,6 +57,36 @@ def build_publish_message(
     return TypedData.from_dict(message)
 
 
+def build_login_message(publisher_name: str, expiration_timestamp: int) -> TypedData:
+    """
+    Builds a typed data message to login to the Pragma API.
+
+    :param publisher_name: The account address to login
+    :return: The typed data message
+    """
+    message = {
+        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "1"},
+        "primaryType": "Request",
+        "message": {
+            "publisher_name": publisher_name,
+            "expiration_timestamp": expiration_timestamp,
+        },
+        "types": {
+            "StarknetDomain": [
+                {"name": "name", "type": "shortstring"},
+                {"name": "version", "type": "shortstring"},
+                {"name": "chainId", "type": "shortstring"},
+                {"name": "revision", "type": "shortstring"},
+            ],
+            "Request": [
+                {"name": "publisher_name", "type": "shortstring"},
+                {"name": "expiration_timestamp", "type": "timestamp"},
+            ],
+        },
+    }
+    return TypedData.from_dict(message)
+
+
 class OffchainSigner:
     """
     Class used to sign messages for the Pragma API
@@ -74,6 +105,20 @@ class OffchainSigner:
         :return: Tuple containing the signature and the message hash
         """
         message = build_publish_message(entries, data_type)
+        hash_ = message.message_hash(self.signer.address)
+        sig = self.signer.sign_message(message, self.signer.address)
+        return sig, hash_
+
+    def sign_login_message(
+        self, publisher_name: str, expiration_timestamp: int
+    ) -> Tuple[List[int], int]:
+        """
+        Sign a login message
+
+        :param publisher_name: The publisher name to login
+        :return: Tuple containing the signature and the message hash
+        """
+        message = build_login_message(publisher_name, expiration_timestamp)
         hash_ = message.message_hash(self.signer.address)
         sig = self.signer.sign_message(message, self.signer.address)
         return sig, hash_
