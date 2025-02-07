@@ -4,7 +4,7 @@ Service used to publish the latest Merkle Feed onchain and the associated data o
 
 ### Usage
 
-The service is ran through the CLI, to have more information you can use the `--help` command:
+The service is run through the CLI, to have more information you can use the `--help` command:
 
 ```bash
 .venv ❯ uv run merkle_maker --help
