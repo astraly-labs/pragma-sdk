@@ -4,7 +4,7 @@ Service used to price Defi Pools using the `LpFetcher` from the SDK.
 
 ### Usage
 
-The service is ran through the CLI, to have more information you can use the `--help` command:
+The service is run through the CLI, to have more information you can use the `--help` command:
 
 ```bash
 .venv ❯ uv run lp_pricer --help

@@ -4,7 +4,7 @@ Service used to automatically create checkpoints periodically for a set of pairs
 
 ### Usage
 
-The service is ran through the CLI.
+The service is run through the CLI.
 
 To specify for which assets you want to set checkpoints, you will need to provide a yaml configuration file formatted as follow:
 
