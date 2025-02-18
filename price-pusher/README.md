@@ -3,7 +3,7 @@
 
 ## Usage
 
-The price-pusher service is ran through the ClI, to have more information you can use the `--help` command:
+The price-pusher service is run through the ClI, to have more information you can use the `--help` command:
 
 ```bash
 .venv ❯ python price_pusher/main.py --help

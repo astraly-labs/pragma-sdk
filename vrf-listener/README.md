@@ -4,7 +4,7 @@ Service used to listen for VRF requests and handle them.
 
 ## Usage
 
-The service is ran through the CLI, to have more information you can use the `--help` command:
+The service is run through the CLI, to have more information you can use the `--help` command:
 
 ```bash
 .venv ❯ python vrf_listener/main.py --help
