@@ -1,0 +1,124 @@
+replicaCount: 1
+
+image:
+  repository: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/pragma-sdk
+  pullPolicy: Always
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+deploymentStrategy: RollingUpdate
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+
+service:
+  enabled: true
+  type: ClusterIP
+  annotations: {}
+  labels: {}
+  ports:
+    - port: 80
+      containerPort: 8080
+      protocol: TCP
+      portName: http
+
+
+podDisruptionBudget: {}
+  # minAvailable: 1
+  # maxUnavailable: ""
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+nodeSelector: {}
+  # Nodelabel: "node-devnet"
+
+tolerations: []
+  # - key: "devnet"
+  #   operator: "Equal"
+  #   value: "reserved"
+  #   effect: "NoSchedule"
+
+affinity: {}
+
+ingress:  {}
+  # - name: "dummy"
+  #   className: "nginx"
+  #   annotations: {}
+  #     # kubernetes.io/ingress.class: nginx
+  #     # Add other annotations as needed
+  #   hosts: 
+  #     - host: chart-example.local
+  #       paths:
+  #         - path: /
+  #           pathType: Prefix
+  #           servicePort: 80
+  #     - host: chart-example-secure.local
+  #       paths:
+  #         - path: /
+  #           pathType: Prefix
+  #           servicePort: 443
+  #   tls: []
+  #     # - secretName: chart-example-tls
+  #     #   hosts:
+  #     #     - chart-example-secure.local
+
+# GCP Secrets Configuration
+gcpSecrets:
+  enabled: false
+  projectId: ${PROJECT_ID}
+  externalSecret:
+    name: "sdk-secrets"
+    secretPath: "sdk-secrets"
+    refreshInterval: "1h"
+
+# Environment variables from secret
+envFromSecret: {}
+    # secretName: "monitoring-secrets"
+
+terminationGracePeriodSeconds: 60
+
+env: []
+  # - name: RUST_BACKTRACE
+  #   value: "1"
+  # - name: COINGECKO_RETRY_DELAY
+  #   value: "5000"
+  # - name: COINGECKO_MAX_RETRIES
+  #   value: "3"
