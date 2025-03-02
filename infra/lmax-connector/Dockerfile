@@ -39,6 +39,10 @@ COPY --from=builder /opt /opt
 COPY infra/lmax-connector/entrypoint.sh /opt/lmax-connector/
 WORKDIR /opt/lmax-connector
 
+# Create necessary directories with proper permissions
+RUN mkdir -p /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log && \
+    chmod -R 777 /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log
+
 # Add a healthcheck for Kubernetes compatibility
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://0.0.0.0:8080/ || exit 1
