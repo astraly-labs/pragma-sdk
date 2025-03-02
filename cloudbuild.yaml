@@ -1,0 +1,18 @@
+timeout: 3600s
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-build-lmax-connector
+    args: [ 'build',
+            '--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:latest',
+            '--file=infra/lmax-connector/Dockerfile',
+            '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-push-lmax-connector
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:latest']
+    waitFor: ['docker-build-lmax-connector']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_32'
