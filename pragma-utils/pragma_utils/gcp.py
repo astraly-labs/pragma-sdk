@@ -5,7 +5,6 @@ from google.cloud import secretmanager
 
 PRIVATE_KEY_COLUMN = "PUBLISHER_PRIVATE_KEY"
 
-
 def fetch_gcp_private_key(secret_name: str) -> str:
     """
     Loads a private key from Google Cloud Secret Manager.
