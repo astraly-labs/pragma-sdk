@@ -15,6 +15,7 @@ RUN apt-get update && \
     gcc \
     g++ \
     libssl-dev \
+    curl \
     swig \
     libgmp3-dev \
     pkg-config \
@@ -42,10 +43,10 @@ WORKDIR /opt/lmax-connector
 RUN mkdir -p /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log && \
     chmod -R 777 /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log
 
+EXPOSE 8080
+
 # Add a healthcheck for Kubernetes compatibility
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://0.0.0.0:8080/ || exit 1
-
-EXPOSE 8080
 
 ENTRYPOINT ["bash", "/opt/lmax-connector/entrypoint.sh"]
