@@ -3,7 +3,7 @@ import os
 from google.cloud import secretmanager
 
 
-PRIVATE_KEY_COLUMN = "PRIVATE_KEY"
+PRIVATE_KEY_COLUMN = "PUBLISHER_PRIVATE_KEY"
 
 def fetch_gcp_private_key(secret_name: str) -> str:
     """
