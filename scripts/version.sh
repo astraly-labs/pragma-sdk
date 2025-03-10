@@ -71,7 +71,6 @@ echo -e "PyPI version: ${GREEN}${PYPI_VERSION}${NC}"
 PROJECT_DIRS=(
     "pragma-sdk"
     "pragma-utils"
-    "merkle-maker"
     "price-pusher"
     "checkpointer"
     "vrf-listener"
