@@ -8,10 +8,12 @@ from starknet_py.net.client_errors import ClientError
 from requests.exceptions import RequestException
 import requests
 
+from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
+from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 logger = get_pragma_sdk_logger()
 
