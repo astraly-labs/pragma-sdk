@@ -83,16 +83,17 @@ class RPCHealthMonitor:
             url for url in RPC_URLS[self.network] if url not in self.failed_rpcs
         ]
         if not available_rpcs:
-            # If all RPCs have failed, clear the failed list and try again
-            self.failed_rpcs.clear()
-            available_rpcs = RPC_URLS[self.network]
+            # If all RPCs have failed, clear all except current one and try again
+            self.failed_rpcs = {current_rpc}  # Keep current RPC in failed list
+            available_rpcs = [
+                url for url in RPC_URLS[self.network] if url not in self.failed_rpcs
+            ]
 
         try:
             new_rpc = pick_random_rpc(self.network, available_rpcs)
             logger.info(f"Switching to new RPC: {new_rpc}")
-            self.client.full_node_client = self.client.client = (
-                self.client._create_full_node_client(new_rpc)
-            )
+            new_client = self.client._create_full_node_client(new_rpc)
+            self.client.full_node_client = self.client.client = new_client
             self.current_rpc_failures = 0
             return True
         except ValueError as e:
