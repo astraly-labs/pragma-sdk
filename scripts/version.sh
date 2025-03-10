@@ -83,26 +83,36 @@ files_to_update=()
 versions_to_update=()
 has_different_versions=false
 
+# Create a temporary file to store the found paths
+temp_files=$(mktemp)
+
+# Find all __init__.py files and store them in the temporary file
 for dir in "${PROJECT_DIRS[@]}"; do
     if [ -d "$dir" ]; then
-        while IFS= read -r init_file; do
-            if [ ! -z "$init_file" ]; then
-                LOCAL_VERSION=$(get_local_version "$init_file")
-                if [ ! -z "$LOCAL_VERSION" ]; then
-                    echo -e "File: ${init_file}"
-                    echo -e "Local version: ${GREEN}${LOCAL_VERSION}${NC}"
-
-                    files_to_update+=("$init_file")
-                    versions_to_update+=("$LOCAL_VERSION")
-
-                    if [ "$LOCAL_VERSION" != "$PYPI_VERSION" ]; then
-                        has_different_versions=true
-                    fi
-                fi
-            fi
-        done < <(find "$dir" -type d -name ".venv" -prune -o -type f -name "__init__.py" -print)
+        find "$dir" -type d -name ".venv" -prune -o -type f -name "__init__.py" -print >> "$temp_files"
     fi
 done
+
+# Read and process each file
+while IFS= read -r init_file; do
+    if [ ! -z "$init_file" ]; then
+        LOCAL_VERSION=$(get_local_version "$init_file")
+        if [ ! -z "$LOCAL_VERSION" ]; then
+            echo -e "File: ${init_file}"
+            echo -e "Local version: ${GREEN}${LOCAL_VERSION}${NC}"
+
+            files_to_update+=("$init_file")
+            versions_to_update+=("$LOCAL_VERSION")
+
+            if [ "$LOCAL_VERSION" != "$PYPI_VERSION" ]; then
+                has_different_versions=true
+            fi
+        fi
+    fi
+done < "$temp_files"
+
+# Clean up temporary file
+rm -f "$temp_files"
 
 if [ ${#files_to_update[@]} -eq 0 ]; then
     echo -e "\n${RED}No __init__.py files found with version information!${NC}"
