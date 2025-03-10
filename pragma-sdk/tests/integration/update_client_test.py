@@ -56,8 +56,12 @@ async def declare_oracle(forked_client: PragmaOnChainClient) -> DeclareResult:
 
     except ClientError as err:
         if "is already declared" in err.message:
-            hash_str = err.message.split("0x")[1].split()[0]
-            return MagicMock(class_hash=int(f"0x{hash_str}", 16))
+            hash_str = (
+                err.data["execution_error"]
+                .split("Class with hash ")[1]
+                .split(" is already declared")[0]
+            )
+            return MagicMock(class_hash=int(hash_str, 16))
         else:
             logger.info("An error occured during the declaration: %s", err)
             raise err

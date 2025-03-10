@@ -21,7 +21,6 @@ jobs:
             price-pusher,
             vrf-listener,
             checkpointer,
-            merkle-maker,
             lp-pricer,
           ]
       fail-fast: false
