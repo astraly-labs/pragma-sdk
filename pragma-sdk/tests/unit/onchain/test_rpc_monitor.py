@@ -94,25 +94,22 @@ async def test_monitor_rpc_health_switches_on_failure(rpc_monitor, mock_client):
     new_mock_client.get_block_number = AsyncMock(return_value=100)
     mock_client._create_full_node_client.return_value = new_mock_client
 
-    # Save the original sleep function and patch asyncio.sleep to a "fast sleep"
+    # Patch asyncio.sleep with a fast sleep that yields immediately
     original_sleep = asyncio.sleep
 
     async def fast_sleep(duration):
-        await original_sleep(0)  # Immediately yield control
+        await original_sleep(0)
 
     with patch("asyncio.sleep", fast_sleep):
-        # Start the monitor in the background
         monitor_task = asyncio.create_task(rpc_monitor.monitor_rpc_health())
-        # Let the monitor run briefly
         await original_sleep(0.1)
-        # Kill the background task
         monitor_task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await monitor_task
 
     # Verify the switch occurred:
     assert mock_client.full_node_client.url == new_mock_client.url
-    # After switching, failures should be reset (i.e. less than MAX_RPC_FAILURES)
+    # Failures should be reset after switching
     assert rpc_monitor.current_rpc_failures < MAX_RPC_FAILURES
 
 
@@ -183,15 +180,25 @@ async def test_continuous_retry_on_all_failures(rpc_monitor, mock_client):
 @pytest.mark.asyncio
 async def test_health_check_interval_respected(rpc_monitor):
     """Test that health check interval is respected"""
-    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+    original_sleep = asyncio.sleep
+    recorded_calls = []
+
+    async def fake_sleep(duration):
+        recorded_calls.append(duration)
+        await original_sleep(0)
+
+    # Patch asyncio.sleep with our custom function.
+    with patch("asyncio.sleep", side_effect=fake_sleep):
         monitor_task = asyncio.create_task(rpc_monitor.monitor_rpc_health())
-        # Allow one iteration of the loop to occur
-        await asyncio.sleep(0.1)
+        # Allow one iteration of the loop to occur.
+        await original_sleep(0.1)
         monitor_task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await monitor_task
 
-        mock_sleep.assert_awaited_with(RPC_HEALTH_CHECK_INTERVAL)
+        # Filter out any calls made by the test itself (e.g. 0.1)
+        monitor_calls = [d for d in recorded_calls if d == RPC_HEALTH_CHECK_INTERVAL]
+        assert monitor_calls, f"Expected a sleep call with {RPC_HEALTH_CHECK_INTERVAL}, got {recorded_calls}"
 
 
 @pytest.mark.asyncio
