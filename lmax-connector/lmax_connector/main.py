@@ -4,11 +4,15 @@ import signal
 import time
 import quickfix as fix
 from dotenv import load_dotenv
+from starknet_py.net.client_errors import ClientError
+from requests.exceptions import RequestException
 
+from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
+from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 logger = get_pragma_sdk_logger()
 
@@ -209,6 +213,11 @@ HeartBtInt=30"""
         self.application = LmaxFixApplication()
         self.init_fix()
 
+        # Setup RPC health monitoring if using onchain client
+        if isinstance(self.pragma_client, PragmaOnChainClient):
+            self.rpc_monitor = RPCHealthMonitor(self.pragma_client)
+            asyncio.create_task(self.rpc_monitor.monitor_rpc_health())
+
     def init_fix(self):
         settings = fix.SessionSettings(self.fix_config_path)
         store_factory = fix.FileStoreFactory(settings)
@@ -396,8 +405,19 @@ HeartBtInt=30"""
                         volume=0,
                     )
 
-                    await self.pragma_client.publish_entries([entry])
-                    logger.info(f"Pushed {pair} price {price} to Pragma")
+                    try:
+                        await self.pragma_client.publish_entries([entry])
+                        logger.info(f"Pushed {pair} price {price} to Pragma")
+                    except (ClientError, RequestException) as e:
+                        if isinstance(self.pragma_client, PragmaOnChainClient):
+                            logger.error(f"RPC error while publishing: {e}")
+                            self.rpc_monitor.record_failure()
+                            if await self.rpc_monitor.should_switch_rpc():
+                                if await self.rpc_monitor.switch_rpc():
+                                    # Retry the publish operation with new RPC
+                                    continue
+                        else:
+                            raise
                 else:
                     logger.debug(f"No market data available for {symbol}")
             except Exception as e:

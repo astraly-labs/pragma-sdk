@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "starknet.py==0.23.0",
+    "starknet.py==0.25.0",
     "typer==0.6.1",
     "deprecated>=1.2.14",
     "aioresponses>=0.7.4",
@@ -111,7 +111,8 @@ test_fetchers = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun 
 test_vrf = "coverage run -m pytest --net=devnet -v --reruns 1 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/vrf_test.py -s"
 test_merkle_feed = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/integration/merkle_feed_test.py -s"
 test_unit = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/ -s"
-test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/hop_handler_test.py -s"
-test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/index_aggregation_test.py -s"
+test_hop_handler = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/common/fetchers/handlers/hop_test.py -s"
+test_index_aggregation = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/common/fetchers/handlers/index_aggregator_test.py -s"
 test_api_client = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/api_client_test.py -s"
+test_rpc_monitor = "coverage run -m pytest -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/unit/onchain/test_rpc_monitor.py -s"
 test = "coverage run -m pytest --net=devnet -v --reruns 5 --only-rerun aiohttp.client_exceptions.ClientConnectorError tests/ -s"
