@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -30,6 +30,8 @@ from pragma_sdk.onchain.mixins import (
     PublisherRegistryMixin,
     RandomnessMixin,
     MerkleFeedMixin,
+    MidenMixin,
+    MidenEntry
 )
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 
@@ -218,3 +220,49 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :return: List of InvokeResult objects
         """
         return await self.publish_many(entries)
+
+
+class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
+    """
+    Client for interacting with Pragma Miden Oracle.
+    
+    This is a simplified client that only provides Miden oracle functionality.
+
+    :param network: Target network for the client. Can be a URL string, or one of
+                    ``"testnet"``, or ``"devnet"``
+    :param oracle_id: Optional oracle ID for the Miden oracle
+    :param storage_path: Optional path where the Miden storage will be kept
+    """
+
+    def __init__(
+        self,
+        network: Network = "testnet",
+        oracle_id: Optional[str] = None,
+        storage_path: Optional[str] = None,
+    ):
+        self.network = network
+        self.oracle_id = oracle_id
+        self.storage_path = storage_path
+        self.is_initialized = False
+        self.publisher_id = None
+
+    async def initialize(self) -> None:
+        """
+        Initialize the Miden client.
+        """
+        if not self.is_initialized:
+            await self.init_miden(self.oracle_id, self.storage_path)
+    
+    async def publish_entries(self, entries: List[MidenEntry]) -> List[Dict[str, Any]]:
+        """
+        Publish entries to the Miden oracle.
+
+        :param entries: List of MidenEntry objects
+        :return: List of publication results
+        """
+        if not self.is_initialized:
+            await self.initialize()
+        
+        return await self.publish_many(entries)
+
+

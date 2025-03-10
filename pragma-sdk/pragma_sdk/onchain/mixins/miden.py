@@ -43,9 +43,10 @@ class MidenMixin:
     
     publisher_id: Optional[str]
     storage_path: Optional[str]
+    network: str
     is_initialized: bool = False
     
-    async def init_miden(self, oracle_id: Optional[str] = None, storage_path: Optional[str] = None) -> None:
+    async def init_miden(self, oracle_id: Optional[str] = None, storage_path: Optional[str] = None, network : Optional[str] = "testnet") -> None:
         """
         Initialize the Miden publisher. This will:
         1. Create a new publisher wallet if none exists
@@ -65,9 +66,10 @@ class MidenMixin:
                 # Create miden_storage in current directory
                 Path("miden_storage").mkdir(exist_ok=True)
             
-            result = pm_publisher.init(oracle_id, storage_path)
+            result = pm_publisher.init(oracle_id, storage_path, network)
             self.is_initialized = True
             self.storage_path = storage_path
+            self.network = network
             
             # Load publisher ID after initialization
             await self._load_publisher_id()
@@ -150,7 +152,8 @@ class MidenMixin:
                     price=entry.price,
                     decimals=entry.decimals,
                     timestamp=entry.timestamp,
-                    storage_path=self.storage_path
+                    storage_path=self.storage_path,
+                    network = self.network
                 )
                 results.append(result)
                 
@@ -207,7 +210,8 @@ class MidenMixin:
             result = pm_publisher.get_entry(
                 publisher_id=self.publisher_id,
                 pair=pair,
-                storage_path=self.storage_path
+                storage_path=self.storage_path,
+                network = self.network
             )
             logger.debug(f"Successfully retrieved entry for {pair}")
             return {"status": "success", "data": result}
@@ -227,7 +231,7 @@ class MidenMixin:
             raise RuntimeError("Miden publisher not initialized. Call init_miden() first.")
         
         try:
-            result = pm_publisher.sync(storage_path=self.storage_path)
+            result = pm_publisher.sync(storage_path=self.storage_path, network = self.network)
             logger.debug("Successfully synced publisher state")
             return {"status": "success", "message": result}
             
