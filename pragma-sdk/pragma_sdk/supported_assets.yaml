@@ -87,7 +87,7 @@
   decimals: 18
   ticker: 'STETH'
   coingecko_id: 'staked-ether'
-  ethereum_address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'
+  ethereum_address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84'
 
 - name: 'Nostra'
   decimals: 18
