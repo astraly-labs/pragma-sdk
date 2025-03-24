@@ -1,7 +1,6 @@
 from pydantic.dataclasses import dataclass
 from typing import Dict, List
 
-from pragma_sdk.common.fetchers.fetchers.coinbase import CoinbaseFetcher
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
 from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
 from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
@@ -34,7 +33,7 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     EkuboFetcher,
     PythFetcher,
     GateioFetcher,
-    CoinbaseFetcher,
+    # CoinbaseFetcher,
     UpbitFetcher,
 ]
 
