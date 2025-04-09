@@ -36,6 +36,8 @@ from pragma_sdk.onchain.mixins import (
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 
 from pragma_sdk.offchain.types import PublishEntriesAPIResult
+from pathlib import Path
+import pm_publisher
 
 
 logger = get_pragma_sdk_logger()
@@ -233,16 +235,21 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
     :param oracle_id: Optional oracle ID for the Miden oracle
     :param storage_path: Optional path where the Miden storage will be kept
     """
+    PRAGMA_MIDEN_CONFIG = "pragma_miden.json"
+    PUBLISHER_ID_KEY = "publisher_account_id"
 
     def __init__(
         self,
         network: Network = "testnet",
         oracle_id: Optional[str] = None,
         storage_path: Optional[str] = None,
+        keystore_path= None
+
     ):
         self.network = network
         self.oracle_id = oracle_id
         self.storage_path = storage_path
+        self.keystore_path = keystore_path
         self.is_initialized = False
         self.publisher_id = None
 
@@ -251,18 +258,150 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
         Initialize the Miden client.
         """
         if not self.is_initialized:
-            await self.init_miden(self.oracle_id, self.storage_path)
+            await self.init_miden(self.oracle_id, self.storage_path, self.keystore_path)
     
-    async def publish_entries(self, entries: List[MidenEntry]) -> List[Dict[str, Any]]:
+    async def init_miden(self, oracle_id=None, storage_path=None, keystore_path=None):
+        """
+        Initialize the Miden publisher.
+        """
+        try:
+            if storage_path:
+                # Ensure miden_storage directory exists in the specified path
+                miden_dir = Path(storage_path) / "miden_storage"
+                miden_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                # Create miden_storage in current directory
+                Path("miden_storage").mkdir(exist_ok=True)
+            
+            print(f"Initializing with oracle_id={oracle_id}, storage_path={storage_path}, network={self.network}")
+            result = pm_publisher.init(oracle_id, storage_path, keystore_path, self.network)
+            self.is_initialized = True
+            self.storage_path = storage_path
+            self.keystore_path = keystore_path
+            
+            # Load publisher ID after initialization
+            await self._load_publisher_id()
+            
+            print(f"Miden publisher initialized: {result}")
+            
+        except Exception as e:
+            print(f"Failed to initialize Miden publisher: {e}")
+            raise
+
+    async def _load_publisher_id(self):
+        """Load publisher ID from pragma_miden.json config file."""
+        try:
+            # pragma_miden.json is always created in the current directory
+            config_path = Path(self.PRAGMA_MIDEN_CONFIG)
+            if not config_path.exists():
+                raise RuntimeError(f"Config file not found: {config_path}")
+                
+            with open(config_path) as f:
+                config = json.load(f)
+                
+            # Check for the new format with networks
+            if 'networks' in config and self.network in config['networks']:
+                network_config = config['networks'][self.network]
+                if self.PUBLISHER_ID_KEY in network_config:
+                    self.publisher_id = network_config[self.PUBLISHER_ID_KEY]
+                    print(f"Loaded publisher ID: {self.publisher_id} for network: {self.network}")
+                    return True
+                
+            raise RuntimeError(f"Publisher ID not found in config file for network: {self.network}")
+            
+        except Exception as e:
+            print(f"Failed to load publisher ID: {e}")
+            raise
+
+    async def publish_entries(self, entries):
         """
         Publish entries to the Miden oracle.
-
-        :param entries: List of MidenEntry objects
-        :return: List of publication results
         """
         if not self.is_initialized:
-            await self.initialize()
+            # Try to load publisher ID from config file first
+            try:
+                await self._load_publisher_id()
+                # If we successfully loaded the publisher ID, mark as initialized
+                self.is_initialized = True
+                print("Found existing publisher configuration, skipping initialization")
+            except Exception as e:
+                # If loading fails, do full initialization
+                print(f"No existing publisher found: {e}, performing full initialization")
+                await self.initialize()
         
         return await self.publish_many(entries)
+    
+    async def publish_many(self, entries):
+        """
+        Publish multiple price entries to the Miden oracle.
+        """
+        if not entries:
+            print("publish_many received no entries to publish. Skipping")
+            return []
+
+        if not self.is_initialized:
+            raise RuntimeError("Miden publisher not initialized. Call init_miden() first.")
+        
+        if self.publisher_id is None:
+            raise RuntimeError("Publisher ID not loaded")
+
+        results = []
+        # Process entries in smaller batches since we're making individual calls
+        batch_size = 5
+        
+        for i in range(0, len(entries), batch_size):
+            batch = entries[i:i + batch_size]
+            result = await self._publish_batch(batch)
+            results.extend(result)
+            print(f"Published batch of {len(batch)} entries")
+            
+        return results
+
+    async def _publish_batch(self, entries):
+        """
+        Publish a batch of entries one by one.
+        """
+        try:
+            results = []
+            for entry in entries:
+                result = pm_publisher.publish(
+                    pair=entry.pair,
+                    price=entry.price,
+                    decimals=entry.decimals,
+                    timestamp=entry.timestamp,
+                    storage_path=self.storage_path,
+                    keystore_path = self.keystore_path,
+                    network=self.network
+                )
+                results.append(result)
+                
+            return results
+            
+        except Exception as e:
+            print(f"Failed to publish batch: {e}")
+            raise
+
+    async def get_entry(self, pair):
+        """
+        Get the latest entry for a pair from this publisher.
+        """
+        if not self.is_initialized:
+            raise RuntimeError("Miden publisher not initialized. Call init_miden() first.")
+            
+        if self.publisher_id is None:
+            raise RuntimeError("Publisher ID not loaded")
+            
+        try:
+            result = pm_publisher.get_entry(
+                pair=pair,
+                storage_path=self.storage_path,
+                network=self.network
+            )
+            print(f"Successfully retrieved entry for {pair}")
+            return {"status": "success", "data": result}
+            
+        except Exception as e:
+            print(f"Failed to get entry: {e}")
+            raise
 
 
