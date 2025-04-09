@@ -40,7 +40,6 @@ class LbankFetcher(FetcherInterfaceT):
                 return PublisherFetchError(f"No data found for {pair} from Lbank")
 
             result = await resp.json()
-            print(result)
             if result["msg"] != "Success":
                 return await self.operate_usdt_hop(pair, session)
             return self._construct(pair=pair, result=result, usdt_price=usdt_price)

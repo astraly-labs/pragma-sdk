@@ -334,3 +334,8 @@
   decimals: 5
   ticker: 'BONK'
   coingecko_id: 'bonk'
+
+- name: 'Dog (Bitcoin)'
+  decimals: 5
+  ticker: 'DOG'
+  coingecko_id: 'dog-go-to-the-moon-rune'

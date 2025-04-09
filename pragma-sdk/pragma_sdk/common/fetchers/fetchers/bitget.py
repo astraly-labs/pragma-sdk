@@ -40,7 +40,6 @@ class BitgetFetcher(FetcherInterfaceT):
                 return PublisherFetchError(f"No data found for {pair} from Bitget")
 
             result = await resp.json()
-            print(result)
             if result["msg"] != "success":
                 return await self.operate_usdt_hop(pair, session)
             return self._construct(pair=pair, result=result, usdt_price=usdt_price)
@@ -59,7 +58,6 @@ class BitgetFetcher(FetcherInterfaceT):
 
     def format_url(self, pair: Pair) -> str:
         url = f"{self.BASE_URL}?symbol={pair.base_currency.id}{pair.quote_currency.id}"
-        print(url)
         return url
 
     async def operate_usdt_hop(
