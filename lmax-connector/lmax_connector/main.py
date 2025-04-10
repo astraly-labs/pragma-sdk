@@ -12,7 +12,6 @@ from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 logger = get_pragma_sdk_logger()
 
@@ -242,11 +241,6 @@ HeartBtInt=30"""
 
         self.application = LmaxFixApplication()
         self.init_fix()
-
-        # Setup RPC health monitoring if using onchain client
-        if isinstance(self.pragma_client, PragmaOnChainClient):
-            self.rpc_monitor = RPCHealthMonitor(self.pragma_client)
-            asyncio.create_task(self.rpc_monitor.monitor_rpc_health())
 
     def init_fix(self):
         settings = fix.SessionSettings(self.fix_config_path)
