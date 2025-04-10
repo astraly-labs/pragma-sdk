@@ -339,3 +339,23 @@
   decimals: 5
   ticker: 'DOG'
   coingecko_id: 'dog-go-to-the-moon-rune'
+
+- name: 'Gold (Spot)'
+  decimals: 8
+  ticker: 'XAU'
+  abstract: true
+
+- name: 'US SPX 500 (Mini)'
+  decimals: 8
+  ticker: 'SPX500m'
+  abstract: true
+
+- name: 'UK Brent (Spot)'
+  decimals: 8
+  ticker: 'XBR'
+  abstract: true
+
+- name: 'US Tech 100 (Mini)'
+  decimals: 8
+  ticker: 'TECH100m'
+  abstract: true

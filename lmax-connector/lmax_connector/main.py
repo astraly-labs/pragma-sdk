@@ -7,14 +7,30 @@ from dotenv import load_dotenv
 from starknet_py.net.client_errors import ClientError
 from requests.exceptions import RequestException
 
-from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 logger = get_pragma_sdk_logger()
+
+# Define constants for LMAX instrument IDs
+LMAX_INSTRUMENT_IDS = {
+    "EUR/USD": "4001",
+    "XAU/USD": "100637",  # Gold Spot
+    "SPX500m": "110093",  # US SPX 500 Mini
+    "XBR/USD": "100805",  # UK Brent Spot
+    "TECH100m": "110095",  # US Tech 100 Mini
+}
+
+# Define mapping between LMAX security IDs and symbols
+SECURITY_ID_TO_SYMBOL = {
+    "4001": "EUR/USD",
+    "100637": "XAU/USD",
+    "110093": "SPX500m",
+    "100805": "XBR/USD",
+    "110095": "TECH100m",
+}
 
 
 class LmaxFixApplication(fix.Application):
@@ -153,16 +169,19 @@ class LmaxFixApplication(fix.Application):
                 logger.debug(f"Got ask: {ask}")
 
         if bid is not None and ask is not None:
-            # Use EUR/USD as the symbol since we know that's what 4001 represents
-            symbol = "EUR/USD"
-            self.latest_market_data[symbol] = {
-                "bid": bid,
-                "ask": ask,
-                "timestamp": int(time.time()),
-            }
-            logger.info(f"Updated {symbol} price - Bid: {bid}, Ask: {ask}")
-            if symbol in self.market_data_ready:
-                self.market_data_ready[symbol].set()
+            # Get the corresponding symbol for this security ID
+            symbol = SECURITY_ID_TO_SYMBOL.get(security_id)
+            if symbol:
+                self.latest_market_data[symbol] = {
+                    "bid": bid,
+                    "ask": ask,
+                    "timestamp": int(time.time()),
+                }
+                logger.info(f"Updated {symbol} price - Bid: {bid}, Ask: {ask}")
+                if symbol in self.market_data_ready:
+                    self.market_data_ready[symbol].set()
+            else:
+                logger.warning(f"Received data for unknown security ID: {security_id}")
 
 
 class LmaxConnector:
@@ -213,11 +232,6 @@ HeartBtInt=30"""
         self.application = LmaxFixApplication()
         self.init_fix()
 
-        # Setup RPC health monitoring if using onchain client
-        if isinstance(self.pragma_client, PragmaOnChainClient):
-            self.rpc_monitor = RPCHealthMonitor(self.pragma_client)
-            asyncio.create_task(self.rpc_monitor.monitor_rpc_health())
-
     def init_fix(self):
         settings = fix.SessionSettings(self.fix_config_path)
         store_factory = fix.FileStoreFactory(settings)
@@ -238,8 +252,8 @@ HeartBtInt=30"""
             logger.error(f"Failed to start FIX initiator: {str(e)}")
             raise
 
-    async def subscribe_market_data(self, pair: Pair):
-        """Subscribe to market data for a specific pair"""
+    async def subscribe_market_data(self, pairs):
+        """Subscribe to market data for specific pairs"""
         logger.info("Waiting for session to be ready...")
         try:
             # Get credentials
@@ -268,18 +282,44 @@ HeartBtInt=30"""
                 group.setField(fix.MDEntryType(entry_type))  # Tag 269
                 message.addGroup(group)
 
-            # Set NoRelatedSym count
-            message.setField(fix.NoRelatedSym(1))  # Tag 146
+            # Get LMAX symbols for the requested pairs
+            pair_symbols = []
+            for pair in pairs:
+                if isinstance(pair, Pair):
+                    pair_id = f"{pair.base_currency.id}/{pair.quote_currency.id}"
+                else:
+                    pair_id = pair  # Assuming pair is already a string like "XAU/USD"
 
-            # Add instrument group
-            instrument_group = fix.Group(146, 48)  # 146 = NoRelatedSym, 48 = SecurityID
-            instrument_group.setField(
-                fix.SecurityID("4001")
-            )  # Tag 48 - EUR/USD LMAX ID
-            instrument_group.setField(
-                fix.SecurityIDSource("8")
-            )  # Tag 22, "8" = Exchange Symbol
-            message.addGroup(instrument_group)
+                if pair_id in LMAX_INSTRUMENT_IDS:
+                    pair_symbols.append((pair_id, LMAX_INSTRUMENT_IDS[pair_id]))
+                else:
+                    logger.warning(f"No LMAX instrument ID found for pair {pair_id}")
+
+            if not pair_symbols:
+                logger.error("No valid pairs to subscribe")
+                return
+
+            # Log the pairs we're subscribing to
+            logger.info(
+                f"Subscribing to the following pairs: {[p[0] for p in pair_symbols]}"
+            )
+
+            # Set NoRelatedSym count
+            message.setField(fix.NoRelatedSym(len(pair_symbols)))  # Tag 146
+
+            # Add instrument groups
+            for idx, (pair_id, security_id) in enumerate(pair_symbols):
+                instrument_group = fix.Group(
+                    146, 48
+                )  # 146 = NoRelatedSym, 48 = SecurityID
+                instrument_group.setField(fix.SecurityID(security_id))  # Tag 48
+                instrument_group.setField(
+                    fix.SecurityIDSource("8")
+                )  # Tag 22, "8" = Exchange Symbol
+                message.addGroup(instrument_group)
+                logger.debug(
+                    f"Added instrument {pair_id} with security ID {security_id}"
+                )
 
             # Create session ID for sending
             session_id = fix.SessionID("FIX.4.4", sender_comp_id, target_comp_id)
@@ -374,55 +414,117 @@ HeartBtInt=30"""
             logger.error(f"Fatal error in market data subscription: {str(e)}")
             raise
 
-    async def push_prices(self, pair: Pair):
-        symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
-        logger.info(f"Starting price push loop for {symbol}")
+    async def push_prices(self, pair):
+        """Push prices for a specific pair to Pragma"""
+        try:
+            # First, ensure we have a string representation
+            if isinstance(pair, Pair):
+                symbol = f"{pair.base_currency.id}/{pair.quote_currency.id}"
+                pair_obj = pair
+            else:
+                symbol = pair
 
-        # Create event for this symbol if it doesn't exist
-        if symbol not in self.application.market_data_ready:
-            self.application.market_data_ready[symbol] = asyncio.Event()
-
-        while self.running:
-            try:
-                # Wait for new market data
-                await self.application.market_data_ready[symbol].wait()
-                self.application.market_data_ready[
-                    symbol
-                ].clear()  # Reset for next update
-
-                if market_data := self.application.latest_market_data.get(symbol):
-                    bid, ask = market_data["bid"], market_data["ask"]
-                    price = (bid + ask) / 2
-                    timestamp = market_data["timestamp"]
-                    price_int = int(price * (10 ** pair.decimals()))
-
-                    entry = SpotEntry(
-                        pair_id=pair.id,
-                        price=price_int,
-                        timestamp=timestamp,
-                        source="LMAX",
-                        publisher=os.getenv("PRAGMA_PUBLISHER_ID"),
-                        volume=0,
-                    )
-
-                    try:
-                        await self.pragma_client.publish_entries([entry])
-                        logger.info(f"Pushed {pair} price {price} to Pragma")
-                    except (ClientError, RequestException) as e:
-                        if isinstance(self.pragma_client, PragmaOnChainClient):
-                            logger.error(f"RPC error while publishing: {e}")
-                            self.rpc_monitor.record_failure()
-                            if await self.rpc_monitor.should_switch_rpc():
-                                if await self.rpc_monitor.switch_rpc():
-                                    # Retry the publish operation with new RPC
-                                    continue
+                try:
+                    # Handle each type of instrument explicitly
+                    if symbol == "EUR/USD":
+                        logger.debug(f"Creating pair for {symbol}")
+                        pair_obj = Pair.from_tickers("EUR", "USD")
+                    elif symbol == "XAU/USD":
+                        logger.debug(f"Creating pair for {symbol}")
+                        pair_obj = Pair.from_tickers("XAU", "USD")
+                    elif symbol == "XBR/USD":
+                        logger.debug(f"Creating pair for {symbol}")
+                        pair_obj = Pair.from_tickers("XBR", "USD")
+                    elif symbol == "SPX500m":
+                        logger.debug(f"Creating special pair for {symbol}")
+                        # For indices, use the symbol directly
+                        pair_obj = Pair.from_tickers("SPX500", "USD")
+                        pair_obj.id = symbol  # Use the symbol directly as the ID
+                    elif symbol == "TECH100m":
+                        logger.debug(f"Creating special pair for {symbol}")
+                        # For indices, use the symbol directly
+                        pair_obj = Pair.from_tickers("TECH100m", "USD")
+                        pair_obj.id = symbol  # Use the symbol directly as the ID
+                    else:
+                        logger.error(f"Unknown instrument: {symbol}")
+                        # Try a generic approach as fallback
+                        if "/" in symbol:
+                            base, quote = symbol.split("/")
+                            pair_obj = Pair.from_tickers(base, quote)
                         else:
-                            raise
-                else:
-                    logger.debug(f"No market data available for {symbol}")
-            except Exception as e:
-                logger.error(f"Error pushing price: {str(e)}")
-                await asyncio.sleep(5)  # Back off on error
+                            # Last resort for special instruments
+                            pair_obj = Pair.from_tickers(symbol, "USD")
+                            pair_obj.id = symbol
+                except Exception as e:
+                    logger.error(f"Error creating pair object for {symbol}: {str(e)}")
+                    # Create a minimal pair object that will work
+                    pair_obj = Pair.from_tickers(
+                        "EUR", "USD"
+                    )  # Use a known working pair as a template
+                    if "/" in symbol:
+                        base, quote = symbol.split("/")
+                        pair_obj.id = f"{base}/{quote}"
+                    else:
+                        pair_obj.id = symbol
+
+            logger.info(
+                f"Starting price push loop for {symbol} with pair ID: {pair_obj.id}"
+            )
+            logger.info(f"Starting price push loop for {symbol}")
+
+            # Create event for this symbol if it doesn't exist
+            if symbol not in self.application.market_data_ready:
+                self.application.market_data_ready[symbol] = asyncio.Event()
+
+            while self.running:
+                try:
+                    # Wait for new market data
+                    await self.application.market_data_ready[symbol].wait()
+                    self.application.market_data_ready[
+                        symbol
+                    ].clear()  # Reset for next update
+
+                    if market_data := self.application.latest_market_data.get(symbol):
+                        bid, ask = market_data["bid"], market_data["ask"]
+                        price = (bid + ask) / 2.0
+                        timestamp = market_data["timestamp"]
+                        price_int = int(price * 10 ** pair_obj.decimals())
+
+                        entry = SpotEntry(
+                            pair_id=pair_obj.id,
+                            price=price_int,
+                            timestamp=timestamp,
+                            source="LMAX",
+                            publisher=os.getenv("PRAGMA_PUBLISHER_ID"),
+                            volume=0,
+                        )
+
+                        try:
+                            # Send the entry to Pragma
+                            await self.pragma_client.publish_entries([entry])
+                            logger.info(
+                                f"Successfully pushed {symbol} price {entry.price} to Pragma"
+                            )
+                        except (ClientError, RequestException) as e:
+                            logger.error(
+                                f"API error publishing {symbol} price to Pragma: {str(e)}"
+                            )
+                            # Don't raise, just log and continue
+                            await asyncio.sleep(5)  # Back off before retrying
+                        except Exception as e:
+                            logger.error(
+                                f"Unexpected error publishing {symbol}: {str(e)}"
+                            )
+                            # Don't raise, just log and continue
+                            await asyncio.sleep(5)  # Back off before retrying
+                    else:
+                        logger.debug(f"No market data available for {symbol}")
+                except Exception as e:
+                    logger.error(f"Error pushing price: {str(e)}")
+                    await asyncio.sleep(5)  # Back off on error
+
+        except Exception as e:
+            logger.error(f"Error pushing prices: {str(e)}")
 
     def stop(self):
         self.running = False
@@ -460,9 +562,10 @@ async def main():
         account_contract_address=os.getenv("PRAGMA_ACCOUNT_CONTRACT_ADDRESS"),
     )
 
-    # Create EUR/USD pair
-    pair = Pair.from_tickers("EUR", "USD")
-    logger.info(f"Configured to fetch {pair} from LMAX")
+    # Configure pairs to fetch
+    # You can specify either as string IDs or create Pair objects
+    requested_pairs = ["EUR/USD", "XAU/USD", "SPX500m", "XBR/USD", "TECH100m"]
+    logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
     # Initialize LMAX connector
     logger.info("Initializing LMAX FIX connection...")
@@ -478,12 +581,23 @@ async def main():
     logger.info("Registered shutdown handlers")
 
     try:
-        # Create tasks for subscription and price pushing
-        subscription_task = asyncio.create_task(connector.subscribe_market_data(pair))
-        push_task = asyncio.create_task(connector.push_prices(pair))
+        # Create subscription task for all pairs
+        subscription_task = asyncio.create_task(
+            connector.subscribe_market_data(requested_pairs)
+        )
 
-        # Wait for both tasks to complete or be cancelled
-        await asyncio.gather(subscription_task, push_task, return_exceptions=True)
+        # Create price pushing tasks for each pair with explicit logging
+        push_tasks = []
+        for pair in requested_pairs:
+            logger.info(f"Creating price push task for pair: {pair}")
+            task = asyncio.create_task(connector.push_prices(pair))
+            task.set_name(f"push_prices_{pair}")
+            push_tasks.append(task)
+
+        logger.info(f"Created {len(push_tasks)} price push tasks")
+
+        # Wait for all tasks to complete or be cancelled
+        await asyncio.gather(subscription_task, *push_tasks, return_exceptions=True)
     except asyncio.CancelledError:
         logger.info("Service shutdown requested")
     except Exception as e:
