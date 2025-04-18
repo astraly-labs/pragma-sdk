@@ -1,6 +1,11 @@
 # LMAX Connector
 
-A service that connects to LMAX Exchange via FIX 4.4 protocol and pushes EUR/USD market data to Pragma.
+A service that connects to LMAX Exchange via FIX 4.4 protocol and pushes market data to Pragma for the following instruments:
+- EUR/USD (FX)
+- XAU/USD (Gold Spot)
+- SPX500m (US SPX 500 Mini)
+- XBR/USD (UK Brent Spot)
+- TECH100m (US Tech 100 Mini)
 
 ## Prerequisites
 

@@ -14,6 +14,8 @@ from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
 from pragma_sdk.common.fetchers.fetchers.dexscreener import DexscreenerFetcher
 from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
 from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
+from pragma_sdk.common.fetchers.fetchers.bitget import BitgetFetcher
+from pragma_sdk.common.fetchers.fetchers.lbank import LbankFetcher
 
 __all__ = [
     "BinanceFetcher",
@@ -32,4 +34,6 @@ __all__ = [
     "DexscreenerFetcher",
     "PythFetcher",
     "UpbitFetcher",
+    "BitgetFetcher",
+    "LbankFetcher",
 ]

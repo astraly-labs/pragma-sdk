@@ -68,29 +68,50 @@ class DexscreenerFetcher(FetcherInterfaceT):
     ) -> SpotEntry | PublisherFetchError:
         """
         Query the dexscreener API and construct the SpotEntry.
-
-        NOTE: It is really unclear at the moment how the pair is actually constructed,
-        sometimes the quote asset is in front of the base asset...
-        To be sure it works, we try both.
+        Returns the median price from all available pairs and the total volume.
         """
-        pair_data = await self._query_dexscreener(
+        pairs_data = await self._query_dexscreener(
             pair,
             session,
         )
-        if isinstance(pair_data, PublisherFetchError):
+        if isinstance(pairs_data, PublisherFetchError):
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
+
+        # Extract all prices and volumes
+        prices = []
+        total_volume = 0.0
+        for pair_data in pairs_data:
+            try:
+                price = float(pair_data["priceUsd"])
+                volume = float(pair_data["volume"]["h24"])
+                prices.append(price)
+                total_volume += volume
+            except (KeyError, ValueError, TypeError):
+                continue
+
+        if not prices:
+            return PublisherFetchError(
+                f"No valid price data found for {pair} from Dexscreener"
+            )
+
+        # Calculate median price
+        prices.sort()
+        if len(prices) % 2 == 0:
+            median_price = (prices[len(prices) // 2 - 1] + prices[len(prices) // 2]) / 2
+        else:
+            median_price = prices[len(prices) // 2]
 
         return self._construct(
             pair=pair,
-            result=float(pair_data["priceUsd"]),
-            volume=float(pair_data["volume"]["h24"]),
+            result=median_price,
+            volume=total_volume,
         )
 
     async def _query_dexscreener(
         self,
         pair: Pair,
         session: ClientSession,
-    ) -> dict | PublisherFetchError:
+    ) -> List[dict] | PublisherFetchError:
         url = self.format_url(pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -101,7 +122,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
                 response = await resp.json()
                 # NOTE: Response are sorted by highest liq, so we take the first.
                 if response["pairs"] is not None and len(response["pairs"]) > 0:
-                    return response["pairs"][0]  # type: ignore[no-any-return]
+                    return response["pairs"]  # type: ignore[no-any-return]
         return PublisherFetchError(f"No data found for {pair.id} from Dexscreener")
 
     def format_url(  # type: ignore[override]
