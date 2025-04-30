@@ -21,6 +21,7 @@ LMAX_INSTRUMENT_IDS = {
     "SPX500m": "110093",  # US SPX 500 Mini
     "XBR/USD": "100805",  # UK Brent Spot
     "TECH100m": "110095",  # US Tech 100 Mini
+    "XTI/USD": "100800",  # US Crude Oil
 }
 
 # Define mapping between LMAX security IDs and symbols
@@ -30,6 +31,7 @@ SECURITY_ID_TO_SYMBOL = {
     "110093": "SPX500m",
     "100805": "XBR/USD",
     "110095": "TECH100m",
+    "100800": "XTI/USD",
 }
 
 
@@ -564,7 +566,14 @@ async def main():
 
     # Configure pairs to fetch
     # You can specify either as string IDs or create Pair objects
-    requested_pairs = ["EUR/USD", "XAU/USD", "SPX500m", "XBR/USD", "TECH100m"]
+    requested_pairs = [
+        "EUR/USD",
+        "XAU/USD",
+        "SPX500m",
+        "XBR/USD",
+        "TECH100m",
+        "XTI/USD",
+    ]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
     # Initialize LMAX connector
