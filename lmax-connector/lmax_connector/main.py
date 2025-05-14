@@ -21,7 +21,7 @@ LMAX_INSTRUMENT_IDS = {
     "SPX500m": "110093",  # US SPX 500 Mini
     "XBR/USD": "100805",  # UK Brent Spot
     "TECH100m": "110095",  # US Tech 100 Mini
-    "XTI/USD": "100800",  # US Crude Oil
+    "USD/JPY": "4004",  # US Dollar/Japanese Yen
 }
 
 # Define mapping between LMAX security IDs and symbols
@@ -31,7 +31,7 @@ SECURITY_ID_TO_SYMBOL = {
     "110093": "SPX500m",
     "100805": "XBR/USD",
     "110095": "TECH100m",
-    "100800": "XTI/USD",
+    "4004": "USD/JPY",
 }
 
 
@@ -491,9 +491,10 @@ HeartBtInt=30"""
                         price = (bid + ask) / 2.0
                         timestamp = market_data["timestamp"]
                         price_int = int(price * 10 ** pair_obj.decimals())
+                        pair_id = pair_obj.id
 
                         entry = SpotEntry(
-                            pair_id=pair_obj.id,
+                            pair_id=pair_id,
                             price=price_int,
                             timestamp=timestamp,
                             source="LMAX",
@@ -505,7 +506,7 @@ HeartBtInt=30"""
                             # Send the entry to Pragma
                             await self.pragma_client.publish_entries([entry])
                             logger.info(
-                                f"Successfully pushed {symbol} price {entry.price} to Pragma"
+                                f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Pragma"
                             )
                         except (ClientError, RequestException) as e:
                             logger.error(
@@ -572,7 +573,7 @@ async def main():
         "SPX500m",
         "XBR/USD",
         "TECH100m",
-        "XTI/USD",
+        "USD/JPY",
     ]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
