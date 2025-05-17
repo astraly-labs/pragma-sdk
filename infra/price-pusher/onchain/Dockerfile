@@ -14,10 +14,8 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     gcc \
     libgmp3-dev \
+    curl \
     pipx
-RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
-'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
-&& apt-get update && apt-get install -y infisical
 
 RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
@@ -27,9 +25,15 @@ WORKDIR /opt/price-pusher
 RUN uv sync --all-extras
 
 FROM base as final
-COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
 COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
+
+EXPOSE 8082
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://0.0.0.0:8082/ || exit 1
+
 WORKDIR /opt/price-pusher
 ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]

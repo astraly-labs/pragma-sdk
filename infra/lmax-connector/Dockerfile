@@ -15,15 +15,14 @@ RUN apt-get update && \
     gcc \
     g++ \
     libssl-dev \
+    curl \
     swig \
     libgmp3-dev \
     pkg-config \
     pipx \
     stunnel4
 
-RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
-'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
-&& apt-get update && apt-get install -y infisical
+RUN apt-get update && apt-get install -y bash curl
 
 RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
@@ -34,10 +33,20 @@ RUN uv sync
 
 FROM base as final
 
-COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /usr/bin/stunnel /usr/bin/stunnel
 COPY --from=builder /usr/lib /usr/lib
 COPY --from=builder /opt /opt
 COPY infra/lmax-connector/entrypoint.sh /opt/lmax-connector/
 WORKDIR /opt/lmax-connector
-ENTRYPOINT ["bash","/opt/lmax-connector/entrypoint.sh"]
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log && \
+    chmod -R 777 /opt/lmax-connector/store /opt/lmax-connector/config /opt/lmax-connector/log
+
+EXPOSE 8080
+
+# Add a healthcheck for Kubernetes compatibility
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://0.0.0.0:8080/ || exit 1
+
+ENTRYPOINT ["bash", "/opt/lmax-connector/entrypoint.sh"]

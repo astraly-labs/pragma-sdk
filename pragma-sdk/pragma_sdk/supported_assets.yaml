@@ -50,6 +50,16 @@
   ticker: 'EUR'
   abstract: true
 
+- name: 'Euro'
+  decimals: 8
+  ticker: 'EUR'
+  abstract: true
+
+- name: 'Japanese Yen'
+  decimals: 8
+  ticker: 'JPY'
+  abstract: true
+
 - name: 'Starknet'
   decimals: 18
   ticker: 'STRK'

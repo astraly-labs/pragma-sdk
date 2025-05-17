@@ -13,11 +13,10 @@ FROM base as builder
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     gcc \
+    curl \
     libgmp3-dev \
     pipx
-RUN apt-get update && apt-get install -y bash curl && curl -1sLf \
-'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash \
-&& apt-get update && apt-get install -y infisical
+
 
 RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
@@ -27,9 +26,16 @@ WORKDIR /opt/checkpointer
 RUN uv sync --all-extras
 
 FROM base as final
-COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/checkpointer/config/ /opt/checkpointer/config/
 COPY infra/checkpointer/entrypoint.sh /opt/checkpointer/
 WORKDIR /opt/checkpointer
+
+# Expose the port that your application will listen on
+EXPOSE 8081
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://0.0.0.0:8081/ || exit 1
+
 ENTRYPOINT ["bash","/opt/checkpointer/entrypoint.sh"]
