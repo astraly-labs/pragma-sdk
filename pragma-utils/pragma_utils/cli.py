@@ -5,6 +5,7 @@ from typing import Union, Tuple
 from pragma_utils.aws import fetch_aws_private_key
 from pragma_utils.gcp import fetch_gcp_private_key
 
+
 def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str]]:
     """
     Load the private key either from AWS, environment variable, from the provided plain value, or return keystore info.

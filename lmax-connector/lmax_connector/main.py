@@ -706,6 +706,9 @@ async def main():
     # Seed prices from Extended Exchange before entering the main loops
     await connector.seed_initial_prices(requested_pairs)
 
+    # Seed prices from Extended Exchange before entering the main loops
+    await connector.seed_initial_prices(requested_pairs)
+
     # Handle graceful shutdown
     loop = asyncio.get_event_loop()
     signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
