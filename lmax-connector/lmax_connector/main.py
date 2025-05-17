@@ -594,7 +594,7 @@ HeartBtInt=30"""
 
                         try:
                             # Send the entry to Pragma
-                            # await self.pragma_client.publish_entries([entry])
+                            await self.pragma_client.publish_entries([entry])
                             logger.info(
                                 f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Pragma"
                             )
