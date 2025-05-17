@@ -5,6 +5,7 @@ from google.cloud import secretmanager
 
 PRIVATE_KEY_COLUMN = "PUBLISHER_PRIVATE_KEY"
 
+
 def fetch_gcp_private_key(secret_name: str) -> str:
     """
     Loads a private key from Google Cloud Secret Manager.
@@ -15,7 +16,7 @@ def fetch_gcp_private_key(secret_name: str) -> str:
     Raises:
         EnvironmentError: If GCP_PROJECT_ID environment variable is not set
     """
-    project_id = os.getenv('GCP_PROJECT_ID')
+    project_id = os.getenv("GCP_PROJECT_ID")
     if not project_id:
         raise EnvironmentError("GCP_PROJECT_ID environment variable must be set")
 

@@ -6,6 +6,7 @@ import quickfix as fix
 from dotenv import load_dotenv
 from starknet_py.net.client_errors import ClientError
 from requests.exceptions import RequestException
+import requests
 
 from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
@@ -190,6 +191,7 @@ class LmaxConnector:
     def __init__(self, pragma_client: PragmaAPIClient):
         self.pragma_client = pragma_client
         self.running = True
+        self.last_known_prices = {}  # Store last known prices for each symbol
 
         # Create required directories
         os.makedirs("config", exist_ok=True)
@@ -233,6 +235,68 @@ HeartBtInt=30"""
 
         self.application = LmaxFixApplication()
         self.init_fix()
+
+    async def seed_initial_prices(self, pairs):
+        """
+        Seed last-known and latest market prices using the public Extended Exchange
+        REST API when LMAX provides no data (e.g. weekends).
+        """
+        EXTENDED_API_BASE_URL = "https://api.extended.exchange/api/v1"
+        EXTENDED_MARKET_MAPPING = {
+            "EUR/USD": "EUR-USD",
+            "XAU/USD": "XAU-USD",
+            "SPX500m": "SPX500m-USD",
+            "XBR/USD": "XBR-USD",
+            "TECH100m": "TECH100m-USD",
+            "USD/JPY": "USD-JPY",
+        }
+
+        for symbol in pairs:
+            market = EXTENDED_MARKET_MAPPING.get(symbol)
+            if not market:
+                logger.warning(f"No Extended Exchange mapping for {symbol}")
+                continue
+
+            url = f"{EXTENDED_API_BASE_URL}/info/markets"
+            try:
+                response = await asyncio.to_thread(
+                    requests.get, url, params={"market": market}, timeout=10
+                )
+                if response.status_code != 200:
+                    logger.warning(
+                        f"Extended API request for {symbol} returned HTTP "
+                        f"{response.status_code}"
+                    )
+                    continue
+
+                payload = response.json()
+                stats = (
+                    payload.get("data", [{}])[0]
+                    .get("marketStats", {})
+                    .get("indexPrice")
+                )
+                if stats is None:
+                    logger.warning(
+                        f"Extended API response missing indexPrice for {symbol}"
+                    )
+                    continue
+
+                price = float(stats)
+                price_data = {
+                    "bid": price,
+                    "ask": price,
+                    "timestamp": int(time.time()),
+                }
+                self.last_known_prices[symbol] = price_data.copy()
+                self.application.latest_market_data[symbol] = price_data.copy()
+                logger.info(
+                    f"Seeded {symbol} with indexPrice {price} from Extended Exchange"
+                )
+            except Exception as e:
+                logger.error(f"Error seeding {symbol} from Extended API: {e}")
+
+        # brief delay so downstream tasks can pick the seeded data up
+        await asyncio.sleep(0.1)
 
     def init_fix(self):
         settings = fix.SessionSettings(self.fix_config_path)
@@ -431,6 +495,9 @@ HeartBtInt=30"""
                     if symbol == "EUR/USD":
                         logger.debug(f"Creating pair for {symbol}")
                         pair_obj = Pair.from_tickers("EUR", "USD")
+                    elif symbol == "USD/JPY":
+                        logger.debug(f"Creating pair for {symbol}")
+                        pair_obj = Pair.from_tickers("USD", "JPY")
                     elif symbol == "XAU/USD":
                         logger.debug(f"Creating pair for {symbol}")
                         pair_obj = Pair.from_tickers("XAU", "USD")
@@ -480,16 +547,37 @@ HeartBtInt=30"""
 
             while self.running:
                 try:
-                    # Wait for new market data
-                    await self.application.market_data_ready[symbol].wait()
-                    self.application.market_data_ready[
-                        symbol
-                    ].clear()  # Reset for next update
+                    # Try to get new market data with a timeout
+                    try:
+                        await asyncio.wait_for(
+                            self.application.market_data_ready[symbol].wait(),
+                            timeout=30,  # Wait up to 30 seconds for new data
+                        )
+                        self.application.market_data_ready[
+                            symbol
+                        ].clear()  # Reset for next update
 
-                    if market_data := self.application.latest_market_data.get(symbol):
+                        if market_data := self.application.latest_market_data.get(
+                            symbol
+                        ):
+                            # Store the new data as the last known price
+                            self.last_known_prices[symbol] = market_data.copy()
+                    except asyncio.TimeoutError:
+                        logger.info(
+                            f"No new data received for {symbol} in 30 seconds, using last known price"
+                        )
+
+                    # Use either new data or last known price
+                    market_data = self.application.latest_market_data.get(
+                        symbol
+                    ) or self.last_known_prices.get(symbol)
+
+                    if market_data:
                         bid, ask = market_data["bid"], market_data["ask"]
                         price = (bid + ask) / 2.0
-                        timestamp = market_data["timestamp"]
+                        timestamp = int(
+                            time.time()
+                        )  # Use current timestamp for last known prices
                         price_int = int(price * 10 ** pair_obj.decimals())
                         pair_id = pair_obj.id
 
@@ -504,7 +592,7 @@ HeartBtInt=30"""
 
                         try:
                             # Send the entry to Pragma
-                            await self.pragma_client.publish_entries([entry])
+                            # await self.pragma_client.publish_entries([entry])
                             logger.info(
                                 f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Pragma"
                             )
@@ -521,7 +609,10 @@ HeartBtInt=30"""
                             # Don't raise, just log and continue
                             await asyncio.sleep(5)  # Back off before retrying
                     else:
-                        logger.debug(f"No market data available for {symbol}")
+                        logger.debug(f"No market data available yet for {symbol}")
+                        await asyncio.sleep(
+                            5
+                        )  # Wait before retrying if no data is available
                 except Exception as e:
                     logger.error(f"Error pushing price: {str(e)}")
                     await asyncio.sleep(5)  # Back off on error
@@ -580,6 +671,9 @@ async def main():
     # Initialize LMAX connector
     logger.info("Initializing LMAX FIX connection...")
     connector = LmaxConnector(pragma_client)
+
+    # Seed prices from Extended Exchange before entering the main loops
+    await connector.seed_initial_prices(requested_pairs)
 
     # Handle graceful shutdown
     loop = asyncio.get_event_loop()
