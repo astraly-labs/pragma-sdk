@@ -5,10 +5,9 @@ import time
 import quickfix as fix
 from dotenv import load_dotenv
 import requests
-import json
 
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
+from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
@@ -17,38 +16,30 @@ from faucon.topics.topics import PriceEntryTopic
 logger = get_pragma_sdk_logger()
 
 
-class PragmaSpotEntryWrapper(SpotEntry):
-    """Wrapper for SpotEntry to add Faucon topic methods."""
-
-    def to_faucon_topic(self) -> FauconTopic:
-        """Return the topic for price entries."""
-        return PriceEntryTopic.to_faucon_topic()
-
-    def to_faucon_key(self) -> str:
-        """Generate key for price entry."""
-        return PriceEntryTopic.to_faucon_key(self)
-
-    def to_proto_bytes(self) -> bytes:
-        """Serialize to protobuf bytes (using pragma-sdk serialization)."""
-        # Use pragma-sdk's built-in serialization
-        return json.dumps(self.serialize()).encode("utf-8")
+# Add extension methods to SpotEntry for Faucon integration
+def spot_entry_to_faucon_topic(self) -> FauconTopic:
+    """Return the topic for price entries."""
+    return PriceEntryTopic.to_faucon_topic()
 
 
-class PragmaFutureEntryWrapper(FutureEntry):
-    """Wrapper for FutureEntry to add Faucon topic methods."""
+def spot_entry_to_faucon_key(self) -> str:
+    """Generate key for price entry."""
+    return PriceEntryTopic.to_faucon_key(self)
 
-    def to_faucon_topic(self) -> FauconTopic:
-        """Return the topic for price entries."""
-        return PriceEntryTopic.to_faucon_topic()
 
-    def to_faucon_key(self) -> str:
-        """Generate key for price entry."""
-        return PriceEntryTopic.to_faucon_key(self)
+def future_entry_to_faucon_topic(self) -> FauconTopic:
+    """Return the topic for price entries."""
+    return PriceEntryTopic.to_faucon_topic()
 
-    def to_proto_bytes(self) -> bytes:
-        """Serialize to protobuf bytes (using pragma-sdk serialization)."""
-        # Use pragma-sdk's built-in serialization
-        return json.dumps(self.serialize()).encode("utf-8")
+
+def future_entry_to_faucon_key(self) -> str:
+    """Generate key for price entry."""
+    return PriceEntryTopic.to_faucon_key(self)
+
+
+# Monkey patch the methods onto the classes
+SpotEntry.to_faucon_topic = spot_entry_to_faucon_topic
+SpotEntry.to_faucon_key = spot_entry_to_faucon_key
 
 
 # Define constants for LMAX instrument IDs
@@ -617,7 +608,7 @@ HeartBtInt=30"""
                         price_int = int(price * 10 ** pair_obj.decimals())
                         pair_id = pair_obj.id
 
-                        entry = PragmaSpotEntryWrapper(
+                        entry = SpotEntry(
                             pair_id=pair_id,
                             price=price_int,
                             timestamp=timestamp,

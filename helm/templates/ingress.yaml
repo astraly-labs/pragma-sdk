@@ -11,8 +11,8 @@ metadata:
   name: {{ $fullname }}-ingress
   {{- end }}
   annotations:
-    argocd.argoproj.io/sync-wave: "2"  
-    {{- with $val.annotations }}  
+    argocd.argoproj.io/sync-wave: "2"
+    {{- with $val.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
@@ -40,7 +40,7 @@ spec:
             backend:
               service:
                 name: {{ $fullname }}
-                port: 
+                port:
                   number: {{ .servicePort }}
           {{- end }}
     {{- end }}
