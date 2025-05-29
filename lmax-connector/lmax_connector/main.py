@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import requests
 
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
@@ -40,6 +40,8 @@ def future_entry_to_faucon_key(self) -> str:
 # Monkey patch the methods onto the classes
 SpotEntry.to_faucon_topic = spot_entry_to_faucon_topic
 SpotEntry.to_faucon_key = spot_entry_to_faucon_key
+FutureEntry.to_faucon_topic = future_entry_to_faucon_topic
+FutureEntry.to_faucon_key = future_entry_to_faucon_key
 
 
 # Define constants for LMAX instrument IDs
