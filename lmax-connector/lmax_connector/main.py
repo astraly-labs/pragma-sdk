@@ -14,6 +14,9 @@ from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
 from faucon.topics.topics import PriceEntryTopic
 
+from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
+from faucon.topics.topics import PriceEntryTopic
+
 logger = get_pragma_sdk_logger()
 
 
@@ -702,9 +705,6 @@ async def main():
     # Initialize LMAX connector
     logger.info("Initializing LMAX FIX connection...")
     connector = LmaxConnector(producer)
-
-    # Seed prices from Extended Exchange before entering the main loops
-    await connector.seed_initial_prices(requested_pairs)
 
     # Seed prices from Extended Exchange before entering the main loops
     await connector.seed_initial_prices(requested_pairs)
