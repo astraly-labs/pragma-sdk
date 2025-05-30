@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: {{ include "pragma-sdk.fullname" . }}
   annotations:
-    argocd.argoproj.io/sync-wave: "2"  
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     {{- include "pragma-sdk.labels" . | nindent 4 }}
 spec:
@@ -42,7 +42,7 @@ spec:
           - containerPort: {{ .containerPort }}
             name: {{ .portName }}
             protocol: {{ .protocol }}
-          {{- end }}             
+          {{- end }}
 
           {{- with .Values.env }}
           env:
@@ -52,7 +52,7 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.envFromSecret.secretName }}
-          {{- end }}        
+          {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -66,7 +66,7 @@ spec:
           volumeMounts:
             - name: openapi-volume
               mountPath: /app/openapi
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}      
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

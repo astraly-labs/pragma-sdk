@@ -4,16 +4,45 @@ import signal
 import time
 import quickfix as fix
 from dotenv import load_dotenv
-from starknet_py.net.client_errors import ClientError
-from requests.exceptions import RequestException
 import requests
 
-from pragma_sdk.offchain.client import PragmaAPIClient
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry
+from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
+from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
+from faucon.topics.topics import PriceEntryTopic
+
 logger = get_pragma_sdk_logger()
+
+
+# Add extension methods to SpotEntry for Faucon integration
+def spot_entry_to_faucon_topic(self) -> FauconTopic:
+    """Return the topic for price entries."""
+    return PriceEntryTopic.to_faucon_topic()
+
+
+def spot_entry_to_faucon_key(self) -> str:
+    """Generate key for price entry."""
+    return PriceEntryTopic.to_faucon_key(self)
+
+
+def future_entry_to_faucon_topic(self) -> FauconTopic:
+    """Return the topic for price entries."""
+    return PriceEntryTopic.to_faucon_topic()
+
+
+def future_entry_to_faucon_key(self) -> str:
+    """Generate key for price entry."""
+    return PriceEntryTopic.to_faucon_key(self)
+
+
+# Monkey patch the methods onto the classes
+SpotEntry.to_faucon_topic = spot_entry_to_faucon_topic
+SpotEntry.to_faucon_key = spot_entry_to_faucon_key
+FutureEntry.to_faucon_topic = future_entry_to_faucon_topic
+FutureEntry.to_faucon_key = future_entry_to_faucon_key
+
 
 # Define constants for LMAX instrument IDs
 LMAX_INSTRUMENT_IDS = {
@@ -188,8 +217,8 @@ class LmaxFixApplication(fix.Application):
 
 
 class LmaxConnector:
-    def __init__(self, pragma_client: PragmaAPIClient):
-        self.pragma_client = pragma_client
+    def __init__(self, faucon_producer):
+        self.faucon_producer = faucon_producer
         self.running = True
         self.last_known_prices = {}  # Store last known prices for each symbol
 
@@ -591,20 +620,18 @@ HeartBtInt=30"""
                         )
 
                         try:
-                            # Send the entry to Pragma
-                            await self.pragma_client.publish_entries([entry])
+                            # Send the entry to Kafka via Faucon
+                            partition, offset = await self.faucon_producer.send(entry)
                             logger.info(
-                                f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Pragma"
+                                f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Kafka"
                             )
-                        except (ClientError, RequestException) as e:
-                            logger.error(
-                                f"API error publishing {symbol} price to Pragma: {str(e)}"
-                            )
-                            # Don't raise, just log and continue
-                            await asyncio.sleep(5)  # Back off before retrying
+                            logger.info(f"  Topic: {entry.to_faucon_topic()}")
+                            logger.info(f"  Key: {entry.to_faucon_key()}")
+                            # logger.info(f"  Partition: {partition}")
+                            # logger.info(f"  Offset: {offset}")
                         except Exception as e:
                             logger.error(
-                                f"Unexpected error publishing {symbol}: {str(e)}"
+                                f"Error publishing {symbol} to Kafka: {str(e)}"
                             )
                             # Don't raise, just log and continue
                             await asyncio.sleep(5)  # Back off before retrying
@@ -624,6 +651,9 @@ HeartBtInt=30"""
         self.running = False
         if hasattr(self, "initiator"):
             self.initiator.stop()
+        # Close Faucon producer
+        if hasattr(self, "faucon_producer"):
+            self.faucon_producer.close()
         # Clean up config file
         if os.path.exists(self.fix_config_path):
             os.remove(self.fix_config_path)
@@ -647,14 +677,11 @@ async def main():
     logger.info("Starting LMAX Connector service...")
     load_dotenv()
 
-    # Initialize Pragma client
-    logger.info("Initializing Pragma client...")
-    pragma_client = PragmaAPIClient(
-        api_key=os.getenv("PRAGMA_API_KEY"),
-        api_base_url=os.getenv("PRAGMA_API_BASE_URL"),
-        account_private_key=os.getenv("PRAGMA_ACCOUNT_PRIVATE_KEY"),
-        account_contract_address=os.getenv("PRAGMA_ACCOUNT_CONTRACT_ADDRESS"),
-    )
+    # Initialize Faucon producer
+    logger.info("Initializing Faucon producer...")
+    producer = FauconProducerBuilder.from_environment(
+        FauconEnvironment.production()
+    ).build()
 
     # Configure pairs to fetch
     # You can specify either as string IDs or create Pair objects
@@ -670,7 +697,7 @@ async def main():
 
     # Initialize LMAX connector
     logger.info("Initializing LMAX FIX connection...")
-    connector = LmaxConnector(pragma_client)
+    connector = LmaxConnector(producer)
 
     # Seed prices from Extended Exchange before entering the main loops
     await connector.seed_initial_prices(requested_pairs)
