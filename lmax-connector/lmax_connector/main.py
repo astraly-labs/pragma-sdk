@@ -201,9 +201,7 @@ class LmaxFixApplication(fix.Application):
                 logger.debug(f"Got ask: {ask}")
 
         if bid is not None and ask is not None:
-            # Get the corresponding symbol for this security ID
-            symbol = SECURITY_ID_TO_SYMBOL.get(security_id)
-            if symbol:
+            if symbol := SECURITY_ID_TO_SYMBOL.get(security_id):
                 self.latest_market_data[symbol] = {
                     "bid": bid,
                     "ask": ask,
@@ -403,7 +401,7 @@ HeartBtInt=30"""
             message.setField(fix.NoRelatedSym(len(pair_symbols)))  # Tag 146
 
             # Add instrument groups
-            for idx, (pair_id, security_id) in enumerate(pair_symbols):
+            for pair_id, security_id in pair_symbols:
                 instrument_group = fix.Group(
                     146, 48
                 )  # 146 = NoRelatedSym, 48 = SecurityID
@@ -596,12 +594,9 @@ HeartBtInt=30"""
                             f"No new data received for {symbol} in 30 seconds, using last known price"
                         )
 
-                    # Use either new data or last known price
-                    market_data = self.application.latest_market_data.get(
+                    if market_data := self.application.latest_market_data.get(
                         symbol
-                    ) or self.last_known_prices.get(symbol)
-
-                    if market_data:
+                    ) or self.last_known_prices.get(symbol):
                         bid, ask = market_data["bid"], market_data["ask"]
                         price = (bid + ask) / 2.0
                         timestamp = int(
@@ -677,10 +672,11 @@ async def main():
     logger.info("Starting LMAX Connector service...")
     load_dotenv()
 
+    broker_address = os.getenv("PRAGMA_BROKER_ADDRESS")
     # Initialize Faucon producer
     logger.info("Initializing Faucon producer...")
     producer = FauconProducerBuilder.from_environment(
-        FauconEnvironment.production()
+        FauconEnvironment.custom(broker_address=broker_address)
     ).build()
 
     # Configure pairs to fetch
