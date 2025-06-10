@@ -73,7 +73,7 @@ class PricePusher(IPricePusher):
             else:
                 start_t = time.time()
                 response = await self.client.publish_entries(
-                    entries, publish_to_websocket=True
+                    entries, publish_to_websocket=False
                 )
 
             end_t = time.time()
