@@ -4,7 +4,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "pragma-sdk.fullname" . }}
   annotations:
-    argocd.argoproj.io/sync-wave: "2"    
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     {{- include "pragma-sdk.labels" . | nindent 4 }}
 spec:

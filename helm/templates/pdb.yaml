@@ -3,7 +3,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: "2"  
+    argocd.argoproj.io/sync-wave: "2"
   name: {{ include "pragma-sdk.fullname" . }}
   labels:
     {{- include "pragma-sdk.labels" . | nindent 4 }}
