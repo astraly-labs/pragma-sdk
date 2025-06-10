@@ -1,20 +1,12 @@
 FROM python:3.12-slim AS base
 
-ENV PYTHONUNBUFFERED=1 \
-     PYTHONDONTWRITEBYTECODE=1 \
-     PIP_NO_CACHE_DIR=off \
-     PIP_DISABLE_PIP_VERSION_CHECK=on \
-     PIP_DEFAULT_TIMEOUT=100
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=off PIP_DISABLE_PIP_VERSION_CHECK=on PIP_DEFAULT_TIMEOUT=100
 
 ENV PATH="/root/.local/bin:${PATH}"
 
 FROM base as builder
 
-RUN apt-get update &&
-     apt-get install --no-install-recommends -y \
-          gcc \
-          libgmp3-dev \
-          pipx
+RUN apt-get update && apt-get install --no-install-recommends -y gcc libgmp3-dev pipx
 
 RUN pipx install uv
 COPY pragma-sdk/ /opt/pragma-sdk/
