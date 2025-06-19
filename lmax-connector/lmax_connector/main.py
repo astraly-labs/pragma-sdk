@@ -52,6 +52,7 @@ LMAX_INSTRUMENT_IDS = {
     "XBR/USD": "100805",  # UK Brent Spot
     "TECH100m": "110095",  # US Tech 100 Mini
     "USD/JPY": "4004",  # US Dollar/Japanese Yen
+    "XAG/USD": "100639",  # Silver Spot
 }
 
 # Define mapping between LMAX security IDs and symbols
@@ -62,6 +63,7 @@ SECURITY_ID_TO_SYMBOL = {
     "100805": "XBR/USD",
     "110095": "TECH100m",
     "4004": "USD/JPY",
+    "100639": "XAG/USD",
 }
 
 
@@ -276,6 +278,7 @@ HeartBtInt=30"""
             "XBR/USD": "XBR-USD",
             "TECH100m": "TECH100m-USD",
             "USD/JPY": "USD-JPY",
+            "XAG/USD": "XAG-USD",
         }
 
         for symbol in pairs:
@@ -541,6 +544,9 @@ HeartBtInt=30"""
                         # For indices, use the symbol directly
                         pair_obj = Pair.from_tickers("TECH100m", "USD")
                         pair_obj.id = symbol  # Use the symbol directly as the ID
+                    elif symbol == "XAG/USD":
+                        logger.debug(f"Creating pair for {symbol}")
+                        pair_obj = Pair.from_tickers("XAG", "USD")
                     else:
                         logger.error(f"Unknown instrument: {symbol}")
                         # Try a generic approach as fallback
@@ -688,6 +694,7 @@ async def main():
         "XBR/USD",
         "TECH100m",
         "USD/JPY",
+        "XAG/USD",
     ]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 

@@ -369,3 +369,8 @@
   decimals: 8
   ticker: 'TECH100m'
   abstract: true
+
+- name: 'Silver (Spot)'
+  decimals: 8
+  ticker: 'XAG'
+  abstract: true
