@@ -608,7 +608,7 @@ HeartBtInt=30"""
                         timestamp = int(
                             time.time()
                         )  # Use current timestamp for last known prices
-                        price_int = int(price * 10 ** pair_obj.decimals())
+                        price_int = int(price * 10**18)
                         pair_id = pair_obj.id
 
                         entry = SpotEntry(
