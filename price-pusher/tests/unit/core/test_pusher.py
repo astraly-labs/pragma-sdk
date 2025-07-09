@@ -33,7 +33,9 @@ async def test_update_price_feeds_success(caplog):
     response = await price_pusher.update_price_feeds(entries)
 
     assert response == mock_response
-    mock_client.publish_entries.assert_called_once_with(entries)
+    mock_client.publish_entries.assert_called_once_with(
+        entries, publish_to_websocket=True
+    )
 
     assert any(
         f"processing {len(entries)} new asset(s) to push..." in record.message
@@ -58,11 +60,15 @@ async def test_update_price_feeds_failure(price_pusher, mock_client, caplog):
     response = await price_pusher.update_price_feeds(entries)
 
     assert response is None
-    mock_client.publish_entries.assert_called_once_with(entries)
+    mock_client.publish_entries.assert_called_once_with(
+        entries, publish_to_websocket=True
+    )
 
     assert any(
-        "processing 1 new asset(s) to push..." in record.message for record in caplog.records
+        "processing 1 new asset(s) to push..." in record.message
+        for record in caplog.records
     )
     assert any(
-        "could not publish entrie(s): Test Exception" in record.message for record in caplog.records
+        "could not publish entrie(s): Test Exception" in record.message
+        for record in caplog.records
     )

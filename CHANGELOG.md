@@ -1,3 +1,57 @@
+## v2.4.8 (2024-12-13)
+
+### Feat
+
+- **poller_refresh_interval**: Added a CLI parameter for the poller refresh interval
+
+## v2.4.7 (2024-12-03)
+
+### Feat
+
+- add kSTRK support
+
+## v2.4.6 (2024-11-27)
+
+## v2.4.5 (2024-11-26)
+
+## v2.4.4 (2024-11-26)
+
+## v2.4.3 (2024-11-26)
+
+### Fix
+
+- starkex x10 full support (#229)
+
+## v2.4.2 (2024-11-22)
+
+### Feat
+
+- add USDPLUS support (#228)
+
+## v2.4.1 (2024-11-22)
+
+### Feat
+
+- add brother support + remove propeller fetcher (#227)
+
+## v2.4.0 (2024-11-15)
+
+### Fix
+
+- use better types for signer
+- starkex all assets + broken fetchers (#224)
+- bybit future api (#221)
+
+## v2.3.2 (2024-11-02)
+
+### Feat
+
+- lambda function (#216)
+
+### Fix
+
+- Ekubo fetcher for quote_address == 0 (#218)
+
 ## v2.3.0 (2024-10-29)
 
 ### Feat

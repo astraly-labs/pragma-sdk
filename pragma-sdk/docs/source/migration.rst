@@ -31,11 +31,11 @@ The main changes are :
         )
 
 
-- The type `PragmaAsset` does not exist anymore. Now the main type is the `Pair` type. 
+- The type `PragmaAsset` does not exist anymore. Now the main type is the `Pair` type.
 - There is no more global variable `PRAGMA_ALL_ASSETS`, you should create yourself the list of pairs you want to publish.
 
 .. code-block:: python
-    
+
     from pragma_sdk.common.types.pair import Pair
 
     pairs = [
@@ -68,4 +68,3 @@ The main changes are :
         chain_name="mainnet",
         execution_config=ExecutionConfig(enable_strk_fees=True)
     )
-

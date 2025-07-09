@@ -46,7 +46,9 @@ def price_listener(mock_request_handler, mock_price_config):
 async def test_run_forever(price_listener):
     with (
         patch.object(price_listener, "_fetch_all_oracle_prices", AsyncMock()),
-        patch.object(price_listener, "_does_oracle_needs_update", AsyncMock(return_value=True)),
+        patch.object(
+            price_listener, "_does_oracle_needs_update", AsyncMock(return_value=True)
+        ),
         patch.object(price_listener, "_notify", MagicMock()),
     ):
         price_listener._fetch_all_oracle_prices.side_effect = lambda: asyncio.sleep(0.1)
@@ -69,7 +71,9 @@ def test_set_orchestrator_prices(price_listener):
 
 
 @pytest.mark.asyncio
-async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, mock_price_config):
+async def test_fetch_all_oracle_prices(
+    price_listener, mock_request_handler, mock_price_config
+):
     mock_entry = SpotEntry(
         pair_id="BTC/USD",
         price=10000,
@@ -79,7 +83,9 @@ async def test_fetch_all_oracle_prices(price_listener, mock_request_handler, moc
     )
     mock_request_handler.fetch_latest_entries.return_value = mock_entry
 
-    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}}
+    price_listener.orchestrator_prices = {
+        "BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}
+    }
 
     await price_listener._fetch_all_oracle_prices()
 
@@ -103,7 +109,9 @@ def test_get_most_recent_orchestrator_entry(price_listener):
         publisher=PUBLISHER,
     )
     mock_entry.base.timestamp = 1000
-    price_listener.orchestrator_prices = {"BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}}
+    price_listener.orchestrator_prices = {
+        "BTC/USD": {DataTypes.SPOT: {SOURCE_1: mock_entry}}
+    }
 
     result = price_listener._get_latest_orchestrator_entry("BTC/USD", DataTypes.SPOT)
     assert result == mock_entry
@@ -172,12 +180,16 @@ def test_oracle_entry_is_outdated(price_listener):
     mock_oracle_entry.get_timestamp.return_value = 1000
     mock_newest_entry = MagicMock(spec=SpotEntry)
     mock_newest_entry.get_timestamp.return_value = 1061
-    assert price_listener._oracle_entry_is_outdated("BTC/USD", mock_oracle_entry, mock_newest_entry)
+    assert price_listener._oracle_entry_is_outdated(
+        "BTC/USD", mock_oracle_entry, mock_newest_entry
+    )
 
 
 def test_notify(caplog, price_listener):
     caplog.set_level(logging.INFO)
-    with patch.object(price_listener.notification_event, "set", MagicMock()) as mock_set:
+    with patch.object(
+        price_listener.notification_event, "set", MagicMock()
+    ) as mock_set:
         price_listener._notify()
         mock_set.assert_called_once()
         assert "sending notification to the Orchestrator!" in caplog.text
@@ -215,5 +227,7 @@ def test_get_sources_for_pair(price_listener):
     spot_sources = price_listener._get_sources_for_pair(BTC_USD_PAIR, DataTypes.SPOT)
     assert spot_sources == [SOURCE_1, SOURCE_3]
 
-    future_sources = price_listener._get_sources_for_pair(BTC_USD_PAIR, DataTypes.FUTURE)
+    future_sources = price_listener._get_sources_for_pair(
+        BTC_USD_PAIR, DataTypes.FUTURE
+    )
     assert future_sources == [SOURCE_1, SOURCE_2, SOURCE_4]

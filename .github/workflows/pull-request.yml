@@ -20,3 +20,7 @@ jobs:
   tests:
     name: Build & Integration Tests
     uses: ./.github/workflows/tests.yml
+
+  build_containers:
+    name: Build Docker Image
+    uses: ./.github/workflows/docker-test.yml

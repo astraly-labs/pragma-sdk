@@ -15,47 +15,75 @@ def build_publish_message(
     see https://community.starknet.io/t/snip-off-chain-signatures-a-la-eip712 for reference
 
     :param entries: List of SpotEntry objects
+    :return: The typed data message
     """
 
     message = {
-        # TODO: We want to update `revision` to `1` but that would require some changes
-        # in the `pragma-node` repository - where we check the signature.
-        # See: https://github.com/astraly-labs/pragma-sdk/issues/151
-        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "0"},
+        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "1"},
         "primaryType": "Request",
         "message": {
             "action": "Publish",
             "entries": Entry.serialize_entries(entries),
         },
         "types": {
-            "StarkNetDomain": [
-                {"name": "name", "type": "felt"},
-                {"name": "version", "type": "felt"},
-                {"name": "chainId", "type": "felt"},
-                {"name": "revision", "type": "felt"},
+            "StarknetDomain": [
+                {"name": "name", "type": "shortstring"},
+                {"name": "version", "type": "shortstring"},
+                {"name": "chainId", "type": "shortstring"},
+                {"name": "revision", "type": "shortstring"},
             ],
             "Request": [
-                {"name": "action", "type": "felt"},
+                {"name": "action", "type": "shortstring"},
                 {"name": "entries", "type": "Entry*"},
             ],
             "Entry": [
                 {"name": "base", "type": "Base"},
-                {"name": "pair_id", "type": "felt"},
-                {"name": "price", "type": "felt"},
-                {"name": "volume", "type": "felt"},
+                {"name": "pair_id", "type": "shortstring"},
+                {"name": "price", "type": "u128"},
+                {"name": "volume", "type": "u128"},
             ],
             "Base": [
-                {"name": "publisher", "type": "felt"},
-                {"name": "source", "type": "felt"},
-                {"name": "timestamp", "type": "felt"},
+                {"name": "publisher", "type": "shortstring"},
+                {"name": "source", "type": "shortstring"},
+                {"name": "timestamp", "type": "timestamp"},
             ],
         },
     }
     if data_type == DataTypes.FUTURE:
         message["types"]["Entry"] += [  # type: ignore[index]
-            {"name": "expiration_timestamp", "type": "felt"},
+            {"name": "expiration_timestamp", "type": "timestamp"},
         ]
 
+    return TypedData.from_dict(message)
+
+
+def build_login_message(publisher_name: str, expiration_timestamp: int) -> TypedData:
+    """
+    Builds a typed data message to login to the Pragma API.
+
+    :param publisher_name: The account address to login
+    :return: The typed data message
+    """
+    message = {
+        "domain": {"name": "Pragma", "version": "1", "chainId": "1", "revision": "1"},
+        "primaryType": "Request",
+        "message": {
+            "publisher_name": publisher_name,
+            "expiration_timestamp": expiration_timestamp,
+        },
+        "types": {
+            "StarknetDomain": [
+                {"name": "name", "type": "shortstring"},
+                {"name": "version", "type": "shortstring"},
+                {"name": "chainId", "type": "shortstring"},
+                {"name": "revision", "type": "shortstring"},
+            ],
+            "Request": [
+                {"name": "publisher_name", "type": "shortstring"},
+                {"name": "expiration_timestamp", "type": "timestamp"},
+            ],
+        },
+    }
     return TypedData.from_dict(message)
 
 
@@ -77,6 +105,20 @@ class OffchainSigner:
         :return: Tuple containing the signature and the message hash
         """
         message = build_publish_message(entries, data_type)
+        hash_ = message.message_hash(self.signer.address)
+        sig = self.signer.sign_message(message, self.signer.address)
+        return sig, hash_
+
+    def sign_login_message(
+        self, publisher_name: str, expiration_timestamp: int
+    ) -> Tuple[List[int], int]:
+        """
+        Sign a login message
+
+        :param publisher_name: The publisher name to login
+        :return: Tuple containing the signature and the message hash
+        """
+        message = build_login_message(publisher_name, expiration_timestamp)
         hash_ = message.message_hash(self.signer.address)
         sig = self.signer.sign_message(message, self.signer.address)
         return sig, hash_

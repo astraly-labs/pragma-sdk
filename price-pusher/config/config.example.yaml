@@ -1,15 +1,8 @@
 - pairs:
     spot:
+      - XSTRK/USD
       - BTC/USD
-      - BTC/EUR
-      - WBTC/USD
-      - WBTC/BTC
-      - STETH/USD
-      - ETH/USD
       - WSTETH/USD
-      - STRK/USD
-      - USDC/USD
-      - USDT/USD
-      - DAI/USD
-  time_difference: 120
-  price_deviation: 0.0025
+      - ETH/USD
+  time_difference: 1
+  price_deviation: 0.025

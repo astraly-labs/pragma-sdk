@@ -8,13 +8,12 @@ build:
     python: "3.12"
   jobs:
     post_create_environment:
-      # Install poetry
-      # https://python-poetry.org/docs/#installing-manually
-      - python -m pip install poetry
+      # Install uv
+      # https://docs.astral.sh/uv/
+      - python -m pip install uv
     post_install:
       # Install only dependencies including docs
-      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-      - cd pragma-sdk && VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with docs && cd ..
+      - cd pragma-sdk && VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH uv sync --all-extras && cd ..
 
 sphinx:
   configuration: pragma-sdk/docs/source/conf.py

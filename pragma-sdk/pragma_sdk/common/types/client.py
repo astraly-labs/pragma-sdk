@@ -12,7 +12,7 @@ from pragma_sdk.onchain.types import PublishEntriesOnChainResult
 class PragmaClient(ABC):
     @abstractmethod
     async def publish_entries(
-        self, entries: List[Entry]
+        self, entries: List[Entry], publish_to_websocket: bool = False
     ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
         """
         Publish entries to some destination.

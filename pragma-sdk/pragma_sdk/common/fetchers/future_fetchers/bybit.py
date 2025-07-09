@@ -16,9 +16,7 @@ logger = get_pragma_sdk_logger()
 
 
 class ByBitFutureFetcher(FetcherInterfaceT):
-    BASE_URL: str = (
-        "https://api.bybit.com/derivatives/v3/public/tickers?category=linear&symbol="
-    )
+    BASE_URL: str = "https://api.bybit.com/v5/market/tickers?category=linear&symbol="
     SOURCE: str = "BYBIT"
 
     async def fetch_pair(

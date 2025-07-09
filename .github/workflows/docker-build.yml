@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         package:
-          [pragma-sdk, price-pusher, vrf-listener, checkpointer, merkle-maker]
+          [pragma-sdk, price-pusher, vrf-listener, checkpointer, lmax-connector]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,8 @@ jobs:
 
       - name: Extract package version
         run: |
-          export PACKAGE_VERSION=$(grep 'version = "' ./${{ matrix.package }}/pyproject.toml | grep -m 1 -e '[0-9][0-9a-zA-Z]*[-.a-z0-9]*' -o)
+          PKG_PATH=$(echo ${{ matrix.package }} | tr '-' '_')
+          export PACKAGE_VERSION=$(grep -o '".*"' ./${{ matrix.package }}/$PKG_PATH/__init__.py | tr -d '"')
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo $PACKAGE_VERSION
 

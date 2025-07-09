@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 
@@ -39,9 +40,8 @@ class OkxFutureFetcher(FetcherInterfaceT):
 
     async def fetch_pair(  # type: ignore[override]
         self, pair: Pair, session: ClientSession
-    ) -> PublisherFetchError | List[Entry]:
+    ) -> PublisherFetchError | FutureEntry:
         url = self.format_url(pair)
-        future_entries: List[Entry] = []
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from OKX")
@@ -58,32 +58,18 @@ class OkxFutureFetcher(FetcherInterfaceT):
                 or result["msg"] == "Instrument ID does not exist"
             ):
                 return PublisherFetchError(f"No data found for {pair} from OKX")
-            result_len = len(result["data"])
-            if result_len > 1:
-                for i in range(0, result_len):
-                    expiry_timestamp = await self.fetch_expiry_timestamp(
-                        pair, result["data"][i]["instId"], session
-                    )
-                    if not isinstance(expiry_timestamp, PublisherFetchError):
-                        future_entries.append(
-                            self._construct(pair, result["data"][i], expiry_timestamp)
-                        )
-            return future_entries
+            return self._construct(pair, result["data"][0], 0)
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        entries: List[Entry | PublisherFetchError | BaseException] = []
+        entries = []
         for pair in self.pairs:
-            future_entries = await self.fetch_pair(pair, session)
-            if isinstance(future_entries, list):
-                entries.extend(future_entries)
-            else:
-                entries.append(future_entries)
-        return entries
+            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
+        return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:
-        url = f"{self.BASE_URL}?instType=FUTURES&uly={pair.base_currency.id}-{pair.quote_currency.id}"
+        url = f"{self.BASE_URL}?instType=SWAP&uly={pair.base_currency.id}-{pair.quote_currency.id}"
         return url
 
     def _construct(self, pair: Pair, data: Any, expiry_timestamp: int) -> FutureEntry:

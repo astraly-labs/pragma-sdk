@@ -12,10 +12,13 @@ Here is step by step example:
 
 .. code-block:: python
 
-    from pragma_sdk.common.fetchers import FetcherClient
-    from pragma_sdk.common.fetchers.fetchers import BitstampFetcher, GateIOFetcher
+    import asyncio
+    from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
+    from pragma_sdk.common.fetchers.fetchers import BitstampFetcher
+    from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
     from pragma_sdk.common.types.pair import Pair
 
+    async def fetch_crypto_data():
     # 1. Create a list of pairs that you want to fetch
     pairs = [
         Pair.from_tickers("BTC","USD"),
@@ -24,7 +27,7 @@ Here is step by step example:
 
     # 2. Create your fetchers and add them to the FetcherClient
     bitstamp_fetcher = BitstampFetcher(pairs, "publisher_test")
-    gateio_fetcher = GateIOFetcher(pairs, "publisher_test")
+    gateio_fetcher = GateioFetcher(pairs, "publisher_test")
     fetchers = [
         bitstamp_fetcher,
         gateio_fetcher,
@@ -36,10 +39,18 @@ Here is step by step example:
     # 3. Fetch the data
     entries = await fc.fetch()
 
+    print(entries)
+
+    async def main():
+        await fetch_crypto_data()
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+
 .. hint::
 
     If you are experiencing issues with fetching, it's most likely due to the fetcher not being able to connect to the API.
-    Some fetchers do require ``api_key`` keyword argument in their constructor. 
+    Some fetchers do require ``api_key`` keyword argument in their constructor.
     Please refer to the fetcher's documentation for more information.
     Also if you want to fetch data synchronously, you can use the :meth:`fetch_sync` method.
 
@@ -57,7 +68,7 @@ Here is an example :
     from pragma_sdk.onchain.client import PragmaOnChainClient
     from pragma_sdk.common.types.pair import Pair
     from pragma_sdk.common.types.types import AggregationMode, DataTypes
-    from pragma_sdk.common.types.asset import Asset 
+    from pragma_sdk.common.types.asset import Asset
 
     # Create your client
     poc = PragmaOnChainClient(
@@ -66,7 +77,7 @@ Here is an example :
 
     # Get spot data
     data = await poc.get_spot(
-        'BTC/USD', 
+        'BTC/USD',
         AggregationMode.Median,
         ['FOURLEAF', 'MECX', 'FLOWDESK'],
         block_number=12345678 # defaults to latest
@@ -82,10 +93,10 @@ Here is an example :
 
 .. hint::
 
-    If you are interacting with contracts locally or on a custom network, you can specify a custom 
+    If you are interacting with contracts locally or on a custom network, you can specify a custom
     RPC url in the `network` parameter of the `PragmaOnChainClient` constructor.
     In that case make sure to specify the `chain_name`.
-    You can also specify addresses of contracts with the `account_contract_address` argument. 
+    You can also specify addresses of contracts with the `account_contract_address` argument.
 
 
 Interact with pragma off-chain
@@ -102,7 +113,7 @@ An API key is currently needed to interact with the off-chain API. You can get o
     from pragma_sdk.offchain.client import PragmaAPIClient
     from pragma_sdk.common.types.pair import Pair
     from pragma_sdk.common.types.types import AggregationMode, DataTypes
-    from pragma_sdk.common.types.asset import Asset 
+    from pragma_sdk.common.types.asset import Asset
 
     # Create your client
     pac = PragmaAPIClient(
@@ -111,8 +122,8 @@ An API key is currently needed to interact with the off-chain API. You can get o
     )
 
     # Get 1min OHLC data
-    entries = await poc.get_ohlc(
-        'BTC/USD', 
+    entries = await pac.get_ohlc(
+        'BTC/USD',
         None,
         Interval.ONE_MINUTE,
         AggregationMode.Median,

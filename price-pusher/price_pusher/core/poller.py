@@ -33,7 +33,8 @@ class PricePoller(IPricePoller):
         # If we're requesting some onchain fetchers, we allow for requests
         # retry in case of a small RPC down time etc...
         self._is_requesting_onchain = any(
-            getattr(getattr(fetcher, "client", None), "full_node_client", None) is not None
+            getattr(getattr(fetcher, "client", None), "full_node_client", None)
+            is not None
             for fetcher in self.fetcher_client.fetchers
         )
 
@@ -52,7 +53,9 @@ class PricePoller(IPricePoller):
         try:
             new_entries = await self._fetch_action()
             new_entries = self._filter_zeros_and_non_perp_from_entries(new_entries)
-            logger.info(f"🔄 POLLER: Successfully fetched {len(new_entries)} new entries!")
+            logger.info(
+                f"🔄 POLLER: Successfully fetched {len(new_entries)} new entries!"
+            )
             self.update_prices_callback(new_entries)
         except Exception as e:
             logger.error(f"🔄 POLLER: ⛔ error while fetching new prices: {e}")
@@ -65,18 +68,22 @@ class PricePoller(IPricePoller):
                 )
                 self.update_prices_callback(new_entries)
             except Exception as e:
-                raise ValueError(f"🔄 POLLERS: Retries for fetching new prices still failed: {e}")
+                raise ValueError(
+                    f"🔄 POLLERS: Retries for fetching new prices still failed: {e}"
+                )
 
     async def _fetch_action(self) -> None:
         """
         Call the fetcher client `fetch` function to try to retrieve all entries from fetchers.
         """
         new_entries = await self.fetcher_client.fetch(
-            filter_exceptions=True, return_exceptions=False, timeout_duration=20
+            filter_exceptions=True, return_exceptions=True, timeout_duration=10
         )
         return new_entries
 
-    def _filter_zeros_and_non_perp_from_entries(self, entries: List[Entry]) -> List[Entry]:
+    def _filter_zeros_and_non_perp_from_entries(
+        self, entries: List[Entry]
+    ) -> List[Entry]:
         """
         Some fetchers sometimes bug and return 0 as the price for an Entry.
         We use this function to filter them out.

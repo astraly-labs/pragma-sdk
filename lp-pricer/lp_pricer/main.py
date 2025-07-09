@@ -5,14 +5,19 @@ import logging
 from pydantic import HttpUrl
 from typing import Optional, List
 from starknet_py.contract import InvokeResult
+from starknet_py.net.client_errors import ClientError
+from requests.exceptions import RequestException
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.fetcher import LPFetcher
-from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.redis_manager import LpRedisManager
+from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.redis_manager import (
+    LpRedisManager,
+)
 from pragma_sdk.common.exceptions import PublisherFetchError
 
 from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
@@ -34,7 +39,9 @@ async def wait_for_txs_acceptance(invocations: List[InvokeResult]):
     """
     for invocation in invocations:
         nonce = invocation.invoke_transaction.nonce
-        logger.info(f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted...")
+        logger.info(
+            f"  ⏳ waiting for TX {hex(invocation.hash)} (nonce={nonce}) to be accepted..."
+        )
         await invocation.wait_for_acceptance(check_interval=1)
 
 
@@ -55,6 +62,10 @@ async def main(
         account_contract_address=publisher_address,
         account_private_key=private_key,
     )
+
+    # Setup RPC health monitoring
+    rpc_monitor = RPCHealthMonitor(pragma_client)
+    asyncio.create_task(rpc_monitor.monitor_rpc_health())
 
     # TODO(akhercha): Handle production mode
     # https://redis.io/docs/latest/develop/connect/clients/python/
@@ -90,6 +101,13 @@ async def main(
                 invokes = await pragma_client.publish_many(entries)  # type:ignore[arg-type]
                 await wait_for_txs_acceptance(invokes)
                 logger.info("✅ Published complete!")
+            except (ClientError, RequestException) as e:
+                logger.error(f"RPC error while publishing: {e}")
+                rpc_monitor.record_failure()
+                if await rpc_monitor.should_switch_rpc():
+                    if await rpc_monitor.switch_rpc():
+                        # Retry the publish operation with new RPC
+                        continue
             except Exception as e:
                 logger.error(e)
 
@@ -119,7 +137,7 @@ async def main(
     required=True,
     default="sepolia",
     type=click.Choice(
-        ["sepolia", "mainnet", "devnet", "pragma_devnet"],
+        ["sepolia", "mainnet", "devnet"],
         case_sensitive=False,
     ),
     help="On which networks the checkpoints will be set.",

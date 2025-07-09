@@ -15,9 +15,7 @@ logger = get_pragma_sdk_logger()
 
 
 class DefillamaFetcher(FetcherInterfaceT):
-    BASE_URL: str = (
-        "https://coins.llama.fi/prices/current/coingecko:{pair_id}" "?searchWidth=15m"
-    )
+    BASE_URL: str = "https://coins.llama.fi/prices/current/coingecko:{pair_id}"
     SOURCE: str = "DEFILLAMA"
 
     async def fetch_pair(
@@ -28,7 +26,7 @@ class DefillamaFetcher(FetcherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair.base_currency.id}"
             )
-        if pair.quote_currency.id != "USD":
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return await self.operate_usd_hop(pair, session)
 
         url = self.format_url(pair)

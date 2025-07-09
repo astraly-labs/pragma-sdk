@@ -3,7 +3,7 @@
 
 ## Usage
 
-The price-pusher service is ran through the ClI, to have more information you can use the `--help` command:
+The price-pusher service is run through the ClI, to have more information you can use the `--help` command:
 
 ```bash
 .venv ❯ python price_pusher/main.py --help
@@ -20,7 +20,7 @@ Options:
                                   Where the prices will be published.
                                   [required]
 
-  -n, --network [sepolia|mainnet|devnet|pragma_devnet]
+  -n, --network [sepolia|mainnet|devnet]
                                   At which network the price corresponds.
                                   [required]
 
@@ -42,7 +42,7 @@ Options:
 For example, if you wish to run the `price-pusher` for our offchain API, that would be:
 
 ```sh
-poetry run price_pusher -c ./config/config.example.yaml --log-level DEBUG -t offchain -n mainnet -p plain:$PUBLISHER_PV_KEY --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS --api-key $PRAGMA_OFFCHAIN_API_KEY --api-base-url http://localhost:3000
+uv run price_pusher -c ./config/config.example.yaml --log-level DEBUG -t offchain -n mainnet -p plain:$PUBLISHER_PV_KEY --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS --api-key $PRAGMA_OFFCHAIN_API_KEY --api-base-url http://localhost:3000
 ```
 
 ## Architecture

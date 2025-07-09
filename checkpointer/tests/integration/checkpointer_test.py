@@ -12,7 +12,11 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_utils.logger import setup_logging
 
 from checkpointer.main import main
-from checkpointer.configs.pairs_config import SpotPairConfig, FuturePairConfig, PairsConfig
+from checkpointer.configs.pairs_config import (
+    SpotPairConfig,
+    FuturePairConfig,
+    PairsConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +122,9 @@ async def test_checkpointer_future(
     # Register publisher
     tx = await pragma_client.add_publisher(PUBLISHER_NAME, caller_address)
     await tx.wait_for_acceptance()
-    tx = await pragma_client.add_sources_for_publisher(PUBLISHER_NAME, ["BINANCE", "BYBIT"])
+    tx = await pragma_client.add_sources_for_publisher(
+        PUBLISHER_NAME, ["BINANCE", "BYBIT"]
+    )
     await tx.wait_for_acceptance()
 
     # Publish entries with different expiry to BTC/USD

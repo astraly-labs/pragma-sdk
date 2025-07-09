@@ -22,16 +22,81 @@ For more information, see the [project's repository](https://github.com/Astraly-
 ## Repository Structure
 
 Our main SDK:
+
 - <a href="./pragma-sdk">Python SDK</a>
 
 Our utility library:
+
 - <a href="./pragma-utils">Pragma utils</a>
 
 Our services used to publish data etc...:
+
 - <a href="./price-pusher">Price Pusher</a>
 - <a href="./vrf-listener">VRF Listener</a>
 - <a href="./checkpointer">Checkpointer</a>
-- <a href="./merkle-maker">Merkle Maker</a>
+
+## Local Development
+
+### Resyncing
+
+When developing locally and making changes to the main `pragma-sdk` package make sure to apply your changes by running `uv sync --reinstall`.
+
+### Linters
+
+1. Install `pre-commit` with `pip install pre-commit`
+2. `git add` the files you want to fix lint
+3. `pre-commit run --all-files`
+4. `git add` them again
+
+## Releasing a new version
+
+We provide a version management script to help maintain consistent versioning across all packages.
+
+### Installation
+
+1. Make the script executable:
+
+```bash
+chmod +x scripts/version.sh
+```
+
+### Usage
+
+Run the version checker:
+
+```bash
+bash scripts/version.sh
+```
+
+The script will:
+
+- Fetch the latest version from PyPI
+- Check all local package versions
+- Display the current version status
+
+- Offer options to:
+
+```bash
+Bump the major version (x.y.z → x+1.0.0)
+Bump the minor version (x.y.z → x.y+1.0)
+Bump the patch version (x.y.z → x.y.z+1)
+```
+
+The script will automatically update all `__init__.py` files in the following packages:
+
+```sh
+.
+    └── pragma-sdk
+        ├── pragma-sdk
+        ├── pragma-utils
+        ├── price-pusher
+        ├── vrf-listener
+        ├── checkpointer
+        ├── lmax-connector
+        └── lp-pricer
+```
+
+> **Note**: Make sure to commit and push the version changes after running the script.
 
 ## Contributing
 

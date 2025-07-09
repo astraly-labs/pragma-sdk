@@ -10,7 +10,7 @@ from pragma_sdk.common.types.pair import Pair
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
-from price_pusher.types import LatestOrchestratorPairPrices
+from price_pusher.price_types import LatestOrchestratorPairPrices
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,10 @@ class Orchestrator:
     """
 
     poller: PricePoller
+    # Time between poller refresh. Defaults to 5 seconds.
+    # Make sure it's high enough - else we might get rate limited by public APIs.
+    poller_refresh_interval: int
+
     listeners: List[PriceListener]
     pusher: PricePusher
     # Contains the latest spot/future prices for each sources
@@ -32,11 +36,14 @@ class Orchestrator:
         poller: PricePoller,
         listeners: List[PriceListener],
         pusher: PricePusher,
+        poller_refresh_interval: int = 5,
     ) -> None:
-        # Init class properties.
         self.poller = poller
         self.listeners = listeners
         self.pusher = pusher
+
+        # Time between poller refresh
+        self.poller_refresh_interval = poller_refresh_interval
 
         # Contains the latest prices for each sources
         self.latest_prices: LatestOrchestratorPairPrices = {}
@@ -73,8 +80,8 @@ class Orchestrator:
         """
         while True:
             await self.poller.poll_prices()
-            # Wait 5 seconds before requerying public APIs (rate limits).
-            await asyncio.sleep(5)
+            # Wait some time before requerying public APIs (rate limits).
+            await asyncio.sleep(self.poller_refresh_interval)
 
     async def _listener_services(self) -> None:
         """
@@ -119,7 +126,9 @@ class Orchestrator:
             await self.pusher.update_price_feeds(entries_to_push)
             self.push_queue.task_done()
 
-    def _flush_entries_for_assets(self, pairs_per_type: Dict[DataTypes, List[Pair]]) -> List[Entry]:
+    def _flush_entries_for_assets(
+        self, pairs_per_type: Dict[DataTypes, List[Pair]]
+    ) -> List[Entry]:
         """
         Retrieves the prices for the assets that needs to be pushed & remove them from
         the latest_prices dict.
@@ -148,7 +157,11 @@ class Orchestrator:
                         all_entries = []
                         for source in self.latest_prices[pair_id][data_type]:
                             all_entries.extend(
-                                list(self.latest_prices[pair_id][data_type][source].values())
+                                list(
+                                    self.latest_prices[pair_id][data_type][
+                                        source
+                                    ].values()
+                                )
                             )
                         entries_to_push.extend(all_entries)
 

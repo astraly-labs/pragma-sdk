@@ -6,7 +6,7 @@ def pytest_addoption(parser):
         "--net",
         action="store",
         default="devnet",
-        help="Network to run tests on, one of: " "`mainnet`, `sepolia`, `devnet`",
+        help="Network to run tests on, one of: `mainnet`, `sepolia`, `devnet`",
     )
 
 

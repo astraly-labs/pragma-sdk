@@ -6,7 +6,7 @@ on:
   workflow_call:
 
 env:
-  PYTHON_VERSION: 3.12.4
+  PYTHON_VERSION: 3.12
 
 jobs:
   tests:
@@ -21,32 +21,27 @@ jobs:
             price-pusher,
             vrf-listener,
             checkpointer,
-            merkle-maker,
             lp-pricer,
           ]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: "true"
-      - uses: CfirTsabari/actions-pipx@v1
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
+          enable-cache: true
       - name: Install dependencies
         run: |
           cd ${{ matrix.package }}
-          poetry install
+          uv sync --python ${{ env.PYTHON_VERSION }} --all-extras
 
       - name: Cache contracts
         id: cache-contracts
         uses: actions/cache@v3
         with:
           path: ./pragma-oracle/pragma-oracle/target
-          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/pragma-oracle/src', 'poetry.lock') }}
+          key: ${{ runner.os }}-contracts-${{ hashFiles('./pragma-oracle/pragma-oracle/src') }}
 
       - uses: software-mansion/setup-scarb@v1
         with:
@@ -66,7 +61,7 @@ jobs:
             # Extract the relative path of the file for comparison
             rel_path=${file#./pragma-oracle/pragma-oracle/target/dev}
             # Use diff to compare the file with its counterpart in the SDK directory
-            diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1) 
+            diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1)
           done
       - name: Install rust
         run: |
@@ -87,19 +82,19 @@ jobs:
           # See: https://github.com/astraly-labs/pragma-sdk/issues/153
           cd ${{ matrix.package }}
           if [ "${{ matrix.package }}" = "pragma-sdk" ]; then
-            poetry run poe test_client
-            poetry run poe test_vrf
-            poetry run poe test_fetchers
-            poetry run poe test_merkle_feed
-            poetry run poe test_unit
-            poetry run poe test_update_client
+            uv run poe test_client
+            uv run poe test_vrf
+            uv run poe test_fetchers
+            uv run poe test_merkle_feed
+            uv run poe test_unit
+            uv run poe test_update_client
           else
-            poetry run poe test
+            uv run poe test
           fi
       - name: Generate coverage in XML
         run: |
           cd ${{ matrix.package }}
-          poetry run coverage xml
+          uv run coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         env:

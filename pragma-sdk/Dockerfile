@@ -1,23 +1,21 @@
-# Dockerfile for publisher
 FROM python:3.12-slim-bullseye AS base
 
-# Needed for fastecdsa
-RUN apt-get update && apt-get install -y gcc python-dev libgmp3-dev curl && apt-get clean
-RUN python -m pip install --upgrade pip
+# Install dependencies and uv
+RUN apt-get update && \
+    apt-get install -y gcc python-dev libgmp3-dev curl && \
+    apt-get clean && \
+    python -m pip install --upgrade pip && \
+    curl -LsSf https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh | sh && \
+    echo 'export PATH="/root/.local/bin:$PATH"' >> ~/.bashrc && \
+    . ~/.bashrc
 
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="${PATH}:/root/.local/bin"
-
-# Defaults
 WORKDIR /app/
+
 COPY ./pragma-sdk /app/
-RUN poetry install
+RUN /root/.local/bin/uv sync --all-extras
 
-FROM base as test
-# If you have additional test dependencies, install them here.
-# Else, you can omit this stage or perform your tests.
+FROM base AS test
 
-FROM base as production
+FROM base AS production
 ARG PRAGMA_PACKAGE_VERSION
 RUN pip install pragma-sdk==$PRAGMA_PACKAGE_VERSION --no-cache-dir --use-deprecated=legacy-resolver

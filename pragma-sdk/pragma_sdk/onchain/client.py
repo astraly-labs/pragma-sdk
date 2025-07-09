@@ -218,3 +218,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :return: List of InvokeResult objects
         """
         return await self.publish_many(entries)
+
+    def _create_full_node_client(self, rpc_url: str) -> FullNodeClient:
+        """Create a new full node client with the given RPC URL."""
+        return FullNodeClient(node_url=rpc_url)

@@ -5,7 +5,6 @@ from pragma_sdk.common.fetchers.fetchers import (
     CoinbaseFetcher,
     OkxFetcher,
     EkuboFetcher,
-    PropellerFetcher,
     GeckoTerminalFetcher,
     DexscreenerFetcher,
 )
@@ -121,18 +120,6 @@ INDEX_FETCHER_CONFIGS = {
             PUBLISHER_NAME,
         ),
     },
-    "PropellerFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "propeller.json",
-        "fetcher_class": PropellerFetcher,
-        "name": "PROPELLER",
-        "expected_result": SpotEntry(
-            "INDEXNAME1",
-            int(4891252302700 * 0.5 + 0.5 * 262209039700),
-            12345,
-            "PROPELLER",
-            PUBLISHER_NAME,
-        ),
-    },
 }
 
 FUTURE_FETCHER_CONFIGS = {
@@ -165,68 +152,24 @@ FUTURE_FETCHER_CONFIGS = {
         "mock_file": MOCK_DIR / "responses" / "okx_future" / "ticker.json",
         "fetcher_class": OkxFutureFetcher,
         "name": "OKX",
-        "other_mock_fns": [
-            {
-                "format_expiry_timestamp_url": {
-                    "kwargs": {
-                        "BTC": {"instrument_id": "BTC-USD-230922"},
-                        "ETH": {"instrument_id": "ETH-USD-230922"},
-                    },
-                    "mock_file": MOCK_DIR
-                    / "responses"
-                    / "okx_future"
-                    / "timestamp_230922.json",
-                }
-            },
-            {
-                "format_expiry_timestamp_url": {
-                    "kwargs": {
-                        "BTC": {"instrument_id": "BTC-USD-230929"},
-                        "ETH": {"instrument_id": "ETH-USD-230929"},
-                    },
-                    "mock_file": MOCK_DIR
-                    / "responses"
-                    / "okx_future"
-                    / "timestamp_230929.json",
-                }
-            },
-        ],
         "expected_result": [
             FutureEntry(
                 pair_id="BTC/USD",
-                price=2664490000000,
+                price=2640240000000,
                 timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
-                volume=274,
-                expiry_timestamp=1695369600000,
-            ),
-            FutureEntry(
-                pair_id="BTC/USD",
-                price=2666120000000,
-                timestamp=12345,
-                source="OKX",
-                publisher=PUBLISHER_NAME,
-                volume=1020,
-                expiry_timestamp=1695974400000,
+                volume=18382.3898,
+                expiry_timestamp=0,
             ),
             FutureEntry(
                 pair_id="ETH/USD",
-                price=159390000000,
+                price=167372000000,
                 timestamp=12345,
                 source="OKX",
                 publisher=PUBLISHER_NAME,
-                volume=2276,
-                expiry_timestamp=1695369600000,
-            ),
-            FutureEntry(
-                pair_id="ETH/USD",
-                price=159092000000,
-                timestamp=12345,
-                source="OKX",
-                publisher=PUBLISHER_NAME,
-                volume=6178,
-                expiry_timestamp=1695974400000,
+                volume=185341.3646,
+                expiry_timestamp=0,
             ),
         ],
     },

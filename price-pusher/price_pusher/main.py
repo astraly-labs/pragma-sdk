@@ -26,7 +26,7 @@ from price_pusher.configs.price_config import (
     PriceConfig,
 )
 from price_pusher.orchestrator import Orchestrator
-from price_pusher.types import Target, Network
+from price_pusher.price_types import Target, Network
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,10 @@ async def main(
     private_key: PrivateKey,
     publisher_name: str,
     publisher_address: str,
+    poller_refresh_interval: int,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
+    websocket_url: Optional[str] = None,
     api_key: Optional[str] = None,
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
@@ -57,6 +59,7 @@ async def main(
         private_key=private_key,
         rpc_url=rpc_url,
         api_base_url=api_base_url,
+        websocket_url=websocket_url,
         api_key=api_key,
         max_fee=max_fee,
         pagination=pagination,
@@ -75,6 +78,7 @@ async def main(
     pusher = PricePusher(client=pragma_client)
     orchestrator = Orchestrator(
         poller=poller,
+        poller_refresh_interval=poller_refresh_interval,
         listeners=_create_listeners(price_configs, target, pragma_client),
         pusher=pusher,
     )
@@ -110,6 +114,7 @@ def _create_client(
     private_key: PrivateKey,
     rpc_url: Optional[str] = None,
     api_base_url: Optional[str] = None,
+    websocket_url: Optional[str] = None,
     api_key: Optional[str] = None,
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
@@ -131,7 +136,9 @@ def _create_client(
     """
     if target == "onchain":
         execution_config = ExecutionConfig(
-            pagination=pagination if pagination is not None else ExecutionConfig.pagination,
+            pagination=pagination
+            if pagination is not None
+            else ExecutionConfig.pagination,
             max_fee=max_fee if max_fee is not None else ExecutionConfig.max_fee,
             enable_strk_fees=enable_strk_fees
             if enable_strk_fees is not None
@@ -147,14 +154,19 @@ def _create_client(
         )
     elif target == "offchain":
         if not api_key:
-            raise click.BadParameter("Argument api-key can't be None if offchain is selected")
+            raise click.BadParameter(
+                "Argument api-key can't be None if offchain is selected"
+            )
         if not api_base_url:
-            raise click.BadParameter("Argument api-base-url can't be None if offchain is selected")
+            raise click.BadParameter(
+                "Argument api-base-url can't be None if offchain is selected"
+            )
         return PragmaAPIClient(
             account_contract_address=publisher_address,
             account_private_key=private_key,
             api_key=api_key,
             api_base_url=api_base_url,
+            websocket_url=websocket_url,
         )
     else:
         raise ValueError(f"Invalid target: {target}")
@@ -171,7 +183,9 @@ def _create_client(
 @click.option(
     "--log-level",
     default="INFO",
-    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False),
+    type=click.Choice(
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], case_sensitive=False
+    ),
     help="Logging level.",
 )
 @click.option(
@@ -185,7 +199,7 @@ def _create_client(
     "-n",
     "--network",
     required=True,
-    type=click.Choice(["sepolia", "mainnet", "pragma_devnet"], case_sensitive=False),
+    type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
     help="At which network the price corresponds.",
 )
 @click.option(
@@ -220,7 +234,15 @@ def _create_client(
     required=True,
     help="Your publisher address.",
 )
-@click.option("--api-base-url", type=click.STRING, required=False, help="Pragma API base URL")
+@click.option(
+    "--api-base-url", type=click.STRING, required=False, help="Pragma API base URL"
+)
+@click.option(
+    "--websocket-url",
+    type=click.STRING,
+    required=False,
+    help="Pragma WebSocket URL used to publish offchain",
+)
 @click.option(
     "--api-key",
     type=click.STRING,
@@ -243,7 +265,14 @@ def _create_client(
     "--enable-strk-fees",
     type=click.BOOL,
     required=False,
-    help="enable_strk_fees option for the onchain client",
+    help="Pay fees using STRK for on chain queries.",
+)
+@click.option(
+    "--poller-refresh-interval",
+    type=click.IntRange(min=5),
+    required=False,
+    default=5,
+    help="Interval in seconds between poller refreshes. Default to 5 seconds.",
 )
 def cli_entrypoint(
     config_file: str,
@@ -255,10 +284,12 @@ def cli_entrypoint(
     publisher_name: str,
     publisher_address: str,
     api_base_url: Optional[str],
+    websocket_url: Optional[str],
     api_key: Optional[str],
     max_fee: Optional[int],
     pagination: Optional[int],
     enable_strk_fees: Optional[bool],
+    poller_refresh_interval: int,
 ) -> None:
     if target == "offchain":
         if not api_key or not api_base_url:
@@ -281,10 +312,15 @@ def cli_entrypoint(
             logger.warning(
                 '🤔 "enable_strk_fees" option has no use when the target is "offchain". Ignoring it.'
             )
-
-    if target == "onchain":
+    else:  # target == "onchain"
+        if websocket_url:
+            logger.warning(
+                '🤔 "websocket-url" option has no use when the target is "onchain". Ignoring it.'
+            )
         if rpc_url and not rpc_url.startswith("http"):
-            raise click.UsageError('⛔ "rpc_url" format is incorrect. It must start with http(...)')
+            raise click.UsageError(
+                '⛔ "rpc_url" format is incorrect. It must start with http(...)'
+            )
 
     # Update the logger level of the pragma_sdk package
     sdk_logger = get_pragma_sdk_logger()
@@ -307,11 +343,13 @@ def cli_entrypoint(
             publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
             api_base_url=api_base_url,
+            websocket_url=websocket_url,
             api_key=api_key,
             rpc_url=rpc_url,
             max_fee=max_fee,
             pagination=pagination,
             enable_strk_fees=enable_strk_fees,
+            poller_refresh_interval=poller_refresh_interval,
         )
     )
 

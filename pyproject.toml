@@ -1,61 +1,27 @@
-[tool.poetry]
+[project]
 name = "pragma-monorepo"
 version = "2.3.0"
 description = "Monorepo container"
 license = "MIT"
-authors = ["0xevolve <matthias@pragma.build>"]
-readme = "README.md"
-include = ["VERSION", "README.md"]
-package-mode = false
-
-[build-system]
-requires = ["poetry_core>=1.8.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "2.3.0"
-tag_format = "v$version"
-version_files = [
-  "VERSION",
-  "pyproject.toml:^version",
-  "pragma-sdk/VERSION",
-  "pragma-sdk/pyproject.toml:^version",
-  "pragma-sdk/pragma_sdk/__init__.py:^__version",
-  "pragma-utils/VERSION",
-  "pragma-utils/pyproject.toml:^version",
-  "pragma-utils/pragma_utils/__init__.py:^__version",
-  "price-pusher/VERSION",
-  "price-pusher/pyproject.toml:^version",
-  "price-pusher/price_pusher/__init__.py:^__version",
-  "vrf-listener/VERSION",
-  "vrf-listener/pyproject.toml:^version",
-  "vrf-listener/vrf_listener/__init__.py:^__version",
-  "checkpointer/VERSION",
-  "checkpointer/pyproject.toml:^version",
-  "checkpointer/checkpointer/__init__.py:^__version",
-  "merkle-maker/VERSION",
-  "merkle-maker/pyproject.toml:^version",
-  "merkle-maker/merkle_maker/__init__.py:^__version",
-  "lp-pricer/pyproject.toml:^version",
-  "lp-pricer/merkle_maker/__init__.py:^__version",
+authors = [
+  {name = "0xevolve", email = "matthias@pragma.build"}
 ]
-update_changelog_on_bump = true
-changelog_incremental = true
-bump_message = "bump: $current_version → $new_version"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
 
+
+[tool.uv]
+dev-dependencies = [
+    "poethepoet >=0.21.1",
+    "ruff >=0.4",
+    "dunamai >= 1.7.0",
+    "commitizen >=2.20.3",
+    "pre-commit >=4.0.0"
+]
+package = false
 
 [tool.poe.tasks]
-update_abis = "find ./pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.13"
-
-[tool.poetry.dev-dependencies]
-poethepoet = "^0.21.1"
-ruff = "^0.4"
-dunamai = "^1.7.0"
-commitizen = "^2.20.3"
+update_abis = "find ./pragma-oracle/pragma-oracle -name '*.sierra.json' -exec cp -prv '{}' './pragma-sdk/pragma_sdk/onchain/abis' ';'"
 
 [tool.ruff]
 exclude = [
