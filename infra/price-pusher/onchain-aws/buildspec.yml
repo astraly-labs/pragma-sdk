@@ -13,7 +13,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - ls -ltr
-      - docker build -f infra/price-pusher/onchain/Dockerfile -t $REPOSITORY_URI:latest .
+      - docker build -f infra/price-pusher/onchain-aws/Dockerfile -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
