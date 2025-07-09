@@ -26,5 +26,5 @@ phases:
 artifacts:
   files:
     - imagedefinitions.json
-    - infra/price-pusher/onchain/config.yml
+    - infra/price-pusher/onchain-aws/config.yml
   discard-paths: yes
