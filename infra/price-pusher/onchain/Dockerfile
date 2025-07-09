@@ -27,7 +27,7 @@ RUN uv sync --all-extras
 FROM base as final
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
-COPY infra/price-pusher/onchain-aws/entrypoint.sh /opt/price-pusher/
+COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
 
 EXPOSE 8082
 

@@ -34,6 +34,6 @@ FROM base as final
 COPY --from=builder /usr/bin/infisical /usr/bin/infisical
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
-COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
+COPY infra/price-pusher/onchain-aws/entrypoint.sh /opt/price-pusher/
 WORKDIR /opt/price-pusher
 ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]
