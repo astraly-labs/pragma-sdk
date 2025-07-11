@@ -54,7 +54,7 @@ async def declare_deploy_randomness(
         "pragma_MockOracle.casm.json", directory=None
     )
     # Declare Randomness
-    declare_result = await Contract.declare_v2(
+    declare_result = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract,
         compiled_contract_casm=compiled_contract_casm,
@@ -63,7 +63,7 @@ async def declare_deploy_randomness(
     await declare_result.wait_for_acceptance()
 
     # Declare Randomness Example
-    declare_example_result = await Contract.declare_v2(
+    declare_example_result = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_example_contract,
         compiled_contract_casm=compiled_example_contract_casm,
@@ -72,7 +72,7 @@ async def declare_deploy_randomness(
     await declare_example_result.wait_for_acceptance()
 
     # Declare Mock Oracle
-    declare_mock_oracle_result = await Contract.declare_v2(
+    declare_mock_oracle_result = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_oracle_mock_contract,
         compiled_contract_casm=compiled_oracle_mock_contract_casm,

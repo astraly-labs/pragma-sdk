@@ -57,7 +57,7 @@ async def _deploy_everything(
         compiled_oracle_mock_contract_casm = read_contract(
             "pragma_MockOracle.casm.json", directory=None
         )
-        declare_mock_oracle_result = await Contract.declare_v2(
+        declare_mock_oracle_result = await Contract.declare_v3(
             account=deployer,
             compiled_contract=compiled_oracle_mock_contract,
             compiled_contract_casm=compiled_oracle_mock_contract_casm,
@@ -81,7 +81,7 @@ async def _deploy_everything(
         compiled_contract_casm = read_contract(
             "pragma_Randomness.casm.json", directory=None
         )
-        declare_result = await Contract.declare_v2(
+        declare_result = await Contract.declare_v3(
             account=deployer,
             compiled_contract=compiled_contract,
             compiled_contract_casm=compiled_contract_casm,
@@ -122,7 +122,7 @@ async def _deploy_everything(
         compiled_example_contract_casm = read_contract(
             "pragma_ExampleRandomness.casm.json", directory=None
         )
-        declare_example_result = await Contract.declare_v2(
+        declare_example_result = await Contract.declare_v3(
             account=deployer,
             compiled_contract=compiled_example_contract,
             compiled_contract_casm=compiled_example_contract_casm,

@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "starknet.py==0.25.0",
+    "starknet.py==0.27.0",
     "typer==0.6.1",
     "deprecated>=1.2.14",
     "aioresponses>=0.7.4",

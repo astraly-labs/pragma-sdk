@@ -45,7 +45,7 @@ async def declare_oracle(forked_client: PragmaOnChainClient) -> DeclareResult:
             "pragma_Oracle.casm.json", directory=None
         )
         # Declare Oracle
-        declare_result = await Contract.declare_v2(
+        declare_result = await Contract.declare_v3(
             account=forked_client.account,
             compiled_contract=compiled_contract,
             compiled_contract_casm=compiled_contract_casm,
