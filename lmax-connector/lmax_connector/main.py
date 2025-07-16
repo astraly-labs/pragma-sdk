@@ -7,7 +7,14 @@ from dotenv import load_dotenv
 import requests
 
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
+from pragma_sdk.common.types.entry import (
+    InstrumentType,
+    OrderbookData,
+    OrderbookEntry,
+    OrderbookUpdateType,
+    SpotEntry,
+    FutureEntry,
+)
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
@@ -180,7 +187,7 @@ class LmaxFixApplication(fix.Application):
         security_id = security_id.getValue()
         logger.debug(f"Processing market data for security ID {security_id}")
 
-        bid = ask = None
+        bids = asks = []
         noMDEntries = fix.NoMDEntries()
         message.getField(noMDEntries)
 
@@ -195,21 +202,28 @@ class LmaxFixApplication(fix.Application):
             mdEntryPx = fix.MDEntryPx()
             group.getField(mdEntryPx)
 
+            mdEntrySize = fix.MDEntrySize()
+            group.getField(mdEntrySize)
+
             if mdEntryType.getValue() == fix.MDEntryType_BID:
                 bid = float(mdEntryPx.getValue())
+                bid_size = float(mdEntrySize.getValue())
+                bids.append((bid, bid_size))
                 logger.debug(f"Got bid: {bid}")
             elif mdEntryType.getValue() == fix.MDEntryType_OFFER:
                 ask = float(mdEntryPx.getValue())
+                ask_size = float(mdEntrySize.getValue())
+                asks.append((ask, ask_size))
                 logger.debug(f"Got ask: {ask}")
 
-        if bid is not None and ask is not None:
+        if bids and asks:
             if symbol := SECURITY_ID_TO_SYMBOL.get(security_id):
                 self.latest_market_data[symbol] = {
-                    "bid": bid,
-                    "ask": ask,
+                    "bids": bids,
+                    "asks": asks,
                     "timestamp": int(time.time()),
                 }
-                logger.info(f"Updated {symbol} price - Bid: {bid}, Ask: {ask}")
+                logger.info(f"Updated {symbol} price - Bid: {bids}, Ask: {asks}")
                 if symbol in self.market_data_ready:
                     self.market_data_ready[symbol].set()
             else:
@@ -313,8 +327,8 @@ HeartBtInt=30"""
 
                 price = float(stats)
                 price_data = {
-                    "bid": price,
-                    "ask": price,
+                    "bids": [price],
+                    "asks": [price],
                     "timestamp": int(time.time()),
                 }
                 self.last_known_prices[symbol] = price_data.copy()
@@ -369,7 +383,7 @@ HeartBtInt=30"""
             # Required fields for market data request in ascending tag order
             message.setField(fix.MDReqID("1"))  # Tag 262
             message.setField(fix.SubscriptionRequestType("1"))  # Tag 263
-            message.setField(fix.MarketDepth(1))  # Tag 264
+            message.setField(fix.MarketDepth(20))  # Tag 264
             message.setField(fix.NoMDEntryTypes(2))  # Tag 267
 
             # Add entry types group (267)
@@ -603,15 +617,29 @@ HeartBtInt=30"""
                     if market_data := self.application.latest_market_data.get(
                         symbol
                     ) or self.last_known_prices.get(symbol):
-                        bid, ask = market_data["bid"], market_data["ask"]
-                        price = (bid + ask) / 2.0
+                        bids = market_data["bids"]
+                        asks = market_data["asks"]
+                        mid_price = bids[0] if bids else asks[0]
                         timestamp = int(
                             time.time()
                         )  # Use current timestamp for last known prices
-                        price_int = int(price * 10**18)
+                        price_int = int(mid_price * 10**18)
                         pair_id = pair_obj.id
 
-                        entry = SpotEntry(
+                        ob_entry = OrderbookEntry(
+                            source="LMAX",
+                            instrument_type=InstrumentType.SPOT,
+                            pair=pair_obj,
+                            type=OrderbookUpdateType.UPDATE,
+                            data=OrderbookData(
+                                update_id=timestamp,
+                                bids=bids,
+                                asks=asks,
+                            ),
+                            timestamp_ms=timestamp,
+                        )
+
+                        spot_entry = SpotEntry(
                             pair_id=pair_id,
                             price=price_int,
                             timestamp=timestamp,
@@ -621,13 +649,20 @@ HeartBtInt=30"""
                         )
 
                         try:
-                            # Send the entry to Kafka via Faucon
-                            partition, offset = await self.faucon_producer.send(entry)
-                            logger.info(
-                                f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Kafka"
+                            # Send the orderbook entry to Kafka via Faucon
+                            partition, offset = await self.faucon_producer.send(
+                                ob_entry
                             )
-                            logger.info(f"  Topic: {entry.to_faucon_topic()}")
-                            logger.info(f"  Key: {entry.to_faucon_key()}")
+                            # We also send the spot entry to Kafka
+                            partition, offset = await self.faucon_producer.send(
+                                spot_entry
+                            )
+
+                            logger.info(
+                                f"Successfully pushed {symbol} pair_id {pair_id} price {ob_entry.price} to Kafka"
+                            )
+                            logger.info(f"  Topic: {ob_entry.to_faucon_topic()}")
+                            logger.info(f"  Key: {ob_entry.to_faucon_key()}")
                             # logger.info(f"  Partition: {partition}")
                             # logger.info(f"  Offset: {offset}")
                         except Exception as e:
@@ -689,12 +724,12 @@ async def main():
     # You can specify either as string IDs or create Pair objects
     requested_pairs = [
         "EUR/USD",
-        "XAU/USD",
-        "SPX500m",
-        "XBR/USD",
-        "TECH100m",
-        "USD/JPY",
-        "XAG/USD",
+        # "XAU/USD",
+        # "SPX500m",
+        # "XBR/USD",
+        # "TECH100m",
+        # "USD/JPY",
+        # "XAG/USD",
     ]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
