@@ -113,6 +113,8 @@ class LmaxFixApplication(fix.Application):
                 logger.info("Received Logon message")
             elif msgType.getValue() == fix.MsgType_Heartbeat:
                 logger.debug("Received Heartbeat")
+            elif msgType.getValue() == fix.MsgType_TestRequest:
+                logger.info("Received Test Request - QuickFIX should auto-respond")
         except Exception as e:
             logger.error(
                 f"Error processing admin message: {str(e)}, Message: {message.toString()}"
@@ -182,16 +184,23 @@ class LmaxFixApplication(fix.Application):
         logger.info(f"Sending application message: {message.toString()}")
 
     def _handle_market_data(self, message):
+        # Log the raw FIX message to debug the market depth issue
+        logger.info(f"Raw market data message: {message.toString()}")
+
         security_id = fix.SecurityID()
         message.getField(security_id)
         security_id = security_id.getValue()
         logger.debug(f"Processing market data for security ID {security_id}")
 
-        bids = asks = []
+        bids = []
+        asks = []
         noMDEntries = fix.NoMDEntries()
         message.getField(noMDEntries)
 
-        for i in range(noMDEntries.getValue()):
+        num_entries = noMDEntries.getValue()
+        logger.info(f"Number of entries: {num_entries}")
+
+        for i in range(num_entries):
             # NoMDEntries is 268, MDEntryType is 269
             group = fix.Group(268, 269)
             message.getGroup(i + 1, group)
@@ -383,7 +392,7 @@ HeartBtInt=30"""
             # Required fields for market data request in ascending tag order
             message.setField(fix.MDReqID("1"))  # Tag 262
             message.setField(fix.SubscriptionRequestType("1"))  # Tag 263
-            message.setField(fix.MarketDepth(20))  # Tag 264
+            message.setField(fix.MarketDepth(10))  # Tag 264
             message.setField(fix.NoMDEntryTypes(2))  # Tag 267
 
             # Add entry types group (267)
@@ -619,7 +628,19 @@ HeartBtInt=30"""
                     ) or self.last_known_prices.get(symbol):
                         bids = market_data["bids"]
                         asks = market_data["asks"]
-                        mid_price = bids[0] if bids else asks[0]
+                        # Calculate mid price from best bid and ask
+                        if bids and asks:
+                            best_bid = bids[0][0]  # Get price from (price, size) tuple
+                            best_ask = asks[0][0]  # Get price from (price, size) tuple
+                            mid_price = (best_bid + best_ask) / 2
+                        elif bids:
+                            mid_price = bids[0][0]
+                        elif asks:
+                            mid_price = asks[0][0]
+                        else:
+                            logger.warning(f"No bids or asks for {symbol}")
+                            continue
+
                         timestamp = int(
                             time.time()
                         )  # Use current timestamp for last known prices
@@ -653,7 +674,7 @@ HeartBtInt=30"""
                             partition, offset = await self.faucon_producer.send(
                                 ob_entry
                             )
-                            # We also send the spot entry to Kafka
+                            # # We also send the spot entry to Kafka
                             partition, offset = await self.faucon_producer.send(
                                 spot_entry
                             )
@@ -677,7 +698,7 @@ HeartBtInt=30"""
                             5
                         )  # Wait before retrying if no data is available
                 except Exception as e:
-                    logger.error(f"Error pushing price: {str(e)}")
+                    logger.error(f"Error pushing price: {str(e)}", exc_info=True)
                     await asyncio.sleep(5)  # Back off on error
 
         except Exception as e:
