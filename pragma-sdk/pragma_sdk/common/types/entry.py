@@ -10,6 +10,7 @@ from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
 from pragma_sdk.onchain.types.types import OracleResponse
+from pragma_sdk.schema import entries_pb2
 
 
 FUTURE_ENTRY_EXPIRIES_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -266,6 +267,72 @@ class SpotEntry(Entry):
     def __hash__(self) -> int:
         return hash((self.base, self.pair_id, self.price, self.volume))
 
+    def to_proto_bytes(self) -> bytes:
+        """Convert SpotEntry to protobuf bytes."""
+        # Create protobuf PriceEntry message
+        price_entry = entries_pb2.PriceEntry()
+
+        # Set source
+        price_entry.source = felt_to_str(self.base.source)
+
+        # Set no chain (LMAX data is not chain-specific)
+        price_entry.noChain = True
+
+        # Set pair
+        pair_id = felt_to_str(self.pair_id)
+        if "/" in pair_id:
+            base, quote = pair_id.split("/", 1)
+        else:
+            # For special instruments like SPX500m, use the full name as base
+            base = pair_id
+            quote = "USD"  # Default quote currency
+
+        price_entry.pair.base = base
+        price_entry.pair.quote = quote
+
+        # Set timestamp (convert to milliseconds)
+        price_entry.timestampMs = self.base.timestamp * 1000
+
+        # Set price (convert to UInt128)
+        price_entry.price.low = self.price & ((1 << 64) - 1)
+        price_entry.price.high = (self.price >> 64) & ((1 << 64) - 1)
+
+        # Set volume (convert to UInt128)
+        price_entry.volume.low = self.volume & ((1 << 64) - 1)
+        price_entry.volume.high = (self.volume >> 64) & ((1 << 64) - 1)
+
+        # Set no expiration for spot entries
+        price_entry.noExpiration = True
+
+        return price_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "SpotEntry":
+        """Create SpotEntry from protobuf bytes."""
+        price_entry = entries_pb2.PriceEntry()
+        price_entry.ParseFromString(data)
+
+        # Extract pair_id
+        pair_id = f"{price_entry.pair.base}/{price_entry.pair.quote}"
+
+        # Convert price from UInt128
+        price = price_entry.price.low + (price_entry.price.high << 64)
+
+        # Convert volume from UInt128
+        volume = price_entry.volume.low + (price_entry.volume.high << 64)
+
+        # Convert timestamp (from milliseconds to seconds)
+        timestamp = price_entry.timestampMs // 1000
+
+        return cls(
+            pair_id=pair_id,
+            price=price,
+            timestamp=timestamp,
+            source=price_entry.source,
+            publisher="UNKNOWN",  # Publisher info not in protobuf
+            volume=volume,
+        )
+
 
 class FutureEntry(Entry):
     """
@@ -448,6 +515,81 @@ class FutureEntry(Entry):
             source_name,
             oracle_response.expiration_timestamp,
             0,
+        )
+
+    def to_proto_bytes(self) -> bytes:
+        """Convert FutureEntry to protobuf bytes."""
+        # Create protobuf PriceEntry message
+        price_entry = entries_pb2.PriceEntry()
+
+        # Set source
+        price_entry.source = felt_to_str(self.base.source)
+
+        # Set no chain (LMAX data is not chain-specific)
+        price_entry.noChain = True
+
+        # Set pair
+        pair_id = felt_to_str(self.pair_id)
+        if "/" in pair_id:
+            base, quote = pair_id.split("/", 1)
+        else:
+            # For special instruments like SPX500m, use the full name as base
+            base = pair_id
+            quote = "USD"  # Default quote currency
+
+        price_entry.pair.base = base
+        price_entry.pair.quote = quote
+
+        # Set timestamp (convert to milliseconds)
+        price_entry.timestampMs = self.base.timestamp * 1000
+
+        # Set price (convert to UInt128)
+        price_entry.price.low = self.price & ((1 << 64) - 1)
+        price_entry.price.high = (self.price >> 64) & ((1 << 64) - 1)
+
+        # Set volume (convert to UInt128)
+        price_entry.volume.low = self.volume & ((1 << 64) - 1)
+        price_entry.volume.high = (self.volume >> 64) & ((1 << 64) - 1)
+
+        # Set expiration timestamp if present
+        if self.expiry_timestamp and self.expiry_timestamp > 0:
+            price_entry.expirationTimestamp = self.expiry_timestamp * 1000
+        else:
+            price_entry.noExpiration = True
+
+        return price_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "FutureEntry":
+        """Create FutureEntry from protobuf bytes."""
+        price_entry = entries_pb2.PriceEntry()
+        price_entry.ParseFromString(data)
+
+        # Extract pair_id
+        pair_id = f"{price_entry.pair.base}/{price_entry.pair.quote}"
+
+        # Convert price from UInt128
+        price = price_entry.price.low + (price_entry.price.high << 64)
+
+        # Convert volume from UInt128
+        volume = price_entry.volume.low + (price_entry.volume.high << 64)
+
+        # Convert timestamp (from milliseconds to seconds)
+        timestamp = price_entry.timestampMs // 1000
+
+        # Extract expiry timestamp
+        expiry_timestamp = None
+        if price_entry.HasField("expirationTimestamp"):
+            expiry_timestamp = price_entry.expirationTimestamp // 1000
+
+        return cls(
+            pair_id=pair_id,
+            price=price,
+            timestamp=timestamp,
+            source=price_entry.source,
+            publisher="UNKNOWN",  # Publisher info not in protobuf
+            expiry_timestamp=expiry_timestamp,
+            volume=volume,
         )
 
 
