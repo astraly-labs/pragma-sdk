@@ -16,7 +16,6 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "starknet.py==0.25.0",
     "pragma-sdk",
     "pragma-utils",
     "click>=8.1.0",
