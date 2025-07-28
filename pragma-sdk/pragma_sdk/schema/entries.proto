@@ -29,6 +29,11 @@ enum OrderbookUpdateType {
   SNAPSHOT = 1;
 }
 
+enum TradeSide {
+  BUY = 0;
+  SELL = 1;
+}
+
 message UInt128 {
   uint64 low = 1;
   uint64 high = 2;
@@ -95,4 +100,15 @@ message VolumeEntry {
   Pair pair = 3;
   double volumeDaily = 4;
   int64 timestampMs = 5;
+}
+
+message TradeEntry {
+  string source = 1;
+  InstrumentType instrumentType = 2;
+  Pair pair = 3;
+  string tradeId = 4;
+  TradeSide side = 5;
+  double size = 6;
+  double price = 7;
+  int64 timestampMs = 8;
 }
