@@ -18,7 +18,7 @@ from pragma_sdk.common.types.entry import (
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
-from faucon.topics.topics import PriceEntryTopic
+from faucon.topics.topics import PriceEntryTopic, OrderbookEntryTopic
 
 logger = get_pragma_sdk_logger()
 
@@ -72,6 +72,22 @@ SECURITY_ID_TO_SYMBOL = {
     "4004": "USD/JPY",
     "100639": "XAG/USD",
 }
+
+
+class OrderbookEntryWrapper(OrderbookEntry):
+    def to_faucon_topic(self):
+        return OrderbookEntryTopic.to_faucon_topic()
+
+    def to_faucon_key(self):
+        return OrderbookEntryTopic.to_faucon_key(self)
+
+
+class SpotEntryWrapper(SpotEntry):
+    def to_faucon_topic(self):
+        return PriceEntryTopic.to_faucon_topic()
+
+    def to_faucon_key(self):
+        return PriceEntryTopic.to_faucon_key(self)
 
 
 class LmaxFixApplication(fix.Application):
@@ -647,11 +663,11 @@ HeartBtInt=30"""
                         price_int = int(mid_price * 10**18)
                         pair_id = pair_obj.id
 
-                        ob_entry = OrderbookEntry(
+                        ob_entry = OrderbookEntryWrapper(
                             source="LMAX",
                             instrument_type=InstrumentType.SPOT,
                             pair=pair_obj,
-                            type=OrderbookUpdateType.UPDATE,
+                            type=OrderbookUpdateType.SNAPSHOT,
                             data=OrderbookData(
                                 update_id=timestamp,
                                 bids=bids,
@@ -660,7 +676,7 @@ HeartBtInt=30"""
                             timestamp_ms=timestamp,
                         )
 
-                        spot_entry = SpotEntry(
+                        spot_entry = SpotEntryWrapper(
                             pair_id=pair_id,
                             price=price_int,
                             timestamp=timestamp,
@@ -680,7 +696,7 @@ HeartBtInt=30"""
                             )
 
                             logger.info(
-                                f"Successfully pushed {symbol} pair_id {pair_id} price {ob_entry.price} to Kafka"
+                                f"Successfully pushed {symbol} pair_id {pair_id} price {mid_price} to Kafka"
                             )
                             logger.info(f"  Topic: {ob_entry.to_faucon_topic()}")
                             logger.info(f"  Key: {ob_entry.to_faucon_key()}")
@@ -735,6 +751,7 @@ async def main():
     load_dotenv()
 
     broker_address = os.getenv("PRAGMA_BROKER_ADDRESS")
+    print(f"Broker address: {broker_address}")
     # Initialize Faucon producer
     logger.info("Initializing Faucon producer...")
     producer = FauconProducerBuilder.from_environment(

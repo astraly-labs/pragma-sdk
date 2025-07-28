@@ -839,8 +839,8 @@ class OrderbookEntry:
             orderbook_entry.instrumentType = entries_pb2.InstrumentType.PERP
 
         # Set pair
-        orderbook_entry.pair.base = self.pair.base
-        orderbook_entry.pair.quote = self.pair.quote
+        orderbook_entry.pair.base = self.pair.base_currency.id
+        orderbook_entry.pair.quote = self.pair.quote_currency.id
 
         # Set type
         if self.type == OrderbookUpdateType.UPDATE:
@@ -885,7 +885,7 @@ class OrderbookEntry:
             )
 
         # Extract pair
-        pair = Pair(base=orderbook_entry.pair.base, quote=orderbook_entry.pair.quote)
+        pair = Pair.from_tickers(orderbook_entry.pair.base, orderbook_entry.pair.quote)
 
         # Extract type
         if orderbook_entry.type == entries_pb2.OrderbookUpdateType.UPDATE:
