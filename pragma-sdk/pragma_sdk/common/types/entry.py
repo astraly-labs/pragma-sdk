@@ -5,6 +5,7 @@ import abc
 from datetime import datetime
 from pydantic.dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
+from enum import StrEnum
 
 from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
@@ -735,4 +736,178 @@ class GenericEntry(Entry):
         """
         raise NotImplementedError(
             "😛 from_oracle_response does not exists for GenericEntry yet!"
+        )
+
+
+class OrderbookUpdateType(StrEnum):
+    """Orderbook update type enum."""
+
+    UPDATE = "UPDATE"
+    SNAPSHOT = "SNAPSHOT"
+
+
+class InstrumentType(StrEnum):
+    """Instrument type enum."""
+
+    SPOT = "SPOT"
+    PERP = "PERP"
+
+
+@dataclass
+class OrderbookData:
+    """Orderbook data containing bids and asks."""
+
+    update_id: int
+    bids: List[Tuple[float, float]]  # List of (price, quantity) tuples
+    asks: List[Tuple[float, float]]  # List of (price, quantity) tuples
+
+
+class OrderbookEntry:
+    """
+    Represents an Orderbook Entry.
+    """
+
+    source: str
+    instrument_type: InstrumentType
+    pair: Pair
+    type: OrderbookUpdateType
+    data: OrderbookData
+    timestamp_ms: int
+
+    def __init__(
+        self,
+        source: str,
+        instrument_type: InstrumentType | str,
+        pair: Pair,
+        type: OrderbookUpdateType | str,
+        data: OrderbookData,
+        timestamp_ms: int,
+    ):
+        self.source = source
+
+        if isinstance(instrument_type, str):
+            self.instrument_type = InstrumentType(instrument_type)
+
+        self.pair = pair
+
+        if isinstance(type, str):
+            self.type = OrderbookUpdateType(type)
+
+        self.data = data
+        self.timestamp_ms = timestamp_ms
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, OrderbookEntry):
+            return all(
+                [
+                    self.source == other.source,
+                    self.instrument_type == other.instrument_type,
+                    self.pair == other.pair,
+                    self.type == other.type,
+                    self.data.update_id == other.data.update_id,
+                    self.data.bids == other.data.bids,
+                    self.data.asks == other.data.asks,
+                    self.timestamp_ms == other.timestamp_ms,
+                ]
+            )
+        return False
+
+    def __repr__(self) -> str:
+        return (
+            f"OrderbookEntry(source='{self.source}', "
+            f"instrument_type={self.instrument_type}, "
+            f"pair={self.pair}, "
+            f"type={self.type}, "
+            f"update_id={self.data.update_id}, "
+            f"bids_count={len(self.data.bids)}, "
+            f"asks_count={len(self.data.asks)}, "
+            f"timestamp_ms={self.timestamp_ms})"
+        )
+
+    def to_proto_bytes(self) -> bytes:
+        """Convert OrderbookEntry to protobuf bytes."""
+        # Create protobuf OrderbookEntry message
+        orderbook_entry = entries_pb2.OrderbookEntry()
+
+        # Set source
+        orderbook_entry.source = self.source
+
+        # Set instrument type
+        if self.instrument_type == InstrumentType.SPOT:
+            orderbook_entry.instrumentType = entries_pb2.InstrumentType.SPOT
+        elif self.instrument_type == InstrumentType.PERP:
+            orderbook_entry.instrumentType = entries_pb2.InstrumentType.PERP
+
+        # Set pair
+        orderbook_entry.pair.base = self.pair.base_currency.id
+        orderbook_entry.pair.quote = self.pair.quote_currency.id
+
+        # Set type
+        if self.type == OrderbookUpdateType.UPDATE:
+            orderbook_entry.type = entries_pb2.OrderbookUpdateType.UPDATE
+        elif self.type == OrderbookUpdateType.SNAPSHOT:
+            orderbook_entry.type = entries_pb2.OrderbookUpdateType.SNAPSHOT
+
+        # Set data
+        orderbook_entry.data.update_id = self.data.update_id
+
+        # Add bids
+        for price, quantity in self.data.bids:
+            bid = orderbook_entry.data.bids.add()
+            bid.price = price
+            bid.quantity = quantity
+
+        # Add asks
+        for price, quantity in self.data.asks:
+            ask = orderbook_entry.data.asks.add()
+            ask.price = price
+            ask.quantity = quantity
+
+        # Set timestamp
+        orderbook_entry.timestampMs = self.timestamp_ms
+
+        return orderbook_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "OrderbookEntry":
+        """Create OrderbookEntry from protobuf bytes."""
+        orderbook_entry = entries_pb2.OrderbookEntry()
+        orderbook_entry.ParseFromString(data)
+
+        # Extract instrument type
+        if orderbook_entry.instrumentType == entries_pb2.InstrumentType.SPOT:
+            instrument_type = InstrumentType.SPOT
+        elif orderbook_entry.instrumentType == entries_pb2.InstrumentType.PERP:
+            instrument_type = InstrumentType.PERP
+        else:
+            raise ValueError(
+                f"Unknown instrument type: {orderbook_entry.instrumentType}"
+            )
+
+        # Extract pair
+        pair = Pair.from_tickers(orderbook_entry.pair.base, orderbook_entry.pair.quote)
+
+        # Extract type
+        if orderbook_entry.type == entries_pb2.OrderbookUpdateType.UPDATE:
+            type_ = OrderbookUpdateType.UPDATE
+        elif orderbook_entry.type == entries_pb2.OrderbookUpdateType.SNAPSHOT:
+            type_ = OrderbookUpdateType.SNAPSHOT
+        else:
+            raise ValueError(f"Unknown orderbook update type: {orderbook_entry.type}")
+
+        # Extract orderbook data
+        bids = [(bid.price, bid.quantity) for bid in orderbook_entry.data.bids]
+        asks = [(ask.price, ask.quantity) for ask in orderbook_entry.data.asks]
+
+        data = OrderbookData(
+            update_id=orderbook_entry.data.update_id, bids=bids, asks=asks
+        )
+
+        return cls(
+            source=orderbook_entry.source,
+            instrument_type=instrument_type,
+            pair=pair,
+            type=type_,
+            data=data,
+            timestamp_ms=orderbook_entry.timestampMs,
         )

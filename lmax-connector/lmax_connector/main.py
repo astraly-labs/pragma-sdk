@@ -7,11 +7,18 @@ from dotenv import load_dotenv
 import requests
 
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.types.entry import SpotEntry, FutureEntry
+from pragma_sdk.common.types.entry import (
+    InstrumentType,
+    OrderbookData,
+    OrderbookEntry,
+    OrderbookUpdateType,
+    SpotEntry,
+    FutureEntry,
+)
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
-from faucon.topics.topics import PriceEntryTopic
+from faucon.topics.topics import PriceEntryTopic, OrderbookEntryTopic
 
 logger = get_pragma_sdk_logger()
 
@@ -67,6 +74,22 @@ SECURITY_ID_TO_SYMBOL = {
 }
 
 
+class OrderbookEntryWrapper(OrderbookEntry):
+    def to_faucon_topic(self):
+        return OrderbookEntryTopic.to_faucon_topic()
+
+    def to_faucon_key(self):
+        return OrderbookEntryTopic.to_faucon_key(self)
+
+
+class SpotEntryWrapper(SpotEntry):
+    def to_faucon_topic(self):
+        return PriceEntryTopic.to_faucon_topic()
+
+    def to_faucon_key(self):
+        return PriceEntryTopic.to_faucon_key(self)
+
+
 class LmaxFixApplication(fix.Application):
     def __init__(self):
         super().__init__()
@@ -106,6 +129,8 @@ class LmaxFixApplication(fix.Application):
                 logger.info("Received Logon message")
             elif msgType.getValue() == fix.MsgType_Heartbeat:
                 logger.debug("Received Heartbeat")
+            elif msgType.getValue() == fix.MsgType_TestRequest:
+                logger.info("Received Test Request - QuickFIX should auto-respond")
         except Exception as e:
             logger.error(
                 f"Error processing admin message: {str(e)}, Message: {message.toString()}"
@@ -175,16 +200,23 @@ class LmaxFixApplication(fix.Application):
         logger.info(f"Sending application message: {message.toString()}")
 
     def _handle_market_data(self, message):
+        # Log the raw FIX message to debug the market depth issue
+        logger.info(f"Raw market data message: {message.toString()}")
+
         security_id = fix.SecurityID()
         message.getField(security_id)
         security_id = security_id.getValue()
         logger.debug(f"Processing market data for security ID {security_id}")
 
-        bid = ask = None
+        bids = []
+        asks = []
         noMDEntries = fix.NoMDEntries()
         message.getField(noMDEntries)
 
-        for i in range(noMDEntries.getValue()):
+        num_entries = noMDEntries.getValue()
+        logger.info(f"Number of entries: {num_entries}")
+
+        for i in range(num_entries):
             # NoMDEntries is 268, MDEntryType is 269
             group = fix.Group(268, 269)
             message.getGroup(i + 1, group)
@@ -195,21 +227,28 @@ class LmaxFixApplication(fix.Application):
             mdEntryPx = fix.MDEntryPx()
             group.getField(mdEntryPx)
 
+            mdEntrySize = fix.MDEntrySize()
+            group.getField(mdEntrySize)
+
             if mdEntryType.getValue() == fix.MDEntryType_BID:
                 bid = float(mdEntryPx.getValue())
+                bid_size = float(mdEntrySize.getValue())
+                bids.append((bid, bid_size))
                 logger.debug(f"Got bid: {bid}")
             elif mdEntryType.getValue() == fix.MDEntryType_OFFER:
                 ask = float(mdEntryPx.getValue())
+                ask_size = float(mdEntrySize.getValue())
+                asks.append((ask, ask_size))
                 logger.debug(f"Got ask: {ask}")
 
-        if bid is not None and ask is not None:
+        if bids and asks:
             if symbol := SECURITY_ID_TO_SYMBOL.get(security_id):
                 self.latest_market_data[symbol] = {
-                    "bid": bid,
-                    "ask": ask,
+                    "bids": bids,
+                    "asks": asks,
                     "timestamp": int(time.time()),
                 }
-                logger.info(f"Updated {symbol} price - Bid: {bid}, Ask: {ask}")
+                logger.info(f"Updated {symbol} price - Bid: {bids}, Ask: {asks}")
                 if symbol in self.market_data_ready:
                     self.market_data_ready[symbol].set()
             else:
@@ -313,8 +352,8 @@ HeartBtInt=30"""
 
                 price = float(stats)
                 price_data = {
-                    "bid": price,
-                    "ask": price,
+                    "bids": [price],
+                    "asks": [price],
                     "timestamp": int(time.time()),
                 }
                 self.last_known_prices[symbol] = price_data.copy()
@@ -369,7 +408,7 @@ HeartBtInt=30"""
             # Required fields for market data request in ascending tag order
             message.setField(fix.MDReqID("1"))  # Tag 262
             message.setField(fix.SubscriptionRequestType("1"))  # Tag 263
-            message.setField(fix.MarketDepth(1))  # Tag 264
+            message.setField(fix.MarketDepth(10))  # Tag 264
             message.setField(fix.NoMDEntryTypes(2))  # Tag 267
 
             # Add entry types group (267)
@@ -603,15 +642,41 @@ HeartBtInt=30"""
                     if market_data := self.application.latest_market_data.get(
                         symbol
                     ) or self.last_known_prices.get(symbol):
-                        bid, ask = market_data["bid"], market_data["ask"]
-                        price = (bid + ask) / 2.0
+                        bids = market_data["bids"]
+                        asks = market_data["asks"]
+                        # Calculate mid price from best bid and ask
+                        if bids and asks:
+                            best_bid = bids[0][0]  # Get price from (price, size) tuple
+                            best_ask = asks[0][0]  # Get price from (price, size) tuple
+                            mid_price = (best_bid + best_ask) / 2
+                        elif bids:
+                            mid_price = bids[0][0]
+                        elif asks:
+                            mid_price = asks[0][0]
+                        else:
+                            logger.warning(f"No bids or asks for {symbol}")
+                            continue
+
                         timestamp = int(
                             time.time()
                         )  # Use current timestamp for last known prices
-                        price_int = int(price * 10**18)
+                        price_int = int(mid_price * 10**18)
                         pair_id = pair_obj.id
 
-                        entry = SpotEntry(
+                        ob_entry = OrderbookEntryWrapper(
+                            source="LMAX",
+                            instrument_type=InstrumentType.SPOT,
+                            pair=pair_obj,
+                            type=OrderbookUpdateType.SNAPSHOT,
+                            data=OrderbookData(
+                                update_id=timestamp,
+                                bids=bids,
+                                asks=asks,
+                            ),
+                            timestamp_ms=timestamp,
+                        )
+
+                        spot_entry = SpotEntryWrapper(
                             pair_id=pair_id,
                             price=price_int,
                             timestamp=timestamp,
@@ -621,13 +686,20 @@ HeartBtInt=30"""
                         )
 
                         try:
-                            # Send the entry to Kafka via Faucon
-                            partition, offset = await self.faucon_producer.send(entry)
-                            logger.info(
-                                f"Successfully pushed {symbol} pair_id {pair_id} price {entry.price} to Kafka"
+                            # Send the orderbook entry to Kafka via Faucon
+                            partition, offset = await self.faucon_producer.send(
+                                ob_entry
                             )
-                            logger.info(f"  Topic: {entry.to_faucon_topic()}")
-                            logger.info(f"  Key: {entry.to_faucon_key()}")
+                            # # We also send the spot entry to Kafka
+                            partition, offset = await self.faucon_producer.send(
+                                spot_entry
+                            )
+
+                            logger.info(
+                                f"Successfully pushed {symbol} pair_id {pair_id} price {mid_price} to Kafka"
+                            )
+                            logger.info(f"  Topic: {ob_entry.to_faucon_topic()}")
+                            logger.info(f"  Key: {ob_entry.to_faucon_key()}")
                             # logger.info(f"  Partition: {partition}")
                             # logger.info(f"  Offset: {offset}")
                         except Exception as e:
@@ -642,7 +714,7 @@ HeartBtInt=30"""
                             5
                         )  # Wait before retrying if no data is available
                 except Exception as e:
-                    logger.error(f"Error pushing price: {str(e)}")
+                    logger.error(f"Error pushing price: {str(e)}", exc_info=True)
                     await asyncio.sleep(5)  # Back off on error
 
         except Exception as e:
@@ -679,23 +751,17 @@ async def main():
     load_dotenv()
 
     broker_address = os.getenv("PRAGMA_BROKER_ADDRESS")
+    print(f"Broker address: {broker_address}")
     # Initialize Faucon producer
     logger.info("Initializing Faucon producer...")
     producer = FauconProducerBuilder.from_environment(
         FauconEnvironment.custom(broker_address=broker_address)
     ).build()
 
-    # Configure pairs to fetch
+    # Configure pairs to fetch from environment variable
     # You can specify either as string IDs or create Pair objects
-    requested_pairs = [
-        "EUR/USD",
-        "XAU/USD",
-        "SPX500m",
-        "XBR/USD",
-        "TECH100m",
-        "USD/JPY",
-        "XAG/USD",
-    ]
+    pairs_env = os.getenv("LMAX_REQUESTED_PAIRS", "EUR/USD")
+    requested_pairs = [pair.strip() for pair in pairs_env.split(",") if pair.strip()]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
     # Initialize LMAX connector
