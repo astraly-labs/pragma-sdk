@@ -16,13 +16,11 @@ from pragma_sdk.common.types.entry import (
     FutureEntry,
 )
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
 from faucon.topics.topics import PriceEntryTopic
 
-from faucon import FauconEnvironment, FauconProducerBuilder, FauconTopic
-from faucon.topics.topics import PriceEntryTopic, OrderbookEntryTopic
+from faucon.topics.topics import OrderbookEntryTopic
 
 logger = get_pragma_sdk_logger()
 
