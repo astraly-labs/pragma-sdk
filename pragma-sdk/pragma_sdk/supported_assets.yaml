@@ -370,6 +370,7 @@
   ticker: 'TECH100m'
   abstract: true
 
-- name: 'Resolv'
-  decimals: 18
-  ticker: 'RESOLV'
+- name: 'Silver (Spot)'
+  decimals: 8
+  ticker: 'XAG'
+  abstract: true

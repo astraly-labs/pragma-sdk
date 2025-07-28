@@ -74,7 +74,8 @@ PROJECT_DIRS=(
     "price-pusher"
     "checkpointer"
     "vrf-listener"
-    "lp-pricer"
+    "lp-pricer",
+    "lmax-connector"
 )
 
 # Find all __init__.py files while excluding .venv directories
