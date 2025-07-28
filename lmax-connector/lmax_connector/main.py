@@ -758,17 +758,10 @@ async def main():
         FauconEnvironment.custom(broker_address=broker_address)
     ).build()
 
-    # Configure pairs to fetch
+    # Configure pairs to fetch from environment variable
     # You can specify either as string IDs or create Pair objects
-    requested_pairs = [
-        "EUR/USD",
-        # "XAU/USD",
-        # "SPX500m",
-        # "XBR/USD",
-        # "TECH100m",
-        # "USD/JPY",
-        # "XAG/USD",
-    ]
+    pairs_env = os.getenv("LMAX_REQUESTED_PAIRS", "EUR/USD")
+    requested_pairs = [pair.strip() for pair in pairs_env.split(",") if pair.strip()]
     logger.info(f"Configured to fetch {requested_pairs} from LMAX")
 
     # Initialize LMAX connector
