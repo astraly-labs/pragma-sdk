@@ -27,7 +27,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
     pairs: List[Pair]
 
     SOURCE = "DEXSCREENER"
-    BASE_URL: str = "https://api.dexscreener.com/latest/dex/tokens"
+    BASE_URL: str = "https://api.dexscreener.com/latest/dex/search"
 
     async def fetch(
         self,
@@ -50,7 +50,10 @@ class DexscreenerFetcher(FetcherInterfaceT):
         NOTE: The base currency being priced must have either a starknet_address
         or an ethereum_address.
         """
-        if pair.quote_currency.id not in ("USD", "USDPLUS"):
+        if pair.quote_currency.id not in (
+            "USD",
+            "USDPLUS",
+        ) or pair.base_currency.id in ("USDC", "USDT"):
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
         if (pair.base_currency.ethereum_address == 0) and (
             pair.base_currency.starknet_address == 0
@@ -132,11 +135,7 @@ class DexscreenerFetcher(FetcherInterfaceT):
         """
         Format the URL to fetch in order to retrieve the price for a pair.
         """
-        if pair.base_currency.ethereum_address not in (None, 0):
-            base_address = f"{pair.base_currency.ethereum_address:#0{42}x}"
-        else:
-            base_address = f"{pair.base_currency.starknet_address:#0{66}x}"
-        return f"{self.BASE_URL}/{base_address}"
+        return f"{self.BASE_URL}?q={pair.base_currency.id.upper()}/USDC"
 
     def _construct(self, pair: Pair, result: float, volume: float) -> SpotEntry:
         price_int = int(result * (10 ** pair.decimals()))
