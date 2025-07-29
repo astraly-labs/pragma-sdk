@@ -19,7 +19,7 @@
   ticker: 'USDT'
   coingecko_id: 'tether-usd'
   starknet_address: '0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8'
-  ethereum_address: '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+  ethereum_address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
 
 - name: 'Dai'
   decimals: 18
@@ -33,7 +33,7 @@
   ticker: 'USDC'
   coingecko_id: 'circle-usd'
   starknet_address: '0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8'
-  ethereum_address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+  ethereum_address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 
 - name: 'US Dollar'
   decimals: 8
@@ -126,12 +126,6 @@
   coingecko_id: 'lords'
   starknet_address: '0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49'
   ethereum_address: '0x686f2404e77Ab0d9070a46cdfb0B7feCDD2318b0'
-
-- name: 'ZkLend'
-  decimals: 18
-  ticker: 'ZEND'
-  coingecko_id: 'zklend-2'
-  starknet_address: '0x00585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34'
 
 - name: 'Ekubo'
   decimals: 18
