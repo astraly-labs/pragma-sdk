@@ -80,34 +80,14 @@ class DexscreenerFetcher(FetcherInterfaceT):
         if isinstance(pairs_data, PublisherFetchError):
             return PublisherFetchError(f"No data found for {pair} from Dexscreener")
 
-        # Extract all prices and volumes
-        prices = []
-        total_volume = 0.0
-        for pair_data in pairs_data:
-            try:
-                price = float(pair_data["priceUsd"])
-                volume = float(pair_data["volume"]["h24"])
-                prices.append(price)
-                total_volume += volume
-            except (KeyError, ValueError, TypeError):
-                continue
-
-        if not prices:
-            return PublisherFetchError(
-                f"No valid price data found for {pair} from Dexscreener"
-            )
-
-        # Calculate median price
-        prices.sort()
-        if len(prices) % 2 == 0:
-            median_price = (prices[len(prices) // 2 - 1] + prices[len(prices) // 2]) / 2
-        else:
-            median_price = prices[len(prices) // 2]
+        pair_data = pairs_data[0]
+        price = float(pair_data["priceUsd"])
+        volume = float(pair_data["volume"]["h24"])
 
         return self._construct(
             pair=pair,
-            result=median_price,
-            volume=total_volume,
+            result=price,
+            volume=volume,
         )
 
     async def _query_dexscreener(
