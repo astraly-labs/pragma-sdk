@@ -22,7 +22,6 @@
       - BROTHER/USDPLUS
       - XSTRK/USD
       - SSTRK/USD
-      - KSTRK/USD
       - WSTETH/USD
   time_difference: 1200
   price_deviation: 0.025

@@ -115,11 +115,6 @@
   ticker: 'SSTRK'
   starknet_address: '0x0356f304b154d29d2a8fe22f1cb9107a9b564a733cf6b4cc47fd121ac1af90c9'
 
-- name: 'kSTRK Token'
-  decimals: 18
-  ticker: 'KSTRK'
-  starknet_address: '0x045cd05ee2caaac3459b87e5e2480099d201be2f62243f839f00e10dde7f500c'
-
 - name: 'Lords'
   decimals: 18
   ticker: 'LORDS'
