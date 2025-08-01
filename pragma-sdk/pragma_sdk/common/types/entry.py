@@ -742,7 +742,8 @@ class GenericEntry(Entry):
 class OrderbookUpdateType(StrEnum):
     """Orderbook update type enum."""
 
-    UPDATE = "UPDATE"
+    TARGET = "TARGET"
+    DELTA = "DELTA"
     SNAPSHOT = "SNAPSHOT"
 
 
@@ -842,11 +843,13 @@ class OrderbookEntry:
         orderbook_entry.pair.base = self.pair.base_currency.id
         orderbook_entry.pair.quote = self.pair.quote_currency.id
 
-        # Set type
-        if self.type == OrderbookUpdateType.UPDATE:
-            orderbook_entry.type = entries_pb2.OrderbookUpdateType.UPDATE
+        # Set type using oneof field
+        if self.type == OrderbookUpdateType.TARGET:
+            orderbook_entry.type.update = entries_pb2.UpdateType.TARGET
+        elif self.type == OrderbookUpdateType.DELTA:
+            orderbook_entry.type.update = entries_pb2.UpdateType.DELTA
         elif self.type == OrderbookUpdateType.SNAPSHOT:
-            orderbook_entry.type = entries_pb2.OrderbookUpdateType.SNAPSHOT
+            orderbook_entry.type.snapshot = True
 
         # Set data
         orderbook_entry.data.update_id = self.data.update_id
@@ -887,10 +890,15 @@ class OrderbookEntry:
         # Extract pair
         pair = Pair.from_tickers(orderbook_entry.pair.base, orderbook_entry.pair.quote)
 
-        # Extract type
-        if orderbook_entry.type == entries_pb2.OrderbookUpdateType.UPDATE:
-            type_ = OrderbookUpdateType.UPDATE
-        elif orderbook_entry.type == entries_pb2.OrderbookUpdateType.SNAPSHOT:
+        # Extract type from oneof field
+        if orderbook_entry.type.HasField("update"):
+            if orderbook_entry.type.update == entries_pb2.UpdateType.TARGET:
+                type_ = OrderbookUpdateType.TARGET
+            elif orderbook_entry.type.update == entries_pb2.UpdateType.DELTA:
+                type_ = OrderbookUpdateType.DELTA
+            else:
+                raise ValueError(f"Unknown update type: {orderbook_entry.type.update}")
+        elif orderbook_entry.type.HasField("snapshot"):
             type_ = OrderbookUpdateType.SNAPSHOT
         else:
             raise ValueError(f"Unknown orderbook update type: {orderbook_entry.type}")

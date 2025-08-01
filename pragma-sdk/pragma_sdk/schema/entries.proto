@@ -24,9 +24,16 @@ enum Chain {
   WORLDCHAIN = 13;
 }
 
-enum OrderbookUpdateType {
-  UPDATE = 0;
-  SNAPSHOT = 1;
+enum UpdateType {
+  TARGET = 0;
+  DELTA = 1;
+}
+
+message OrderbookUpdateType {
+  oneof update_type {
+    UpdateType update = 1;
+    bool snapshot = 2;
+  }
 }
 
 enum TradeSide {
