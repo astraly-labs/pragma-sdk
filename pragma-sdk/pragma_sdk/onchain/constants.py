@@ -20,16 +20,17 @@ STARKSCAN_URLS: Dict[Network, str] = {
 
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
-        "https://starknet-mainnet.public.blastapi.io/rpc/v0_8",
-        "https://juno-mainnet.s.karnot.xyz/",
-        "https://free-rpc.nethermind.io/mainnet-juno",
-        "https://api.cartridge.gg/x/starknet/mainnet",
+        "https://starknet-mainnet.blastapi.io/d4c81751-861c-4970-bef5-9decd7f7aa39/rpc/v0_8",
+        "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_8",
+        "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/WrkE4HqPXT-zi7gQn8bUtH-TXgYYs3w1",
+        "https://rpc.pathfinder.equilibrium.co/mainnet/rpc/v0_8",
+        "https://api.zan.top/public/starknet-mainnet",
+        "https://starknet.api.onfinality.io/public",
+        "https://rpc.starknet.lava.build:443",
     ],
     "sepolia": [
         "https://starknet-sepolia.public.blastapi.io/rpc/v0_8",
-        "https://juno-sepolia.s.karnot.xyz/",
-        "https://free-rpc.nethermind.io/sepolia-juno",
-        "https://api.cartridge.gg/x/starknet/sepolia",
+        "https://api.cartridge.gg/x/starknet/sepolia/rpc/v0_8",
     ],
 }
 
