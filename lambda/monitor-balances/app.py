@@ -44,7 +44,9 @@ async def _handler():
         telegram_bot_token = _get_telegram_bot_oauth_token_from_aws()
     network = os.environ.get("NETWORK")
     ignore_publishers_str = os.environ.get("IGNORE_PUBLISHERS", "")
-    ignore_publishers = ignore_publishers_str.split(",")
+    ignore_publishers = [
+        int(p.strip()) for p in ignore_publishers_str.split(",") if p.strip()
+    ]
     threshold_wei = int(os.environ.get("THRESHOLD_WEI", 100 * 10**18))
     bot = telegram.Bot(token=telegram_bot_token)
     client = PragmaOnChainClient(network)
