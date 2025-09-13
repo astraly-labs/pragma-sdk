@@ -21,6 +21,7 @@ dependencies = [
     "click>=8.1.0",
     "pydantic>=2.7.4",
     "asgiref>=3.4.1",
+    "aiohttp>=3.9.0",
 ]
 
 dynamic = ["version"]

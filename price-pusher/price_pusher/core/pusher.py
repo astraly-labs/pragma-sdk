@@ -1,7 +1,7 @@
 import asyncio
 import time
 import logging
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Callable
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client_errors import ClientError
 from requests.exceptions import RequestException
@@ -30,10 +30,15 @@ class IPricePusher(ABC):
 
 
 class PricePusher(IPricePusher):
-    def __init__(self, client: PragmaClient):
+    def __init__(
+        self,
+        client: PragmaClient,
+        on_successful_push: Optional[Callable[[], None]] = None,
+    ):
         self.client = client
         self.consecutive_push_error = 0
         self.onchain_lock = asyncio.Lock()
+        self.on_successful_push = on_successful_push
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
@@ -82,6 +87,11 @@ class PricePusher(IPricePusher):
                 f"(took {(end_t - start_t):.2f}s)"
             )
             self.consecutive_push_error = 0
+
+            # Notify health server of successful push
+            if self.on_successful_push:
+                self.on_successful_push()
+
             return response
 
         except (ClientError, RequestException) as e:
