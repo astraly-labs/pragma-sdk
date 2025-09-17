@@ -29,11 +29,11 @@ COPY --from=builder /opt /opt
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
 COPY infra/price-pusher/onchain/entrypoint.sh /opt/price-pusher/
 
-EXPOSE 8082
+EXPOSE 8080
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://0.0.0.0:8082/ || exit 1
+    CMD curl -f http://0.0.0.0:8080/ || exit 1
 
 WORKDIR /opt/price-pusher
 ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]
