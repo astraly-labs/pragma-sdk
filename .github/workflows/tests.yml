@@ -74,8 +74,21 @@ jobs:
           cargo --version
 
       - uses: Swatinem/rust-cache@v2
+
+      - name: Install LLVM 19
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+          sudo apt-get install -y llvm-19-dev libclang-19-dev
+          echo "LLVM_SYS_190_PREFIX=/usr/lib/llvm-19" >> $GITHUB_ENV
+          echo "/usr/lib/llvm-19/bin" >> $GITHUB_PATH
+
       - name: Install starknet-devnet
-        run: cargo install starknet-devnet
+        run: |
+          export LLVM_SYS_190_PREFIX=/usr/lib/llvm-19
+          export PATH="/usr/lib/llvm-19/bin:$PATH"
+          cargo install starknet-devnet
       - name: Run tests
         run: |
           # TODO: The tests loop forever if we don't run them one by one for some packages.
