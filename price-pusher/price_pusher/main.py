@@ -27,6 +27,7 @@ from price_pusher.configs.price_config import (
 )
 from price_pusher.orchestrator import Orchestrator
 from price_pusher.price_types import Target, Network
+from price_pusher.health_server import HealthServer
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ async def main(
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
     enable_strk_fees: Optional[bool] = None,
+    health_port: Optional[int] = None,
+    max_seconds_without_push: Optional[int] = None,
 ) -> None:
     """
     Main function of the price pusher.
@@ -74,13 +77,25 @@ async def main(
     )
 
     logger.info("⏳ Starting orchestration...")
+
+    # Create health server if configured
+    health_server = None
+    if health_port:
+        health_server = HealthServer(
+            port=health_port, max_seconds_without_push=max_seconds_without_push or 300
+        )
+
     poller = PricePoller(fetcher_client=fetcher_client)
-    pusher = PricePusher(client=pragma_client)
+    pusher = PricePusher(
+        client=pragma_client,
+        on_successful_push=health_server.update_last_push if health_server else None,
+    )
     orchestrator = Orchestrator(
         poller=poller,
         poller_refresh_interval=poller_refresh_interval,
         listeners=_create_listeners(price_configs, target, pragma_client),
         pusher=pusher,
+        health_server=health_server,
     )
 
     logger.info("🚀 Orchestration starting 🚀")
@@ -274,6 +289,20 @@ def _create_client(
     default=5,
     help="Interval in seconds between poller refreshes. Default to 5 seconds.",
 )
+@click.option(
+    "--health-port",
+    type=click.IntRange(min=1, max=65535),
+    required=False,
+    default=8080,
+    help="Port for health check HTTP server. Default to 8080. Set to 0 to disable.",
+)
+@click.option(
+    "--max-seconds-without-push",
+    type=click.IntRange(min=60),
+    required=False,
+    default=300,
+    help="Maximum seconds without push before unhealthy. Default to 300 seconds (5 minutes).",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -290,6 +319,8 @@ def cli_entrypoint(
     pagination: Optional[int],
     enable_strk_fees: Optional[bool],
     poller_refresh_interval: int,
+    health_port: Optional[int],
+    max_seconds_without_push: Optional[int],
 ) -> None:
     if target == "offchain":
         if not api_key or not api_base_url:
@@ -334,6 +365,10 @@ def cli_entrypoint(
     if api_base_url is not None and api_base_url.endswith("/"):
         api_base_url = api_base_url.rstrip()[:-1]
 
+    # Disable health server if port is 0
+    if health_port == 0:
+        health_port = None
+
     asyncio.run(
         main(
             price_configs=price_configs,
@@ -350,6 +385,8 @@ def cli_entrypoint(
             pagination=pagination,
             enable_strk_fees=enable_strk_fees,
             poller_refresh_interval=poller_refresh_interval,
+            health_port=health_port,
+            max_seconds_without_push=max_seconds_without_push,
         )
     )
 
