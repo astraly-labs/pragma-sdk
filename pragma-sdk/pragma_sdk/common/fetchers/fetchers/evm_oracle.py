@@ -20,16 +20,21 @@ from pragma_sdk.common.types.pair import Pair
 logger = get_pragma_sdk_logger()
 
 
-LATEST_ANSWER_SELECTOR = "0x50d25bcd"
+DEFAULT_FEED_SELECTOR = "0x50d25bcd"
 
-ETHEREUM_RPC_URLS = [
+_DEFAULT_ETHEREUM_RPC_URLS = [
+    "https://ethereum.publicnode.com",
     "https://rpc.ankr.com/eth",
     "https://eth.llamarpc.com",
-    "https://cloudflare-eth.com",
-    "https://eth.llamarpc.com",
-    "https://ethereum-rpc.publicnode.com",
     "https://rpc.mevblocker.io",
 ]
+
+
+def _gather_ethereum_rpcs() -> List[str]:
+    return _DEFAULT_ETHEREUM_RPC_URLS
+
+
+ETHEREUM_RPC_URLS = _gather_ethereum_rpcs()
 
 
 @dataclass(slots=True)
@@ -38,6 +43,7 @@ class FeedConfig:
 
     contract_address: str
     decimals: int = 8
+    selector: str = DEFAULT_FEED_SELECTOR
 
 
 class EVMOracleFeedFetcher(FetcherInterfaceT):
@@ -117,7 +123,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
                 f"No feed configuration for {feed_key} in {self.__class__.__name__}"
             )
 
-        latest_answer = await self._read_latest_answer(session, config.contract_address)
+        latest_answer = await self._read_feed_value(session, config)
         if isinstance(latest_answer, PublisherFetchError):
             return latest_answer
 
@@ -152,10 +158,10 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
             publisher=self.publisher,
         )
 
-    async def _read_latest_answer(
-        self, session: ClientSession, contract_address: str
+    async def _read_feed_value(
+        self, session: ClientSession, config: FeedConfig
     ) -> float | PublisherFetchError:
-        """Call ``latestAnswer`` on the configured feed, rotating RPCs on failure."""
+        """Call the configured feed selector, rotating RPCs on failure."""
 
         rpc_candidates = list(self._rpc_urls)
         for _ in range(len(rpc_candidates)):
@@ -165,7 +171,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
                 "id": self._next_request_id(),
                 "method": "eth_call",
                 "params": [
-                    {"to": contract_address, "data": LATEST_ANSWER_SELECTOR},
+                    {"to": config.contract_address, "data": config.selector},
                     "latest",
                 ],
             }
@@ -228,7 +234,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
             return float(value)
 
         return PublisherFetchError(
-            f"All Ethereum RPCs failed while calling latestAnswer for {contract_address}"
+            f"All Ethereum RPCs failed while calling feed for {config.contract_address}"
         )
 
     def _next_rpc_url(self) -> str:
@@ -241,21 +247,33 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
         return self._request_id
 
     def format_url(self, pair: Pair) -> str:
-        None
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not use HTTP endpoints per pair."
+        )
 
 
-def build_feed_mapping(
-    entries: Iterable[tuple[str, str, int]],
-) -> Dict[str, FeedConfig]:
+def build_feed_mapping(entries: Iterable[tuple]) -> Dict[str, FeedConfig]:
     """Utility to build ``feed_configs`` dictionaries.
 
-    Args:
-        entries: iterable of tuples (pair_str, contract_address, decimals)
+    Accepts entries shaped as ``(pair, contract, decimals[, selector])``.
     """
 
     mapping: Dict[str, FeedConfig] = {}
-    for pair_str, contract_address, decimals in entries:
+    for entry in entries:
+        if len(entry) == 3:
+            pair_str, contract_address, decimals = entry
+            selector = DEFAULT_FEED_SELECTOR
+        elif len(entry) == 4:
+            pair_str, contract_address, decimals, selector = entry
+            selector = selector or DEFAULT_FEED_SELECTOR
+        else:
+            raise ValueError(
+                "Feed mapping entries must contain 3 or 4 elements (pair, contract, decimals[, selector])."
+            )
+
         mapping[pair_str] = FeedConfig(
-            contract_address=contract_address, decimals=decimals
+            contract_address=contract_address,
+            decimals=decimals,
+            selector=selector,
         )
     return mapping

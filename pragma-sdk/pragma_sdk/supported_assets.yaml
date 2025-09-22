@@ -92,6 +92,14 @@
   ticker: 'UNIBTC'
   ethereum_address: '0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568'
 
+- name: 'mRe7 Bitcoin'
+  decimals: 8
+  ticker: 'MRE7BTC'
+
+- name: 'mRe7 USD'
+  decimals: 8
+  ticker: 'MRE7USD'
+
 - name: 'Bitcoin Cash'
   decimals: 8
   ticker: 'BCH'
