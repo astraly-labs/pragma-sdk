@@ -36,6 +36,11 @@ Options:
 
   --api-key TEXT                  Pragma API key used to publish offchain
 
+  --rpc-url TEXT                  RPC url used to interact with the chain.
+
+  --evm-rpc-url TEXT              Ethereum RPC URL used by on-chain fetchers
+                                  (can be passed multiple times)
+
   --help                          Show this message and exit
 ```
 
@@ -44,6 +49,26 @@ For example, if you wish to run the `price-pusher` for our offchain API, that wo
 ```sh
 uv run price_pusher -c ./config/config.example.yaml --log-level DEBUG -t offchain -n mainnet -p plain:$PUBLISHER_PV_KEY --publisher-name $PUBLISHER_NAME --publisher-address $PUBLISHER_ADDRESS --api-key $PRAGMA_OFFCHAIN_API_KEY --api-base-url http://localhost:3000
 ```
+
+### Docker
+
+The published Docker image exposes the CLI directly. You can pass any option (including multiple `--evm-rpc-url` values) when starting the container:
+
+```sh
+docker run --rm \
+  -v $(pwd)/config.yaml:/opt/price-pusher/config/config.yaml \
+  ghcr.io/pragma-labs/price-pusher:latest \
+  --config-file /opt/price-pusher/config/config.yaml \
+  --target onchain \
+  --network mainnet \
+  --private-key plain:$PUBLISHER_PV_KEY \
+  --publisher-name $PUBLISHER_NAME \
+  --publisher-address $PUBLISHER_ADDRESS \
+  --evm-rpc-url https://my.ethereum.node \
+  --evm-rpc-url https://backup.rpc.example
+```
+
+If you omit `--evm-rpc-url`, the fetchers automatically fall back to the default public Ethereum RPC list bundled with the SDK.
 
 ## Architecture
 
