@@ -87,6 +87,11 @@
   coingecko_id: 'lombard-staked-btc'
   ethereum_address: '0x8236a87084f8b84306f72007f36f2618a5634494'
 
+- name: 'Universal BTC'
+  decimals: 8
+  ticker: 'UNIBTC'
+  ethereum_address: '0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568'
+
 - name: 'Bitcoin Cash'
   decimals: 8
   ticker: 'BCH'
