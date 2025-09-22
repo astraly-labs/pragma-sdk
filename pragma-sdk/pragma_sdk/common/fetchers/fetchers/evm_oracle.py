@@ -22,19 +22,12 @@ logger = get_pragma_sdk_logger()
 
 DEFAULT_FEED_SELECTOR = "0x50d25bcd"
 
-_DEFAULT_ETHEREUM_RPC_URLS = [
+DEFAULT_ETHEREUM_RPC_URLS: Sequence[str] = (
     "https://ethereum.publicnode.com",
     "https://rpc.ankr.com/eth",
     "https://eth.llamarpc.com",
     "https://rpc.mevblocker.io",
-]
-
-
-def _gather_ethereum_rpcs() -> List[str]:
-    return _DEFAULT_ETHEREUM_RPC_URLS
-
-
-ETHEREUM_RPC_URLS = _gather_ethereum_rpcs()
+)
 
 
 @dataclass(slots=True)
@@ -63,7 +56,8 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     ) -> None:
         super().__init__(pairs, publisher, api_key, network)
 
-        self._rpc_urls: List[str] = list(rpc_urls) if rpc_urls else ETHEREUM_RPC_URLS
+        default_rpcs = getattr(self, "DEFAULT_RPC_URLS", DEFAULT_ETHEREUM_RPC_URLS)
+        self._rpc_urls: List[str] = list(rpc_urls) if rpc_urls else list(default_rpcs)
         if len(self._rpc_urls) == 0:
             raise ValueError("Ethereum RPC URLs list cannot be empty")
         self._rpc_index = 0
