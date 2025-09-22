@@ -81,6 +81,12 @@
   starknet_address: '0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac'
   ethereum_address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
 
+- name: 'Lombard Staked Bitcoin'
+  decimals: 8
+  ticker: 'LBTC'
+  coingecko_id: 'lombard-staked-btc'
+  ethereum_address: '0x8236a87084f8b84306f72007f36f2618a5634494'
+
 - name: 'Bitcoin Cash'
   decimals: 8
   ticker: 'BCH'

@@ -17,6 +17,8 @@ from pragma_sdk.common.fetchers.fetchers import (
     BinanceFetcher,
     LbankFetcher,
     BitgetFetcher,
+    ChainlinkFetcher,
+    RedstoneFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import (
     BinanceFutureFetcher,
@@ -33,6 +35,8 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BybitFetcher,
     BinanceFetcher,
     EkuboFetcher,
+    ChainlinkFetcher,
+    RedstoneFetcher,
     PythFetcher,
     GateioFetcher,
     # DexscreenerFetcher,
