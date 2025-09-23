@@ -97,34 +97,3 @@ Here is an example :
     RPC url in the `network` parameter of the `PragmaOnChainClient` constructor.
     In that case make sure to specify the `chain_name`.
     You can also specify addresses of contracts with the `account_contract_address` argument.
-
-
-Interact with pragma off-chain
-------------------------------
-
-To interact with the Pragma off-chain, one can use the `PragmaOffChainClient<pragma_sdk.offchain.client.PragmaOffChainClient>`.
-The client covers most of the external endpoints of the Pragma off-chain API.
-Please refer to the complete `api documentation <https://docs.pragma.build/Resources/PragmApi/overview>`_
-
-An API key is currently needed to interact with the off-chain API. You can get one by contacting us at `support@pragma.build`.
-
-.. code-block:: python
-
-    from pragma_sdk.offchain.client import PragmaAPIClient
-    from pragma_sdk.common.types.pair import Pair
-    from pragma_sdk.common.types.types import AggregationMode, DataTypes
-    from pragma_sdk.common.types.asset import Asset
-
-    # Create your client
-    pac = PragmaAPIClient(
-        api_base_url="https://api.dev.pragma.build",
-        api_key="your_api_key"
-    )
-
-    # Get 1min OHLC data
-    entries = await pac.get_ohlc(
-        'BTC/USD',
-        None,
-        Interval.ONE_MINUTE,
-        AggregationMode.Median,
-    )

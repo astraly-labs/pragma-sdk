@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence
 
 from aiohttp import ClientSession
+from time import monotonic
 
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
@@ -48,6 +49,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     SOURCE: str = "EVM_ORACLE"
     hop_handler: HopHandler = HopHandler(hopped_currencies={"USD": "BTC"})
     feed_configs: Dict[str, FeedConfig] = {}
+    RPC_FAILURE_COOLDOWN_SECONDS: int = 60
 
     def __init__(
         self,
@@ -60,11 +62,14 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
         super().__init__(pairs, publisher, api_key, network)
 
         default_rpcs = getattr(self, "DEFAULT_RPC_URLS", DEFAULT_ETHEREUM_RPC_URLS)
-        self._rpc_urls: List[str] = list(rpc_urls) if rpc_urls else list(default_rpcs)
+        configured_rpcs = list(rpc_urls) if rpc_urls else list(default_rpcs)
+        unique_rpcs = list(dict.fromkeys(configured_rpcs))
+        self._rpc_urls: List[str] = unique_rpcs
         if len(self._rpc_urls) == 0:
             raise ValueError("Ethereum RPC URLs list cannot be empty")
         self._rpc_index = 0
         self._request_id = 0
+        self._rpc_failures: Dict[str, float] = {}
 
     async def fetch(
         self, session: ClientSession
@@ -188,88 +193,161 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     ) -> float | PublisherFetchError:
         """Call the configured feed selector, rotating RPCs on failure."""
 
-        rpc_candidates = list(self._rpc_urls)
-        for _ in range(len(rpc_candidates)):
-            rpc_url = self._next_rpc_url()
-            payload = {
-                "jsonrpc": "2.0",
-                "id": self._next_request_id(),
-                "method": "eth_call",
-                "params": [
-                    {"to": config.contract_address, "data": config.selector},
-                    "latest",
-                ],
-            }
+        total_rpcs = len(self._rpc_urls)
+        retry_without_cooldown = False
 
-            try:
-                async with session.post(
-                    rpc_url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"},
-                ) as resp:
-                    if resp.status != 200:
-                        logger.warning(
-                            "%s received non-200 status %s from %s",
-                            self.__class__.__name__,
-                            resp.status,
-                            rpc_url,
-                        )
-                        continue
+        while True:
+            attempted: set[str] = set()
+            made_request = False
 
-                    data = await resp.json()
-            except Exception as exc:  # pragma: no cover - defensive, network failure
-                logger.warning(
-                    "%s failed RPC call via %s: %s",
-                    self.__class__.__name__,
-                    rpc_url,
-                    exc,
-                )
-                continue
+            for _ in range(total_rpcs):
+                rpc_url = self._next_rpc_url(ignore_cooldown=retry_without_cooldown)
+                if rpc_url in attempted:
+                    continue
+                attempted.add(rpc_url)
 
-            result = data.get("result") if isinstance(data, dict) else None
-            if result is None:
-                message = (
-                    data.get("error", {}).get("message")
-                    if isinstance(data, dict)
-                    else data
-                )
-                logger.warning(
-                    "%s got empty result from %s: %s",
-                    self.__class__.__name__,
-                    rpc_url,
-                    message,
-                )
-                continue
+                if not retry_without_cooldown and self._is_rpc_in_cooldown(rpc_url):
+                    logger.debug(
+                        "%s skipping RPC %s because it is cooling down",
+                        self.__class__.__name__,
+                        rpc_url,
+                    )
+                    continue
 
-            try:
-                value = int(result, 16)
-            except ValueError as exc:
-                logger.error(
-                    "%s received invalid hex result %s: %s",
-                    self.__class__.__name__,
-                    result,
-                    exc,
-                )
-                continue
+                payload = {
+                    "jsonrpc": "2.0",
+                    "id": self._next_request_id(),
+                    "method": "eth_call",
+                    "params": [
+                        {"to": config.contract_address, "data": config.selector},
+                        "latest",
+                    ],
+                }
 
-            # Convert from uint256 to signed int256 if needed.
-            if value >= 2**255:
-                value -= 2**256
+                try:
+                    async with session.post(
+                        rpc_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"},
+                    ) as resp:
+                        made_request = True
+                        if resp.status != 200:
+                            logger.warning(
+                                "%s received non-200 status %s from %s",
+                                self.__class__.__name__,
+                                resp.status,
+                                rpc_url,
+                            )
+                            self._mark_rpc_failure(rpc_url)
+                            continue
 
-            return float(value)
+                        data = await resp.json()
+                except (
+                    Exception
+                ) as exc:  # pragma: no cover - defensive, network failure
+                    made_request = True
+                    logger.warning(
+                        "%s failed RPC call via %s: %s",
+                        self.__class__.__name__,
+                        rpc_url,
+                        exc,
+                    )
+                    self._mark_rpc_failure(rpc_url)
+                    continue
+
+                result = data.get("result") if isinstance(data, dict) else None
+                if result is None:
+                    message = (
+                        data.get("error", {}).get("message")
+                        if isinstance(data, dict)
+                        else data
+                    )
+                    logger.warning(
+                        "%s got empty result from %s: %s",
+                        self.__class__.__name__,
+                        rpc_url,
+                        message,
+                    )
+                    self._mark_rpc_failure(rpc_url)
+                    continue
+
+                try:
+                    value = int(result, 16)
+                except ValueError as exc:
+                    logger.error(
+                        "%s received invalid hex result %s: %s",
+                        self.__class__.__name__,
+                        result,
+                        exc,
+                    )
+                    self._mark_rpc_failure(rpc_url)
+                    continue
+
+                # Convert from uint256 to signed int256 if needed.
+                if value >= 2**255:
+                    value -= 2**256
+
+                self._mark_rpc_success(rpc_url)
+                return float(value)
+
+            if retry_without_cooldown or made_request or total_rpcs == 0:
+                break
+
+            # All available endpoints were cooling down and skipped; try once ignoring cooldowns
+            logger.debug(
+                "%s retrying Ethereum RPCs without cooldown skips",
+                self.__class__.__name__,
+            )
+            retry_without_cooldown = True
+            continue
+            # loop restarts with ignore flag set
 
         return PublisherFetchError(
             f"All Ethereum RPCs failed while calling feed for {config.contract_address}"
         )
 
-    def _next_rpc_url(self) -> str:
+    def _next_rpc_url(self, *, ignore_cooldown: bool = False) -> str:
+        total = len(self._rpc_urls)
+        if total == 0:
+            raise ValueError("Ethereum RPC URLs list cannot be empty")
+
+        now = monotonic()
+        for offset in range(total):
+            index = (self._rpc_index + offset) % total
+            url = self._rpc_urls[index]
+            if ignore_cooldown or not self._is_rpc_in_cooldown(url, now):
+                self._rpc_index = (index + 1) % total
+                return url
+
+        # All RPCs are currently cooling down; pick the next one regardless
         url = self._rpc_urls[self._rpc_index]
-        self._rpc_index = (self._rpc_index + 1) % len(self._rpc_urls)
+        self._rpc_index = (self._rpc_index + 1) % total
         return url
 
     def _next_request_id(self) -> int:
         self._request_id += 1
         return self._request_id
+
+    def _mark_rpc_failure(self, rpc_url: str) -> None:
+        self._rpc_failures[rpc_url] = monotonic()
+
+    def _mark_rpc_success(self, rpc_url: str) -> None:
+        self._rpc_failures.pop(rpc_url, None)
+
+    def _is_rpc_in_cooldown(self, rpc_url: str, now: Optional[float] = None) -> bool:
+        failure_time = self._rpc_failures.get(rpc_url)
+        if failure_time is None:
+            return False
+
+        if now is None:
+            now = monotonic()
+
+        if now - failure_time >= self.RPC_FAILURE_COOLDOWN_SECONDS:
+            # Cooldown expired
+            self._rpc_failures.pop(rpc_url, None)
+            return False
+
+        return True
 
     def format_url(self, pair: Pair) -> str:
         raise NotImplementedError(

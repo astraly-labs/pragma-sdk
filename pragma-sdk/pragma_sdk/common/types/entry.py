@@ -30,9 +30,6 @@ class Entry(abc.ABC):
     def serialize(self) -> Dict[str, object]: ...
 
     @abc.abstractmethod
-    def offchain_serialize(self) -> Dict[str, object]: ...
-
-    @abc.abstractmethod
     def get_timestamp(self) -> int: ...
 
     @abc.abstractmethod
@@ -58,11 +55,6 @@ class Entry(abc.ABC):
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [entry.serialize() for entry in entries]
-        return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
-
-    @staticmethod
-    def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        serialized_entries = [entry.offchain_serialize() for entry in entries]
         return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
 
     @staticmethod
@@ -185,18 +177,6 @@ class SpotEntry(Entry):
                 "publisher": self.base.publisher,
             },
             "pair_id": self.pair_id,
-            "price": self.price,
-            "volume": self.volume,
-        }
-
-    def offchain_serialize(self) -> Dict[str, object]:
-        return {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "pair_id": felt_to_str(self.pair_id),
             "price": self.price,
             "volume": self.volume,
         }
@@ -432,20 +412,6 @@ class FutureEntry(Entry):
             "volume": self.volume,
         }
 
-    def offchain_serialize(self) -> Dict[str, object]:
-        serialized = {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "pair_id": felt_to_str(self.pair_id),
-            "price": self.price,
-            "volume": self.volume,
-            "expiration_timestamp": self.expiry_timestamp,
-        }
-        return serialized
-
     def __repr__(self) -> str:
         return (
             f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
@@ -670,18 +636,6 @@ class GenericEntry(Entry):
             "key": self.key,
             "value": self.value,
         }
-
-    def offchain_serialize(self) -> Dict[str, object]:
-        serialized = {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "key": felt_to_str(self.key),
-            "value": self.value,
-        }
-        return serialized
 
     def __repr__(self) -> str:
         return (

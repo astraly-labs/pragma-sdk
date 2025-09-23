@@ -3,8 +3,6 @@ import time
 import logging
 from typing import List, Optional, Dict, Callable
 from starknet_py.contract import InvokeResult
-from starknet_py.net.client_errors import ClientError
-from requests.exceptions import RequestException
 
 from abc import ABC, abstractmethod
 
@@ -47,7 +45,8 @@ class PricePusher(IPricePusher):
 
     @property
     def is_publishing_on_chain(self) -> bool:
-        return isinstance(self.client, PragmaOnChainClient)
+        publish_many = getattr(self.client, "publish_many", None)
+        return callable(publish_many)
 
     async def wait_for_publishing_acceptance(self, invocations: List[InvokeResult]):
         """
@@ -70,16 +69,15 @@ class PricePusher(IPricePusher):
         logger.info(f"📨 PUSHER: processing {len(entries)} new asset(s) to push...")
 
         try:
-            if isinstance(self.client, PragmaOnChainClient):
-                async with self.onchain_lock:
-                    start_t = time.time()
-                    response = await self.client.publish_many(entries)
-                    await self.wait_for_publishing_acceptance(response)
-            else:
-                start_t = time.time()
-                response = await self.client.publish_entries(
-                    entries, publish_to_websocket=True
+            if not callable(getattr(self.client, "publish_many", None)):
+                raise TypeError(
+                    "PricePusher now requires a client exposing an async publish_many method"
                 )
+
+            async with self.onchain_lock:
+                start_t = time.time()
+                response = await self.client.publish_many(entries)
+                await self.wait_for_publishing_acceptance(response)
 
             end_t = time.time()
             logger.info(
@@ -94,7 +92,7 @@ class PricePusher(IPricePusher):
 
             return response
 
-        except (ClientError, RequestException) as e:
+        except Exception as e:
             self.consecutive_push_error += 1
             logger.error(f"⛔ PUSHER: could not publish entrie(s): {e}")
 
