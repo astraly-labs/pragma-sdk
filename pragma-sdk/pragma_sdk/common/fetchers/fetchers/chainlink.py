@@ -16,7 +16,7 @@ class ChainlinkFetcher(EVMOracleFeedFetcher):
     feed_configs = build_feed_mapping(
         [
             ("LBTC/BTC", "0x5c29868C58b6e15e2b962943278969Ab6a7D3212", 8),
-            ("UNIBTC/BTC", "0x861d15F8a4059cb918bD6F3670adAEB1220B298f", 8),
+            ("UNIBTC/BTC", "0x861d15F8a4059cb918bD6F3670adAEB1220B298f", 18),
         ]
     )
 
