@@ -37,6 +37,7 @@ class FeedConfig:
     contract_address: str
     decimals: int = 8
     selector: str = DEFAULT_FEED_SELECTOR
+    feed_pair: Optional[str] = None
 
 
 class EVMOracleFeedFetcher(FetcherInterfaceT):
@@ -66,15 +67,47 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        pairs_to_fetch: List[tuple[Pair, Pair]] = []
+        resolved_pairs: List[tuple[Pair, Pair, FeedConfig]] = []
+        errors: List[PublisherFetchError] = []
         requires_hop = False
+
         for requested_pair in self.pairs:
+            requested_key = str(requested_pair)
+            config = self.feed_configs.get(requested_key)
+
+            if config is not None:
+                feed_pair_str = config.feed_pair or requested_key
+                if feed_pair_str != requested_key:
+                    base_ticker, quote_ticker = feed_pair_str.split("/")
+                    feed_pair = Pair.from_tickers(base_ticker, quote_ticker)
+                    if quote_ticker != requested_pair.quote_currency.id:
+                        requires_hop = True
+                else:
+                    feed_pair = requested_pair
+
+                resolved_pairs.append((requested_pair, feed_pair, config))
+                continue
+
             hopped_pair = self.hop_handler.get_hop_pair(requested_pair)
             if hopped_pair is not None:
+                config = self.feed_configs.get(str(hopped_pair))
+                if config is None:
+                    errors.append(
+                        PublisherFetchError(
+                            f"No feed configuration for {hopped_pair} in {self.__class__.__name__}"
+                        )
+                    )
+                    continue
+
                 requires_hop = True
-                pairs_to_fetch.append((requested_pair, hopped_pair))
-            else:
-                pairs_to_fetch.append((requested_pair, requested_pair))
+                resolved_pairs.append((requested_pair, hopped_pair, config))
+                continue
+
+            errors.append(
+                PublisherFetchError(
+                    f"No feed configuration for {requested_pair} in {self.__class__.__name__}"
+                )
+            )
 
         hop_prices: Optional[Dict[Pair, float]] = None
         if requires_hop:
@@ -87,12 +120,14 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
                     feed_pair=feed_pair,
                     session=session,
                     hop_prices=hop_prices,
+                    config=config,
                 )
             )
-            for pair, feed_pair in pairs_to_fetch
+            for pair, feed_pair, config in resolved_pairs
         ]
 
-        return list(await asyncio.gather(*tasks, return_exceptions=True))
+        results = list(await asyncio.gather(*tasks, return_exceptions=True))
+        return errors + results
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -107,15 +142,9 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
         feed_pair: Pair,
         session: ClientSession,
         hop_prices: Optional[Dict[Pair, float]],
+        config: FeedConfig,
     ) -> Entry | PublisherFetchError:
         """Fetch and assemble a spot entry for a single pair."""
-
-        feed_key = str(feed_pair)
-        config = self.feed_configs.get(feed_key)
-        if config is None:
-            return PublisherFetchError(
-                f"No feed configuration for {feed_key} in {self.__class__.__name__}"
-            )
 
         latest_answer = await self._read_feed_value(session, config)
         if isinstance(latest_answer, PublisherFetchError):
@@ -249,7 +278,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
 def build_feed_mapping(entries: Iterable[tuple]) -> Dict[str, FeedConfig]:
     """Utility to build ``feed_configs`` dictionaries.
 
-    Accepts entries shaped as ``(pair, contract, decimals[, selector])``.
+    Accepts entries shaped as ``(pair, contract, decimals[, selector[, feed_pair]])``.
     """
 
     mapping: Dict[str, FeedConfig] = {}
@@ -257,17 +286,31 @@ def build_feed_mapping(entries: Iterable[tuple]) -> Dict[str, FeedConfig]:
         if len(entry) == 3:
             pair_str, contract_address, decimals = entry
             selector = DEFAULT_FEED_SELECTOR
+            feed_pair = pair_str
         elif len(entry) == 4:
-            pair_str, contract_address, decimals, selector = entry
-            selector = selector or DEFAULT_FEED_SELECTOR
+            pair_str, contract_address, decimals, optional = entry
+            if isinstance(optional, str) and optional.startswith("0x"):
+                selector = optional
+                feed_pair = pair_str
+            else:
+                selector = DEFAULT_FEED_SELECTOR
+                feed_pair = optional
+        elif len(entry) == 5:
+            pair_str, contract_address, decimals, selector, feed_pair = entry
         else:
             raise ValueError(
-                "Feed mapping entries must contain 3 or 4 elements (pair, contract, decimals[, selector])."
+                "Feed mapping entries must contain 3 to 5 elements: (pair, contract, decimals[, selector[, feed_pair]])."
             )
 
-        mapping[pair_str] = FeedConfig(
+        config = FeedConfig(
             contract_address=contract_address,
             decimals=decimals,
-            selector=selector,
+            selector=selector or DEFAULT_FEED_SELECTOR,
+            feed_pair=feed_pair if feed_pair != pair_str else None,
         )
+
+        mapping[pair_str] = config
+        if config.feed_pair is not None:
+            mapping[config.feed_pair] = config
+
     return mapping

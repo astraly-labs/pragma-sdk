@@ -16,8 +16,15 @@ class Re7OnChainFetcher(EVMOracleFeedFetcher):
     feed_configs = build_feed_mapping(
         [
             (
-                "MRE7BTC/BTC",
+                "MRE7BTC/USD",
                 "0x9de073685AEb382B7c6Dd0FB93fa0AEF80eB8967",
+                8,
+                "0xbb23ae25",
+                "MRE7BTC/BTC",
+            ),
+            (
+                "MRE7YIELD/USD",
+                "0x0a2a51f2f206447dE3E3a80FCf92240244722395",
                 8,
                 "0xbb23ae25",
             ),

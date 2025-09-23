@@ -92,13 +92,16 @@
   ticker: 'UNIBTC'
   ethereum_address: '0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568'
 
-- name: 'mRe7 Bitcoin'
+- name: 'Midas mRe7BTC'
   decimals: 8
   ticker: 'MRE7BTC'
+  ethereum_address: '0x9FB442d6B612a6dcD2acC67bb53771eF1D9F661A'
 
-- name: 'mRe7 USD'
+- name: 'Midas mRe7YIELD'
   decimals: 8
-  ticker: 'MRE7USD'
+  ticker: 'MRE7YIELD'
+  ethereum_address: '0x87C9053C819bB28e0D73d33059E1b3DA80AFb0cf'
+  coingecko_id: 'midas-mre7yield'
 
 - name: 'Bitcoin Cash'
   decimals: 8
