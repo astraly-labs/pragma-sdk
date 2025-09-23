@@ -2,7 +2,7 @@ import asyncio
 import click
 import logging
 
-from typing import Optional, List
+from typing import Optional, List, Sequence
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.types.client import PragmaClient
@@ -49,6 +49,7 @@ async def main(
     enable_strk_fees: Optional[bool] = None,
     health_port: Optional[int] = None,
     max_seconds_without_push: Optional[int] = None,
+    evm_rpc_urls: Optional[List[str]] = None,
 ) -> None:
     """
     Main function of the price pusher.
@@ -74,6 +75,7 @@ async def main(
         fetcher_client=FetcherClient(),
         publisher_name=publisher_name,
         price_configs=price_configs,
+        evm_rpc_urls=evm_rpc_urls,
     )
 
     logger.info("⏳ Starting orchestration...")
@@ -303,6 +305,12 @@ def _create_client(
     default=300,
     help="Maximum seconds without push before unhealthy. Default to 300 seconds (5 minutes).",
 )
+@click.option(
+    "--evm-rpc-url",
+    type=click.STRING,
+    multiple=True,
+    help="Ethereum RPC URL used by on-chain fetchers (can be passed multiple times).",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -321,6 +329,7 @@ def cli_entrypoint(
     poller_refresh_interval: int,
     health_port: Optional[int],
     max_seconds_without_push: Optional[int],
+    evm_rpc_url: Sequence[str],
 ) -> None:
     if target == "offchain":
         if not api_key or not api_base_url:
@@ -330,6 +339,10 @@ def cli_entrypoint(
         if rpc_url:
             logger.error(
                 '🤔 "rpc-url" option has no use when the target is "offchain". Ignoring it.'
+            )
+        if evm_rpc_url:
+            logger.warning(
+                '🤔 "evm-rpc-url" option has no use when the target is "offchain". Ignoring it.'
             )
         if max_fee:
             logger.warning(
@@ -352,6 +365,11 @@ def cli_entrypoint(
             raise click.UsageError(
                 '⛔ "rpc_url" format is incorrect. It must start with http(...)'
             )
+        for url in evm_rpc_url:
+            if not url.startswith("http"):
+                raise click.UsageError(
+                    '⛔ "evm-rpc-url" format is incorrect. Each value must start with http(...)'
+                )
 
     # Update the logger level of the pragma_sdk package
     sdk_logger = get_pragma_sdk_logger()
@@ -368,6 +386,8 @@ def cli_entrypoint(
     # Disable health server if port is 0
     if health_port == 0:
         health_port = None
+
+    evm_rpc_urls = list(evm_rpc_url) if evm_rpc_url else None
 
     asyncio.run(
         main(
@@ -387,6 +407,7 @@ def cli_entrypoint(
             poller_refresh_interval=poller_refresh_interval,
             health_port=health_port,
             max_seconds_without_push=max_seconds_without_push,
+            evm_rpc_urls=evm_rpc_urls,
         )
     )
 

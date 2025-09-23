@@ -11,6 +11,7 @@ from pragma_sdk.common.fetchers.fetchers.okx import OkxFetcher
 from pragma_sdk.common.fetchers.fetchers.ekubo import EkuboFetcher
 from pragma_sdk.common.fetchers.fetchers.chainlink import ChainlinkFetcher
 from pragma_sdk.common.fetchers.fetchers.redstone import RedstoneFetcher
+from pragma_sdk.common.fetchers.fetchers.re7onchain import Re7OnChainFetcher
 from pragma_sdk.common.fetchers.fetchers.mexc import MEXCFetcher
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
 from pragma_sdk.common.fetchers.fetchers.dexscreener import DexscreenerFetcher
@@ -40,4 +41,5 @@ __all__ = [
     "LbankFetcher",
     "ChainlinkFetcher",
     "RedstoneFetcher",
+    "Re7OnChainFetcher",
 ]

@@ -1,0 +1,11 @@
+- pairs:
+    spot:
+      - MRE7BTC/USD
+      - MRE7YIELD/USD
+      - USDC/USD
+      - LBTC/USD
+      - UNIBTC/USD
+      - WBTC/USD
+      - BTC/USD
+  time_difference: 600
+  price_deviation: 0.025

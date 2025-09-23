@@ -20,16 +20,14 @@ from pragma_sdk.common.types.pair import Pair
 logger = get_pragma_sdk_logger()
 
 
-LATEST_ANSWER_SELECTOR = "0x50d25bcd"
+DEFAULT_FEED_SELECTOR = "0x50d25bcd"
 
-ETHEREUM_RPC_URLS = [
+DEFAULT_ETHEREUM_RPC_URLS: Sequence[str] = (
+    "https://ethereum.publicnode.com",
     "https://rpc.ankr.com/eth",
     "https://eth.llamarpc.com",
-    "https://cloudflare-eth.com",
-    "https://eth.llamarpc.com",
-    "https://ethereum-rpc.publicnode.com",
     "https://rpc.mevblocker.io",
-]
+)
 
 
 @dataclass(slots=True)
@@ -38,6 +36,8 @@ class FeedConfig:
 
     contract_address: str
     decimals: int = 8
+    selector: str = DEFAULT_FEED_SELECTOR
+    feed_pair: Optional[str] = None
 
 
 class EVMOracleFeedFetcher(FetcherInterfaceT):
@@ -57,7 +57,8 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     ) -> None:
         super().__init__(pairs, publisher, api_key, network)
 
-        self._rpc_urls: List[str] = list(rpc_urls) if rpc_urls else ETHEREUM_RPC_URLS
+        default_rpcs = getattr(self, "DEFAULT_RPC_URLS", DEFAULT_ETHEREUM_RPC_URLS)
+        self._rpc_urls: List[str] = list(rpc_urls) if rpc_urls else list(default_rpcs)
         if len(self._rpc_urls) == 0:
             raise ValueError("Ethereum RPC URLs list cannot be empty")
         self._rpc_index = 0
@@ -66,15 +67,47 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        pairs_to_fetch: List[tuple[Pair, Pair]] = []
+        resolved_pairs: List[tuple[Pair, Pair, FeedConfig]] = []
+        errors: List[PublisherFetchError] = []
         requires_hop = False
+
         for requested_pair in self.pairs:
+            requested_key = str(requested_pair)
+            config = self.feed_configs.get(requested_key)
+
+            if config is not None:
+                feed_pair_str = config.feed_pair or requested_key
+                if feed_pair_str != requested_key:
+                    base_ticker, quote_ticker = feed_pair_str.split("/")
+                    feed_pair = Pair.from_tickers(base_ticker, quote_ticker)
+                    if quote_ticker != requested_pair.quote_currency.id:
+                        requires_hop = True
+                else:
+                    feed_pair = requested_pair
+
+                resolved_pairs.append((requested_pair, feed_pair, config))
+                continue
+
             hopped_pair = self.hop_handler.get_hop_pair(requested_pair)
             if hopped_pair is not None:
+                config = self.feed_configs.get(str(hopped_pair))
+                if config is None:
+                    errors.append(
+                        PublisherFetchError(
+                            f"No feed configuration for {hopped_pair} in {self.__class__.__name__}"
+                        )
+                    )
+                    continue
+
                 requires_hop = True
-                pairs_to_fetch.append((requested_pair, hopped_pair))
-            else:
-                pairs_to_fetch.append((requested_pair, requested_pair))
+                resolved_pairs.append((requested_pair, hopped_pair, config))
+                continue
+
+            errors.append(
+                PublisherFetchError(
+                    f"No feed configuration for {requested_pair} in {self.__class__.__name__}"
+                )
+            )
 
         hop_prices: Optional[Dict[Pair, float]] = None
         if requires_hop:
@@ -87,12 +120,14 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
                     feed_pair=feed_pair,
                     session=session,
                     hop_prices=hop_prices,
+                    config=config,
                 )
             )
-            for pair, feed_pair in pairs_to_fetch
+            for pair, feed_pair, config in resolved_pairs
         ]
 
-        return list(await asyncio.gather(*tasks, return_exceptions=True))
+        results = list(await asyncio.gather(*tasks, return_exceptions=True))
+        return errors + results
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -107,17 +142,11 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
         feed_pair: Pair,
         session: ClientSession,
         hop_prices: Optional[Dict[Pair, float]],
+        config: FeedConfig,
     ) -> Entry | PublisherFetchError:
         """Fetch and assemble a spot entry for a single pair."""
 
-        feed_key = str(feed_pair)
-        config = self.feed_configs.get(feed_key)
-        if config is None:
-            return PublisherFetchError(
-                f"No feed configuration for {feed_key} in {self.__class__.__name__}"
-            )
-
-        latest_answer = await self._read_latest_answer(session, config.contract_address)
+        latest_answer = await self._read_feed_value(session, config)
         if isinstance(latest_answer, PublisherFetchError):
             return latest_answer
 
@@ -152,10 +181,10 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
             publisher=self.publisher,
         )
 
-    async def _read_latest_answer(
-        self, session: ClientSession, contract_address: str
+    async def _read_feed_value(
+        self, session: ClientSession, config: FeedConfig
     ) -> float | PublisherFetchError:
-        """Call ``latestAnswer`` on the configured feed, rotating RPCs on failure."""
+        """Call the configured feed selector, rotating RPCs on failure."""
 
         rpc_candidates = list(self._rpc_urls)
         for _ in range(len(rpc_candidates)):
@@ -165,7 +194,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
                 "id": self._next_request_id(),
                 "method": "eth_call",
                 "params": [
-                    {"to": contract_address, "data": LATEST_ANSWER_SELECTOR},
+                    {"to": config.contract_address, "data": config.selector},
                     "latest",
                 ],
             }
@@ -228,7 +257,7 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
             return float(value)
 
         return PublisherFetchError(
-            f"All Ethereum RPCs failed while calling latestAnswer for {contract_address}"
+            f"All Ethereum RPCs failed while calling feed for {config.contract_address}"
         )
 
     def _next_rpc_url(self) -> str:
@@ -241,21 +270,47 @@ class EVMOracleFeedFetcher(FetcherInterfaceT):
         return self._request_id
 
     def format_url(self, pair: Pair) -> str:
-        None
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not use HTTP endpoints per pair."
+        )
 
 
-def build_feed_mapping(
-    entries: Iterable[tuple[str, str, int]],
-) -> Dict[str, FeedConfig]:
+def build_feed_mapping(entries: Iterable[tuple]) -> Dict[str, FeedConfig]:
     """Utility to build ``feed_configs`` dictionaries.
 
-    Args:
-        entries: iterable of tuples (pair_str, contract_address, decimals)
+    Accepts entries shaped as ``(pair, contract, decimals[, selector[, feed_pair]])``.
     """
 
     mapping: Dict[str, FeedConfig] = {}
-    for pair_str, contract_address, decimals in entries:
-        mapping[pair_str] = FeedConfig(
-            contract_address=contract_address, decimals=decimals
+    for entry in entries:
+        if len(entry) == 3:
+            pair_str, contract_address, decimals = entry
+            selector = DEFAULT_FEED_SELECTOR
+            feed_pair = pair_str
+        elif len(entry) == 4:
+            pair_str, contract_address, decimals, optional = entry
+            if isinstance(optional, str) and optional.startswith("0x"):
+                selector = optional
+                feed_pair = pair_str
+            else:
+                selector = DEFAULT_FEED_SELECTOR
+                feed_pair = optional
+        elif len(entry) == 5:
+            pair_str, contract_address, decimals, selector, feed_pair = entry
+        else:
+            raise ValueError(
+                "Feed mapping entries must contain 3 to 5 elements: (pair, contract, decimals[, selector[, feed_pair]])."
+            )
+
+        config = FeedConfig(
+            contract_address=contract_address,
+            decimals=decimals,
+            selector=selector or DEFAULT_FEED_SELECTOR,
+            feed_pair=feed_pair if feed_pair != pair_str else None,
         )
+
+        mapping[pair_str] = config
+        if config.feed_pair is not None:
+            mapping[config.feed_pair] = config
+
     return mapping
