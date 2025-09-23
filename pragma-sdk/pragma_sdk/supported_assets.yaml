@@ -90,6 +90,7 @@
 - name: 'Universal BTC'
   decimals: 8
   ticker: 'UNIBTC'
+  coingecko_id: 'universal-btc'
   ethereum_address: '0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568'
 
 - name: 'Midas mRe7BTC'

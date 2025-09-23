@@ -24,9 +24,11 @@ DEFAULT_FEED_SELECTOR = "0x50d25bcd"
 
 DEFAULT_ETHEREUM_RPC_URLS: Sequence[str] = (
     "https://ethereum.publicnode.com",
-    "https://rpc.ankr.com/eth",
     "https://eth.llamarpc.com",
     "https://rpc.mevblocker.io",
+    "https://1rpc.io/eth",
+    "https://eth.merkle.io",
+    "https://rpc.flashbots.net",
 )
 
 
