@@ -2,40 +2,30 @@ import pytest
 import logging
 
 from typing import List
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
-from pragma_sdk.common.types.client import PragmaClient
+
 from pragma_sdk.common.types.entry import Entry
 from price_pusher.core.pusher import PricePusher
-
-
-@pytest.fixture
-def mock_client():
-    client = AsyncMock(spec=PragmaClient)
-    return client
-
-
-@pytest.fixture
-def price_pusher(mock_client):
-    return PricePusher(client=mock_client)
 
 
 @pytest.mark.asyncio
 async def test_update_price_feeds_success(caplog):
     caplog.set_level(logging.INFO)
 
-    mock_client = AsyncMock()
+    mock_client = SimpleNamespace()
     mock_entry = MagicMock()
     mock_response = [mock_entry]
-    mock_client.publish_entries.return_value = mock_response
+    mock_client.publish_many = AsyncMock(return_value=mock_response)
 
     price_pusher = PricePusher(mock_client)
+    price_pusher.wait_for_publishing_acceptance = AsyncMock()
     entries: List[MagicMock] = [mock_entry]
     response = await price_pusher.update_price_feeds(entries)
 
     assert response == mock_response
-    mock_client.publish_entries.assert_called_once_with(
-        entries, publish_to_websocket=True
-    )
+    mock_client.publish_many.assert_awaited_once_with(entries)
+    price_pusher.wait_for_publishing_acceptance.assert_awaited_once_with(mock_response)
 
     assert any(
         f"processing {len(entries)} new asset(s) to push..." in record.message
@@ -46,23 +36,27 @@ async def test_update_price_feeds_success(caplog):
         for record in caplog.records
     )
     assert price_pusher.consecutive_push_error == 0
-    assert not price_pusher.is_publishing_on_chain
+    assert price_pusher.is_publishing_on_chain
 
 
 @pytest.mark.asyncio
-async def test_update_price_feeds_failure(price_pusher, mock_client, caplog):
+async def test_update_price_feeds_failure(caplog):
     caplog.set_level(logging.INFO)
     mock_entry = MagicMock(spec=Entry)
-    mock_client.publish_entries.side_effect = Exception("Test Exception")
+
+    mock_client = SimpleNamespace()
+    mock_client.publish_many = AsyncMock(side_effect=Exception("Test Exception"))
+
+    price_pusher = PricePusher(mock_client)
+    price_pusher.wait_for_publishing_acceptance = AsyncMock()
 
     entries = [mock_entry]
 
     response = await price_pusher.update_price_feeds(entries)
 
     assert response is None
-    mock_client.publish_entries.assert_called_once_with(
-        entries, publish_to_websocket=True
-    )
+    mock_client.publish_many.assert_awaited_once_with(entries)
+    price_pusher.wait_for_publishing_acceptance.assert_not_awaited()
 
     assert any(
         "processing 1 new asset(s) to push..." in record.message
@@ -72,3 +66,4 @@ async def test_update_price_feeds_failure(price_pusher, mock_client, caplog):
         "could not publish entrie(s): Test Exception" in record.message
         for record in caplog.records
     )
+    assert price_pusher.consecutive_push_error == 1
