@@ -451,7 +451,6 @@ class OracleMixin:
                         for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
                     ],
                     aggregation_mode.serialize(),
-                    max_fee=self.execution_config.max_fee,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -467,7 +466,6 @@ class OracleMixin:
                     for pair_id, expiry in zip(pair_ids, expiry_timestamps)
                 ],
                 aggregation_mode.serialize(),
-                max_fee=self.execution_config.max_fee,
                 callback=self.track_nonce,
             )
 
@@ -504,7 +502,6 @@ class OracleMixin:
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
-                    max_fee=self.execution_config.max_fee,
                     callback=self.track_nonce,
                 )
                 index += pagination
@@ -520,7 +517,6 @@ class OracleMixin:
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),
-                max_fee=self.execution_config.max_fee,
                 callback=self.track_nonce,
             )
 
@@ -593,10 +589,7 @@ class OracleMixin:
                 "self._setup_account_client(private_key, account_contract_address)"
             )
 
-        invocation = await self.oracle.functions["upgrade"].invoke(
-            implementation_hash,
-            max_fee=self.execution_config.max_fee,
-        )
+        invocation = await self.oracle.functions["upgrade"].invoke(implementation_hash)
         return invocation
 
     async def get_time_since_last_published_spot(
