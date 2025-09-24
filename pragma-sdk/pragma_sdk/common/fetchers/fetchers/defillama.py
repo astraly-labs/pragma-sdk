@@ -26,6 +26,10 @@ class DefillamaFetcher(FetcherInterfaceT):
             return PublisherFetchError(
                 f"Unknown price pair, do not know how to query Coingecko for {pair.base_currency.id}"
             )
+        # Ignore some base currencies
+        if pair.base_currency.id in ("UNIBTC", "LBTC"):
+            return PublisherFetchError(f"No data found for {pair} from Defillama")
+
         if pair.quote_currency.id not in ("USD", "USDPLUS"):
             return await self.operate_usd_hop(pair, session)
 
