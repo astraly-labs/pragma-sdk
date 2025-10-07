@@ -240,6 +240,13 @@ def _create_client(
     ),
 )
 @click.option(
+    "--aws-region",
+    type=click.STRING,
+    required=False,
+    default="eu-west-3",
+    help="AWS region for fetching secrets from AWS Secrets Manager. Default: eu-west-3",
+)
+@click.option(
     "--publisher-name",
     type=click.STRING,
     required=True,
@@ -318,6 +325,7 @@ def cli_entrypoint(
     network: str,
     rpc_url: Optional[str],
     raw_private_key: str,
+    aws_region: str,
     publisher_name: str,
     publisher_address: str,
     api_base_url: Optional[str],
@@ -376,7 +384,7 @@ def cli_entrypoint(
     sdk_logger.setLevel(log_level)
 
     setup_logging(logger, log_level)
-    private_key = load_private_key_from_cli_arg(raw_private_key)
+    private_key = load_private_key_from_cli_arg(raw_private_key, aws_region=aws_region)
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
 
     # Make sure that the API base url does not ends with /
