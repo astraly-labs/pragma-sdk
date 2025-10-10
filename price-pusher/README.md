@@ -57,7 +57,7 @@ The published Docker image exposes the CLI directly. You can pass any option (in
 ```sh
 docker run --rm \
   -v $(pwd)/config.yaml:/opt/price-pusher/config/config.yaml \
-  ghcr.io/pragma-labs/price-pusher:latest \
+  ghcr.io/astraly-labs/price-pusher:latest \
   --config-file /opt/price-pusher/config/config.yaml \
   --target onchain \
   --network mainnet \
