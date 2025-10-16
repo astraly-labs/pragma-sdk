@@ -28,6 +28,7 @@ from price_pusher.configs.price_config import (
 from price_pusher.orchestrator import Orchestrator
 from price_pusher.price_types import Target, Network
 from price_pusher.health_server import HealthServer
+from price_pusher.fastapi_health_server import FastAPIHealthServer
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ async def main(
     pagination: Optional[int] = None,
     enable_strk_fees: Optional[bool] = None,
     health_port: Optional[int] = None,
+    health_server_type: str = "fastapi",
     max_seconds_without_push: Optional[int] = None,
     evm_rpc_urls: Optional[List[str]] = None,
 ) -> None:
@@ -83,9 +85,16 @@ async def main(
     # Create health server if configured
     health_server = None
     if health_port:
-        health_server = HealthServer(
-            port=health_port, max_seconds_without_push=max_seconds_without_push or 300
-        )
+        if health_server_type.lower() == "fastapi":
+            health_server = FastAPIHealthServer(
+                port=health_port,
+                max_seconds_without_push=max_seconds_without_push or 300,
+            )
+        else:
+            health_server = HealthServer(
+                port=health_port,
+                max_seconds_without_push=max_seconds_without_push or 300,
+            )
 
     poller = PricePoller(fetcher_client=fetcher_client)
     pusher = PricePusher(
@@ -306,6 +315,13 @@ def _create_client(
     help="Port for health check HTTP server. Default to 8080. Set to 0 to disable.",
 )
 @click.option(
+    "--health-server-type",
+    type=click.Choice(["aiohttp", "fastapi"], case_sensitive=False),
+    required=False,
+    default="fastapi",
+    help="Type of health server to use. Default to fastapi.",
+)
+@click.option(
     "--max-seconds-without-push",
     type=click.IntRange(min=60),
     required=False,
@@ -336,6 +352,7 @@ def cli_entrypoint(
     enable_strk_fees: Optional[bool],
     poller_refresh_interval: int,
     health_port: Optional[int],
+    health_server_type: str,
     max_seconds_without_push: Optional[int],
     evm_rpc_url: Sequence[str],
 ) -> None:
@@ -414,6 +431,7 @@ def cli_entrypoint(
             enable_strk_fees=enable_strk_fees,
             poller_refresh_interval=poller_refresh_interval,
             health_port=health_port,
+            health_server_type=health_server_type,
             max_seconds_without_push=max_seconds_without_push,
             evm_rpc_urls=evm_rpc_urls,
         )
