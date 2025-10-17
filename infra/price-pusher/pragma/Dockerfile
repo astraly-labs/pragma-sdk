@@ -25,6 +25,13 @@ WORKDIR /opt/price-pusher
 RUN uv sync --all-extras
 
 FROM base as final
+
+# Install curl for health checks
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /opt /opt
 COPY infra/price-pusher/pragma/entrypoint.sh /opt/price-pusher/
 COPY infra/price-pusher/config/ /opt/price-pusher/config/
@@ -32,8 +39,8 @@ WORKDIR /opt/price-pusher
 
 EXPOSE 8083
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://0.0.0.0:8083/ || exit 1
+# Add healthcheck using the new FastAPI health endpoints
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://0.0.0.0:8083/health || exit 1
 
 ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]
