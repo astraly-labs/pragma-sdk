@@ -386,3 +386,15 @@
   decimals: 8
   ticker: 'XAG'
   abstract: true
+
+- name: 'Noon USN'
+  decimals: 18
+  ticker: 'USN'
+  ethereum_address: '0xda67b4284609d2d48e5d10cfac411572727dc1ed'
+  coingecko_id: 'noon-usn'
+
+- name: 'Staked Noon USD'
+  decimals: 18
+  ticker: 'SUSN'
+  ethereum_address: '0xe24a3dc889621612422a64e6388927901608b91d'
+  coingecko_id: 'staked-usn'
