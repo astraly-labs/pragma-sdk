@@ -1,8 +1,5 @@
 - pairs:
     spot:
       - XSTRK/USD
-      - BTC/USD
-      - WSTETH/USD
-      - ETH/USD
-  time_difference: 1
+  time_difference: 60
   price_deviation: 0.025

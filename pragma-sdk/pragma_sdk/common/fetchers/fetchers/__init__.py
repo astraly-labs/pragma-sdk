@@ -19,6 +19,9 @@ from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
 from pragma_sdk.common.fetchers.fetchers.upbit import UpbitFetcher
 from pragma_sdk.common.fetchers.fetchers.bitget import BitgetFetcher
 from pragma_sdk.common.fetchers.fetchers.lbank import LbankFetcher
+from pragma_sdk.common.fetchers.fetchers.usn import USNFetcher
+from pragma_sdk.common.fetchers.fetchers.erc4626 import ERC4626RateFetcher
+from pragma_sdk.common.fetchers.fetchers.susn import sUSNFetcher
 
 __all__ = [
     "BinanceFetcher",
@@ -42,4 +45,7 @@ __all__ = [
     "ChainlinkFetcher",
     "RedstoneFetcher",
     "Re7OnChainFetcher",
+    "USNFetcher",
+    "ERC4626RateFetcher",
+    "sUSNFetcher",
 ]
