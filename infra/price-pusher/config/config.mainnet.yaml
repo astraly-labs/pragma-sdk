@@ -27,6 +27,8 @@
       - MRE7YIELD/USD
       - MRE7BTC/USD
       - UNIBTC/USD
+      - USN/USD
+      - SUSN/USD
   time_difference: 1200
   price_deviation: 0.025
 
