@@ -40,8 +40,7 @@ async def add_all_fetchers(
         FetcherClient
     """
     spot_pairs = get_unique_spot_pairs_from_config_list(price_configs)
-    future_pairs = get_unique_future_pairs_from_config_list(price_configs)
-    _add_fetchers(
+    await _add_fetchers(
         fetcher_client,
         ALL_SPOT_FETCHERS,
         spot_pairs,
