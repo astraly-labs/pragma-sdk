@@ -1,5 +1,5 @@
 - pairs:
     spot:
-      - XSTRK/USD
+      - STRK/USD
   time_difference: 60
   price_deviation: 0.025

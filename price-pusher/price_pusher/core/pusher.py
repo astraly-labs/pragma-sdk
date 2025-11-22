@@ -86,6 +86,7 @@ class PricePusher(IPricePusher):
                 f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)! "
                 f"(took {(end_t - start_t):.2f}s)"
             )
+            await asyncio.sleep(5)
             self.consecutive_push_error = 0
 
             # Notify health server of successful push
