@@ -14,5 +14,4 @@ LatestOrchestratorPairPrices = Dict[
     Dict[DataTypes, Union[Dict[SourceName, Entry], Dict[SourceName, FuturePrices]]],
 ]
 LatestOraclePairPrices = Dict[PairId, Dict[DataTypes, Entry]]
-Target = Literal["onchain", "offchain"]
 Network = Literal["mainnet", "sepolia"]

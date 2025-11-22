@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -32,8 +32,6 @@ from pragma_sdk.onchain.mixins import (
     MerkleFeedMixin,
 )
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
-
-from pragma_sdk.offchain.types import PublishEntriesAPIResult
 
 
 logger = get_pragma_sdk_logger()
@@ -210,7 +208,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
 
     async def publish_entries(
         self, entries: List[Entry]
-    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
+    ) -> PublishEntriesOnChainResult:
         """
         Publish entries on-chain.
 
