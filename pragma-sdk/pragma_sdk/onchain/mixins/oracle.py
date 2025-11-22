@@ -121,7 +121,7 @@ class OracleMixin:
                 invocations.append(invocation)
                 self._log_transaction(invocation, len(entries_subset), data_type)
                 if i + pagination < len(serialized_entries):
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(10)
         else:
             invocation = await self._invoke_publish(serialized_entries, data_type)
             invocations.append(invocation)
