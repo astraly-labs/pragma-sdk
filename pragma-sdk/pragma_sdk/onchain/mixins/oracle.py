@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Callable, Coroutine, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from deprecated import deprecated
 from starknet_py.contract import InvokeResult
@@ -38,7 +38,6 @@ class OracleMixin:
     execution_config: ExecutionConfig
     oracle: Contract
     is_user_client: bool = False
-    track_nonce: Callable[[object, int, int], Coroutine[None, None, None]]
 
     @deprecated
     async def publish_spot_entry(
@@ -136,7 +135,6 @@ class OracleMixin:
         return await self.oracle.functions["publish_data_entries"].invoke(
             new_entries=[{data_type: entry} for entry in entries],
             execution_config=self.execution_config,
-            callback=self.track_nonce,
         )
 
     def _log_transaction(
@@ -454,7 +452,6 @@ class OracleMixin:
                         for pair_id, expiry in zip(pair_ids_subset, expiries_subset)
                     ],
                     aggregation_mode.serialize(),
-                    callback=self.track_nonce,
                 )
                 index += pagination
                 logger.info(
@@ -469,7 +466,6 @@ class OracleMixin:
                     for pair_id, expiry in zip(pair_ids, expiry_timestamps)
                 ],
                 aggregation_mode.serialize(),
-                callback=self.track_nonce,
             )
 
         return invocation
@@ -505,7 +501,6 @@ class OracleMixin:
                         for pair_id in pair_ids_subset
                     ],
                     aggregation_mode.serialize(),
-                    callback=self.track_nonce,
                 )
                 index += pagination
                 logger.info(
@@ -520,7 +515,6 @@ class OracleMixin:
                     for pair_id in pair_ids
                 ],
                 aggregation_mode.serialize(),
-                callback=self.track_nonce,
             )
 
         return invocation
