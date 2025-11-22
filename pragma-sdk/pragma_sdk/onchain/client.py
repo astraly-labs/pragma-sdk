@@ -25,7 +25,6 @@ from pragma_sdk.onchain.types import (
     PublishEntriesOnChainResult,
 )
 from pragma_sdk.onchain.mixins import (
-    NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
@@ -40,7 +39,6 @@ logger.setLevel(logging.INFO)
 
 class PragmaOnChainClient(  # type: ignore[misc]
     PragmaClient,
-    NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,

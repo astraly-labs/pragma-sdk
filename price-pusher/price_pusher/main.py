@@ -63,7 +63,7 @@ async def main(
     )
 
     logger.info("🪚 Creating Fetcher client & adding fetchers...")
-    fetcher_client = add_all_fetchers(
+    fetcher_client = await add_all_fetchers(
         fetcher_client=FetcherClient(),
         publisher_name=publisher_name,
         price_configs=price_configs,

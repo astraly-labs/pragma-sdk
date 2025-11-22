@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -21,7 +22,7 @@ from price_pusher.configs.fetchers import (
 logger = logging.getLogger(__name__)
 
 
-def add_all_fetchers(
+async def add_all_fetchers(
     fetcher_client: FetcherClient,
     publisher_name: str,
     price_configs: List[PriceConfig],
@@ -47,17 +48,11 @@ def add_all_fetchers(
         publisher_name,
         evm_rpc_urls,
     )
-    _add_fetchers(
-        fetcher_client,
-        ALL_FUTURE_FETCHERS,
-        future_pairs,
-        publisher_name,
-        evm_rpc_urls,
-    )
+
     return fetcher_client
 
 
-def _add_fetchers(
+async def _add_fetchers(
     fetcher_client: FetcherClient,
     fetchers: List[FetcherInterfaceT],
     pairs: Set[Pair],
@@ -65,7 +60,7 @@ def _add_fetchers(
     evm_rpc_urls: Optional[Sequence[str]],
 ) -> None:
     """
-    Add multiple fetchers to the FetcherClient.
+    Add multiple fetchers to the FetcherClient concurrently.
 
     Args:
         fetcher_client: The FetcherClient to add fetchers to.
@@ -73,17 +68,21 @@ def _add_fetchers(
         pairs: List of pairs for the fetchers.
         publisher_name: The name of the publisher.
     """
-    for fetcher in fetchers:
-        _add_one_fetcher(
-            fetcher=fetcher,
-            fetcher_client=fetcher_client,
-            pairs=pairs,
-            publisher_name=publisher_name,
-            evm_rpc_urls=evm_rpc_urls,
-        )
+    await asyncio.gather(
+        *[
+            _add_one_fetcher(
+                fetcher=fetcher,
+                fetcher_client=fetcher_client,
+                pairs=pairs,
+                publisher_name=publisher_name,
+                evm_rpc_urls=evm_rpc_urls,
+            )
+            for fetcher in fetchers
+        ]
+    )
 
 
-def _add_one_fetcher(
+async def _add_one_fetcher(
     fetcher: FetcherInterfaceT,
     fetcher_client: FetcherClient,
     pairs: Set[Pair],
