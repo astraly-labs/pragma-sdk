@@ -396,3 +396,8 @@
   decimals: 18
   ticker: 'SUSN'
   ethereum_address: '0xe24a3dc889621612422a64e6388927901608b91d'
+
+- name: 'Survivor'
+  decimals: 18
+  ticker: 'SURVIVOR'
+  starknet_address: '0x042DD777885AD2C116be96d4D634abC90A26A790ffB5871E037Dd5Ae7d2Ec86B'

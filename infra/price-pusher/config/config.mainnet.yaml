@@ -29,5 +29,6 @@
       - UNIBTC/USD
       - USN/USD
       - SUSN/USD
+      - SURVIVOR/USD
   time_difference: 1200
   price_deviation: 0.025
