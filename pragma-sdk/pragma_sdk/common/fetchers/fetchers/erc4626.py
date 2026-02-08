@@ -24,7 +24,7 @@ DEFAULT_ETHEREUM_RPC_URLS: Sequence[str] = (
     "https://eth.llamarpc.com",
     "https://rpc.mevblocker.io",
     "https://eth.merkle.io",
-    "https://rpc.flashbots.net",
+    "https://eth.drpc.org",
 )
 
 # ERC4626 convertToAssets(uint256 shares) selector

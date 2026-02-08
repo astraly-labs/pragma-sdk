@@ -29,7 +29,7 @@ DEFAULT_ETHEREUM_RPC_URLS: Sequence[str] = (
     "https://rpc.mevblocker.io",
     "https://1rpc.io/eth",
     "https://eth.merkle.io",
-    "https://rpc.flashbots.net",
+    "https://eth.drpc.org",
 )
 
 

@@ -32,10 +32,11 @@ class ChainlinkFetcher(EVMOracleFeedFetcher):
 
 
 ARBITRUM_RPC_URLS: Sequence[str] = (
+    "https://arbitrum.drpc.org",
+    "https://rpc.sentio.xyz/arbitrum-one",
+    "https://arb1.lava.build",
     "https://arbitrum-one.publicnode.com",
     "https://arbitrum.llamarpc.com",
-    "https://1rpc.io/arb",
-    "https://arb1.arbitrum.io/rpc",
 )
 
 
