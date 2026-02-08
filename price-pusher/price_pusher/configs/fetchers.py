@@ -1,5 +1,5 @@
 from pydantic.dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, FrozenSet, List, Type
 
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
 from pragma_sdk.common.fetchers.fetchers.pyth import PythFetcher
@@ -18,11 +18,14 @@ from pragma_sdk.common.fetchers.fetchers import (
     LbankFetcher,
     BitgetFetcher,
     ChainlinkFetcher,
+    WstETHChainlinkFetcher,
     RedstoneFetcher,
+    WstETHRedstoneFetcher,
     Re7OnChainFetcher,
     USNFetcher,
     ERC4626RateFetcher,
     sUSNFetcher,
+    WstETHRateFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import (
     BinanceFutureFetcher,
@@ -40,7 +43,9 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BinanceFetcher,
     EkuboFetcher,
     ChainlinkFetcher,
+    WstETHChainlinkFetcher,
     RedstoneFetcher,
+    WstETHRedstoneFetcher,
     Re7OnChainFetcher,
     PythFetcher,
     GateioFetcher,
@@ -52,7 +57,26 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     USNFetcher,
     ERC4626RateFetcher,
     sUSNFetcher,
+    WstETHRateFetcher,
 ]
+
+# Pairs that should only be fetched by conversion rate fetchers (not market rate).
+CONVERSION_RATE_ONLY_PAIRS: FrozenSet[str] = frozenset({"WSTETH/USD"})
+
+# Fetchers that provide conversion rates (on-chain or oracle-based).
+# These are NOT blocked from fetching CONVERSION_RATE_ONLY_PAIRS.
+CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset({
+    ChainlinkFetcher,
+    WstETHChainlinkFetcher,
+    RedstoneFetcher,
+    WstETHRedstoneFetcher,
+    PythFetcher,
+    ERC4626RateFetcher,
+    sUSNFetcher,
+    USNFetcher,
+    Re7OnChainFetcher,
+    WstETHRateFetcher,
+})
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
     BinanceFutureFetcher,

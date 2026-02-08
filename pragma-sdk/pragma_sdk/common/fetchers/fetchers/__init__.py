@@ -9,8 +9,8 @@ from pragma_sdk.common.fetchers.fetchers.indexcoop import IndexCoopFetcher
 from pragma_sdk.common.fetchers.fetchers.kucoin import KucoinFetcher
 from pragma_sdk.common.fetchers.fetchers.okx import OkxFetcher
 from pragma_sdk.common.fetchers.fetchers.ekubo import EkuboFetcher
-from pragma_sdk.common.fetchers.fetchers.chainlink import ChainlinkFetcher
-from pragma_sdk.common.fetchers.fetchers.redstone import RedstoneFetcher
+from pragma_sdk.common.fetchers.fetchers.chainlink import ChainlinkFetcher, WstETHChainlinkFetcher
+from pragma_sdk.common.fetchers.fetchers.redstone import RedstoneFetcher, WstETHRedstoneFetcher
 from pragma_sdk.common.fetchers.fetchers.re7onchain import Re7OnChainFetcher
 from pragma_sdk.common.fetchers.fetchers.mexc import MEXCFetcher
 from pragma_sdk.common.fetchers.fetchers.gateio import GateioFetcher
@@ -22,6 +22,7 @@ from pragma_sdk.common.fetchers.fetchers.lbank import LbankFetcher
 from pragma_sdk.common.fetchers.fetchers.usn import USNFetcher
 from pragma_sdk.common.fetchers.fetchers.erc4626 import ERC4626RateFetcher
 from pragma_sdk.common.fetchers.fetchers.susn import sUSNFetcher
+from pragma_sdk.common.fetchers.fetchers.wsteth import WstETHRateFetcher
 
 __all__ = [
     "BinanceFetcher",
@@ -43,9 +44,12 @@ __all__ = [
     "BitgetFetcher",
     "LbankFetcher",
     "ChainlinkFetcher",
+    "WstETHChainlinkFetcher",
     "RedstoneFetcher",
+    "WstETHRedstoneFetcher",
     "Re7OnChainFetcher",
     "USNFetcher",
     "ERC4626RateFetcher",
     "sUSNFetcher",
+    "WstETHRateFetcher",
 ]

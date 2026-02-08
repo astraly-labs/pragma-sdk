@@ -16,6 +16,8 @@ from price_pusher.configs.price_config import (
 from price_pusher.configs.fetchers import (
     ALL_FUTURE_FETCHERS,
     ALL_SPOT_FETCHERS,
+    CONVERSION_RATE_FETCHERS,
+    CONVERSION_RATE_ONLY_PAIRS,
     FETCHERS_WITH_API_KEY,
 )
 
@@ -88,6 +90,12 @@ async def _add_one_fetcher(
     publisher_name: str,
     evm_rpc_urls: Optional[Sequence[str]],
 ):
+    # Filter out conversion-rate-only pairs from market rate fetchers
+    if fetcher not in CONVERSION_RATE_FETCHERS:
+        pairs = {p for p in pairs if str(p) not in CONVERSION_RATE_ONLY_PAIRS}
+        if not pairs:
+            return
+
     init_args = [list(pairs), publisher_name]
     init_kwargs: Dict[str, object] = {}
 

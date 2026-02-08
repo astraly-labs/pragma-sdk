@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession
@@ -8,10 +9,11 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
+from pragma_sdk.common.utils import str_to_felt
 
 logger = get_pragma_sdk_logger()
 
-# Mapping of currency pairs to Pyth feed IDs
+# Mapping of currency pairs to Pyth feed IDs (market rate feeds)
 PYTH_FEED_IDS: Dict[str, str] = {
     # Major cryptocurrencies
     "BTC/USD": "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
@@ -53,9 +55,25 @@ PYTH_FEED_IDS: Dict[str, str] = {
     "TON/USD": "0x8963217838ab4cf5cadc172203c1f0b763fbaa45f346d8ee50ba994bbcac3026",
     "XEC/USD": "0x44622616f246ce5fc46cf9ebdb879b0c0157275510744cea824ad206e48390b3",
     "STRK/USD": "0x6a182399ff70ccf3e06024898942028204125a819e519a335ffa4579e66cd870",
-    "WSTETH/USD": "0x6df640f3b8963d8f8358f791f352b8364513f6ab1cca5ed3f1f7b5448980e784",
     "EUR/USD": "0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b",
     "LBTC/USD": "0x8f257aab6e7698bb92b15511915e593d6f8eae914452f781874754b03d0c612b",
+}
+
+
+@dataclass
+class HoppedFeedConfig:
+    """Configuration for a Pyth conversion rate feed that needs hopping."""
+
+    feed_id: str
+    hop_currency: str
+
+
+# Conversion rate feeds that need to be multiplied by a hop price (e.g. ETH/USD)
+PYTH_HOPPED_FEEDS: Dict[str, HoppedFeedConfig] = {
+    "WSTETH/USD": HoppedFeedConfig(
+        feed_id="0xf59ead01ed0faba85332a1e2feae8ddb14a1c94ebac259f1c982c92fc7ce333e",
+        hop_currency="ETH",
+    ),
 }
 
 
@@ -64,9 +82,18 @@ class PythFetcher(FetcherInterfaceT):
     SOURCE: str = "PYTH"
 
     def get_feed_id(self, pair: Pair) -> Optional[str]:
-        """Get the Pyth feed ID for a given currency pair."""
+        """Get the Pyth feed ID for a given currency pair.
+
+        Checks both standard feeds and hopped conversion rate feeds.
+        """
         pair_str = f"{pair.base_currency.id}/{pair.quote_currency.id}"
-        return PYTH_FEED_IDS.get(pair_str)
+        feed_id = PYTH_FEED_IDS.get(pair_str)
+        if feed_id is not None:
+            return feed_id
+        hopped = PYTH_HOPPED_FEEDS.get(pair_str)
+        if hopped is not None:
+            return hopped.feed_id
+        return None
 
     def format_url(self, feed_ids: List[str]) -> str:
         """Format URL with feed IDs for batch request."""
@@ -104,6 +131,12 @@ class PythFetcher(FetcherInterfaceT):
                     f"No matching price feed found for {pair} from Pyth"
                 )
 
+            # Check if this is a hopped conversion rate feed
+            pair_str = f"{pair.base_currency.id}/{pair.quote_currency.id}"
+            hopped_config = PYTH_HOPPED_FEEDS.get(pair_str)
+            if hopped_config is not None:
+                return await self._construct_hopped(pair, price_feed, hopped_config)
+
             return self._construct(pair, price_feed)
 
     async def fetch(
@@ -136,3 +169,44 @@ class PythFetcher(FetcherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
+
+    async def _construct_hopped(
+        self, pair: Pair, result: Any, hopped_config: HoppedFeedConfig
+    ) -> SpotEntry | PublisherFetchError:
+        """Construct a SpotEntry for a hopped conversion rate feed.
+
+        Fetches the hop price (e.g. ETH/USD) from Pragma on-chain, then multiplies
+        the conversion rate from Pyth by it.
+        """
+        price_data = result["price"]
+        conversion_rate = int(price_data["price"]) / (10 ** abs(price_data["expo"]))
+        timestamp = int(price_data["publish_time"])
+
+        hop_pair_id = str_to_felt(f"{hopped_config.hop_currency}/USD")
+        try:
+            hop_response = await self.client.get_spot(hop_pair_id)
+            hop_price = int(hop_response.price) / (10 ** int(hop_response.decimals))
+        except Exception as e:
+            return PublisherFetchError(
+                f"[Pyth] Failed to fetch {hopped_config.hop_currency}/USD hop price: {e}"
+            )
+
+        price = conversion_rate * hop_price
+        price_int = int(price * (10 ** pair.decimals()))
+
+        logger.debug(
+            "Fetched hopped price %d for %s from Pyth (rate=%.6f, hop=%.2f)",
+            price_int,
+            pair,
+            conversion_rate,
+            hop_price,
+        )
+
+        return SpotEntry(
+            pair_id=pair.id,
+            price=price_int,
+            timestamp=timestamp,
+            source=self.SOURCE,
+            publisher=self.publisher,
+        )
+
