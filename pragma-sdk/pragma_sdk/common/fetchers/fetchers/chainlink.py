@@ -13,7 +13,7 @@ from pragma_sdk.common.types.pair import Pair
 class ChainlinkFetcher(EVMOracleFeedFetcher):
     """Fetches prices from Chainlink Ethereum feeds and rebases them to USD."""
 
-    SOURCE = "CHAINLINK"
+    SOURCE = "CUSTOM"
     feed_configs = build_feed_mapping(
         [
             ("LBTC/BTC", "0x5c29868C58b6e15e2b962943278969Ab6a7D3212", 8),
@@ -48,7 +48,7 @@ class WstETHChainlinkFetcher(EVMOracleFeedFetcher):
     WSTETH/USD = chainlink_wsteth_eth * ETH/USD
     """
 
-    SOURCE = "CHAINLINK_WSTETH"
+    SOURCE = "CUSTOM"
     DEFAULT_RPC_URLS = ARBITRUM_RPC_URLS
     hop_handler = HopHandler(hopped_currencies={"USD": "ETH"})
     feed_configs = build_feed_mapping(
