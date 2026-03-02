@@ -47,7 +47,7 @@ async def declare_deploy_oracle(
     )
 
     # Declare Publisher Registry
-    declare_result_registry = await Contract.declare_v2(
+    declare_result_registry = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract_registry,
         compiled_contract_casm=compiled_contract_registry_casm,
@@ -62,7 +62,7 @@ async def declare_deploy_oracle(
     await deploy_result_registry.wait_for_acceptance()
 
     # Declare Oracle
-    declare_result = await Contract.declare_v2(
+    declare_result = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract,
         compiled_contract_casm=compiled_contract_casm,
@@ -89,7 +89,7 @@ async def declare_deploy_oracle(
     await deploy_result.wait_for_acceptance()
 
     # Declare Summary Stats
-    declare_result_summary = await Contract.declare_v2(
+    declare_result_summary = await Contract.declare_v3(
         account=account,
         compiled_contract=compiled_contract_summary,
         compiled_contract_casm=compiled_contract_summary_casm,

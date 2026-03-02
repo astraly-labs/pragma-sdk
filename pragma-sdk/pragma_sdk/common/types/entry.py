@@ -5,11 +5,13 @@ import abc
 from datetime import datetime
 from pydantic.dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
+from enum import StrEnum
 
 from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.utils import felt_to_str, str_to_felt
 from pragma_sdk.onchain.types.types import OracleResponse
+from pragma_sdk.schema import entries_pb2
 
 
 FUTURE_ENTRY_EXPIRIES_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -26,9 +28,6 @@ class Entry(abc.ABC):
 
     @abc.abstractmethod
     def serialize(self) -> Dict[str, object]: ...
-
-    @abc.abstractmethod
-    def offchain_serialize(self) -> Dict[str, object]: ...
 
     @abc.abstractmethod
     def get_timestamp(self) -> int: ...
@@ -56,11 +55,6 @@ class Entry(abc.ABC):
     @staticmethod
     def serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
         serialized_entries = [entry.serialize() for entry in entries]
-        return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
-
-    @staticmethod
-    def offchain_serialize_entries(entries: List[Entry]) -> List[Dict[str, int]]:
-        serialized_entries = [entry.offchain_serialize() for entry in entries]
         return list(filter(lambda item: item is not None, serialized_entries))  # type: ignore[arg-type]
 
     @staticmethod
@@ -187,18 +181,6 @@ class SpotEntry(Entry):
             "volume": self.volume,
         }
 
-    def offchain_serialize(self) -> Dict[str, object]:
-        return {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "pair_id": felt_to_str(self.pair_id),
-            "price": self.price,
-            "volume": self.volume,
-        }
-
     def set_publisher(self, publisher: int) -> "SpotEntry":
         self.base.publisher = publisher
         return self
@@ -265,6 +247,72 @@ class SpotEntry(Entry):
 
     def __hash__(self) -> int:
         return hash((self.base, self.pair_id, self.price, self.volume))
+
+    def to_proto_bytes(self) -> bytes:
+        """Convert SpotEntry to protobuf bytes."""
+        # Create protobuf PriceEntry message
+        price_entry = entries_pb2.PriceEntry()
+
+        # Set source
+        price_entry.source = felt_to_str(self.base.source)
+
+        # Set no chain (LMAX data is not chain-specific)
+        price_entry.noChain = True
+
+        # Set pair
+        pair_id = felt_to_str(self.pair_id)
+        if "/" in pair_id:
+            base, quote = pair_id.split("/", 1)
+        else:
+            # For special instruments like SPX500m, use the full name as base
+            base = pair_id
+            quote = "USD"  # Default quote currency
+
+        price_entry.pair.base = base
+        price_entry.pair.quote = quote
+
+        # Set timestamp (convert to milliseconds)
+        price_entry.timestampMs = self.base.timestamp * 1000
+
+        # Set price (convert to UInt128)
+        price_entry.price.low = self.price & ((1 << 64) - 1)
+        price_entry.price.high = (self.price >> 64) & ((1 << 64) - 1)
+
+        # Set volume (convert to UInt128)
+        price_entry.volume.low = self.volume & ((1 << 64) - 1)
+        price_entry.volume.high = (self.volume >> 64) & ((1 << 64) - 1)
+
+        # Set no expiration for spot entries
+        price_entry.noExpiration = True
+
+        return price_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "SpotEntry":
+        """Create SpotEntry from protobuf bytes."""
+        price_entry = entries_pb2.PriceEntry()
+        price_entry.ParseFromString(data)
+
+        # Extract pair_id
+        pair_id = f"{price_entry.pair.base}/{price_entry.pair.quote}"
+
+        # Convert price from UInt128
+        price = price_entry.price.low + (price_entry.price.high << 64)
+
+        # Convert volume from UInt128
+        volume = price_entry.volume.low + (price_entry.volume.high << 64)
+
+        # Convert timestamp (from milliseconds to seconds)
+        timestamp = price_entry.timestampMs // 1000
+
+        return cls(
+            pair_id=pair_id,
+            price=price,
+            timestamp=timestamp,
+            source=price_entry.source,
+            publisher="UNKNOWN",  # Publisher info not in protobuf
+            volume=volume,
+        )
 
 
 class FutureEntry(Entry):
@@ -364,20 +412,6 @@ class FutureEntry(Entry):
             "volume": self.volume,
         }
 
-    def offchain_serialize(self) -> Dict[str, object]:
-        serialized = {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "pair_id": felt_to_str(self.pair_id),
-            "price": self.price,
-            "volume": self.volume,
-            "expiration_timestamp": self.expiry_timestamp,
-        }
-        return serialized
-
     def __repr__(self) -> str:
         return (
             f'FutureEntry(pair_id="{felt_to_str(self.pair_id)}", '
@@ -448,6 +482,81 @@ class FutureEntry(Entry):
             source_name,
             oracle_response.expiration_timestamp,
             0,
+        )
+
+    def to_proto_bytes(self) -> bytes:
+        """Convert FutureEntry to protobuf bytes."""
+        # Create protobuf PriceEntry message
+        price_entry = entries_pb2.PriceEntry()
+
+        # Set source
+        price_entry.source = felt_to_str(self.base.source)
+
+        # Set no chain (LMAX data is not chain-specific)
+        price_entry.noChain = True
+
+        # Set pair
+        pair_id = felt_to_str(self.pair_id)
+        if "/" in pair_id:
+            base, quote = pair_id.split("/", 1)
+        else:
+            # For special instruments like SPX500m, use the full name as base
+            base = pair_id
+            quote = "USD"  # Default quote currency
+
+        price_entry.pair.base = base
+        price_entry.pair.quote = quote
+
+        # Set timestamp (convert to milliseconds)
+        price_entry.timestampMs = self.base.timestamp * 1000
+
+        # Set price (convert to UInt128)
+        price_entry.price.low = self.price & ((1 << 64) - 1)
+        price_entry.price.high = (self.price >> 64) & ((1 << 64) - 1)
+
+        # Set volume (convert to UInt128)
+        price_entry.volume.low = self.volume & ((1 << 64) - 1)
+        price_entry.volume.high = (self.volume >> 64) & ((1 << 64) - 1)
+
+        # Set expiration timestamp if present
+        if self.expiry_timestamp and self.expiry_timestamp > 0:
+            price_entry.expirationTimestamp = self.expiry_timestamp * 1000
+        else:
+            price_entry.noExpiration = True
+
+        return price_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "FutureEntry":
+        """Create FutureEntry from protobuf bytes."""
+        price_entry = entries_pb2.PriceEntry()
+        price_entry.ParseFromString(data)
+
+        # Extract pair_id
+        pair_id = f"{price_entry.pair.base}/{price_entry.pair.quote}"
+
+        # Convert price from UInt128
+        price = price_entry.price.low + (price_entry.price.high << 64)
+
+        # Convert volume from UInt128
+        volume = price_entry.volume.low + (price_entry.volume.high << 64)
+
+        # Convert timestamp (from milliseconds to seconds)
+        timestamp = price_entry.timestampMs // 1000
+
+        # Extract expiry timestamp
+        expiry_timestamp = None
+        if price_entry.HasField("expirationTimestamp"):
+            expiry_timestamp = price_entry.expirationTimestamp // 1000
+
+        return cls(
+            pair_id=pair_id,
+            price=price,
+            timestamp=timestamp,
+            source=price_entry.source,
+            publisher="UNKNOWN",  # Publisher info not in protobuf
+            expiry_timestamp=expiry_timestamp,
+            volume=volume,
         )
 
 
@@ -528,18 +637,6 @@ class GenericEntry(Entry):
             "value": self.value,
         }
 
-    def offchain_serialize(self) -> Dict[str, object]:
-        serialized = {
-            "base": {
-                "timestamp": self.base.timestamp,
-                "source": felt_to_str(self.base.source),
-                "publisher": felt_to_str(self.base.publisher),
-            },
-            "key": felt_to_str(self.key),
-            "value": self.value,
-        }
-        return serialized
-
     def __repr__(self) -> str:
         return (
             f'GenericEntry(key="{self.key}", '
@@ -593,4 +690,186 @@ class GenericEntry(Entry):
         """
         raise NotImplementedError(
             "😛 from_oracle_response does not exists for GenericEntry yet!"
+        )
+
+
+class OrderbookUpdateType(StrEnum):
+    """Orderbook update type enum."""
+
+    TARGET = "TARGET"
+    DELTA = "DELTA"
+    SNAPSHOT = "SNAPSHOT"
+
+
+class InstrumentType(StrEnum):
+    """Instrument type enum."""
+
+    SPOT = "SPOT"
+    PERP = "PERP"
+
+
+@dataclass
+class OrderbookData:
+    """Orderbook data containing bids and asks."""
+
+    update_id: int
+    bids: List[Tuple[float, float]]  # List of (price, quantity) tuples
+    asks: List[Tuple[float, float]]  # List of (price, quantity) tuples
+
+
+class OrderbookEntry:
+    """
+    Represents an Orderbook Entry.
+    """
+
+    source: str
+    instrument_type: InstrumentType
+    pair: Pair
+    type: OrderbookUpdateType
+    data: OrderbookData
+    timestamp_ms: int
+
+    def __init__(
+        self,
+        source: str,
+        instrument_type: InstrumentType | str,
+        pair: Pair,
+        type: OrderbookUpdateType | str,
+        data: OrderbookData,
+        timestamp_ms: int,
+    ):
+        self.source = source
+
+        if isinstance(instrument_type, str):
+            self.instrument_type = InstrumentType(instrument_type)
+
+        self.pair = pair
+
+        if isinstance(type, str):
+            self.type = OrderbookUpdateType(type)
+
+        self.data = data
+        self.timestamp_ms = timestamp_ms
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, OrderbookEntry):
+            return all(
+                [
+                    self.source == other.source,
+                    self.instrument_type == other.instrument_type,
+                    self.pair == other.pair,
+                    self.type == other.type,
+                    self.data.update_id == other.data.update_id,
+                    self.data.bids == other.data.bids,
+                    self.data.asks == other.data.asks,
+                    self.timestamp_ms == other.timestamp_ms,
+                ]
+            )
+        return False
+
+    def __repr__(self) -> str:
+        return (
+            f"OrderbookEntry(source='{self.source}', "
+            f"instrument_type={self.instrument_type}, "
+            f"pair={self.pair}, "
+            f"type={self.type}, "
+            f"update_id={self.data.update_id}, "
+            f"bids_count={len(self.data.bids)}, "
+            f"asks_count={len(self.data.asks)}, "
+            f"timestamp_ms={self.timestamp_ms})"
+        )
+
+    def to_proto_bytes(self) -> bytes:
+        """Convert OrderbookEntry to protobuf bytes."""
+        # Create protobuf OrderbookEntry message
+        orderbook_entry = entries_pb2.OrderbookEntry()
+
+        # Set source
+        orderbook_entry.source = self.source
+
+        # Set instrument type
+        if self.instrument_type == InstrumentType.SPOT:
+            orderbook_entry.instrumentType = entries_pb2.InstrumentType.SPOT
+        elif self.instrument_type == InstrumentType.PERP:
+            orderbook_entry.instrumentType = entries_pb2.InstrumentType.PERP
+
+        # Set pair
+        orderbook_entry.pair.base = self.pair.base_currency.id
+        orderbook_entry.pair.quote = self.pair.quote_currency.id
+
+        # Set type using oneof field
+        if self.type == OrderbookUpdateType.TARGET:
+            orderbook_entry.type.update = entries_pb2.UpdateType.TARGET
+        elif self.type == OrderbookUpdateType.DELTA:
+            orderbook_entry.type.update = entries_pb2.UpdateType.DELTA
+        elif self.type == OrderbookUpdateType.SNAPSHOT:
+            orderbook_entry.type.snapshot = True
+
+        # Set data
+        orderbook_entry.data.update_id = self.data.update_id
+
+        # Add bids
+        for price, quantity in self.data.bids:
+            bid = orderbook_entry.data.bids.add()
+            bid.price = price
+            bid.quantity = quantity
+
+        # Add asks
+        for price, quantity in self.data.asks:
+            ask = orderbook_entry.data.asks.add()
+            ask.price = price
+            ask.quantity = quantity
+
+        # Set timestamp
+        orderbook_entry.timestampMs = self.timestamp_ms
+
+        return orderbook_entry.SerializeToString()
+
+    @classmethod
+    def from_proto_bytes(cls, data: bytes) -> "OrderbookEntry":
+        """Create OrderbookEntry from protobuf bytes."""
+        orderbook_entry = entries_pb2.OrderbookEntry()
+        orderbook_entry.ParseFromString(data)
+
+        # Extract instrument type
+        if orderbook_entry.instrumentType == entries_pb2.InstrumentType.SPOT:
+            instrument_type = InstrumentType.SPOT
+        elif orderbook_entry.instrumentType == entries_pb2.InstrumentType.PERP:
+            instrument_type = InstrumentType.PERP
+        else:
+            raise ValueError(
+                f"Unknown instrument type: {orderbook_entry.instrumentType}"
+            )
+
+        # Extract pair
+        pair = Pair.from_tickers(orderbook_entry.pair.base, orderbook_entry.pair.quote)
+
+        # Extract type from oneof field
+        if orderbook_entry.type.HasField("update"):
+            if orderbook_entry.type.update == entries_pb2.UpdateType.TARGET:
+                type_ = OrderbookUpdateType.TARGET
+            elif orderbook_entry.type.update == entries_pb2.UpdateType.DELTA:
+                type_ = OrderbookUpdateType.DELTA
+            else:
+                raise ValueError(f"Unknown update type: {orderbook_entry.type.update}")
+        elif orderbook_entry.type.HasField("snapshot"):
+            type_ = OrderbookUpdateType.SNAPSHOT
+        else:
+            raise ValueError(f"Unknown orderbook update type: {orderbook_entry.type}")
+
+        # Extract orderbook data
+        bids = [(bid.price, bid.quantity) for bid in orderbook_entry.data.bids]
+        asks = [(ask.price, ask.quantity) for ask in orderbook_entry.data.asks]
+
+        data = OrderbookData(
+            update_id=orderbook_entry.data.update_id, bids=bids, asks=asks
+        )
+
+        return cls(
+            source=orderbook_entry.source,
+            instrument_type=instrument_type,
+            pair=pair,
+            type=type_,
+            data=data,
+            timestamp_ms=orderbook_entry.timestampMs,
         )

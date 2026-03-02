@@ -1,17 +1,16 @@
 import asyncio
 import time
+import logging
+from typing import List, Optional, Dict, Callable
+from starknet_py.contract import InvokeResult
 
 from abc import ABC, abstractmethod
-
-from typing import List, Optional, Dict
-from starknet_py.contract import InvokeResult
 
 from pragma_sdk.common.types.client import PragmaClient
 from pragma_sdk.common.types.entry import Entry
 
 from pragma_sdk.onchain.client import PragmaOnChainClient
-
-import logging
+from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +28,25 @@ class IPricePusher(ABC):
 
 
 class PricePusher(IPricePusher):
-    def __init__(self, client: PragmaClient) -> None:
+    def __init__(
+        self,
+        client: PragmaClient,
+        on_successful_push: Optional[Callable[[], None]] = None,
+    ):
         self.client = client
         self.consecutive_push_error = 0
         self.onchain_lock = asyncio.Lock()
+        self.on_successful_push = on_successful_push
+
+        # Setup RPC health monitoring if using onchain client
+        if isinstance(self.client, PragmaOnChainClient):
+            self.rpc_monitor = RPCHealthMonitor(self.client)
+            asyncio.create_task(self.rpc_monitor.monitor_rpc_health())
 
     @property
     def is_publishing_on_chain(self) -> bool:
-        return isinstance(self.client, PragmaOnChainClient)
+        publish_many = getattr(self.client, "publish_many", None)
+        return callable(publish_many)
 
     async def wait_for_publishing_acceptance(self, invocations: List[InvokeResult]):
         """
@@ -53,36 +63,52 @@ class PricePusher(IPricePusher):
         """
         Push the entries passed as parameter with the internal pragma client.
         """
-        try:
-            logger.info(
-                f"🏋️ PUSHER: 👷‍♂️ processing {len(entries)} new asset(s) to push..."
-            )
+        if len(entries) == 0:
+            return None
 
-            if self.is_publishing_on_chain:
-                async with self.onchain_lock:
-                    start_t = time.time()
-                    response = await self.client.publish_entries(entries)
-                    await self.wait_for_publishing_acceptance(response)
-            else:
-                start_t = time.time()
-                response = await self.client.publish_entries(
-                    entries, publish_to_websocket=True
+        logger.info(f"📨 PUSHER: processing {len(entries)} new asset(s) to push...")
+
+        try:
+            if not callable(getattr(self.client, "publish_many", None)):
+                raise TypeError(
+                    "PricePusher now requires a client exposing an async publish_many method"
                 )
+
+            async with self.onchain_lock:
+                start_t = time.time()
+                response = await self.client.publish_many(entries)
+                await self.wait_for_publishing_acceptance(response)
 
             end_t = time.time()
             logger.info(
                 f"🏋️ PUSHER: ✅ Successfully published {len(entries)} entrie(s)! "
                 f"(took {(end_t - start_t):.2f}s)"
             )
+            await asyncio.sleep(5)
             self.consecutive_push_error = 0
+
+            # Notify health server of successful push
+            if self.on_successful_push:
+                self.on_successful_push()
+
             return response
 
         except Exception as e:
-            logger.error(f"🏋️ PUSHER: ⛔ could not publish entrie(s): {e}")
             self.consecutive_push_error += 1
+            logger.error(f"⛔ PUSHER: could not publish entrie(s): {e}")
 
-        if self.consecutive_push_error >= CONSECUTIVES_PUSH_ERRORS_LIMIT:
-            raise ValueError(
-                f"⛔ Pusher failed {self.consecutive_push_error} times in a row. Stopping."
-            )
-        return None
+            if isinstance(self.client, PragmaOnChainClient):
+                # If we have RPC issues, try switching to a different RPC
+                self.rpc_monitor.record_failure()
+                if await self.rpc_monitor.should_switch_rpc():
+                    if await self.rpc_monitor.switch_rpc():
+                        # Retry the publish operation with new RPC
+                        return await self.update_price_feeds(entries)
+
+            if self.consecutive_push_error >= CONSECUTIVES_PUSH_ERRORS_LIMIT:
+                raise ValueError(
+                    f"⛔ PUSHER: Failed to publish entries {self.consecutive_push_error} "
+                    "times in a row. Something is wrong!"
+                )
+
+            return None

@@ -1,0 +1,54 @@
+timeout: 3600s
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-build-lmax-connector
+    args: [ 'build',
+            '--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:latest',
+            '--file=infra/lmax-connector/Dockerfile',
+            '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-build-checkpointer
+    args: [ 'build',
+            '--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/checkpointer:latest',
+            '--file=infra/checkpointer/Dockerfile',
+            '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-build-price-pusher-onchain
+    args: [ 'build',
+            '--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher-onchain:latest',
+            '--file=infra/price-pusher/onchain/Dockerfile',
+            '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-build-price-pusher-pragma
+    args: [ 'build',
+            '--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher-pragma:latest',
+            '--file=infra/price-pusher/pragma/Dockerfile',
+            '.' ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-push-lmax-connector
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:latest']
+    waitFor: ['docker-build-lmax-connector']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-push-checkpointer
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/checkpointer:latest']
+    waitFor: ['docker-build-checkpointer']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-push-price-pusher-onchain
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher-onchain:latest']
+    waitFor: ['docker-build-price-pusher-onchain']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: docker-push-price-pusher-pragma
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher-pragma:latest']
+    waitFor: ['docker-build-price-pusher-pragma']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_32'

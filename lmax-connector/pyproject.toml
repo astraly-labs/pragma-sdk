@@ -19,6 +19,8 @@ dependencies = [
     "pragma-sdk",
     "quickfix-py>=0.0.2",
     "python-dotenv>=1.0.0",
+    "faucon_py==0.1.2",
+    "protobuf>=4.0.0",
 ]
 
 dynamic = ["version"]
@@ -36,6 +38,7 @@ path = "lmax_connector/__init__.py"
 
 [tool.uv.sources]
 pragma_sdk = { path = "../pragma-sdk" }
+faucon_py = { url = "https://pypi.devnet.pragma.build/packages/faucon_py-0.1.2.tar.gz" }
 
 [tool.hatch.metadata]
 allow-direct-references = true

@@ -49,7 +49,7 @@ async def _multicall(
         transaction = (
             await self.account.sign_invoke_v3(
                 calls=prepared_calls,
-                l1_resource_bounds=execution_config.l1_resource_bounds,
+                resource_bounds=execution_config.l1_resource_bounds,
                 auto_estimate=execution_config.auto_estimate,
             )
             if execution_config.enable_strk_fees
@@ -110,7 +110,7 @@ async def _invoke(
         transaction = (
             await self.get_account.sign_invoke_v3(
                 calls=self,
-                l1_resource_bounds=execution_config.l1_resource_bounds,
+                resource_bounds=execution_config.l1_resource_bounds,
                 auto_estimate=execution_config.auto_estimate,
             )
             if execution_config.enable_strk_fees

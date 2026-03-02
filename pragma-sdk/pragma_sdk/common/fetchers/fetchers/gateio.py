@@ -1,17 +1,17 @@
 import asyncio
 import time
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from aiohttp import ClientSession
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
+from pragma_sdk.common.exceptions import PublisherFetchError
+from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
+from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.exceptions import PublisherFetchError
-from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
-from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
-from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 logger = get_pragma_sdk_logger()
 
@@ -19,6 +19,9 @@ logger = get_pragma_sdk_logger()
 class GateioFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.gateio.ws/api/v4/spot/tickers"
     SOURCE: str = "GATEIO"
+
+    # Pairs to skip fetching from GateIO
+    SKIP_PAIRS: set = {"NSTR/USD"}
 
     hop_handler = HopHandler(
         hopped_currencies={
@@ -45,6 +48,8 @@ class GateioFetcher(FetcherInterfaceT):
         entries = []
         usdt_price = await self.get_stable_price("USDT")
         for pair in self.pairs:
+            if str(pair) in self.SKIP_PAIRS:
+                continue
             entries.append(
                 asyncio.ensure_future(self.fetch_pair(pair, session, usdt_price))
             )

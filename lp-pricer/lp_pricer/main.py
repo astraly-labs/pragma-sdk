@@ -5,6 +5,8 @@ import logging
 from pydantic import HttpUrl
 from typing import Optional, List
 from starknet_py.contract import InvokeResult
+from starknet_py.net.client_errors import ClientError
+from requests.exceptions import RequestException
 
 from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
 from pragma_sdk.common.fetchers.generic_fetchers.lp_fetcher.fetcher import LPFetcher
@@ -15,6 +17,7 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 
 from pragma_sdk.onchain.types.types import PrivateKey, NetworkName
 from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
@@ -60,6 +63,10 @@ async def main(
         account_private_key=private_key,
     )
 
+    # Setup RPC health monitoring
+    rpc_monitor = RPCHealthMonitor(pragma_client)
+    asyncio.create_task(rpc_monitor.monitor_rpc_health())
+
     # TODO(akhercha): Handle production mode
     # https://redis.io/docs/latest/develop/connect/clients/python/
     redis_host, redis_port = redis_host.split(":")
@@ -94,6 +101,13 @@ async def main(
                 invokes = await pragma_client.publish_many(entries)  # type:ignore[arg-type]
                 await wait_for_txs_acceptance(invokes)
                 logger.info("✅ Published complete!")
+            except (ClientError, RequestException) as e:
+                logger.error(f"RPC error while publishing: {e}")
+                rpc_monitor.record_failure()
+                if await rpc_monitor.should_switch_rpc():
+                    if await rpc_monitor.switch_rpc():
+                        # Retry the publish operation with new RPC
+                        continue
             except Exception as e:
                 logger.error(e)
 

@@ -34,7 +34,6 @@ Our services used to publish data etc...:
 - <a href="./price-pusher">Price Pusher</a>
 - <a href="./vrf-listener">VRF Listener</a>
 - <a href="./checkpointer">Checkpointer</a>
-- <a href="./merkle-maker">Merkle Maker</a>
 
 ## Local Development
 
@@ -90,9 +89,10 @@ The script will automatically update all `__init__.py` files in the following pa
     └── pragma-sdk
         ├── pragma-sdk
         ├── pragma-utils
-        ├── merkle-maker
         ├── price-pusher
         ├── vrf-listener
+        ├── checkpointer
+        ├── lmax-connector
         └── lp-pricer
 ```
 

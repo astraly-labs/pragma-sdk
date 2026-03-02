@@ -8,8 +8,8 @@ from starknet_py.net.client_models import ResourceBounds
 @dataclass(frozen=True)
 class ExecutionConfig:
     pagination: int = 40
-    max_fee: int = int(1e17)
-    enable_strk_fees: bool = False
+    max_fee: int = int(1e18)
+    enable_strk_fees: bool = True
     l1_resource_bounds: Optional[ResourceBounds] = None
     auto_estimate: bool = False
 

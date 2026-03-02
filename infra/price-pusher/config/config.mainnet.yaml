@@ -9,6 +9,8 @@
       - USDC/USD
       - USDT/USD
       - DAI/USD
+      - DOG/USD
+      - LBTC/USD
   time_difference: 600
   price_deviation: 0.005
 
@@ -16,22 +18,17 @@
     spot:
       - STETH/USD
       - LORDS/USD
-      - ZEND/USD
       - NSTR/USD
       - EKUBO/USD
       - BROTHER/USDPLUS
       - XSTRK/USD
       - SSTRK/USD
-      - KSTRK/USD
       - WSTETH/USD
+      - MRE7YIELD/USD
+      - MRE7BTC/USD
+      - UNIBTC/USD
+      - USN/USD
+      - SUSN/USD
+      - SURVIVOR/USD
   time_difference: 1200
   price_deviation: 0.025
-
-- pairs:
-    future:
-      - BTC/USD
-      - ETH/USD
-      - BTC/USDT
-      - ETH/USDT
-  time_difference: 5000
-  price_deviation: 0.05

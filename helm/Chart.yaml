@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pragma-sdk
+description: A helm chart configuration for the SDK
+version: 0.1.0
+appVersion: "1.0.0"
+icon: https://raw.githubusercontent.com/kubernetes/kubernetes/refs/heads/master/logo/logo.svg

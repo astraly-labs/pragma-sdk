@@ -25,7 +25,6 @@ from pragma_sdk.onchain.types import (
     PublishEntriesOnChainResult,
 )
 from pragma_sdk.onchain.mixins import (
-    NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
@@ -46,7 +45,6 @@ logger.setLevel(logging.INFO)
 
 class PragmaOnChainClient(  # type: ignore[misc]
     PragmaClient,
-    NonceMixin,
     OracleMixin,
     PublisherRegistryMixin,
     RandomnessMixin,
@@ -177,7 +175,6 @@ class PragmaOnChainClient(  # type: ignore[misc]
             signer=self.signer,
         )
         self.client = self.account.client
-        self.account.get_nonce = self._get_nonce  # pylint: disable=protected-access
         self.is_user_client = True
         if isinstance(account_contract_address, str):
             account_contract_address = int(account_contract_address, 16)
@@ -214,7 +211,7 @@ class PragmaOnChainClient(  # type: ignore[misc]
 
     async def publish_entries(
         self, entries: List[Entry]
-    ) -> Union[PublishEntriesAPIResult, PublishEntriesOnChainResult]:
+    ) -> PublishEntriesOnChainResult:
         """
         Publish entries on-chain.
 
@@ -222,11 +219,14 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :return: List of InvokeResult objects
         """
         return await self.publish_many(entries)
+    
+    def _create_full_node_client(self, rpc_url: str) -> FullNodeClient:
+        """Create a new full node client with the given RPC URL."""
+        return FullNodeClient(node_url=rpc_url)
 
 
 class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
     """
-    Client for interacting with Pragma Miden Oracle.
     
     This is a simplified client that only provides Miden oracle functionality.
 
@@ -403,5 +403,4 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
         except Exception as e:
             print(f"Failed to get entry: {e}")
             raise
-
 

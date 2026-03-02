@@ -40,13 +40,13 @@ Network = HttpUrl | NetworkName
 
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
-        "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+        "https://starknet-mainnet.public.blastapi.io",
         "https://rpc.starknet.lava.build:443",
         "https://free-rpc.nethermind.io/mainnet-juno",
         "https://api.cartridge.gg/x/starknet/mainnet",
     ],
     "sepolia": [
-        "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
+        "https://starknet-sepolia.public.blastapi.io",
         "https://rpc.starknet-testnet.lava.build:443",
         "https://free-rpc.nethermind.io/sepolia-juno",
         "https://api.cartridge.gg/x/starknet/sepolia",

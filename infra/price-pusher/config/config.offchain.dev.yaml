@@ -49,6 +49,7 @@
       - MOODENG/USD
       - BONK/USD
       - LUSD/USD
+      - RESOLV/USD
 
     future:
       - BTC/USDT
@@ -90,6 +91,7 @@
       - GOAT/USDT
       - MOODENG/USDT
       - BONK/USDT
+      - RESOLV/USDT
 
   time_difference: 1
   price_deviation: 0.025

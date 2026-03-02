@@ -19,7 +19,7 @@
   ticker: 'USDT'
   coingecko_id: 'tether-usd'
   starknet_address: '0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8'
-  ethereum_address: '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+  ethereum_address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
 
 - name: 'Dai'
   decimals: 18
@@ -33,7 +33,7 @@
   ticker: 'USDC'
   coingecko_id: 'circle-usd'
   starknet_address: '0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8'
-  ethereum_address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+  ethereum_address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 
 - name: 'US Dollar'
   decimals: 8
@@ -48,6 +48,16 @@
 - name: 'Euro'
   decimals: 8
   ticker: 'EUR'
+  abstract: true
+
+- name: 'Euro'
+  decimals: 8
+  ticker: 'EUR'
+  abstract: true
+
+- name: 'Japanese Yen'
+  decimals: 8
+  ticker: 'JPY'
   abstract: true
 
 - name: 'Starknet'
@@ -71,6 +81,29 @@
   starknet_address: '0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac'
   ethereum_address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
 
+- name: 'Lombard Staked Bitcoin'
+  decimals: 8
+  ticker: 'LBTC'
+  coingecko_id: 'lombard-staked-btc'
+  ethereum_address: '0x8236a87084f8b84306f72007f36f2618a5634494'
+
+- name: 'Universal BTC'
+  decimals: 8
+  ticker: 'UNIBTC'
+  coingecko_id: 'universal-btc'
+  ethereum_address: '0x004e9c3ef86bc1ca1f0bb5c7662861ee93350568'
+
+- name: 'Midas mRe7BTC'
+  decimals: 8
+  ticker: 'MRE7BTC'
+  ethereum_address: '0x9FB442d6B612a6dcD2acC67bb53771eF1D9F661A'
+
+- name: 'Midas mRe7YIELD'
+  decimals: 8
+  ticker: 'MRE7YIELD'
+  ethereum_address: '0x87C9053C819bB28e0D73d33059E1b3DA80AFb0cf'
+  coingecko_id: 'midas-mre7yield'
+
 - name: 'Bitcoin Cash'
   decimals: 8
   ticker: 'BCH'
@@ -87,7 +120,7 @@
   decimals: 18
   ticker: 'STETH'
   coingecko_id: 'staked-ether'
-  ethereum_address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'
+  ethereum_address: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84'
 
 - name: 'Nostra'
   decimals: 18
@@ -105,23 +138,12 @@
   ticker: 'SSTRK'
   starknet_address: '0x0356f304b154d29d2a8fe22f1cb9107a9b564a733cf6b4cc47fd121ac1af90c9'
 
-- name: 'kSTRK Token'
-  decimals: 18
-  ticker: 'KSTRK'
-  starknet_address: '0x045cd05ee2caaac3459b87e5e2480099d201be2f62243f839f00e10dde7f500c'
-
 - name: 'Lords'
   decimals: 18
   ticker: 'LORDS'
   coingecko_id: 'lords'
   starknet_address: '0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49'
   ethereum_address: '0x686f2404e77Ab0d9070a46cdfb0B7feCDD2318b0'
-
-- name: 'ZkLend'
-  decimals: 18
-  ticker: 'ZEND'
-  coingecko_id: 'zklend-2'
-  starknet_address: '0x00585c32b625999e6e5e78645ff8df7a9001cf5cf3eb6b80ccdd16cb64bd3a34'
 
 - name: 'Ekubo'
   decimals: 18
@@ -334,3 +356,48 @@
   decimals: 5
   ticker: 'BONK'
   coingecko_id: 'bonk'
+
+- name: 'Dog (Bitcoin)'
+  decimals: 5
+  ticker: 'DOG'
+  coingecko_id: 'dog-go-to-the-moon-rune'
+
+- name: 'Gold (Spot)'
+  decimals: 8
+  ticker: 'XAU'
+  abstract: true
+
+- name: 'US SPX 500 (Mini)'
+  decimals: 8
+  ticker: 'SPX500m'
+  abstract: true
+
+- name: 'UK Brent (Spot)'
+  decimals: 8
+  ticker: 'XBR'
+  abstract: true
+
+- name: 'US Tech 100 (Mini)'
+  decimals: 8
+  ticker: 'TECH100m'
+  abstract: true
+
+- name: 'Silver (Spot)'
+  decimals: 8
+  ticker: 'XAG'
+  abstract: true
+
+- name: 'Noon USN'
+  decimals: 18
+  ticker: 'USN'
+  ethereum_address: '0xda67b4284609d2d48e5d10cfac411572727dc1ed'
+
+- name: 'Staked Noon USD'
+  decimals: 18
+  ticker: 'SUSN'
+  ethereum_address: '0xe24a3dc889621612422a64e6388927901608b91d'
+
+- name: 'Survivor'
+  decimals: 18
+  ticker: 'SURVIVOR'
+  starknet_address: '0x042DD777885AD2C116be96d4D634abC90A26A790ffB5871E037Dd5Ae7d2Ec86B'

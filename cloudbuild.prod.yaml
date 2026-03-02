@@ -1,0 +1,44 @@
+timeout: 3600s
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    id: docker-build-lmax-connector
+    args:
+      [
+        "build",
+        "--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:$TAG_NAME",
+        "--file=infra/lmax-connector/Dockerfile",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: docker-build-price-pusher
+    args:
+      [
+        "build",
+        "--tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher:$TAG_NAME",
+        "--file=infra/price-pusher/onchain/Dockerfile",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: docker-push-lmax-connector
+    args:
+      [
+        "push",
+        "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/lmax-connector:$TAG_NAME",
+      ]
+    waitFor: ["docker-build-lmax-connector"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: docker-push-price-pusher
+    args:
+      [
+        "push",
+        "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/price-pusher:$TAG_NAME",
+      ]
+    waitFor: ["docker-build-price-pusher"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_HIGHCPU_32"

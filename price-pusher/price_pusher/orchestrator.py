@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from pragma_sdk.common.types.entry import Entry
 
@@ -11,6 +11,7 @@ from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.price_types import LatestOrchestratorPairPrices
+from price_pusher.health_server import HealthServer
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +38,12 @@ class Orchestrator:
         listeners: List[PriceListener],
         pusher: PricePusher,
         poller_refresh_interval: int = 5,
+        health_server: Optional[HealthServer] = None,
     ) -> None:
         self.poller = poller
         self.listeners = listeners
         self.pusher = pusher
+        self.health_server = health_server
 
         # Time between poller refresh
         self.poller_refresh_interval = poller_refresh_interval
@@ -67,12 +70,19 @@ class Orchestrator:
             - the listener, that listen our oracle and push an event when the
               data is outdated and needs new entries,
             - the pusher, that pushes entries to our oracle.
+            - the health server (if configured), that provides health status.
         """
-        await asyncio.gather(
+        tasks = [
             self._poller_service(),
             self._listener_services(),
             self._pusher_service(),
-        )
+        ]
+
+        # Start health server if configured
+        if self.health_server:
+            tasks.append(self._health_server_service())
+
+        await asyncio.gather(*tasks)
 
     async def _poller_service(self) -> None:
         """
@@ -196,3 +206,13 @@ class Orchestrator:
                     if source not in self.latest_prices[pair_id][data_type]:
                         self.latest_prices[pair_id][data_type][source] = {}
                     self.latest_prices[pair_id][data_type][source][expiry] = entry
+
+    async def _health_server_service(self) -> None:
+        """
+        Start the health check HTTP server.
+        """
+        if self.health_server:
+            await self.health_server.start()
+            # Keep the service running
+            while True:
+                await asyncio.sleep(3600)  # Sleep for an hour

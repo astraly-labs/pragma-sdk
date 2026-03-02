@@ -3,14 +3,18 @@ import os
 from typing import Union, Tuple
 
 from pragma_utils.aws import fetch_aws_private_key
+from pragma_utils.gcp import fetch_gcp_private_key
 
 
-def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str]]:
+def load_private_key_from_cli_arg(
+    private_key: str, aws_region: str = "eu-west-3"
+) -> Union[str, Tuple[str, str]]:
     """
     Load the private key either from AWS, environment variable, from the provided plain value, or return keystore info.
 
     Args:
         private_key: The private key string, prefixed with 'aws:', 'plain:', 'env:', or 'keystore:'.
+        aws_region: The AWS region to use when fetching from AWS Secrets Manager. Defaults to "eu-west-3".
 
     Returns:
         Union[str, Tuple[str, str]]:
@@ -22,7 +26,10 @@ def load_private_key_from_cli_arg(private_key: str) -> Union[str, Tuple[str, str
     """
     if private_key.startswith("aws:"):
         secret_name = private_key.split("aws:", 1)[1]
-        return fetch_aws_private_key(secret_name)
+        return fetch_aws_private_key(secret_name, region=aws_region)
+    elif private_key.startswith("gcp:"):
+        secret_name = private_key.split("gcp:", 1)[1]
+        return fetch_gcp_private_key(secret_name)
     elif private_key.startswith("plain:"):
         return private_key.split("plain:", 1)[1]
     elif private_key.startswith("env:"):
