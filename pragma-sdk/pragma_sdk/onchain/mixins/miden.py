@@ -91,10 +91,13 @@ class MidenMixin:
             with open(config_path) as f:
                 config = json.load(f)
                 
-            if 'data' not in config or self.PUBLISHER_ID_KEY not in config['data']:
-                raise RuntimeError("Publisher ID not found in config file")
-                
-            self.publisher_id = config['data'][self.PUBLISHER_ID_KEY]
+            network_config = config.get('networks', {}).get(self.network, {})
+            ids = network_config.get('publisher_account_ids')
+            if ids:
+                self.publisher_id = ids[0]
+                logger.debug(f"Loaded publisher ID: {self.publisher_id}")
+                return
+            raise RuntimeError(f"publisher_account_ids not found in config for network: {self.network}")
             logger.debug(f"Loaded publisher ID: {self.publisher_id}")
             
         except Exception as e:
@@ -147,13 +150,12 @@ class MidenMixin:
             results = []
             for entry in entries:
                 result = pm_publisher.publish(
-                    publisher=self.publisher_id,
-                    pair=entry.pair,
+                    faucet_id=entry.pair,
                     price=entry.price,
                     decimals=entry.decimals,
                     timestamp=entry.timestamp,
                     storage_path=self.storage_path,
-                    network = self.network
+                    network=self.network,
                 )
                 results.append(result)
                 
@@ -208,10 +210,9 @@ class MidenMixin:
             
         try:
             result = pm_publisher.get_entry(
-                publisher_id=self.publisher_id,
-                pair=pair,
+                faucet_id=pair,
                 storage_path=self.storage_path,
-                network = self.network
+                network=self.network,
             )
             logger.debug(f"Successfully retrieved entry for {pair}")
             return {"status": "success", "data": result}

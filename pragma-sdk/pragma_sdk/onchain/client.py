@@ -258,9 +258,9 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
         Initialize the Miden client.
         """
         if not self.is_initialized:
-            await self.init_miden(self.oracle_id, self.storage_path, self.keystore_path)
+            await self.init_miden(self.oracle_id, self.storage_path, self.keystore_path, self.network)
     
-    async def init_miden(self, oracle_id=None, storage_path=None, keystore_path=None):
+    async def init_miden(self, oracle_id=None, storage_path=None, keystore_path=None, network=None):
         """
         Initialize the Miden publisher.
         """
@@ -274,7 +274,7 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
                 Path("miden_storage").mkdir(exist_ok=True)
             
             print(f"Initializing with oracle_id={oracle_id}, storage_path={storage_path}, network={self.network}")
-            result = pm_publisher.init(oracle_id, storage_path, keystore_path, self.network)
+            result = pm_publisher.init(oracle_id or "", storage_path, keystore_path, network or self.network)
             self.is_initialized = True
             self.storage_path = storage_path
             self.keystore_path = keystore_path
@@ -300,14 +300,13 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
                 config = json.load(f)
                 
             # Check for the new format with networks
-            if 'networks' in config and self.network in config['networks']:
-                network_config = config['networks'][self.network]
-                if self.PUBLISHER_ID_KEY in network_config:
-                    self.publisher_id = network_config[self.PUBLISHER_ID_KEY]
-                    print(f"Loaded publisher ID: {self.publisher_id} for network: {self.network}")
-                    return True
-                
-            raise RuntimeError(f"Publisher ID not found in config file for network: {self.network}")
+            network_config = config.get('networks', {}).get(self.network, {})
+            ids = network_config.get('publisher_account_ids')
+            if ids:
+                self.publisher_id = ids[0]
+                print(f"Loaded publisher ID: {self.publisher_id} for network: {self.network}")
+                return True
+            raise RuntimeError(f"publisher_account_ids not found in config for network: {self.network}")
             
         except Exception as e:
             print(f"Failed to load publisher ID: {e}")
@@ -365,13 +364,13 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
             results = []
             for entry in entries:
                 result = pm_publisher.publish(
-                    pair=entry.pair,
+                    faucet_id=entry.pair,
                     price=entry.price,
                     decimals=entry.decimals,
                     timestamp=entry.timestamp,
                     storage_path=self.storage_path,
-                    keystore_path = self.keystore_path,
-                    network=self.network
+                    keystore_path=self.keystore_path,
+                    network=self.network,
                 )
                 results.append(result)
                 
@@ -393,9 +392,9 @@ class PragmaMidenOnChainClient(PragmaClient, MidenMixin):
             
         try:
             result = pm_publisher.get_entry(
-                pair=pair,
+                faucet_id=pair,
                 storage_path=self.storage_path,
-                network=self.network
+                network=self.network,
             )
             print(f"Successfully retrieved entry for {pair}")
             return {"status": "success", "data": result}
