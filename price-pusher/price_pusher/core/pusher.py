@@ -12,6 +12,8 @@ from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
+from pragma_sdk.miden.client import PragmaMidenClient, MidenEntry
+
 logger = logging.getLogger(__name__)
 
 CONSECUTIVES_PUSH_ERRORS_LIMIT = 10
@@ -32,11 +34,13 @@ class PricePusher(IPricePusher):
         self,
         client: PragmaClient,
         on_successful_push: Optional[Callable[[], None]] = None,
+        miden_client: Optional[PragmaMidenClient] = None,
     ):
         self.client = client
         self.consecutive_push_error = 0
         self.onchain_lock = asyncio.Lock()
         self.on_successful_push = on_successful_push
+        self.miden_client = miden_client
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
@@ -91,6 +95,9 @@ class PricePusher(IPricePusher):
             if self.on_successful_push:
                 self.on_successful_push()
 
+            # Miden publishing — fire-and-forget, isolated from Starknet
+            if self.miden_client is not None:
+                asyncio.create_task(self._publish_to_miden(entries))
             return response
 
         except Exception as e:
@@ -112,3 +119,21 @@ class PricePusher(IPricePusher):
                 )
 
             return None
+
+    async def _publish_to_miden(self, entries: List[Entry]) -> None:
+        """
+        Publish entries to Miden in the background.
+        Completely isolated — any failure here has zero impact on the Starknet loop.
+        """
+        miden_entries = [
+            me for e in entries
+            if (me := MidenEntry.from_starknet_entry(e)) is not None
+        ]
+        if not miden_entries:
+            return
+        try:
+            results = await self.miden_client.publish_entries(miden_entries)
+            ok = sum(results)
+            logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
+        except Exception as e:
+            logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")

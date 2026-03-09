@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union, Dict, Any
 
 from starknet_py.net.account.account import Account
 from starknet_py.net.full_node_client import FullNodeClient
@@ -31,6 +31,8 @@ from pragma_sdk.onchain.mixins import (
     MerkleFeedMixin,
 )
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
+
+from pragma_sdk.offchain.types import PublishEntriesAPIResult
 
 
 logger = get_pragma_sdk_logger()
@@ -213,7 +215,8 @@ class PragmaOnChainClient(  # type: ignore[misc]
         :return: List of InvokeResult objects
         """
         return await self.publish_many(entries)
-
+    
     def _create_full_node_client(self, rpc_url: str) -> FullNodeClient:
         """Create a new full node client with the given RPC URL."""
         return FullNodeClient(node_url=rpc_url)
+
