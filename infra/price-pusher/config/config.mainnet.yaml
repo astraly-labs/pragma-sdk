@@ -12,7 +12,7 @@
       - DOG/USD
       - LBTC/USD
   time_difference: 1800
-  price_deviation: 0.005
+  price_deviation: 0.01
 
 - pairs:
     spot:
