@@ -16,5 +16,6 @@ Pragma SDK for Python
 
    installation
    quickstart
+   miden
    migration
    api
