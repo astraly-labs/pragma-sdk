@@ -1,8 +1,9 @@
+import asyncio
 import json
 import time
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 from pragma_sdk.miden.client import (
     PragmaMidenClient,
@@ -26,8 +27,8 @@ def make_starknet_entry(pair_id: str, price: int):
     return entry
 
 
-def make_config(tmp_path: Path, network: str = "testnet") -> Path:
-    """Write a minimal pragma_miden.json in tmp_path and return the path."""
+def write_config(tmp_path: Path, network: str = "testnet") -> Path:
+    """Write a minimal pragma_miden.json and return its path."""
     config = {
         "networks": {
             network: {
@@ -38,7 +39,7 @@ def make_config(tmp_path: Path, network: str = "testnet") -> Path:
     }
     config_path = tmp_path / "pragma_miden.json"
     config_path.write_text(json.dumps(config))
-    return tmp_path
+    return config_path
 
 
 # ---------------------------------------------------------------------------
@@ -48,28 +49,44 @@ def make_config(tmp_path: Path, network: str = "testnet") -> Path:
 
 class TestFromStarknetEntry:
     def test_supported_pair_converts(self):
-        entry = make_starknet_entry("BTC/USD", 68199_000000)
+        entry = make_starknet_entry("BTC/USD", 6819900000000)
         result = MidenEntry.from_starknet_entry(entry)
         assert result is not None
         assert result.pair == "1:0"
-        assert result.price == 68199_000000
-        assert result.decimals == 6
+        assert result.price == 6819900000000
+
+    def test_decimals_resolved_from_pair_currencies(self):
+        # BTC has 8 decimals, USD has 8 decimals -> min == 8
+        entry = make_starknet_entry("BTC/USD", 6819900000000)
+        result = MidenEntry.from_starknet_entry(entry)
+        assert result is not None
+        assert result.decimals == 8
+
+    def test_eth_usd_decimals(self):
+        # ETH 18 decimals, USD 8 -> min == 8
+        entry = make_starknet_entry("ETH/USD", 215000000000)
+        result = MidenEntry.from_starknet_entry(entry)
+        assert result is not None
+        assert result.decimals == 8
 
     def test_unsupported_pair_returns_none(self):
         entry = make_starknet_entry("WSTETH/USD", 2500_000000)
         result = MidenEntry.from_starknet_entry(entry)
         assert result is None
 
-    def test_all_supported_pairs_convert(self):
-        for starknet_pair, faucet_id in STARKNET_PAIR_TO_MIDEN_FAUCET.items():
-            entry = make_starknet_entry(starknet_pair, 1_000000)
+    def test_unresolvable_decimals_returns_none(self):
+        # In the mapping but the asset config doesn't exist -> skip rather than publish wrong
+        entry = make_starknet_entry("HYPE/USD", 1_000_000)
+        with patch(
+            "pragma_sdk.miden.client._resolve_pair_decimals",
+            return_value=None,
+        ):
             result = MidenEntry.from_starknet_entry(entry)
-            assert result is not None, f"{starknet_pair} should be supported"
-            assert result.pair == faucet_id
+        assert result is None
 
     def test_timestamp_is_copied_from_entry(self):
         ts = 1700000000
-        entry = make_starknet_entry("ETH/USD", 2000_000000)
+        entry = make_starknet_entry("ETH/USD", 215000000000)
         entry.base.timestamp = ts
         result = MidenEntry.from_starknet_entry(entry)
         assert result is not None
@@ -88,7 +105,7 @@ class TestMapping:
 
     def test_faucet_ids_are_unique(self):
         values = list(STARKNET_PAIR_TO_MIDEN_FAUCET.values())
-        assert len(values) == len(set(values)), "Duplicate faucet_id detected"
+        assert len(values) == len(set(values))
 
     def test_faucet_id_format(self):
         for pair, faucet_id in STARKNET_PAIR_TO_MIDEN_FAUCET.items():
@@ -105,7 +122,6 @@ class TestMapping:
 class TestPublishEntries:
     @pytest.fixture
     def mock_pm(self):
-        """Patch pm_publisher at the module level."""
         with patch("pragma_sdk.miden.client.pm_publisher") as mock:
             mock.publish.return_value = None
             mock.init.return_value = None
@@ -113,19 +129,21 @@ class TestPublishEntries:
 
     @pytest.fixture
     def client(self, mock_pm, tmp_path):
-        config_dir = make_config(tmp_path)
-        with patch.object(Path, "cwd", return_value=config_dir):
-            c = PragmaMidenClient(network="testnet")
-            c.is_initialized = True  # skip init
-            c.storage_path = str(config_dir)
-            c.keystore_path = str(config_dir / "keystore")
-            return c
+        config_path = write_config(tmp_path)
+        c = PragmaMidenClient(
+            network="testnet",
+            storage_path=str(tmp_path),
+            keystore_path=str(tmp_path / "keystore"),
+            config_path=config_path,
+        )
+        c.is_initialized = True  # skip network init for these tests
+        return c
 
     @pytest.mark.asyncio
     async def test_publish_all_success(self, client, mock_pm):
         entries = [
-            MidenEntry(pair="1:0", price=68199_000000, decimals=6),
-            MidenEntry(pair="2:0", price=2150_000000, decimals=6),
+            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
+            MidenEntry(pair="2:0", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [True, True]
@@ -141,9 +159,9 @@ class TestPublishEntries:
     async def test_publish_partial_failure(self, client, mock_pm):
         mock_pm.publish.side_effect = [None, Exception("network error"), None]
         entries = [
-            MidenEntry(pair="1:0", price=68199_000000, decimals=6),
-            MidenEntry(pair="2:0", price=2150_000000, decimals=6),
-            MidenEntry(pair="3:0", price=85_000000, decimals=6),
+            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
+            MidenEntry(pair="2:0", price=215000000000, decimals=8),
+            MidenEntry(pair="3:0", price=8500000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [True, False, True]
@@ -153,16 +171,29 @@ class TestPublishEntries:
         """A failure on entry N must not prevent entry N+1 from being published."""
         mock_pm.publish.side_effect = [Exception("fail"), None]
         entries = [
-            MidenEntry(pair="1:0", price=68199_000000, decimals=6),
-            MidenEntry(pair="2:0", price=2150_000000, decimals=6),
+            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
+            MidenEntry(pair="2:0", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert mock_pm.publish.call_count == 2
-        assert results[1] is True
+        assert results == [False, True]
+
+    @pytest.mark.asyncio
+    async def test_publish_timeout_returns_false(self, client, mock_pm, monkeypatch):
+        """A pm_publisher.publish that hangs must not freeze the loop forever."""
+        monkeypatch.setattr("pragma_sdk.miden.client.PUBLISH_TIMEOUT_S", 0.1)
+
+        def slow_publish(*args, **kwargs):
+            time.sleep(1)
+
+        mock_pm.publish.side_effect = slow_publish
+        entries = [MidenEntry(pair="1:0", price=6819900000000, decimals=8)]
+        results = await client.publish_entries(entries)
+        assert results == [False]
 
 
 # ---------------------------------------------------------------------------
-# PragmaMidenClient._load_oracle_id / _load_publisher_id
+# PragmaMidenClient — config loading
 # ---------------------------------------------------------------------------
 
 
@@ -172,59 +203,78 @@ class TestConfigLoading:
         with patch("pragma_sdk.miden.client.pm_publisher") as mock:
             yield mock
 
-    def test_load_oracle_id_from_json(self, mock_pm, tmp_path):
-        make_config(tmp_path)
-        client = PragmaMidenClient(network="testnet")
-        with patch("pragma_sdk.miden.client.Path") as MockPath:
-            MockPath.return_value.exists.return_value = True
-            MockPath.return_value.__truediv__ = lambda s, o: tmp_path / o
-            config_path = tmp_path / "pragma_miden.json"
-            MockPath.return_value = config_path
-            # Direct test via actual file
-            import os
-            orig = os.getcwd()
-            os.chdir(tmp_path)
-            try:
-                client._load_oracle_id()
-                assert client.oracle_id == "0xafebd403be621e005bf03b9fec7fe8"
-            finally:
-                os.chdir(orig)
+    def test_load_oracle_id_from_explicit_config_path(self, mock_pm, tmp_path):
+        config_path = write_config(tmp_path)
+        client = PragmaMidenClient(network="testnet", config_path=config_path)
+        client._load_oracle_id()
+        assert client.oracle_id == "0xafebd403be621e005bf03b9fec7fe8"
 
     def test_load_oracle_id_missing_file_raises(self, mock_pm, tmp_path):
-        client = PragmaMidenClient(network="testnet")
-        import os
-        orig = os.getcwd()
-        os.chdir(tmp_path)  # empty dir, no pragma_miden.json
-        try:
-            with pytest.raises(RuntimeError, match="oracle_id not provided"):
-                client._load_oracle_id()
-        finally:
-            os.chdir(orig)
+        client = PragmaMidenClient(
+            network="testnet",
+            config_path=tmp_path / "does_not_exist.json",
+        )
+        with pytest.raises(RuntimeError, match="oracle_id not provided"):
+            client._load_oracle_id()
 
     def test_load_oracle_id_missing_network_raises(self, mock_pm, tmp_path):
-        config = {"networks": {"local": {"oracle_account_id": "0xabc"}}}
-        (tmp_path / "pragma_miden.json").write_text(json.dumps(config))
-        client = PragmaMidenClient(network="testnet")
-        import os
-        orig = os.getcwd()
-        os.chdir(tmp_path)
-        try:
-            with pytest.raises(RuntimeError, match="oracle_account_id not found"):
-                client._load_oracle_id()
-        finally:
-            os.chdir(orig)
+        config_path = tmp_path / "pragma_miden.json"
+        config_path.write_text(json.dumps({"networks": {"local": {"oracle_account_id": "0xabc"}}}))
+        client = PragmaMidenClient(network="testnet", config_path=config_path)
+        with pytest.raises(RuntimeError, match="oracle_account_id not found"):
+            client._load_oracle_id()
 
-    def test_load_publisher_id_from_json(self, mock_pm, tmp_path):
-        make_config(tmp_path)
-        client = PragmaMidenClient(network="testnet")
-        import os
-        orig = os.getcwd()
-        os.chdir(tmp_path)
-        try:
-            client._load_publisher_id()
-            assert client.publisher_id == "0x474d7a81bb950b001661523cdd7c0b"
-        finally:
-            os.chdir(orig)
+    def test_load_publisher_id_from_explicit_config_path(self, mock_pm, tmp_path):
+        config_path = write_config(tmp_path)
+        client = PragmaMidenClient(network="testnet", config_path=config_path)
+        client._load_publisher_id()
+        assert client.publisher_id == "0x474d7a81bb950b001661523cdd7c0b"
+
+    def test_config_path_defaults_to_storage_path(self, mock_pm, tmp_path):
+        write_config(tmp_path)
+        client = PragmaMidenClient(network="testnet", storage_path=str(tmp_path))
+        assert client.config_path == tmp_path / "pragma_miden.json"
+        client._load_oracle_id()
+        assert client.oracle_id == "0xafebd403be621e005bf03b9fec7fe8"
+
+
+# ---------------------------------------------------------------------------
+# PragmaMidenClient.initialize idempotence
+# ---------------------------------------------------------------------------
+
+
+class TestInitializeIdempotence:
+    @pytest.fixture
+    def mock_pm(self):
+        with patch("pragma_sdk.miden.client.pm_publisher") as mock:
+            mock.init.return_value = None
+            yield mock
+
+    @pytest.mark.asyncio
+    async def test_existing_config_skips_pm_publisher_init(self, mock_pm, tmp_path):
+        """If pragma_miden.json already exists, pm_publisher.init must NOT be called."""
+        config_path = write_config(tmp_path)
+        client = PragmaMidenClient(
+            network="testnet",
+            storage_path=str(tmp_path),
+            config_path=config_path,
+        )
+        await client.initialize()
+        mock_pm.init.assert_not_called()
+        assert client.is_initialized is True
+        assert client.publisher_id == "0x474d7a81bb950b001661523cdd7c0b"
+
+    @pytest.mark.asyncio
+    async def test_double_initialize_is_noop(self, mock_pm, tmp_path):
+        config_path = write_config(tmp_path)
+        client = PragmaMidenClient(
+            network="testnet",
+            storage_path=str(tmp_path),
+            config_path=config_path,
+        )
+        await client.initialize()
+        await client.initialize()
+        mock_pm.init.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -235,5 +285,5 @@ class TestConfigLoading:
 class TestMissingPmPublisher:
     def test_raises_import_error_with_helpful_message(self):
         with patch("pragma_sdk.miden.client.pm_publisher", None):
-            with pytest.raises(ImportError, match="pip install pragma-sdk\\[miden\\]"):
+            with pytest.raises(ImportError, match=r"pip install pragma-sdk\[miden\]"):
                 PragmaMidenClient(network="testnet")

@@ -49,6 +49,9 @@ async def main(
     evm_rpc_urls: Optional[List[str]] = None,
     miden_network: Optional[str] = None,
     miden_oracle_id: Optional[str] = None,
+    miden_config_path: Optional[str] = None,
+    miden_storage_path: Optional[str] = None,
+    miden_keystore_path: Optional[str] = None,
 ) -> None:
     """
     Main function of the price pusher.
@@ -89,13 +92,22 @@ async def main(
                 max_seconds_without_push=max_seconds_without_push or 300,
             )
 
-    miden_client = None
+    miden_client: Optional[PragmaMidenClient] = None
     if miden_network:
-        miden_client = PragmaMidenClient(
-            network=miden_network,
-            oracle_id=miden_oracle_id,
-        )
-        logger.info(f"🌐 Miden publishing enabled (network={miden_network})")
+        try:
+            miden_client = PragmaMidenClient(
+                network=miden_network,
+                oracle_id=miden_oracle_id,
+                storage_path=miden_storage_path,
+                keystore_path=miden_keystore_path,
+                config_path=miden_config_path,
+            )
+            await miden_client.initialize()
+            logger.info(f"🌐 Miden publishing enabled (network={miden_network})")
+        except Exception as e:
+            # Miden is best-effort — Starknet must keep running even if init fails.
+            logger.error(f"🌐 Miden init failed, disabling Miden publishing: {e}")
+            miden_client = None
 
     poller = PricePoller(fetcher_client=fetcher_client)
     pusher = PricePusher(
@@ -290,6 +302,28 @@ def _create_client(
     default=None,
     help="Miden oracle account ID (read from pragma_miden.json if omitted).",
 )
+@click.option(
+    "--miden-config-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Path to pragma_miden.json. Defaults to <miden-storage-path>/pragma_miden.json "
+    "or ./pragma_miden.json relative to cwd.",
+)
+@click.option(
+    "--miden-storage-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Directory where the Miden SQLite store is kept.",
+)
+@click.option(
+    "--miden-keystore-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Directory where the Miden keystore is kept.",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -309,6 +343,9 @@ def cli_entrypoint(
     evm_rpc_url: Sequence[str],
     miden_network: Optional[str],
     miden_oracle_id: Optional[str],
+    miden_config_path: Optional[str],
+    miden_storage_path: Optional[str],
+    miden_keystore_path: Optional[str],
 ) -> None:
     if rpc_url and not rpc_url.startswith("http"):
         raise click.UsageError(
@@ -352,6 +389,9 @@ def cli_entrypoint(
             evm_rpc_urls=evm_rpc_urls,
             miden_network=miden_network,
             miden_oracle_id=miden_oracle_id,
+            miden_config_path=miden_config_path,
+            miden_storage_path=miden_storage_path,
+            miden_keystore_path=miden_keystore_path,
         )
     )
 

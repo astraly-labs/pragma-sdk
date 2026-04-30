@@ -18,7 +18,12 @@ This installs ``pm-publisher``, the Rust-backed wheel that handles Miden account
 Initialize your publisher account
 ----------------------------------
 
-Run this once per environment. It creates your Miden publisher account on-chain and writes credentials locally.
+Run this **once per environment** to create your Miden publisher account on-chain.
+``initialize()`` is idempotent: if a ``pragma_miden.json`` already exists for the network,
+it is reused. Otherwise a fresh on-chain account is created.
+
+Get the latest ``oracle_id`` for your target network from
+`pragma_miden.json in the pragma-miden repo <https://github.com/astraly-labs/pragma-miden/blob/main/pragma_miden.json>`_.
 
 .. code-block:: python
 
@@ -28,14 +33,14 @@ Run this once per environment. It creates your Miden publisher account on-chain 
     async def main():
         client = PragmaMidenClient(
             network="testnet",
-            oracle_id="0xafebd403be621e005bf03b9fec7fe8",  # see pragma-miden README for latest
+            oracle_id="<latest-oracle-id-from-pragma_miden.json>",
         )
         await client.initialize()
         print(f"Publisher ID: {client.publisher_id}")
 
     asyncio.run(main())
 
-This creates three files in your working directory:
+The first init creates three artifacts (locations are configurable):
 
 - ``pragma_miden.json`` — your publisher ID and oracle address
 - ``keystore/`` — account signing keys (**back this up**)
@@ -55,15 +60,18 @@ After initialization, publish entries directly:
 
     async def main():
         client = PragmaMidenClient(network="testnet")
+        await client.initialize()  # reuses existing config if present
         results = await client.publish_entries([
-            MidenEntry(pair="1:0", price=68199_000000, decimals=6),  # BTC/USD
-            MidenEntry(pair="2:0", price=2150_000000,  decimals=6),  # ETH/USD
+            MidenEntry(pair="1:0", price=6819900000000, decimals=8),  # BTC/USD
+            MidenEntry(pair="2:0", price=215000000000,  decimals=8),  # ETH/USD
         ])
         print(results)  # [True, True]
 
     asyncio.run(main())
 
-Prices use **6 decimal places** — multiply the USD value by ``1_000_000``.
+When converting from a Pragma Starknet ``Entry`` via ``MidenEntry.from_starknet_entry``,
+the decimals are derived from the pair's currencies (``min(base.decimals, quote.decimals)``,
+which is **8** for all currently supported pairs). Don't hardcode 6 in new callers.
 
 Integrate with the price-pusher
 --------------------------------
@@ -78,10 +86,19 @@ If you run the ``price-pusher``, pass ``--miden-network`` to enable Miden publis
       --private-key plain:0x... \
       --publisher-name MY_PUBLISHER \
       --publisher-address 0x... \
-      --miden-network testnet
+      --miden-network testnet \
+      --miden-config-path /path/to/pragma_miden.json \
+      --miden-storage-path /path/to/miden_storage \
+      --miden-keystore-path /path/to/keystore
 
-Miden publishing hooks into the existing loop automatically. After each successful Starknet push,
-the same entries are forwarded to Miden in a fire-and-forget task — no extra configuration needed.
+The Miden client is initialized **once at startup** (out of the hot Starknet loop). If init
+fails — network down, missing config, etc. — Miden is silently disabled and Starknet keeps
+running. After each successful Starknet push, supported pairs are forwarded to Miden in a
+thread-offloaded fire-and-forget task with per-call timeouts, so a stuck Miden node cannot
+freeze the Starknet pusher.
+
+The ``--miden-config-path`` / ``--miden-storage-path`` / ``--miden-keystore-path`` flags
+are optional — if omitted, paths are resolved relative to the pusher's working directory.
 
 Supported pairs
 ---------------
@@ -119,15 +136,16 @@ API reference
     class PragmaMidenClient:
         def __init__(
             self,
-            network: str = "testnet",        # "testnet" | "devnet" | "local"
-            oracle_id: str | None = None,    # read from pragma_miden.json if omitted
-            storage_path: str | None = None, # CWD by default
+            network: str = "testnet",         # "testnet" | "devnet" | "local"
+            oracle_id: str | None = None,     # read from pragma_miden.json if omitted
+            storage_path: str | None = None,
             keystore_path: str | None = None,
+            config_path: str | Path | None = None,  # path to pragma_miden.json
         ): ...
 
-        async def initialize(self) -> None: ...
+        async def initialize(self) -> None: ...                                 # idempotent
         async def publish_entries(self, entries: list[MidenEntry]) -> list[bool]: ...
-        async def get_entry(self, pair: str) -> str | None: ...
+        async def get_entry(self, pair: str) -> str | None: ...                 # None on failure
         async def sync(self) -> None: ...
 
     class MidenEntry:
@@ -138,4 +156,5 @@ API reference
 
         @classmethod
         def from_starknet_entry(cls, entry) -> MidenEntry | None:
-            """Convert a Starknet Entry. Returns None if the pair is not supported on Miden."""
+            """Convert a Starknet Entry. Returns None if the pair is unsupported on Miden
+            or if the pair's decimals cannot be resolved."""
