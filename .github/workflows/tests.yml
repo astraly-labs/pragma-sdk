@@ -88,11 +88,7 @@ jobs:
         run: |
           export LLVM_SYS_190_PREFIX=/usr/lib/llvm-19
           export PATH="/usr/lib/llvm-19/bin:$PATH"
-          # starknet-py 0.27.0 talks RPC v0.8.x. starknet-devnet bumped to
-          # RPC v0.9 in 0.5.0 and v0.10 in 0.7.0, both of which drop the
-          # "pending" block tag we use across the SDK. 0.4.2 is the last
-          # 0.4.x published on crates.io and serves RPC v0.8.x.
-          cargo install starknet-devnet --version 0.4.2 --locked
+          cargo install starknet-devnet
       - name: Run tests
         run: |
           # TODO: The tests loop forever if we don't run them one by one for some packages.
