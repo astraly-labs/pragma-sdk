@@ -41,6 +41,12 @@ class PricePusher(IPricePusher):
         self.onchain_lock = asyncio.Lock()
         self.on_successful_push = on_successful_push
         self.miden_client = miden_client
+        # At most one Miden publish in flight at a time. New ticks skip rather
+        # than queue when one is already running — that way a hung Miden
+        # publish_batch never accumulates zombie threads behind it.
+        self._miden_sem: Optional[asyncio.Semaphore] = (
+            asyncio.Semaphore(1) if miden_client is not None else None
+        )
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
@@ -124,16 +130,24 @@ class PricePusher(IPricePusher):
         """
         Publish entries to Miden in the background.
         Completely isolated — any failure here has zero impact on the Starknet loop.
+        Skipped when a previous batch is still in flight.
         """
+        if self._miden_sem is None or self._miden_sem.locked():
+            if self._miden_sem is not None:
+                logger.warning(
+                    "🌐 MIDEN: previous batch still in flight, skipping this tick"
+                )
+            return
         miden_entries = [
             me for e in entries
             if (me := MidenEntry.from_starknet_entry(e)) is not None
         ]
         if not miden_entries:
             return
-        try:
-            results = await self.miden_client.publish_entries(miden_entries)
-            ok = sum(results)
-            logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
-        except Exception as e:
-            logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")
+        async with self._miden_sem:
+            try:
+                results = await self.miden_client.publish_entries(miden_entries)
+                ok = sum(results)
+                logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
+            except Exception as e:
+                logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")

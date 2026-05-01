@@ -19,7 +19,7 @@ logger = get_pragma_sdk_logger()
 # Bound every blocking pm_publisher call so a stuck Miden node cannot
 # starve the event loop indefinitely.
 INIT_TIMEOUT_S = 60
-PUBLISH_TIMEOUT_S = 30
+PUBLISH_BATCH_TIMEOUT_S = 60
 GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
 
@@ -236,11 +236,14 @@ class PragmaMidenClient:
 
     async def publish_entries(self, entries: List[MidenEntry]) -> List[bool]:
         """
-        Publish price entries to the Miden oracle.
+        Publish price entries to the Miden oracle in a single batched transaction.
 
-        Each entry is published in its own thread-offloaded transaction with
-        an independent timeout. A failure on entry N never prevents entry N+1
-        from being attempted.
+        All entries are submitted via ``pm_publisher.publish_batch`` in **one**
+        on-chain transaction. The result is therefore all-or-nothing: on
+        success returns ``[True] * N``, on failure returns ``[False] * N``.
+        Returning a list (rather than a single bool) keeps the call shape
+        aligned with upstream callers and lets us evolve later without an
+        API break.
         """
         if not entries:
             logger.warning("publish_entries: no entries to publish")
@@ -249,40 +252,40 @@ class PragmaMidenClient:
         if not self.is_initialized:
             await self.initialize()
 
-        results: List[bool] = []
-        for entry in entries:
-            try:
-                await asyncio.wait_for(
-                    asyncio.to_thread(
-                        pm_publisher.publish,
-                        entry.pair,
-                        entry.price,
-                        entry.decimals,
-                        entry.timestamp,
-                        storage_path=self.storage_path,
-                        keystore_path=self.keystore_path,
-                        network=self.network,
-                    ),
-                    timeout=PUBLISH_TIMEOUT_S,
-                )
-                results.append(True)
-            except asyncio.TimeoutError:
-                logger.error(
-                    f"Timeout (>{PUBLISH_TIMEOUT_S}s) publishing {entry.pair} to Miden"
-                )
-                results.append(False)
-            except Exception as e:
-                logger.error(f"Failed to publish {entry.pair}: {e}")
-                results.append(False)
+        batch = [
+            (e.pair, e.price, e.decimals, e.timestamp) for e in entries
+        ]
+        try:
+            await asyncio.wait_for(
+                asyncio.to_thread(
+                    pm_publisher.publish_batch,
+                    batch,
+                    storage_path=self.storage_path,
+                    keystore_path=self.keystore_path,
+                    network=self.network,
+                ),
+                timeout=PUBLISH_BATCH_TIMEOUT_S,
+            )
+            return [True] * len(entries)
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Timeout (>{PUBLISH_BATCH_TIMEOUT_S}s) publishing batch of "
+                f"{len(entries)} entries to Miden"
+            )
+            return [False] * len(entries)
+        except Exception as e:
+            logger.error(f"Failed to publish batch of {len(entries)} entries: {e}")
+            return [False] * len(entries)
 
-        return results
-
-    async def get_entry(self, pair: str) -> Optional[str]:
-        """Fetch the latest published entry for a pair. Returns None on failure."""
+    async def get_entry(self, pair: str) -> Optional[MidenEntry]:
+        """
+        Fetch the latest published entry for a pair. Returns ``None`` on
+        failure (network error, timeout, malformed response).
+        """
         if not self.is_initialized:
             raise RuntimeError("Call initialize() or publish_entries() first.")
         try:
-            return await asyncio.wait_for(
+            raw = await asyncio.wait_for(
                 asyncio.to_thread(
                     pm_publisher.get_entry,
                     pair,
@@ -297,6 +300,18 @@ class PragmaMidenClient:
             return None
         except Exception as e:
             logger.error(f"Failed to get entry for {pair}: {e}")
+            return None
+
+        try:
+            data = json.loads(raw)
+            return MidenEntry(
+                pair=data["faucet_id"],
+                price=int(data["price"]),
+                decimals=int(data["decimals"]),
+                timestamp=int(data["timestamp"]),
+            )
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            logger.error(f"Malformed get_entry payload for {pair}: {raw!r} ({e})")
             return None
 
     async def sync(self) -> None:

@@ -1,4 +1,3 @@
-import asyncio
 import json
 import time
 import pytest
@@ -123,7 +122,7 @@ class TestPublishEntries:
     @pytest.fixture
     def mock_pm(self):
         with patch("pragma_sdk.miden.client.pm_publisher") as mock:
-            mock.publish.return_value = None
+            mock.publish_batch.return_value = None
             mock.init.return_value = None
             yield mock
 
@@ -140,56 +139,95 @@ class TestPublishEntries:
         return c
 
     @pytest.mark.asyncio
-    async def test_publish_all_success(self, client, mock_pm):
+    async def test_publish_all_success_uses_single_batch_call(self, client, mock_pm):
         entries = [
             MidenEntry(pair="1:0", price=6819900000000, decimals=8),
             MidenEntry(pair="2:0", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [True, True]
-        assert mock_pm.publish.call_count == 2
+        # Single batched transaction, not N individual publish calls.
+        assert mock_pm.publish_batch.call_count == 1
+        positional = mock_pm.publish_batch.call_args.args[0]
+        assert positional == [
+            ("1:0", 6819900000000, 8, entries[0].timestamp),
+            ("2:0", 215000000000, 8, entries[1].timestamp),
+        ]
 
     @pytest.mark.asyncio
     async def test_publish_empty_returns_empty(self, client, mock_pm):
         results = await client.publish_entries([])
         assert results == []
-        mock_pm.publish.assert_not_called()
+        mock_pm.publish_batch.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_publish_partial_failure(self, client, mock_pm):
-        mock_pm.publish.side_effect = [None, Exception("network error"), None]
+    async def test_publish_batch_failure_marks_all_false(self, client, mock_pm):
+        """Batch is atomic — one failure means none of the entries landed."""
+        mock_pm.publish_batch.side_effect = Exception("network error")
         entries = [
             MidenEntry(pair="1:0", price=6819900000000, decimals=8),
             MidenEntry(pair="2:0", price=215000000000, decimals=8),
             MidenEntry(pair="3:0", price=8500000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
-        assert results == [True, False, True]
+        assert results == [False, False, False]
 
     @pytest.mark.asyncio
-    async def test_publish_one_failure_does_not_abort(self, client, mock_pm):
-        """A failure on entry N must not prevent entry N+1 from being published."""
-        mock_pm.publish.side_effect = [Exception("fail"), None]
+    async def test_publish_timeout_returns_all_false(self, client, mock_pm, monkeypatch):
+        """A pm_publisher.publish_batch that hangs must not freeze the loop forever."""
+        monkeypatch.setattr("pragma_sdk.miden.client.PUBLISH_BATCH_TIMEOUT_S", 0.1)
+
+        def slow_publish_batch(*args, **kwargs):
+            time.sleep(1)
+
+        mock_pm.publish_batch.side_effect = slow_publish_batch
         entries = [
             MidenEntry(pair="1:0", price=6819900000000, decimals=8),
             MidenEntry(pair="2:0", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
-        assert mock_pm.publish.call_count == 2
-        assert results == [False, True]
+        assert results == [False, False]
+
+
+# ---------------------------------------------------------------------------
+# PragmaMidenClient.get_entry
+# ---------------------------------------------------------------------------
+
+
+class TestGetEntry:
+    @pytest.fixture
+    def mock_pm(self):
+        with patch("pragma_sdk.miden.client.pm_publisher") as mock:
+            yield mock
+
+    @pytest.fixture
+    def client(self, mock_pm, tmp_path):
+        config_path = write_config(tmp_path)
+        c = PragmaMidenClient(network="testnet", config_path=config_path)
+        c.is_initialized = True
+        return c
 
     @pytest.mark.asyncio
-    async def test_publish_timeout_returns_false(self, client, mock_pm, monkeypatch):
-        """A pm_publisher.publish that hangs must not freeze the loop forever."""
-        monkeypatch.setattr("pragma_sdk.miden.client.PUBLISH_TIMEOUT_S", 0.1)
+    async def test_get_entry_parses_json_payload(self, client, mock_pm):
+        mock_pm.get_entry.return_value = json.dumps(
+            {"faucet_id": "1:0", "price": 6819900000000, "decimals": 8, "timestamp": 1700000000}
+        )
+        entry = await client.get_entry("1:0")
+        assert entry is not None
+        assert entry.pair == "1:0"
+        assert entry.price == 6819900000000
+        assert entry.decimals == 8
+        assert entry.timestamp == 1700000000
 
-        def slow_publish(*args, **kwargs):
-            time.sleep(1)
+    @pytest.mark.asyncio
+    async def test_get_entry_returns_none_on_malformed_payload(self, client, mock_pm):
+        mock_pm.get_entry.return_value = "not json"
+        assert await client.get_entry("1:0") is None
 
-        mock_pm.publish.side_effect = slow_publish
-        entries = [MidenEntry(pair="1:0", price=6819900000000, decimals=8)]
-        results = await client.publish_entries(entries)
-        assert results == [False]
+    @pytest.mark.asyncio
+    async def test_get_entry_returns_none_on_exception(self, client, mock_pm):
+        mock_pm.get_entry.side_effect = Exception("rpc down")
+        assert await client.get_entry("1:0") is None
 
 
 # ---------------------------------------------------------------------------

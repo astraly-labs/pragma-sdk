@@ -53,7 +53,7 @@ docs = [
 ]
 
 miden = [
-    "pm-publisher>=0.1.0a1",
+    "pm-publisher>=0.1.0a2",
 ]
 
 dev = [
