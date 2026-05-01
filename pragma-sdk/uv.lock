@@ -2,6 +2,10 @@ version = 1
 revision = 3
 requires-python = ">=3.11, <3.13"
 
+[options]
+exclude-newer = "2026-04-23T15:18:30.309196Z"
+exclude-newer-span = "P7D"
+
 [[package]]
 name = "accessible-pygments"
 version = "0.0.5"
@@ -1248,6 +1252,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pm-publisher"
+version = "0.1.0a1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/38/644b97e9216c9657196cbea40cef49bdcf8a09c507b7cb1e4312b90f26e2/pm_publisher-0.1.0a1-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:411ef0e27db6319292a72af6f8c83d112d672640e359b755d6ae3a03e2037738", size = 10049222, upload-time = "2026-03-04T18:03:25.047Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/a1/d028f844e2dbaecd545ea1b2754fd3ce1180109116e7d0ba49173c331792/pm_publisher-0.1.0a1-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:15b1913625b1b64bd780d8abde6f6f375791c6ce6a99525c8dddbe74b232c59f", size = 11021661, upload-time = "2026-03-04T18:03:27.897Z" },
+]
+
+[[package]]
 name = "poethepoet"
 version = "0.37.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1333,6 +1346,9 @@ docs = [
     { name = "pallets-sphinx-themes" },
     { name = "sphinx" },
 ]
+miden = [
+    { name = "pm-publisher" },
+]
 typing = [
     { name = "mypy" },
     { name = "types-deprecated" },
@@ -1353,6 +1369,7 @@ requires-dist = [
     { name = "moto", extras = ["s3", "secretsmanager"], marker = "extra == 'dev'", specifier = ">=4.2.5" },
     { name = "mypy", marker = "extra == 'typing'", specifier = ">=1.10" },
     { name = "pallets-sphinx-themes", marker = "extra == 'docs'", specifier = ">=2.1.3" },
+    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a1" },
     { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.21.1" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2.2" },
@@ -1375,7 +1392,7 @@ requires-dist = [
     { name = "types-requests", marker = "extra == 'typing'", specifier = ">=2.26.0" },
     { name = "websockets", specifier = ">=14.0" },
 ]
-provides-extras = ["dev", "docs", "typing"]
+provides-extras = ["dev", "docs", "miden", "typing"]
 
 [[package]]
 name = "propcache"

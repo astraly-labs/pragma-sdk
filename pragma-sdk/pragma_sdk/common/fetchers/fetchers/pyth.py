@@ -209,4 +209,3 @@ class PythFetcher(FetcherInterfaceT):
             source=self.SOURCE,
             publisher=self.publisher,
         )
-

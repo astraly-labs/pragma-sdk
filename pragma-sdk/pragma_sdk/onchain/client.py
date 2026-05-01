@@ -32,7 +32,6 @@ from pragma_sdk.onchain.mixins import (
 )
 from pragma_sdk.onchain.utils import get_full_node_client_from_network
 
-
 logger = get_pragma_sdk_logger()
 logger.setLevel(logging.INFO)
 

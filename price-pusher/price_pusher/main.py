@@ -12,6 +12,7 @@ from pragma_sdk.onchain.types.types import PrivateKey
 from pragma_sdk.onchain.types.execution_config import ExecutionConfig
 from pragma_sdk.onchain.client import PragmaOnChainClient
 
+from pragma_sdk.miden.client import PragmaMidenClient
 from pragma_utils.logger import setup_logging
 from pragma_utils.cli import load_private_key_from_cli_arg
 
@@ -46,6 +47,11 @@ async def main(
     health_server_type: str = "fastapi",
     max_seconds_without_push: Optional[int] = None,
     evm_rpc_urls: Optional[List[str]] = None,
+    miden_network: Optional[str] = None,
+    miden_oracle_id: Optional[str] = None,
+    miden_config_path: Optional[str] = None,
+    miden_storage_path: Optional[str] = None,
+    miden_keystore_path: Optional[str] = None,
 ) -> None:
     """
     Main function of the price pusher.
@@ -86,10 +92,28 @@ async def main(
                 max_seconds_without_push=max_seconds_without_push or 300,
             )
 
+    miden_client: Optional[PragmaMidenClient] = None
+    if miden_network:
+        try:
+            miden_client = PragmaMidenClient(
+                network=miden_network,
+                oracle_id=miden_oracle_id,
+                storage_path=miden_storage_path,
+                keystore_path=miden_keystore_path,
+                config_path=miden_config_path,
+            )
+            await miden_client.initialize()
+            logger.info(f"🌐 Miden publishing enabled (network={miden_network})")
+        except Exception as e:
+            # Miden is best-effort — Starknet must keep running even if init fails.
+            logger.error(f"🌐 Miden init failed, disabling Miden publishing: {e}")
+            miden_client = None
+
     poller = PricePoller(fetcher_client=fetcher_client)
     pusher = PricePusher(
         client=pragma_client,
         on_successful_push=health_server.update_last_push if health_server else None,
+        miden_client=miden_client,
     )
     orchestrator = Orchestrator(
         poller=poller,
@@ -264,6 +288,42 @@ def _create_client(
     multiple=True,
     help="Ethereum RPC URL used by on-chain fetchers (can be passed multiple times).",
 )
+@click.option(
+    "--miden-network",
+    type=click.Choice(["testnet", "devnet", "local"], case_sensitive=False),
+    required=False,
+    default=None,
+    help="Enable Miden publishing. Specify network: testnet, devnet, or local.",
+)
+@click.option(
+    "--miden-oracle-id",
+    type=click.STRING,
+    required=False,
+    default=None,
+    help="Miden oracle account ID (read from pragma_miden.json if omitted).",
+)
+@click.option(
+    "--miden-config-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Path to pragma_miden.json. Defaults to <miden-storage-path>/pragma_miden.json "
+    "or ./pragma_miden.json relative to cwd.",
+)
+@click.option(
+    "--miden-storage-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Directory where the Miden SQLite store is kept.",
+)
+@click.option(
+    "--miden-keystore-path",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Directory where the Miden keystore is kept.",
+)
 def cli_entrypoint(
     config_file: str,
     log_level: str,
@@ -281,6 +341,11 @@ def cli_entrypoint(
     health_server_type: str,
     max_seconds_without_push: Optional[int],
     evm_rpc_url: Sequence[str],
+    miden_network: Optional[str],
+    miden_oracle_id: Optional[str],
+    miden_config_path: Optional[str],
+    miden_storage_path: Optional[str],
+    miden_keystore_path: Optional[str],
 ) -> None:
     if rpc_url and not rpc_url.startswith("http"):
         raise click.UsageError(
@@ -322,6 +387,11 @@ def cli_entrypoint(
             health_server_type=health_server_type,
             max_seconds_without_push=max_seconds_without_push,
             evm_rpc_urls=evm_rpc_urls,
+            miden_network=miden_network,
+            miden_oracle_id=miden_oracle_id,
+            miden_config_path=miden_config_path,
+            miden_storage_path=miden_storage_path,
+            miden_keystore_path=miden_keystore_path,
         )
     )
 

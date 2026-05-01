@@ -292,11 +292,11 @@ PersistMessages=Y
 
 [SESSION]
 BeginString=FIX.4.4
-SenderCompID={os.getenv('LMAX_SENDER_COMP_ID')}
-TargetCompID={os.getenv('LMAX_TARGET_COMP_ID')}
+SenderCompID={os.getenv("LMAX_SENDER_COMP_ID")}
+TargetCompID={os.getenv("LMAX_TARGET_COMP_ID")}
 SocketConnectHost=127.0.0.1
 SocketConnectPort=40003
-Password={os.getenv('LMAX_PASSWORD')}
+Password={os.getenv("LMAX_PASSWORD")}
 HeartBtInt=30"""
 
         logger.info(f"Using FIX settings:\n{fix_settings}")

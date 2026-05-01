@@ -77,3 +77,10 @@ devnet.pkl
 lmax-connector/log/
 lmax-connector/store/
 lmax-connector/config/fix_settings.cfg
+
+
+store.sqlite3
+pragma_miden.json
+
+**/keystore/
+keystore/
