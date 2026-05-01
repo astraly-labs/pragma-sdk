@@ -377,9 +377,9 @@ def _assert_and_sample(keys, actuals):
     global test_dict
     for key, actual in zip(keys, actuals):
         if key in test_dict and actual:
-            assert (
-                actual == test_dict[key]
-            ), f"{key}  actual:{actual.hex()} != expected:{test_dict[key].hex()}"
+            assert actual == test_dict[key], (
+                f"{key}  actual:{actual.hex()} != expected:{test_dict[key].hex()}"
+            )
         test_dict[key + "_sample"] = actual
 
 

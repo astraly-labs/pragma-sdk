@@ -69,14 +69,14 @@ async def _handler():
         balance = await client.get_balance(address, token_address)
 
         if balance < threshold_wei:
-            error_message = f"Balance below threshold for publisher: {felt_to_str(publisher)}, address: {hex(address)}, balance in STRK: {balance/(10**18)}"
+            error_message = f"Balance below threshold for publisher: {felt_to_str(publisher)}, address: {hex(address)}, balance in STRK: {balance / (10**18)}"
             logger.warning(error_message)
             all_above_threshold = False
             await bot.send_message(chat_id, text=error_message)
 
         else:
             logger.info(
-                f"Balance above threshold for publisher: {felt_to_str(publisher)}, address: {hex(address)}, balance in STRK: {balance/(10**18)}"
+                f"Balance above threshold for publisher: {felt_to_str(publisher)}, address: {hex(address)}, balance in STRK: {balance / (10**18)}"
             )
 
     if all_above_threshold:

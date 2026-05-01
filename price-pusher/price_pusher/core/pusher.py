@@ -139,8 +139,7 @@ class PricePusher(IPricePusher):
                 )
             return
         miden_entries = [
-            me for e in entries
-            if (me := MidenEntry.from_starknet_entry(e)) is not None
+            me for e in entries if (me := MidenEntry.from_starknet_entry(e)) is not None
         ]
         if not miden_entries:
             return

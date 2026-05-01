@@ -45,7 +45,12 @@ class WstETHRedstoneFetcher(EVMOracleFeedFetcher):
     hop_handler = HopHandler(hopped_currencies={"USD": "ETH"})
     feed_configs = build_feed_mapping(
         [
-            ("WSTETH/USD", "0xa7B0247d2dA6B11FF2740491cB433a1520d5DA98", 8, "WSTETH/ETH"),
+            (
+                "WSTETH/USD",
+                "0xa7B0247d2dA6B11FF2740491cB433a1520d5DA98",
+                8,
+                "WSTETH/ETH",
+            ),
         ]
     )
 

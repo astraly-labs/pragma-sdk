@@ -65,18 +65,20 @@ CONVERSION_RATE_ONLY_PAIRS: FrozenSet[str] = frozenset({"WSTETH/USD"})
 
 # Fetchers that provide conversion rates (on-chain or oracle-based).
 # These are NOT blocked from fetching CONVERSION_RATE_ONLY_PAIRS.
-CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset({
-    ChainlinkFetcher,
-    WstETHChainlinkFetcher,
-    RedstoneFetcher,
-    WstETHRedstoneFetcher,
-    PythFetcher,
-    ERC4626RateFetcher,
-    sUSNFetcher,
-    USNFetcher,
-    Re7OnChainFetcher,
-    WstETHRateFetcher,
-})
+CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset(
+    {
+        ChainlinkFetcher,
+        WstETHChainlinkFetcher,
+        RedstoneFetcher,
+        WstETHRedstoneFetcher,
+        PythFetcher,
+        ERC4626RateFetcher,
+        sUSNFetcher,
+        USNFetcher,
+        Re7OnChainFetcher,
+        WstETHRateFetcher,
+    }
+)
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
     BinanceFutureFetcher,

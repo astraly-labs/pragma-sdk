@@ -11,10 +11,8 @@ from pragma_sdk.common.fetchers.fetchers.evm_oracle import EVMOracleFeedFetcher
 from price_pusher.configs.price_config import (
     PriceConfig,
     get_unique_spot_pairs_from_config_list,
-    get_unique_future_pairs_from_config_list,
 )
 from price_pusher.configs.fetchers import (
-    ALL_FUTURE_FETCHERS,
     ALL_SPOT_FETCHERS,
     CONVERSION_RATE_FETCHERS,
     CONVERSION_RATE_ONLY_PAIRS,

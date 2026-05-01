@@ -198,7 +198,9 @@ async def test_health_check_interval_respected(rpc_monitor):
 
         # Filter out any calls made by the test itself (e.g. 0.1)
         monitor_calls = [d for d in recorded_calls if d == RPC_HEALTH_CHECK_INTERVAL]
-        assert monitor_calls, f"Expected a sleep call with {RPC_HEALTH_CHECK_INTERVAL}, got {recorded_calls}"
+        assert monitor_calls, (
+            f"Expected a sleep call with {RPC_HEALTH_CHECK_INTERVAL}, got {recorded_calls}"
+        )
 
 
 @pytest.mark.asyncio

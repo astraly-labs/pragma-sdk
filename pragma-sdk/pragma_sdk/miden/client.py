@@ -182,7 +182,9 @@ class PragmaMidenClient:
             self._load_oracle_id()
 
         if self.storage_path:
-            (Path(self.storage_path) / "miden_storage").mkdir(parents=True, exist_ok=True)
+            (Path(self.storage_path) / "miden_storage").mkdir(
+                parents=True, exist_ok=True
+            )
         else:
             Path("miden_storage").mkdir(exist_ok=True)
 
@@ -207,7 +209,11 @@ class PragmaMidenClient:
             raise RuntimeError(f"Config file not found: {self.config_path}")
         with open(self.config_path) as f:
             config = json.load(f)
-        ids = config.get("networks", {}).get(self.network, {}).get("publisher_account_ids")
+        ids = (
+            config.get("networks", {})
+            .get(self.network, {})
+            .get("publisher_account_ids")
+        )
         if not ids:
             raise RuntimeError(
                 f"publisher_account_ids not found in {self.config_path} "
@@ -222,7 +228,9 @@ class PragmaMidenClient:
             )
         with open(self.config_path) as f:
             config = json.load(f)
-        oracle_id = config.get("networks", {}).get(self.network, {}).get("oracle_account_id")
+        oracle_id = (
+            config.get("networks", {}).get(self.network, {}).get("oracle_account_id")
+        )
         if not oracle_id:
             raise RuntimeError(
                 f"oracle_account_id not found in {self.config_path} "
@@ -252,9 +260,7 @@ class PragmaMidenClient:
         if not self.is_initialized:
             await self.initialize()
 
-        batch = [
-            (e.pair, e.price, e.decimals, e.timestamp) for e in entries
-        ]
+        batch = [(e.pair, e.price, e.decimals, e.timestamp) for e in entries]
         try:
             await asyncio.wait_for(
                 asyncio.to_thread(

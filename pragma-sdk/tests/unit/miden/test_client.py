@@ -99,7 +99,15 @@ class TestFromStarknetEntry:
 
 class TestMapping:
     def test_all_expected_pairs_present(self):
-        expected = {"BTC/USD", "ETH/USD", "SOL/USD", "BNB/USD", "XRP/USD", "HYPE/USD", "POL/USD"}
+        expected = {
+            "BTC/USD",
+            "ETH/USD",
+            "SOL/USD",
+            "BNB/USD",
+            "XRP/USD",
+            "HYPE/USD",
+            "POL/USD",
+        }
         assert expected == set(STARKNET_PAIR_TO_MIDEN_FAUCET.keys())
 
     def test_faucet_ids_are_unique(self):
@@ -110,7 +118,9 @@ class TestMapping:
         for pair, faucet_id in STARKNET_PAIR_TO_MIDEN_FAUCET.items():
             parts = faucet_id.split(":")
             assert len(parts) == 2, f"Invalid faucet_id format for {pair}: {faucet_id}"
-            assert all(p.isdigit() for p in parts), f"Non-numeric faucet_id for {pair}: {faucet_id}"
+            assert all(p.isdigit() for p in parts), (
+                f"Non-numeric faucet_id for {pair}: {faucet_id}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +183,9 @@ class TestPublishEntries:
         assert results == [False, False, False]
 
     @pytest.mark.asyncio
-    async def test_publish_timeout_returns_all_false(self, client, mock_pm, monkeypatch):
+    async def test_publish_timeout_returns_all_false(
+        self, client, mock_pm, monkeypatch
+    ):
         """A pm_publisher.publish_batch that hangs must not freeze the loop forever."""
         monkeypatch.setattr("pragma_sdk.miden.client.PUBLISH_BATCH_TIMEOUT_S", 0.1)
 
@@ -210,7 +222,12 @@ class TestGetEntry:
     @pytest.mark.asyncio
     async def test_get_entry_parses_json_payload(self, client, mock_pm):
         mock_pm.get_entry.return_value = json.dumps(
-            {"faucet_id": "1:0", "price": 6819900000000, "decimals": 8, "timestamp": 1700000000}
+            {
+                "faucet_id": "1:0",
+                "price": 6819900000000,
+                "decimals": 8,
+                "timestamp": 1700000000,
+            }
         )
         entry = await client.get_entry("1:0")
         assert entry is not None
@@ -257,7 +274,9 @@ class TestConfigLoading:
 
     def test_load_oracle_id_missing_network_raises(self, mock_pm, tmp_path):
         config_path = tmp_path / "pragma_miden.json"
-        config_path.write_text(json.dumps({"networks": {"local": {"oracle_account_id": "0xabc"}}}))
+        config_path.write_text(
+            json.dumps({"networks": {"local": {"oracle_account_id": "0xabc"}}})
+        )
         client = PragmaMidenClient(network="testnet", config_path=config_path)
         with pytest.raises(RuntimeError, match="oracle_account_id not found"):
             client._load_oracle_id()

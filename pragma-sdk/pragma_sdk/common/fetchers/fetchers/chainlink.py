@@ -53,7 +53,12 @@ class WstETHChainlinkFetcher(EVMOracleFeedFetcher):
     hop_handler = HopHandler(hopped_currencies={"USD": "ETH"})
     feed_configs = build_feed_mapping(
         [
-            ("WSTETH/USD", "0xB1552C5e96B312d0Bf8b554186F846C40614a540", 18, "WSTETH/ETH"),
+            (
+                "WSTETH/USD",
+                "0xB1552C5e96B312d0Bf8b554186F846C40614a540",
+                18,
+                "WSTETH/ETH",
+            ),
         ]
     )
 
