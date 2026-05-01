@@ -118,9 +118,9 @@ class TestMapping:
         for pair, faucet_id in STARKNET_PAIR_TO_MIDEN_FAUCET.items():
             parts = faucet_id.split(":")
             assert len(parts) == 2, f"Invalid faucet_id format for {pair}: {faucet_id}"
-            assert all(p.isdigit() for p in parts), (
-                f"Non-numeric faucet_id for {pair}: {faucet_id}"
-            )
+            assert all(
+                p.isdigit() for p in parts
+            ), f"Non-numeric faucet_id for {pair}: {faucet_id}"
 
 
 # ---------------------------------------------------------------------------
