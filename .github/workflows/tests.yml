@@ -88,7 +88,10 @@ jobs:
         run: |
           export LLVM_SYS_190_PREFIX=/usr/lib/llvm-19
           export PATH="/usr/lib/llvm-19/bin:$PATH"
-          cargo install starknet-devnet
+          # Pin to the last 0.7.x — starknet-devnet 0.8.x bumps to RPC v0.10
+          # which drops the "pending" block tag, breaking starknet-py 0.27.0.
+          # See https://github.com/0xSpaceShard/starknet-devnet/releases/tag/v0.8.0
+          cargo install starknet-devnet --version 0.7.2 --locked
       - name: Run tests
         run: |
           # TODO: The tests loop forever if we don't run them one by one for some packages.
