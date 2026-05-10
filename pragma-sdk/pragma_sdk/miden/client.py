@@ -177,13 +177,19 @@ class PragmaMidenClient:
             # The local SQLite store is empty after every restart (we run on
             # an emptyDir in K8s). pm_publisher.publish_batch needs the
             # publisher account state to be cached locally, otherwise the
-            # Rust client raises AccountDataNotFound at submit time. Sync
-            # now to populate the store before the first publish.
+            # Rust client raises AccountDataNotFound at submit time.
+            # 1) import_account adds the publisher account to the tracked set
+            #    by fetching it from the network — without this, sync_state
+            #    is a no-op for our account.
+            # 2) sync then refreshes the rest of the chain state.
+            # Both are best-effort: a failure here doesn't kill the client,
+            # publish_entries will surface the real error on the next tick.
             try:
+                await self._import_publisher_account()
                 await self.sync()
             except Exception as e:
                 logger.warning(
-                    f"Initial Miden sync failed (will retry on next publish): {e}"
+                    f"Initial Miden import/sync failed (will retry on next publish): {e}"
                 )
             return
         except RuntimeError:
@@ -338,6 +344,28 @@ class PragmaMidenClient:
         await asyncio.wait_for(
             asyncio.to_thread(
                 pm_publisher.sync,
+                storage_path=self.storage_path,
+                keystore_path=self.keystore_path,
+                network=self.network,
+            ),
+            timeout=SYNC_TIMEOUT_S,
+        )
+
+    async def _import_publisher_account(self) -> None:
+        """
+        Add the publisher account to the local store's tracked set so that
+        sync_state actually fetches its on-chain state. Required after a
+        store wipe (e.g. emptyDir in K8s); idempotent on the Rust side.
+        """
+        if not self.publisher_id:
+            return
+        if not hasattr(pm_publisher, "import_account"):
+            # pm-publisher < 0.1.0a3 doesn't expose this; nothing to do.
+            return
+        await asyncio.wait_for(
+            asyncio.to_thread(
+                pm_publisher.import_account,
+                self.publisher_id,
                 storage_path=self.storage_path,
                 keystore_path=self.keystore_path,
                 network=self.network,
