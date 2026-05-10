@@ -174,6 +174,17 @@ class PragmaMidenClient:
                 f"Miden publisher reused from config (network={self.network}, "
                 f"id={self.publisher_id})"
             )
+            # The local SQLite store is empty after every restart (we run on
+            # an emptyDir in K8s). pm_publisher.publish_batch needs the
+            # publisher account state to be cached locally, otherwise the
+            # Rust client raises AccountDataNotFound at submit time. Sync
+            # now to populate the store before the first publish.
+            try:
+                await self.sync()
+            except Exception as e:
+                logger.warning(
+                    f"Initial Miden sync failed (will retry on next publish): {e}"
+                )
             return
         except RuntimeError:
             pass
