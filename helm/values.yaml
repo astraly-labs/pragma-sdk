@@ -113,6 +113,21 @@ gcpSecrets:
 envFromSecret: {}
     # secretName: "monitoring-secrets"
 
+# Binary keystore-like secrets pulled from GCP Secret Manager and mounted
+# read-only into the container. Each entry produces one ExternalSecret +
+# one volume mount under `mountPath/fileName`.
+# Example:
+#   keystoreSecrets:
+#     - secretName: price-pusher-miden-keystore
+#       fileName: "9190688567612556222"
+#       mountPath: /secrets/miden/keystore
+keystoreSecrets: []
+
+# Extra arbitrary volumes / volume mounts the deployment should attach
+# (e.g. an emptyDir for runtime caches that don't need persistence).
+extraVolumes: []
+extraVolumeMounts: []
+
 terminationGracePeriodSeconds: 60
 
 env: []
