@@ -66,6 +66,15 @@ spec:
           volumeMounts:
             - name: openapi-volume
               mountPath: /app/openapi
+            {{- range .Values.keystoreSecrets }}
+            - name: keystore-{{ .secretName }}
+              mountPath: {{ .mountPath }}/{{ .fileName }}
+              subPath: keystore
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -82,3 +91,11 @@ spec:
       volumes:
         - name: openapi-volume
           emptyDir: {}
+        {{- range .Values.keystoreSecrets }}
+        - name: keystore-{{ .secretName }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
