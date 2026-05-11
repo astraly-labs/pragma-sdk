@@ -17,9 +17,12 @@ except ImportError:
 logger = get_pragma_sdk_logger()
 
 # Bound every blocking pm_publisher call so a stuck Miden node cannot
-# starve the event loop indefinitely.
+# starve the event loop indefinitely. publish_batch is generous because
+# zkSTARK proving for ~5 publish_entry calls reliably takes 60-120s in
+# prod; setting it too tight makes us log "Timeout" / "0/N entries" for
+# transactions the Rust binding then completes successfully.
 INIT_TIMEOUT_S = 60
-PUBLISH_BATCH_TIMEOUT_S = 60
+PUBLISH_BATCH_TIMEOUT_S = 180
 GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
 
