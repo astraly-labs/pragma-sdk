@@ -138,8 +138,28 @@ class PricePusher(IPricePusher):
                     "🌐 MIDEN: previous batch still in flight, skipping this tick"
                 )
             return
+        # Pragma publishes one Starknet entry per (pair, source), so a tick
+        # batch can contain e.g. BTC/USD × 5 sources, ETH/USD × 5 sources, ...
+        # Miden has no notion of "source": publish_entry overwrites the
+        # storage map at faucet_id, so duplicate calls within the same tx
+        # are wasted work, and the Miden prover cost grows linearly with
+        # script length. 22 raw entries (5 pairs × ~4 sources) was taking
+        # >60s and >4Gi RSS to prove. Aggregate one MidenEntry per pair
+        # using the median price (matches Pragma's on-chain aggregation).
+        from statistics import median
+        per_pair: dict[str, list[MidenEntry]] = {}
+        for e in entries:
+            me = MidenEntry.from_starknet_entry(e)
+            if me is not None:
+                per_pair.setdefault(me.pair, []).append(me)
         miden_entries = [
-            me for e in entries if (me := MidenEntry.from_starknet_entry(e)) is not None
+            MidenEntry(
+                pair=pair,
+                price=int(median(m.price for m in mes)),
+                decimals=mes[0].decimals,
+                timestamp=max(m.timestamp for m in mes),
+            )
+            for pair, mes in per_pair.items()
         ]
         if not miden_entries:
             return
