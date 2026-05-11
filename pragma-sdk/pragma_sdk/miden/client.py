@@ -23,15 +23,18 @@ PUBLISH_BATCH_TIMEOUT_S = 60
 GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
 
-# Mapping from Starknet pair_id (e.g. "BTC/USD") to Miden faucet_id (e.g. "1:0")
+# Mapping from Starknet pair_id (e.g. "BTC/USD") to Miden faucet_id (e.g. "1:0").
+# Only pairs published by the Starknet pusher are forwarded to Miden; the
+# rest are silently skipped at conversion time. Faucet IDs are arbitrary
+# identifiers — no on-chain deployment needed, just pick a unique key per
+# pair and the publisher contract will store entries under that key in
+# its storage map.
 STARKNET_PAIR_TO_MIDEN_FAUCET: dict[str, str] = {
     "BTC/USD": "1:0",
     "ETH/USD": "2:0",
-    "SOL/USD": "3:0",
-    "BNB/USD": "4:0",
-    "XRP/USD": "5:0",
-    "HYPE/USD": "6:0",
-    "POL/USD": "7:0",
+    "WBTC/USD": "3:0",
+    "USDT/USD": "4:0",
+    "DAI/USD": "5:0",
 }
 
 

@@ -75,7 +75,7 @@ class TestFromStarknetEntry:
 
     def test_unresolvable_decimals_returns_none(self):
         # In the mapping but the asset config doesn't exist -> skip rather than publish wrong
-        entry = make_starknet_entry("HYPE/USD", 1_000_000)
+        entry = make_starknet_entry("BTC/USD", 1_000_000)
         with patch(
             "pragma_sdk.miden.client._resolve_pair_decimals",
             return_value=None,
@@ -102,11 +102,9 @@ class TestMapping:
         expected = {
             "BTC/USD",
             "ETH/USD",
-            "SOL/USD",
-            "BNB/USD",
-            "XRP/USD",
-            "HYPE/USD",
-            "POL/USD",
+            "WBTC/USD",
+            "USDT/USD",
+            "DAI/USD",
         }
         assert expected == set(STARKNET_PAIR_TO_MIDEN_FAUCET.keys())
 

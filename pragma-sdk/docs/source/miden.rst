@@ -115,16 +115,12 @@ Only pairs in the following mapping are published to Miden. Unsupported pairs ar
      - ``1:0``
    * - ``ETH/USD``
      - ``2:0``
-   * - ``SOL/USD``
+   * - ``WBTC/USD``
      - ``3:0``
-   * - ``BNB/USD``
+   * - ``USDT/USD``
      - ``4:0``
-   * - ``XRP/USD``
+   * - ``DAI/USD``
      - ``5:0``
-   * - ``HYPE/USD``
-     - ``6:0``
-   * - ``POL/USD``
-     - ``7:0``
 
 To add a new pair, update ``STARKNET_PAIR_TO_MIDEN_FAUCET`` in ``pragma_sdk/miden/client.py`` and bump the ``pragma-sdk`` version.
 
