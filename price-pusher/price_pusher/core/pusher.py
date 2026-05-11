@@ -47,6 +47,11 @@ class PricePusher(IPricePusher):
         self._miden_sem: Optional[asyncio.Semaphore] = (
             asyncio.Semaphore(1) if miden_client is not None else None
         )
+        # asyncio.create_task() returns a Task that the event loop only keeps
+        # a weak reference to. If our caller doesn't hold a strong ref, the
+        # GC can collect the task mid-execution and cancel it silently.
+        # Cf. https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+        self._miden_tasks: set[asyncio.Task] = set()
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
@@ -101,9 +106,13 @@ class PricePusher(IPricePusher):
             if self.on_successful_push:
                 self.on_successful_push()
 
-            # Miden publishing — fire-and-forget, isolated from Starknet
+            # Miden publishing — fire-and-forget, isolated from Starknet.
+            # Hold a strong reference in self._miden_tasks until done, so
+            # the task isn't garbage-collected mid-publish.
             if self.miden_client is not None:
-                asyncio.create_task(self._publish_to_miden(entries))
+                task = asyncio.create_task(self._publish_to_miden(entries))
+                self._miden_tasks.add(task)
+                task.add_done_callback(self._miden_tasks.discard)
             return response
 
         except Exception as e:
