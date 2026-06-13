@@ -33,7 +33,11 @@ class BinanceFetcher(FetcherInterfaceT):
     async def fetch_pair(
         self, pair: Pair, session: ClientSession, usdt_price: float = 1
     ) -> Entry | PublisherFetchError:
-        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        hop_pair = self.hop_handler.get_hop_pair(pair)
+        if hop_pair is None:
+            # Direct fiat pair (e.g. USDT/USD): no USDT rebasing needed.
+            usdt_price = 1
+        new_pair = hop_pair or pair
         url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:

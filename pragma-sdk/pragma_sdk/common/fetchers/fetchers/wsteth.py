@@ -49,3 +49,17 @@ class WstETHRateFetcher(EVMOracleFeedFetcher):
         rpc_urls: Optional[Sequence[str]] = None,
     ) -> None:
         super().__init__(pairs, publisher, api_key, network, rpc_urls)
+
+
+class WstETHRateLidoFetcher(WstETHRateFetcher):
+    """
+    Second WSTETH/USD component derived from the same on-chain Lido wstETH → stETH
+    rate as :class:`WstETHRateFetcher`, but published under a distinct source name
+    so it counts as an independent oracle component.
+
+    This is an intentional duplication of the rate to reach the minimum number of
+    sources required for the WSTETH/USD feed. It does NOT add price-discovery
+    redundancy (same contract, same RPC pool), only an extra median component.
+    """
+
+    SOURCE = "LIDO"

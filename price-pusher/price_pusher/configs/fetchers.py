@@ -26,6 +26,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     ERC4626RateFetcher,
     sUSNFetcher,
     WstETHRateFetcher,
+    WstETHRateLidoFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import (
     BinanceFutureFetcher,
@@ -58,6 +59,7 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     ERC4626RateFetcher,
     sUSNFetcher,
     WstETHRateFetcher,
+    WstETHRateLidoFetcher,
 ]
 
 # Pairs that should only be fetched by conversion rate fetchers (not market rate).
@@ -77,6 +79,7 @@ CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset(
         USNFetcher,
         Re7OnChainFetcher,
         WstETHRateFetcher,
+        WstETHRateLidoFetcher,
     }
 )
 

@@ -28,7 +28,10 @@ from pragma_sdk.common.fetchers.fetchers.lbank import LbankFetcher
 from pragma_sdk.common.fetchers.fetchers.usn import USNFetcher
 from pragma_sdk.common.fetchers.fetchers.erc4626 import ERC4626RateFetcher
 from pragma_sdk.common.fetchers.fetchers.susn import sUSNFetcher
-from pragma_sdk.common.fetchers.fetchers.wsteth import WstETHRateFetcher
+from pragma_sdk.common.fetchers.fetchers.wsteth import (
+    WstETHRateFetcher,
+    WstETHRateLidoFetcher,
+)
 
 __all__ = [
     "BinanceFetcher",
@@ -58,4 +61,5 @@ __all__ = [
     "ERC4626RateFetcher",
     "sUSNFetcher",
     "WstETHRateFetcher",
+    "WstETHRateLidoFetcher",
 ]
