@@ -10,6 +10,9 @@ from pragma_sdk.onchain.types import Network
 from pragma_sdk.common.utils import add_sync_methods, str_to_felt
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.exceptions import PublisherFetchError
+from pragma_sdk.common.logging import get_pragma_sdk_logger
+
+logger = get_pragma_sdk_logger()
 
 
 # TODO(akhercha): FetcherInterfaceT should take as parameter the client instead of creating it
@@ -69,8 +72,24 @@ class FetcherInterfaceT(abc.ABC):
         """
         Query the PragmaOnChainClient for the price of the stable asset in USD
         e.g get_stable_price("USDT") returns the price of USDT in USD
+
+        This is only used to rebase hopped pairs (e.g. X/USDT -> X/USD). If the
+        on-chain call fails (RPC down, rate-limited, ...), we must NOT let the
+        whole fetcher crash: we degrade gracefully to 1.0 so that direct fiat
+        pairs (e.g. USDT/USD, which ignore this value) and the other pairs still
+        publish. The induced error on hopped pairs is bounded by the stablecoin
+        depeg (~0.06% while USDT≈1).
         """
 
-        usdt_str = str_to_felt(stable_asset + "/USD")
-        usdt_entry = await self.client.get_spot(usdt_str)
-        return int(usdt_entry.price) / int(10 ** int(usdt_entry.decimals))
+        pair_str = stable_asset + "/USD"
+        try:
+            entry = await self.client.get_spot(str_to_felt(pair_str))
+            return int(entry.price) / int(10 ** int(entry.decimals))
+        except Exception as e:
+            logger.warning(
+                "[⚠️ Fetcher] On-chain %s price unavailable (%s); "
+                "falling back to 1.0 for stable rebasing.",
+                pair_str,
+                type(e).__name__,
+            )
+            return 1.0
