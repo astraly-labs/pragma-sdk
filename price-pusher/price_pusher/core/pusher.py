@@ -156,6 +156,7 @@ class PricePusher(IPricePusher):
         # >60s and >4Gi RSS to prove. Aggregate one MidenEntry per pair
         # using the median price (matches Pragma's on-chain aggregation).
         from statistics import median
+
         per_pair: dict[str, list[MidenEntry]] = {}
         for e in entries:
             me = MidenEntry.from_starknet_entry(e)
