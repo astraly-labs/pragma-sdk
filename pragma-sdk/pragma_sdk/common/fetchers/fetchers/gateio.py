@@ -20,8 +20,10 @@ class GateioFetcher(FetcherInterfaceT):
     BASE_URL: str = "https://api.gateio.ws/api/v4/spot/tickers"
     SOURCE: str = "GATEIO"
 
-    # Pairs to skip fetching from GateIO
-    SKIP_PAIRS: set = {"NSTR/USD"}
+    # Pairs to skip fetching from GateIO.
+    # USDT/USD: the Gate spot market is illiquid (wide spread, ~0.94 ask) and
+    # would publish a garbage component, so we rely on other CEX for it.
+    SKIP_PAIRS: set = {"NSTR/USD", "USDT/USD"}
 
     hop_handler = HopHandler(
         hopped_currencies={

@@ -37,6 +37,12 @@ class HopHandler:
 
         new_currency_id = self.hopped_currencies[pair.quote_currency.id]
 
+        # Skip degenerate hops where the base already equals the hop target
+        # (e.g. USDT/USD with a USD->USDT hop would become USDT/USDT, which no
+        # exchange lists). Returning None lets the fetcher query the pair directly.
+        if new_currency_id == pair.base_currency.id:
+            return None
+
         return Pair(
             pair.base_currency,
             Currency.from_asset_config(AssetConfig.from_ticker(new_currency_id)),
