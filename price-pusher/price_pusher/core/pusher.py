@@ -41,17 +41,6 @@ class PricePusher(IPricePusher):
         self.onchain_lock = asyncio.Lock()
         self.on_successful_push = on_successful_push
         self.miden_client = miden_client
-        # At most one Miden publish in flight at a time. New ticks skip rather
-        # than queue when one is already running — that way a hung Miden
-        # publish_batch never accumulates zombie threads behind it.
-        self._miden_sem: Optional[asyncio.Semaphore] = (
-            asyncio.Semaphore(1) if miden_client is not None else None
-        )
-        # asyncio.create_task() returns a Task that the event loop only keeps
-        # a weak reference to. If our caller doesn't hold a strong ref, the
-        # GC can collect the task mid-execution and cancel it silently.
-        # Cf. https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
-        self._miden_tasks: set[asyncio.Task] = set()
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
@@ -106,13 +95,9 @@ class PricePusher(IPricePusher):
             if self.on_successful_push:
                 self.on_successful_push()
 
-            # Miden publishing — fire-and-forget, isolated from Starknet.
-            # Hold a strong reference in self._miden_tasks until done, so
-            # the task isn't garbage-collected mid-publish.
-            if self.miden_client is not None:
-                task = asyncio.create_task(self._publish_to_miden(entries))
-                self._miden_tasks.add(task)
-                task.add_done_callback(self._miden_tasks.discard)
+            # Miden publishing is fully decoupled from the Starknet tick — it
+            # runs on its own periodic loop (Orchestrator._miden_service) so it
+            # can publish at a much higher cadence than Starknet pushes.
             return response
 
         except Exception as e:
@@ -135,26 +120,21 @@ class PricePusher(IPricePusher):
 
             return None
 
-    async def _publish_to_miden(self, entries: List[Entry]) -> None:
+    async def publish_to_miden(self, entries: List[Entry]) -> None:
         """
-        Publish entries to Miden in the background.
-        Completely isolated — any failure here has zero impact on the Starknet loop.
-        Skipped when a previous batch is still in flight.
+        Publish the latest prices to Miden in a single batched transaction.
+
+        Fully isolated — any failure here has zero impact on the Starknet loop.
+        Called serially by the orchestrator's periodic Miden loop (no overlap),
+        so no in-flight guard is needed here.
         """
-        if self._miden_sem is None or self._miden_sem.locked():
-            if self._miden_sem is not None:
-                logger.warning(
-                    "🌐 MIDEN: previous batch still in flight, skipping this tick"
-                )
+        if self.miden_client is None or not entries:
             return
-        # Pragma publishes one Starknet entry per (pair, source), so a tick
-        # batch can contain e.g. BTC/USD × 5 sources, ETH/USD × 5 sources, ...
-        # Miden has no notion of "source": publish_entry overwrites the
-        # storage map at faucet_id, so duplicate calls within the same tx
-        # are wasted work, and the Miden prover cost grows linearly with
-        # script length. 22 raw entries (5 pairs × ~4 sources) was taking
-        # >60s and >4Gi RSS to prove. Aggregate one MidenEntry per pair
-        # using the median price (matches Pragma's on-chain aggregation).
+        # Pragma emits one entry per (pair, source); Miden has no notion of
+        # "source" (publish_entry overwrites the storage map at faucet_id), and
+        # the prover cost grows with the number of publish_entry calls. Aggregate
+        # one MidenEntry per pair using the median price (matches Pragma's
+        # on-chain aggregation).
         from statistics import median
 
         per_pair: dict[str, list[MidenEntry]] = {}
@@ -173,10 +153,9 @@ class PricePusher(IPricePusher):
         ]
         if not miden_entries:
             return
-        async with self._miden_sem:
-            try:
-                results = await self.miden_client.publish_entries(miden_entries)
-                ok = sum(results)
-                logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
-            except Exception as e:
-                logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")
+        try:
+            results = await self.miden_client.publish_entries(miden_entries)
+            ok = sum(results)
+            logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
+        except Exception as e:
+            logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")

@@ -47,6 +47,7 @@ async def main(
     health_server_type: str = "fastapi",
     max_seconds_without_push: Optional[int] = None,
     evm_rpc_urls: Optional[List[str]] = None,
+    miden_publish_interval: int = 3,
     miden_network: Optional[str] = None,
     miden_oracle_id: Optional[str] = None,
     miden_config_path: Optional[str] = None,
@@ -118,6 +119,7 @@ async def main(
     orchestrator = Orchestrator(
         poller=poller,
         poller_refresh_interval=poller_refresh_interval,
+        miden_publish_interval=miden_publish_interval,
         listeners=_create_listeners(price_configs, pragma_client),
         pusher=pusher,
         health_server=health_server,
@@ -296,6 +298,14 @@ def _create_client(
     help="Enable Miden publishing. Specify network: testnet, devnet, or local.",
 )
 @click.option(
+    "--miden-publish-interval",
+    type=click.IntRange(min=1),
+    required=False,
+    default=3,
+    help="Target seconds between Miden publishes (decoupled from Starknet). "
+    "Default 3. Publishes back-to-back if a publish takes longer than this.",
+)
+@click.option(
     "--miden-oracle-id",
     type=click.STRING,
     required=False,
@@ -341,6 +351,7 @@ def cli_entrypoint(
     health_server_type: str,
     max_seconds_without_push: Optional[int],
     evm_rpc_url: Sequence[str],
+    miden_publish_interval: int,
     miden_network: Optional[str],
     miden_oracle_id: Optional[str],
     miden_config_path: Optional[str],
@@ -387,6 +398,7 @@ def cli_entrypoint(
             health_server_type=health_server_type,
             max_seconds_without_push=max_seconds_without_push,
             evm_rpc_urls=evm_rpc_urls,
+            miden_publish_interval=miden_publish_interval,
             miden_network=miden_network,
             miden_oracle_id=miden_oracle_id,
             miden_config_path=miden_config_path,
