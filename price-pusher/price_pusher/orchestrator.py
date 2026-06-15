@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import time
 
 from typing import List, Dict, Optional
 
@@ -38,6 +39,7 @@ class Orchestrator:
         listeners: List[PriceListener],
         pusher: PricePusher,
         poller_refresh_interval: int = 5,
+        miden_publish_interval: int = 3,
         health_server: Optional[HealthServer] = None,
     ) -> None:
         self.poller = poller
@@ -47,6 +49,16 @@ class Orchestrator:
 
         # Time between poller refresh
         self.poller_refresh_interval = poller_refresh_interval
+
+        # Target interval (seconds) between Miden publishes. The Miden loop is
+        # decoupled from the Starknet tick and publishes the latest polled
+        # prices as often as this allows (back-to-back if a publish takes
+        # longer than the interval).
+        self.miden_publish_interval = miden_publish_interval
+
+        # Snapshot of the most recent full poll, fed to the Miden loop. Never
+        # mutated in place — replaced wholesale on each poll.
+        self.last_polled_entries: List[Entry] = []
 
         # Contains the latest prices for each sources
         self.latest_prices: LatestOrchestratorPairPrices = {}
@@ -77,6 +89,10 @@ class Orchestrator:
             self._listener_services(),
             self._pusher_service(),
         ]
+
+        # Decoupled Miden publish loop — only when Miden publishing is enabled.
+        if self.pusher.miden_client is not None:
+            tasks.append(self._miden_service())
 
         # Start health server if configured
         if self.health_server:
@@ -136,6 +152,20 @@ class Orchestrator:
             await self.pusher.update_price_feeds(entries_to_push)
             self.push_queue.task_done()
 
+    async def _miden_service(self) -> None:
+        """
+        Periodically publish the latest polled prices to Miden, decoupled from
+        the Starknet push cadence. Aims for one publish every
+        `miden_publish_interval` seconds; if a publish takes longer, the next
+        starts immediately (calls are awaited serially, so they never overlap).
+        """
+        while True:
+            start = time.monotonic()
+            if self.last_polled_entries:
+                await self.pusher.publish_to_miden(self.last_polled_entries)
+            elapsed = time.monotonic() - start
+            await asyncio.sleep(max(0.0, self.miden_publish_interval - elapsed))
+
     def _flush_entries_for_assets(
         self, pairs_per_type: Dict[DataTypes, List[Pair]]
     ) -> List[Entry]:
@@ -186,6 +216,8 @@ class Orchestrator:
         For spot price, we store the latest price for each source.
         For future price, we store the latest price for each source for each expiry received.
         """
+        # Keep a fresh snapshot of the full poll for the decoupled Miden loop.
+        self.last_polled_entries = entries
 
         for entry in entries:
             pair_id = entry.get_pair_id()
