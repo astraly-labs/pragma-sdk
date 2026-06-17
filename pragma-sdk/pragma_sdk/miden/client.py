@@ -284,7 +284,8 @@ class PragmaMidenClient:
             await self.initialize()
 
         batch = [(e.pair, e.price, e.decimals, e.timestamp) for e in entries]
-        try:
+
+        async def _submit() -> None:
             await asyncio.wait_for(
                 asyncio.to_thread(
                     pm_publisher.publish_batch,
@@ -295,6 +296,9 @@ class PragmaMidenClient:
                 ),
                 timeout=PUBLISH_BATCH_TIMEOUT_S,
             )
+
+        try:
+            await _submit()
             return [True] * len(entries)
         except asyncio.TimeoutError:
             logger.error(
@@ -303,6 +307,30 @@ class PragmaMidenClient:
             )
             return [False] * len(entries)
         except Exception as e:
+            # A reverted/dropped tx leaves our local account commitment ahead of
+            # the chain's, so the node then rejects with
+            # IncorrectAccountInitialCommitment ("conflicts with current mempool
+            # state"). sync_state can't recover it (the node's lower-nonce
+            # committed account is filtered out by a nonce gate), but
+            # import_account_by_id re-fetches + overwrites the account. We only
+            # need this when the account has actually diverged, so reconcile and
+            # retry once on that specific error rather than on every publish.
+            msg = str(e)
+            if (
+                "IncorrectAccountInitialCommitment" in msg
+                or "conflicts with current mempool state" in msg
+            ):
+                logger.warning(
+                    "Miden publisher account diverged from chain; reconciling and retrying..."
+                )
+                try:
+                    await self._import_publisher_account()
+                    await self.sync()
+                    await _submit()
+                    return [True] * len(entries)
+                except Exception as e2:
+                    logger.error(f"Miden publish still failing after reconcile: {e2}")
+                    return [False] * len(entries)
             logger.error(f"Failed to publish batch of {len(entries)} entries: {e}")
             return [False] * len(entries)
 
