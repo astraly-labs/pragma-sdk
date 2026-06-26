@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.11, <3.13"
 
 [options]
-exclude-newer = "2026-06-14T00:00:00Z"
+exclude-newer = "2026-06-27T22:00:00Z"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -1106,11 +1106,11 @@ wheels = [
 
 [[package]]
 name = "pm-publisher"
-version = "0.1.0a5"
+version = "0.1.0a7"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/75/13b1726dae0b1c84dda526eb972ac4f2cb984a5931edb74e62cb6eae7621/pm_publisher-0.1.0a5-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:09139f0cf275f634042090a37f782aaf6dde8383695bbffd034ed4f8ae51c5ff", size = 10613527, upload-time = "2026-06-13T10:57:20.148Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/08/92cf90000dc81a8d49ae394c78da4d919acc2f65a239cb434c3c003f038a/pm_publisher-0.1.0a5-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:540313a8e85d631fc66de4b2938be54eb820f86790616d5b586754fab283224f", size = 11981012, upload-time = "2026-06-13T10:57:21.986Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/c6/80188a6923fe50dc2bd107908bc1f44a9ada1667e9ec45e8b62bc743a1f3/pm_publisher-0.1.0a7-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:d773184ed704e3eed2394856e70b39f309edccaafffb6e9f524e60181650fa36", size = 11275367, upload-time = "2026-06-25T21:04:24.723Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/71/5d58bfe6a6bfc4259dccff5e32e754cac68fdfd98c5b3a0915164c73e13a/pm_publisher-0.1.0a7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2e183c97fa321d655bdf55d2b2544738992f539e454e97b9821555f1239755f", size = 12499199, upload-time = "2026-06-25T21:04:26.646Z" },
 ]
 
 [[package]]
@@ -1195,7 +1195,7 @@ requires-dist = [
     { name = "moto", extras = ["s3", "secretsmanager"], marker = "extra == 'dev'", specifier = ">=4.2.5" },
     { name = "mypy", marker = "extra == 'typing'", specifier = ">=1.10" },
     { name = "pallets-sphinx-themes", marker = "extra == 'docs'", specifier = ">=2.1.3" },
-    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a5" },
+    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a7" },
     { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.21.1" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2.2" },
