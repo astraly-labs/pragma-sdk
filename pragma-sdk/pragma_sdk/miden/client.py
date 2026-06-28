@@ -298,6 +298,14 @@ class PragmaMidenClient:
             )
 
         try:
+            # Refresh the local chain view + publisher account state before
+            # building the tx. The decoupled Miden loop only publishes and never
+            # syncs, so without this the tx stays anchored to the startup-sync
+            # block; pm-publisher >=0.1.0a6 sets a 16-block tx expiration, which
+            # then makes every publish fail once the chain moves past it
+            # ("transaction expired ... InputNotesAlreadyConsumed"). a5 had no
+            # expiration so the missing sync was latent.
+            await self.sync()
             await _submit()
             return [True] * len(entries)
         except asyncio.TimeoutError:
