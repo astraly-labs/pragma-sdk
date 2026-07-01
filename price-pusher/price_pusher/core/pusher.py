@@ -113,6 +113,20 @@ class PricePusher(IPricePusher):
                         return await self.update_price_feeds(entries)
 
             if self.consecutive_push_error >= CONSECUTIVES_PUSH_ERRORS_LIMIT:
+                # This fatal guard crashes the pod so k8s restarts it when the
+                # Starknet publish path is persistently broken. But when Miden
+                # publishing is enabled it shares this process, so crashing here
+                # would also take down the independent Miden loop. In that case,
+                # log and keep the loop retrying instead: the Starknet path
+                # self-heals once the condition clears (e.g. the publisher
+                # account is refunded), and Miden keeps publishing throughout.
+                if self.miden_client is not None:
+                    logger.error(
+                        f"⛔ PUSHER: Starknet publish still failing after "
+                        f"{self.consecutive_push_error} consecutive errors "
+                        "— keeping the process alive so Miden publishing continues."
+                    )
+                    return None
                 raise ValueError(
                     f"⛔ PUSHER: Failed to publish entries {self.consecutive_push_error} "
                     "times in a row. Something is wrong!"
@@ -157,5 +171,12 @@ class PricePusher(IPricePusher):
             results = await self.miden_client.publish_entries(miden_entries)
             ok = sum(results)
             logger.info(f"🌐 MIDEN: published {ok}/{len(miden_entries)} entries")
+            # Count Miden pushes toward liveness too. The health server is
+            # otherwise driven only by Starknet pushes, so if the Starknet path
+            # stops (e.g. out of funds) the liveness probe goes stale and k8s
+            # restarts the pod — which would kill this Miden loop. A live Miden
+            # feed keeps the pod healthy on its own.
+            if ok > 0 and self.on_successful_push:
+                self.on_successful_push()
         except Exception as e:
             logger.error(f"🌐 MIDEN: publish failed (Starknet unaffected): {e}")
