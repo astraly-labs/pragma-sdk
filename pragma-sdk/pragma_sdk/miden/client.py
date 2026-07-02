@@ -305,7 +305,20 @@ class PragmaMidenClient:
             # then makes every publish fail once the chain moves past it
             # ("transaction expired ... InputNotesAlreadyConsumed"). a5 had no
             # expiration so the missing sync was latent.
-            await self.sync()
+            #
+            # But a sync failure must NOT block publishing: the Miden testnet RPC
+            # flakes/rate-limits, and sync does far more RPC calls than the submit.
+            # The local store is usually recent enough that the tx still anchors
+            # within its 16-block expiration window, so on a sync error we log and
+            # submit anyway — it succeeds when the store is fresh, and only fails
+            # (retried next tick) if the store has actually drifted too far.
+            try:
+                await self.sync()
+            except Exception as e:
+                logger.warning(
+                    f"Miden sync before publish failed ({e}); "
+                    "submitting with the current local state."
+                )
             await _submit()
             return [True] * len(entries)
         except asyncio.TimeoutError:
