@@ -14,6 +14,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     KucoinFetcher,
     BybitFetcher,
     EkuboFetcher,
+    GeckoTerminalFetcher,
     BinanceFetcher,
     LbankFetcher,
     BitgetFetcher,
@@ -50,6 +51,7 @@ ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     Re7OnChainFetcher,
     PythFetcher,
     GateioFetcher,
+    GeckoTerminalFetcher,
     # DexscreenerFetcher,
     # CoinbaseFetcher,
     UpbitFetcher,
@@ -82,6 +84,22 @@ CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset(
         WstETHRateLidoFetcher,
     }
 )
+
+# Per-fetcher allowlist: a fetcher listed here ONLY fetches the given pairs
+# (everything else in the config is hidden from it). Used to source a single
+# illiquid asset from one specific source without activating that fetcher for
+# all of its other supported assets.
+FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
+    GeckoTerminalFetcher: frozenset({"SURVIVOR/USD"}),
+}
+
+# Per-fetcher denylist: a fetcher listed here NEVER fetches the given pairs.
+# SURVIVOR/USD is excluded from Ekubo because Ekubo's on-chain PriceFetcher oracle
+# reads a mispriced/stale pool for it (~$0.125 vs ~$0.038 real market, confirmed
+# across every TWAP window), which would poison the published median.
+FETCHER_EXCLUDED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
+    EkuboFetcher: frozenset({"SURVIVOR/USD"}),
+}
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
     BinanceFutureFetcher,

@@ -82,6 +82,10 @@ ASSET_MAPPING: Dict[str, Any] = {
         "starknet-alpha",
         "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
     ),
+    "SURVIVOR": (
+        "starknet-alpha",
+        "0x042dd777885ad2c116be96d4d634abc90a26a790ffb5871e037dd5ae7d2ec86b",
+    ),
 }
 
 

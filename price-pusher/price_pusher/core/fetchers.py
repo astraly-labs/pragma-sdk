@@ -16,6 +16,8 @@ from price_pusher.configs.fetchers import (
     ALL_SPOT_FETCHERS,
     CONVERSION_RATE_FETCHERS,
     CONVERSION_RATE_ONLY_PAIRS,
+    FETCHER_RESTRICTED_PAIRS,
+    FETCHER_EXCLUDED_PAIRS,
     FETCHERS_WITH_API_KEY,
 )
 
@@ -93,6 +95,19 @@ async def _add_one_fetcher(
         pairs = {p for p in pairs if str(p) not in CONVERSION_RATE_ONLY_PAIRS}
         if not pairs:
             return
+
+    # Per-fetcher allowlist: restrict this fetcher to specific pairs only.
+    restricted = FETCHER_RESTRICTED_PAIRS.get(fetcher)
+    if restricted is not None:
+        pairs = {p for p in pairs if str(p) in restricted}
+
+    # Per-fetcher denylist: hide specific pairs from this fetcher.
+    excluded = FETCHER_EXCLUDED_PAIRS.get(fetcher)
+    if excluded:
+        pairs = {p for p in pairs if str(p) not in excluded}
+
+    if not pairs:
+        return
 
     init_args = [list(pairs), publisher_name]
     init_kwargs: Dict[str, object] = {}
