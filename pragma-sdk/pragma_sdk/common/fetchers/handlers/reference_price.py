@@ -62,8 +62,40 @@ async def _kraken(session: ClientSession, base: str) -> float:
         return float(ticker["c"][0])
 
 
+async def _bitstamp(session: ClientSession, base: str) -> float:
+    url = f"https://www.bitstamp.net/api/v2/ticker/{base.lower()}usd/"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"bitstamp {base}usd status {resp.status}")
+        data = await resp.json()
+        if float(data.get("volume", 0) or 0) <= 0:
+            raise ReferencePriceError(f"bitstamp {base}usd has no volume")
+        return (float(data["bid"]) + float(data["ask"])) / 2
+
+
+async def _gemini(session: ClientSession, base: str) -> float:
+    url = f"https://api.gemini.com/v1/pubticker/{base.lower()}usd"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"gemini {base}usd status {resp.status}")
+        data = await resp.json()
+        return (float(data["bid"]) + float(data["ask"])) / 2
+
+
+async def _bitfinex(session: ClientSession, base: str) -> float:
+    url = f"https://api-pub.bitfinex.com/v2/ticker/t{base}USD"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"bitfinex t{base}USD status {resp.status}")
+        data = await resp.json()
+        # [BID, BID_SIZE, ASK, ASK_SIZE, ...]
+        return (float(data[0]) + float(data[2])) / 2
+
+
+# USDT-quoted venues, rebased at 1.0 like every other USDT hop in the SDK.
+
+
 async def _binance(session: ClientSession, base: str) -> float:
-    # USDT-quoted, rebased at 1.0 like every other USDT hop in the SDK.
     url = f"https://api.binance.com/api/v3/ticker/price?symbol={base}USDT"
     async with session.get(url) as resp:
         if resp.status != 200:
@@ -72,23 +104,59 @@ async def _binance(session: ClientSession, base: str) -> float:
         return float(data["price"])
 
 
+async def _okx(session: ClientSession, base: str) -> float:
+    url = f"https://www.okx.com/api/v5/market/ticker?instId={base}-USDT"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"okx {base}-USDT status {resp.status}")
+        data = await resp.json()
+        return float(data["data"][0]["last"])
+
+
+async def _bybit(session: ClientSession, base: str) -> float:
+    url = f"https://api.bybit.com/v5/market/tickers?category=spot&symbol={base}USDT"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"bybit {base}USDT status {resp.status}")
+        data = await resp.json()
+        return float(data["result"]["list"][0]["lastPrice"])
+
+
+async def _kucoin(session: ClientSession, base: str) -> float:
+    url = f"https://api.kucoin.com/api/v1/market/orderbook/level1?symbol={base}-USDT"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"kucoin {base}-USDT status {resp.status}")
+        data = await resp.json()
+        return float(data["data"]["price"])
+
+
+# Five USD venues and four USDT venues. Independent operators, independent
+# APIs; the median tolerates any four of them being down or wrong at once.
 DEFAULT_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
     ("coinbase", _coinbase),
     ("kraken", _kraken),
+    ("bitstamp", _bitstamp),
+    ("gemini", _gemini),
+    ("bitfinex", _bitfinex),
     ("binance", _binance),
+    ("okx", _okx),
+    ("bybit", _bybit),
+    ("kucoin", _kucoin),
 )
 
 
 @dataclass
 class ReferencePriceProvider:
     """
-    Median of independent CEX quotes for <asset>/USD, with a quorum and a
-    maximum spread between the venues that answered. Never reads the oracle.
+    Median of independent CEX quotes for <asset>/USD. Venues further than
+    `max_deviation` from the median are dropped as outliers, and at least
+    `quorum` venues must remain. Never reads the oracle.
     """
 
     sources: Tuple[Tuple[str, ReferenceSource], ...] = DEFAULT_SOURCES
-    quorum: int = 2
-    max_spread: float = 0.02
+    quorum: int = 4
+    max_deviation: float = 0.02
     timeout_seconds: float = 3.0
     cache_ttl_seconds: float = 10.0
     _cache: Dict[str, Tuple[float, float]] = field(default_factory=dict)
@@ -151,14 +219,25 @@ class ReferencePriceProvider:
                 f"{ticker}/USD: only {len(quotes)} reference source(s) answered, "
                 f"quorum is {self.quorum}"
             )
-        prices = [p for _, p in quotes]
-        low, high = min(prices), max(prices)
-        if (high - low) / low > self.max_spread:
-            raise ReferencePriceError(
-                f"{ticker}/USD: reference sources disagree by more than "
-                f"{self.max_spread:.0%}: {quotes}"
+        median = statistics.median(p for _, p in quotes)
+        kept = [
+            (n, p) for n, p in quotes if abs(p - median) / median <= self.max_deviation
+        ]
+        dropped = [(n, p) for n, p in quotes if (n, p) not in kept]
+        if dropped:
+            logger.warning(
+                "[Reference] %s/USD: dropping outlier venue(s) %s (median %.6g)",
+                ticker,
+                dropped,
+                median,
             )
-        return statistics.median(prices)
+        if len(kept) < self.quorum:
+            raise ReferencePriceError(
+                f"{ticker}/USD: only {len(kept)} venue(s) within "
+                f"{self.max_deviation:.0%} of the median {median:.6g}, "
+                f"quorum is {self.quorum}: {quotes}"
+            )
+        return statistics.median(p for _, p in kept)
 
 
 _default_provider: Optional[ReferencePriceProvider] = None
