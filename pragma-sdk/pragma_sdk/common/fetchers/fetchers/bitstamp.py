@@ -39,7 +39,16 @@ class BitstampFetcher(FetcherInterfaceT):
         url = f"{self.BASE_URL}/{pair.base_currency.id.lower()}{pair.quote_currency.id.lower()}"
         return url
 
-    def _construct(self, pair: Pair, result: Any) -> SpotEntry:
+    def _construct(self, pair: Pair, result: Any) -> SpotEntry | PublisherFetchError:
+        # Bitstamp keeps listing markets nobody trades anymore (e.g. strkusd):
+        # the ticker still answers 200 with a stale `last` and a zero 24h volume.
+        # STRK/USD sat 31% above the market that way. A market with no volume
+        # has no price.
+        volume = float(result.get("volume", 0) or 0)
+        if volume <= 0:
+            return PublisherFetchError(
+                f"No data found for {pair} from Bitstamp: market has no 24h volume"
+            )
         timestamp = int(time.time())
         price = float(result["last"])
         price_int = int(price * (10 ** pair.decimals()))
