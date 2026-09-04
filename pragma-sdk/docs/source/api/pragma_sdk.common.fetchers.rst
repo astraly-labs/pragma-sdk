@@ -9,6 +9,12 @@ FetcherClient
    :undoc-members:
    :show-inheritance:
 
+ReferencePriceProvider
+------------------------------------------
+
+.. automodule:: pragma_sdk.common.fetchers.handlers.reference_price
+   :members:
+
 HopHandler
 ------------------------------------------
 
