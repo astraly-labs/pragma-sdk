@@ -86,7 +86,7 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         pairs: List[Tuple[Pair, bool]] = self._get_pairs_after_hop()
         hop_prices = (
-            await self.hop_handler.get_hop_prices(self.client)
+            self._fixed_hop_prices()
             if any([has_been_hopped for _, has_been_hopped in pairs])
             else None
         )
@@ -118,6 +118,18 @@ class EkuboFetcher(FetcherInterfaceT):
             entries.extend(new_entries)
 
         return entries  # type: ignore[call-overload]
+
+    def _fixed_hop_prices(self) -> Dict[Pair, float]:
+        """
+        Every hop target is a USD stablecoin, so we rebase at exactly 1.0 instead
+        of reading <stable>/USD from our own oracle. A stablecoin depeg costs a
+        few bps at most; a thin or poisoned on-chain median (USDT/USD at 2.04 on
+        2026-09-04) would instead get multiplied into every Ekubo entry.
+        """
+        return {
+            Pair.from_tickers(to_currency, from_currency): 1.0
+            for from_currency, to_currency in self.hop_handler.hopped_currencies.items()
+        }
 
     def _get_no_quote_errors(
         self, quote: Tuple[Currency, bool], base_currencies: List[Currency]

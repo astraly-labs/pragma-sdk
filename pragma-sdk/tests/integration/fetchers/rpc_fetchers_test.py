@@ -32,7 +32,7 @@ async def test_async_rpc_fetcher(rpc_fetcher_config):
             fetcher.client,
             "get_spot",
             return_value=STABLE_MOCK_PRICE,
-        ),
+        ) as get_spot,
         mock.patch.object(
             fetcher.client.full_node_client,
             "call_contract",
@@ -41,6 +41,9 @@ async def test_async_rpc_fetcher(rpc_fetcher_config):
     ):
         result = await fetcher.fetch(session=mock.MagicMock())
         assert are_entries_list_equal(result, rpc_fetcher_config["expected_result"])
+        # USD hops are rebased at a fixed 1.0: the on-chain stable price must
+        # never be read, so a poisoned median cannot leak into Ekubo entries.
+        assert get_spot.call_count == 0
 
 
 # NOTE: This test work because we only have Ekubo as Rpc Fetcher for now.
