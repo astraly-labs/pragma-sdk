@@ -99,7 +99,7 @@ class HuobiFetcher(FetcherInterfaceT):
     ) -> SpotEntry:
         bid = float(result["tick"]["bid"][0])
         ask = float(result["tick"]["ask"][0])
-        price = (bid + ask) / (2 * usdt_price)
+        price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result["tick"]["bid"][0])
             hop_ask = float(hop_result["tick"]["ask"][0])

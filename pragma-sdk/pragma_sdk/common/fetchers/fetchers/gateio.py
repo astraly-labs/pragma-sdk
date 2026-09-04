@@ -107,7 +107,7 @@ class GateioFetcher(FetcherInterfaceT):
     ) -> SpotEntry:
         bid = float(result[0]["highest_bid"])
         ask = float(result[0]["lowest_ask"])
-        price = (bid + ask) / (2 * usdt_price)
+        price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result[0]["highest_bid"])
             hop_ask = float(hop_result[0]["lowest_ask"])

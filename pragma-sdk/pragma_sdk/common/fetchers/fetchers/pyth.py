@@ -9,7 +9,10 @@ from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.common.fetchers.handlers.reference_price import (
+    ReferencePriceError,
+    get_reference_price_provider,
+)
 
 logger = get_pragma_sdk_logger()
 
@@ -135,7 +138,9 @@ class PythFetcher(FetcherInterfaceT):
             pair_str = f"{pair.base_currency.id}/{pair.quote_currency.id}"
             hopped_config = PYTH_HOPPED_FEEDS.get(pair_str)
             if hopped_config is not None:
-                return await self._construct_hopped(pair, price_feed, hopped_config)
+                return await self._construct_hopped(
+                    pair, price_feed, hopped_config, session
+                )
 
             return self._construct(pair, price_feed)
 
@@ -171,24 +176,28 @@ class PythFetcher(FetcherInterfaceT):
         )
 
     async def _construct_hopped(
-        self, pair: Pair, result: Any, hopped_config: HoppedFeedConfig
+        self,
+        pair: Pair,
+        result: Any,
+        hopped_config: HoppedFeedConfig,
+        session: ClientSession,
     ) -> SpotEntry | PublisherFetchError:
         """Construct a SpotEntry for a hopped conversion rate feed.
 
-        Fetches the hop price (e.g. ETH/USD) from Pragma on-chain, then multiplies
-        the conversion rate from Pyth by it.
+        Multiplies the conversion rate from Pyth by an off-chain reference
+        price (e.g. ETH/USD), never by Pragma's own median.
         """
         price_data = result["price"]
         conversion_rate = int(price_data["price"]) / (10 ** abs(price_data["expo"]))
         timestamp = int(price_data["publish_time"])
 
-        hop_pair_id = str_to_felt(f"{hopped_config.hop_currency}/USD")
         try:
-            hop_response = await self.client.get_spot(hop_pair_id)
-            hop_price = int(hop_response.price) / (10 ** int(hop_response.decimals))
-        except Exception as e:
+            hop_price = await get_reference_price_provider().get_price(
+                hopped_config.hop_currency, "USD", session
+            )
+        except ReferencePriceError as e:
             return PublisherFetchError(
-                f"[Pyth] Failed to fetch {hopped_config.hop_currency}/USD hop price: {e}"
+                f"[Pyth] No reference for {hopped_config.hop_currency}/USD hop: {e}"
             )
 
         price = conversion_rate * hop_price
