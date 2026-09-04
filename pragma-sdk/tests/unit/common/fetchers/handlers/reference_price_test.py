@@ -103,3 +103,21 @@ async def test_cache_shares_one_lookup():
             # would fail the quorum
             second = await provider.get_price("ETH", "USD", session)
     assert first == second == 2447.34
+
+
+@pytest.mark.asyncio
+async def test_concurrent_lookups_share_one_http_round():
+    # 20+ fetchers ask for ETH/USD at the same instant on a cold cache; the
+    # per-ticker lock must serialise them onto a single HTTP round.
+    import asyncio
+
+    provider = ReferencePriceProvider(cache_ttl_seconds=60)
+    with aioresponses() as m:
+        m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
+        m.get(KRAKEN, payload=_kraken_payload("2447.34"))
+        m.get(BINANCE, payload={"price": "2448.32"})
+        async with aiohttp.ClientSession() as session:
+            prices = await asyncio.gather(
+                *(provider.get_price("ETH", "USD", session) for _ in range(20))
+            )
+    assert prices == [2447.34] * 20

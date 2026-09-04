@@ -14,7 +14,7 @@ from pathlib import Path
 FETCHERS_DIR = Path(__file__).parents[4] / "pragma_sdk" / "common" / "fetchers"
 
 ONCHAIN_READ = re.compile(
-    r"\.get_spot\(|\.get_future\(|\.get_data_median|get_data_median_for_sources|\.get_data\("
+    r"\.get_(spot|future|data|data_median|data_median_for_sources|entry)(_sync)?\("
 )
 
 # path (relative to fetchers/) -> why an on-chain read is tolerated there

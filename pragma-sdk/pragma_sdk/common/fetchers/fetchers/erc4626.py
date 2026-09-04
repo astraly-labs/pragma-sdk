@@ -11,7 +11,6 @@ from aiohttp import ClientSession
 
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
-from pragma_sdk.common.fetchers.handlers.reference_price import ReferencePriceError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.entry import Entry, SpotEntry
@@ -125,7 +124,7 @@ class ERC4626RateFetcher(FetcherInterfaceT):
         if requires_hop:
             try:
                 hop_prices = await self.hop_handler.get_hop_prices(session)
-            except ReferencePriceError as e:
+            except Exception as e:  # noqa: BLE001 - any failure must fail closed
                 # Hopped pairs fail closed below ("Missing hop prices"), the
                 # others are still published.
                 logger.warning(

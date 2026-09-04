@@ -10,7 +10,6 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.fetchers.handlers.reference_price import (
-    ReferencePriceError,
     get_reference_price_provider,
 )
 
@@ -195,7 +194,7 @@ class PythFetcher(FetcherInterfaceT):
             hop_price = await get_reference_price_provider().get_price(
                 hopped_config.hop_currency, "USD", session
             )
-        except ReferencePriceError as e:
+        except Exception as e:  # noqa: BLE001 - any failure must fail closed
             return PublisherFetchError(
                 f"[Pyth] No reference for {hopped_config.hop_currency}/USD hop: {e}"
             )

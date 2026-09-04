@@ -92,6 +92,9 @@ class ReferencePriceProvider:
     timeout_seconds: float = 3.0
     cache_ttl_seconds: float = 10.0
     _cache: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    # One lock per ticker: 20+ fetchers ask for ETH/USD at the same instant on
+    # a cold cache, one HTTP round must serve them all.
+    _locks: Dict[str, asyncio.Lock] = field(default_factory=dict)
 
     async def get_price(
         self, base: str, quote: str = "USD", session: Optional[ClientSession] = None
@@ -110,13 +113,15 @@ class ReferencePriceProvider:
     async def _usd_price(self, ticker: str, session: ClientSession) -> float:
         if ticker in STABLE_TICKERS:
             return 1.0
-        cached = self._cache.get(ticker)
-        now = time.monotonic()
-        if cached is not None and now - cached[1] < self.cache_ttl_seconds:
-            return cached[0]
-        price = await self._query_sources(ticker, session)
-        self._cache[ticker] = (price, now)
-        return price
+        lock = self._locks.setdefault(ticker, asyncio.Lock())
+        async with lock:
+            cached = self._cache.get(ticker)
+            now = time.monotonic()
+            if cached is not None and now - cached[1] < self.cache_ttl_seconds:
+                return cached[0]
+            price = await self._query_sources(ticker, session)
+            self._cache[ticker] = (price, time.monotonic())
+            return price
 
     async def _query_sources(self, ticker: str, session: ClientSession) -> float:
         async def one(name: str, source: ReferenceSource) -> Tuple[str, float]:
