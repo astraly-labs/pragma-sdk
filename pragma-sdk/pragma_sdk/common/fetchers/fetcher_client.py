@@ -6,7 +6,7 @@ import logging
 import aiohttp
 
 from pragma_sdk.common.types.entry import Entry
-from pragma_sdk.common.utils import add_sync_methods
+from pragma_sdk.common.utils import add_sync_methods, felt_to_str
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.exceptions import PublisherFetchError
 
@@ -76,6 +76,28 @@ class FetcherClient:
         """
         self.fetchers.append(fetcher)
 
+    @staticmethod
+    def _reject_zero_price(value: Entry | BaseException) -> Entry | BaseException:
+        """
+        A dead market (Binance DAIUSDT, Bitstamp strkusd, ...) still answers a
+        well-formed ticker at 0. Zero is never a price: it would drag every
+        median it lands in. Convert it to an error before it reaches a publisher.
+        """
+        price = getattr(value, "price", None)
+        if isinstance(price, (int, float)) and price <= 0:
+            source = felt_to_str(getattr(getattr(value, "base", None), "source", 0))
+            pair_id = felt_to_str(getattr(value, "pair_id", 0))
+            logger.warning(
+                "[⚠️ Fetcher] Rejecting non-positive price %s for %s from %s",
+                price,
+                pair_id,
+                source,
+            )
+            return PublisherFetchError(
+                f"Non-positive price {price} for {pair_id} from {source}"
+            )
+        return value
+
     async def fetch(
         self,
         filter_exceptions: bool = True,
@@ -138,6 +160,7 @@ class FetcherClient:
 
             result = [r if isinstance(r, list) else [r] for r in result]
             result = [val for subl in result for val in subl]  # flatten
+            result = [self._reject_zero_price(val) for val in result]
 
             if filter_exceptions:
                 result = [

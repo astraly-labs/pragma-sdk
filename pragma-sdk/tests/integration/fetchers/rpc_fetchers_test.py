@@ -4,6 +4,7 @@ from unittest import mock
 
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
+from pragma_sdk.common.types.entry import SpotEntry
 
 from tests.integration.fixtures.fetchers import get_mock_data
 from tests.integration.constants import (
@@ -104,3 +105,44 @@ async def test_quote_without_liquidity_rejects_all_pairs(rpc_fetcher_config):
         assert str(pair) in str(error)
         assert "USDC" in str(error)
         assert "liquidity" in str(error).lower()
+
+
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.asyncio
+async def test_hop_back_uses_each_pairs_own_quote(rpc_fetcher_config):
+    """
+    Regression: the hop-back quote was taken from self.pairs[0]. With the
+    mainnet config (WBTC/BTC next to X/USD pairs) the whole fetcher failed
+    with "No valid hop price found for USDC/BTC" whenever a BTC-quoted pair
+    came first. Each pair must be rebased to its own requested quote.
+    """
+    pairs = [Pair.from_tickers("WBTC", "BTC"), Pair.from_tickers("LUSD", "USD")]
+    fetcher = rpc_fetcher_config["fetcher_class"](pairs, PUBLISHER_NAME)
+    lusd_response = get_mock_data(rpc_fetcher_config)["LUSD"][:4]  # one price
+
+    with (
+        mock.patch.object(fetcher.client, "get_spot", return_value=STABLE_MOCK_PRICE),
+        mock.patch.object(
+            fetcher.client.full_node_client,
+            "call_contract",
+            side_effect=[QUOTE_LIQUIDITY_OK, [1, *lusd_response[1:]]],
+        ),
+    ):
+        result = await fetcher.fetch(session=mock.MagicMock())
+
+    by_type = {type(r): r for r in result}
+    assert "WBTC/BTC" in str(
+        by_type[PublisherFetchError]
+    )  # BTC has no Starknet address
+    assert by_type[SpotEntry].pair_id == Pair.from_tickers("LUSD", "USD").id
+
+
+def test_zero_price_entries_are_rejected():
+    from pragma_sdk.common.fetchers.fetcher_client import FetcherClient
+
+    dead = SpotEntry("DAI/USD", 0, 12345, "BINANCE", PUBLISHER_NAME)
+    live = SpotEntry("DAI/USD", 99990000, 12345, "BITSTAMP", PUBLISHER_NAME)
+    assert FetcherClient._reject_zero_price(live) is live
+    rejected = FetcherClient._reject_zero_price(dead)
+    assert isinstance(rejected, PublisherFetchError)
+    assert "BINANCE" in str(rejected)

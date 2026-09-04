@@ -84,10 +84,10 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         Fetches the data from the fetcher and returns a list of Entry objects.
         """
-        pairs: List[Tuple[Pair, bool]] = self._get_pairs_after_hop()
+        pairs: List[Tuple[Pair, bool, str]] = self._get_pairs_after_hop()
         hop_prices = (
             self._fixed_hop_prices()
-            if any([has_been_hopped for _, has_been_hopped in pairs])
+            if any([has_been_hopped for _, has_been_hopped, _ in pairs])
             else None
         )
 
@@ -114,6 +114,7 @@ class EkuboFetcher(FetcherInterfaceT):
                 bases=base_currencies,
                 res=response,
                 hop_prices=hop_prices,
+                requested_quote=quote[2],
             )
             entries.extend(new_entries)
 
@@ -132,7 +133,7 @@ class EkuboFetcher(FetcherInterfaceT):
         }
 
     def _get_no_quote_errors(
-        self, quote: Tuple[Currency, bool], base_currencies: List[Currency]
+        self, quote: Tuple[Currency, bool, str], base_currencies: List[Currency]
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Returns errors for the pairs that have a Quote currency without address.
@@ -170,7 +171,7 @@ class EkuboFetcher(FetcherInterfaceT):
 
     def _get_quote_liquidity_errors(
         self,
-        quote: Tuple[Currency, bool],
+        quote: Tuple[Currency, bool, str],
         base_currencies: List[Currency],
         status: EkuboStatus,
     ) -> List[Entry | PublisherFetchError | BaseException]:
@@ -188,7 +189,7 @@ class EkuboFetcher(FetcherInterfaceT):
 
     async def _call_get_prices(
         self,
-        quote: Tuple[Currency, bool],
+        quote: Tuple[Currency, bool, str],
         bases: List[Currency],
     ) -> List[int]:
         """
@@ -226,10 +227,11 @@ class EkuboFetcher(FetcherInterfaceT):
 
     async def _parse_response_into_entries(
         self,
-        quote: Tuple[Currency, bool],
+        quote: Tuple[Currency, bool, str],
         bases: List[Currency],
         res: List[int],
         hop_prices: Optional[Dict[Pair, float]],
+        requested_quote: str,
     ) -> List[Entry | PublisherFetchError | BaseException]:
         """
         Parse response data into a list of entries or errors.
@@ -270,6 +272,7 @@ class EkuboFetcher(FetcherInterfaceT):
                         pair=pair,
                         is_hopped_pair=quote[1],
                         hop_prices=hop_prices,
+                        requested_quote=requested_quote,
                     )
                     entries.append(entry)
 
@@ -292,6 +295,7 @@ class EkuboFetcher(FetcherInterfaceT):
         pair: Pair,
         is_hopped_pair: bool,
         hop_prices: Optional[Dict[Pair, float]],
+        requested_quote: str,
     ) -> Tuple[SpotEntry, int]:
         """
         Handle the sub-array of the Ekubo Response when the response was 3, i.e
@@ -312,7 +316,9 @@ class EkuboFetcher(FetcherInterfaceT):
         if is_hopped_pair:
             if hop_prices is None:
                 raise ValueError("Hopped prices are None. Should never happen.")
-            pair, price = await self._adapt_back_hopped_pair(hop_prices, pair, price)
+            pair, price = await self._adapt_back_hopped_pair(
+                hop_prices, pair, price, requested_quote
+            )
 
         price_int = int(price * 10 ** pair.decimals())
         logger.debug("Fetched price %d for %s from Ekubo", price_int, pair)
@@ -331,6 +337,7 @@ class EkuboFetcher(FetcherInterfaceT):
         hop_prices: Dict[Pair, float],
         pair: Pair,
         price: float,
+        requested_quote: str,
     ) -> Tuple[Pair, float]:
         """
         If a hop occured for the given pair, we enter this function.
@@ -345,7 +352,6 @@ class EkuboFetcher(FetcherInterfaceT):
         At the end, we return the original Pair before hop and the price.
         """
         # For USDPLUS, use USD prices directly
-        requested_quote = self.pairs[0].quote_currency.id
         lookup_quote = "USD" if requested_quote == "USDPLUS" else requested_quote
 
         hop_quote_pair = Pair.from_tickers(pair.quote_currency.id, lookup_quote)
@@ -391,7 +397,7 @@ class EkuboFetcher(FetcherInterfaceT):
         price: float = (raw_price / (2**128)) * (10**decimals)
         return price
 
-    def _get_pairs_after_hop(self) -> List[Tuple[Pair, bool]]:
+    def _get_pairs_after_hop(self) -> List[Tuple[Pair, bool, str]]:
         """
         Returns the Fetcher pairs after the work of the Hop Handler.
         Each pair is associated with a boolean flag allowing us to know if
@@ -402,17 +408,18 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         new_pairs = []
         for pair in self.pairs:
+            requested_quote = pair.quote_currency.id
             hopped_pair = self.hop_handler.get_hop_pair(pair)
             if hopped_pair is None:
-                new_pairs.append((pair, False))
+                new_pairs.append((pair, False, requested_quote))
             else:
-                new_pairs.append((hopped_pair, True))
+                new_pairs.append((hopped_pair, True, requested_quote))
         return new_pairs
 
     def _group_pairs_by_quote(
         self,
-        pairs: List[Tuple[Pair, bool]],
-    ) -> Dict[Tuple[Currency, bool], List[Currency]]:
+        pairs: List[Tuple[Pair, bool, str]],
+    ) -> Dict[Tuple[Currency, bool, str], List[Currency]]:
         """
         Groups a list of Pair by their quote currency.
 
@@ -432,10 +439,14 @@ class EkuboFetcher(FetcherInterfaceT):
         The boolean in the key will be True if the quote currency was hopped,
         else false.
         """
-        grouped_pairs: Dict[Tuple[Currency, bool], List[Currency]] = {}
-        for pair, is_hopped in pairs:
+        # The requested quote is part of the key: USD and USDPLUS both hop to
+        # USDC but must be rebased back to their own quote, and a fetcher can
+        # hold BTC-quoted pairs (WBTC/BTC) next to USD ones. Taking it from
+        # self.pairs[0] made the hop depend on the pair ordering.
+        grouped_pairs: Dict[Tuple[Currency, bool, str], List[Currency]] = {}
+        for pair, is_hopped, requested_quote in pairs:
             quote_currency = pair.quote_currency
-            key = (quote_currency, is_hopped)
+            key = (quote_currency, is_hopped, requested_quote)
             if key not in grouped_pairs:
                 grouped_pairs[key] = []
             if pair.base_currency != key[0]:
