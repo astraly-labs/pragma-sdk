@@ -41,9 +41,12 @@ async def test_async_fetcher(fetcher_config):
         async with aiohttp.ClientSession() as session:
             with unittest.mock.patch.object(
                 fetcher.client, "get_spot", return_value=STABLE_MOCK_PRICE
-            ):
+            ) as get_spot:
                 result = await fetcher.fetch(session)
                 assert are_entries_list_equal(result, fetcher_config["expected_result"])
+                # Stable hops are rebased at a fixed 1.0: the on-chain price
+                # must never be read, so a poisoned median cannot leak in.
+                assert get_spot.call_count == 0
 
 
 @pytest.mark.asyncio
