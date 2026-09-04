@@ -1,4 +1,5 @@
 import asyncio
+import statistics
 import time
 from typing import List
 import logging
@@ -98,6 +99,32 @@ class FetcherClient:
             )
         return value
 
+    # Entries further than this from the cross-source median of their pair are
+    # logged (not dropped): the alert hook for dead or drifting markets.
+    DEVIATION_WARN_THRESHOLD: float = 0.05
+
+    @classmethod
+    def _warn_cross_source_deviation(cls, values: List[Entry | BaseException]) -> None:
+        by_pair: dict = {}
+        for value in values:
+            price = getattr(value, "price", None)
+            pair_id = getattr(value, "pair_id", None)
+            if isinstance(price, (int, float)) and price > 0 and pair_id is not None:
+                by_pair.setdefault(pair_id, []).append(value)
+        for pair_id, entries in by_pair.items():
+            if len(entries) < 3:
+                continue
+            med = statistics.median(e.price for e in entries)
+            for e in entries:
+                dev = (e.price - med) / med
+                if abs(dev) > cls.DEVIATION_WARN_THRESHOLD:
+                    logger.warning(
+                        "[⚠️ Fetcher] %s from %s is %+.1f%% off the cross-source median",
+                        felt_to_str(pair_id),
+                        felt_to_str(getattr(getattr(e, "base", None), "source", 0)),
+                        dev * 100,
+                    )
+
     async def fetch(
         self,
         filter_exceptions: bool = True,
@@ -161,6 +188,7 @@ class FetcherClient:
             result = [r if isinstance(r, list) else [r] for r in result]
             result = [val for subl in result for val in subl]  # flatten
             result = [self._reject_zero_price(val) for val in result]
+            self._warn_cross_source_deviation(result)
 
             if filter_exceptions:
                 result = [

@@ -26,11 +26,15 @@ from pragma_sdk.common.logging import get_pragma_sdk_logger
 logger = get_pragma_sdk_logger()
 
 # USD-pegged tickers are rebased at exactly 1.0. A depeg costs a few bps, a
-# poisoned oracle median gets multiplied into every pair.
+# poisoned oracle median gets multiplied into every pair. For USDT and USDC
+# the peg is verified against USD venues: a *material* depeg (beyond
+# STABLE_BAND) fails closed instead of being published as if 1.0 held.
 STABLE_TICKERS = frozenset({"USD", "USDT", "USDC", "DAI", "USDPLUS"})
+STABLE_BAND = 0.02
 
 # Kraken uses legacy codes for a few assets.
 _KRAKEN_ALIASES = {"BTC": "XBT", "DOGE": "XDG"}
+_BITFINEX_ALIASES = {"USDT": "UST", "USDC": "UDC"}
 
 
 class ReferencePriceError(Exception):
@@ -83,7 +87,8 @@ async def _gemini(session: ClientSession, base: str) -> float:
 
 
 async def _bitfinex(session: ClientSession, base: str) -> float:
-    url = f"https://api-pub.bitfinex.com/v2/ticker/t{base}USD"
+    symbol = _BITFINEX_ALIASES.get(base, base)
+    url = f"https://api-pub.bitfinex.com/v2/ticker/t{symbol}USD"
     async with session.get(url) as resp:
         if resp.status != 200:
             raise ReferencePriceError(f"bitfinex t{base}USD status {resp.status}")
@@ -145,6 +150,14 @@ DEFAULT_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
     ("kucoin", _kucoin),
 )
 
+# Venues quoting the stablecoins themselves in USD, used only for the peg check.
+STABLE_CHECK_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
+    ("kraken", _kraken),
+    ("coinbase", _coinbase),
+    ("bitstamp", _bitstamp),
+    ("bitfinex", _bitfinex),
+)
+
 
 @dataclass
 class ReferencePriceProvider:
@@ -155,7 +168,10 @@ class ReferencePriceProvider:
     """
 
     sources: Tuple[Tuple[str, ReferenceSource], ...] = DEFAULT_SOURCES
+    stable_sources: Tuple[Tuple[str, ReferenceSource], ...] = STABLE_CHECK_SOURCES
     quorum: int = 4
+    stable_quorum: int = 2
+    stable_band: float = STABLE_BAND
     max_deviation: float = 0.02
     timeout_seconds: float = 3.0
     cache_ttl_seconds: float = 10.0
@@ -179,7 +195,7 @@ class ReferencePriceProvider:
         return base_usd / quote_usd
 
     async def _usd_price(self, ticker: str, session: ClientSession) -> float:
-        if ticker in STABLE_TICKERS:
+        if ticker in STABLE_TICKERS and ticker not in ("USDT", "USDC"):
             return 1.0
         lock = self._locks.setdefault(ticker, asyncio.Lock())
         async with lock:
@@ -187,21 +203,60 @@ class ReferencePriceProvider:
             now = time.monotonic()
             if cached is not None and now - cached[1] < self.cache_ttl_seconds:
                 return cached[0]
-            price = await self._query_sources(ticker, session)
+            if ticker in STABLE_TICKERS:
+                price = await self._checked_stable(ticker, session)
+            else:
+                price = await self._query_sources(ticker, session)
             self._cache[ticker] = (price, time.monotonic())
             return price
 
-    async def _query_sources(self, ticker: str, session: ClientSession) -> float:
+    async def _checked_stable(self, ticker: str, session: ClientSession) -> float:
+        """
+        USDT and USDC are rebased at exactly 1.0, but only while USD venues
+        confirm the peg. A depeg beyond `stable_band` raises: USDT-quoted
+        entries stop instead of being published at a wrong USD value. When too
+        few venues answer, we keep 1.0 (an API outage must not stop every CEX
+        fetcher) and say so in the logs.
+        """
+        try:
+            market = await self._query_sources(
+                ticker,
+                session,
+                sources=self.stable_sources,
+                quorum=self.stable_quorum,
+            )
+        except ReferencePriceError as e:
+            logger.warning(
+                "[Reference] %s/USD peg unverified, assuming 1.0: %s", ticker, e
+            )
+            return 1.0
+        if abs(market - 1.0) > self.stable_band:
+            raise ReferencePriceError(
+                f"{ticker}/USD trades at {market:.4f}, beyond the "
+                f"{self.stable_band:.0%} peg band: refusing to rebase at 1.0"
+            )
+        return 1.0
+
+    async def _query_sources(
+        self,
+        ticker: str,
+        session: ClientSession,
+        sources: Optional[Tuple[Tuple[str, ReferenceSource], ...]] = None,
+        quorum: Optional[int] = None,
+    ) -> float:
+        sources = self.sources if sources is None else sources
+        quorum = self.quorum if quorum is None else quorum
+
         async def one(name: str, source: ReferenceSource) -> Tuple[str, float]:
             async with asyncio.timeout(self.timeout_seconds):
                 return name, await source(session, ticker)
 
         results = await asyncio.gather(
-            *(one(name, source) for name, source in self.sources),
+            *(one(name, source) for name, source in sources),
             return_exceptions=True,
         )
         quotes: List[Tuple[str, float]] = []
-        for name_source, result in zip(self.sources, results):
+        for name_source, result in zip(sources, results):
             if isinstance(result, BaseException):
                 logger.warning(
                     "[Reference] %s unavailable for %s/USD: %s",
@@ -214,10 +269,10 @@ class ReferencePriceProvider:
             if price > 0:
                 quotes.append((name, price))
 
-        if len(quotes) < self.quorum:
+        if len(quotes) < quorum:
             raise ReferencePriceError(
                 f"{ticker}/USD: only {len(quotes)} reference source(s) answered, "
-                f"quorum is {self.quorum}"
+                f"quorum is {quorum}"
             )
         median = statistics.median(p for _, p in quotes)
         kept = [
@@ -231,11 +286,11 @@ class ReferencePriceProvider:
                 dropped,
                 median,
             )
-        if len(kept) < self.quorum:
+        if len(kept) < quorum:
             raise ReferencePriceError(
                 f"{ticker}/USD: only {len(kept)} venue(s) within "
                 f"{self.max_deviation:.0%} of the median {median:.6g}, "
-                f"quorum is {self.quorum}: {quotes}"
+                f"quorum is {quorum}: {quotes}"
             )
         return statistics.median(p for _, p in kept)
 

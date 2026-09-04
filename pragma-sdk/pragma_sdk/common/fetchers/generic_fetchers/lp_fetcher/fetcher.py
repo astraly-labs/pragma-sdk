@@ -294,7 +294,7 @@ class LPFetcher(FetcherInterfaceT):
         return (price, reserve)
 
     async def _get_token_price_and_decimals(
-        self, token: Contract, block_id: str = "pending"
+        self, token: Contract, block_id: str = "latest"
     ) -> Tuple[int, int, int] | PublisherFetchError:
         """
         For a given token contract, return:

@@ -133,9 +133,8 @@ async def test_stables_are_one_without_any_request():
     with aioresponses():
         # no mocked endpoint: any HTTP call would raise
         async with aiohttp.ClientSession() as session:
-            assert await provider.get_price("USDT", "USD", session) == 1.0
-            assert await provider.get_price("USDC", "USD", session) == 1.0
-            assert await provider.get_price("USDC", "USDPLUS", session) == 1.0
+            assert await provider.get_price("DAI", "USD", session) == 1.0
+            assert await provider.get_price("USD", "USDPLUS", session) == 1.0
 
 
 @pytest.mark.asyncio
@@ -193,3 +192,71 @@ async def test_concurrent_lookups_share_one_http_round():
                 *(provider.get_price("ETH", "USD", session) for _ in range(20))
             )
     assert prices == [2447.34] * 20
+
+
+# ------------------------------------------------------------ stablecoin peg
+
+USDT_KRAKEN = "https://api.kraken.com/0/public/Ticker?pair=USDTUSD"
+USDT_COINBASE = "https://api.coinbase.com/v2/prices/USDT-USD/spot"
+USDT_BITSTAMP = "https://www.bitstamp.net/api/v2/ticker/usdtusd/"
+USDT_BITFINEX = "https://api-pub.bitfinex.com/v2/ticker/tUSTUSD"
+
+
+def _mock_usdt(m, price: float):
+    m.get(
+        USDT_KRAKEN,
+        payload={"error": [], "result": {"USDTZUSD": {"c": [str(price), "1"]}}},
+    )
+    m.get(USDT_COINBASE, payload={"data": {"amount": str(price)}})
+    m.get(
+        USDT_BITSTAMP, payload={"bid": str(price), "ask": str(price), "volume": "1000"}
+    )
+    m.get(USDT_BITFINEX, payload=[price, 1.0, price, 1.0])
+
+
+@pytest.mark.asyncio
+async def test_stable_within_band_rebases_at_exactly_one():
+    provider = ReferencePriceProvider()
+    with aioresponses() as m:
+        _mock_usdt(m, 0.9985)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USDT", "USD", session) == 1.0
+
+
+@pytest.mark.asyncio
+async def test_material_depeg_fails_closed():
+    provider = ReferencePriceProvider()
+    with aioresponses() as m:
+        _mock_usdt(m, 0.93)
+        async with aiohttp.ClientSession() as session:
+            with pytest.raises(ReferencePriceError, match="peg band"):
+                await provider.get_price("USDT", "USD", session)
+
+
+@pytest.mark.asyncio
+async def test_unverifiable_peg_keeps_one_with_a_warning():
+    # Venue outage must not stop every USDT-quoted CEX fetcher.
+    from unittest import mock
+
+    provider = ReferencePriceProvider()
+    with (
+        aioresponses() as m,
+        mock.patch(
+            "pragma_sdk.common.fetchers.handlers.reference_price.logger"
+        ) as logger,
+    ):
+        m.get(USDT_KRAKEN, status=503)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USDT", "USD", session) == 1.0
+    assert any(
+        "peg unverified" in str(call.args[0]) for call in logger.warning.call_args_list
+    )
+
+
+@pytest.mark.asyncio
+async def test_usd_and_usdplus_never_query_venues():
+    provider = ReferencePriceProvider()
+    with aioresponses():
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USD", "USD", session) == 1.0
+            assert await provider.get_price("USDPLUS", "USD", session) == 1.0
