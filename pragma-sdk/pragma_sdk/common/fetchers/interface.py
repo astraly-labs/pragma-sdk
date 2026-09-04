@@ -9,6 +9,9 @@ from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.onchain.types import Network
 from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.reference_price import (
+    get_reference_price_provider,
+)
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 
@@ -70,13 +73,11 @@ class FetcherInterfaceT(abc.ABC):
 
     async def get_stable_price(self, stable_asset: str) -> float:
         """
-        Price of the stable asset in USD, used only to rebase hopped pairs
-        (e.g. X/USDT -> X/USD).
+        Rebasing factor for hopped pairs (e.g. X/USDT -> X/USD): 1.0 while USD
+        venues confirm the peg, ReferencePriceError on a material depeg.
 
-        Deliberately fixed at 1.0: reading <stable>/USD from our own oracle made
-        every CEX entry depend on an on-chain median that can be thin or poisoned.
-        On 2026-09-04 USDT/USD went to 2.04 with two valid sources and every
-        USDT-quoted CEX price was published at -51%. A stablecoin depeg costs a
-        few bps at most; a bad median gets multiplied into every pair.
+        Never read from our own oracle: on 2026-09-04 USDT/USD went to 2.04
+        with two valid sources and every USDT-quoted CEX price was published
+        at -51%. See handlers/reference_price.py.
         """
-        return 1.0
+        return await get_reference_price_provider().get_price(stable_asset, "USD")

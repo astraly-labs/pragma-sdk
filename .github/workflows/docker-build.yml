@@ -12,6 +12,9 @@ env:
 jobs:
   build_containers:
     strategy:
+      # One image failing (lmax-connector's dead index, a PyPI propagation
+      # delay) must not cancel the others: price-pusher is what publishers pull.
+      fail-fast: false
       matrix:
         package:
           [pragma-sdk, price-pusher, vrf-listener, checkpointer, lmax-connector]
@@ -33,6 +36,17 @@ jobs:
           export PACKAGE_VERSION=$(grep -o '".*"' ./${{ matrix.package }}/$PKG_PATH/__init__.py | tr -d '"')
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo $PACKAGE_VERSION
+
+      - name: Wait for the package to be installable from PyPI
+        if: matrix.package == 'pragma-sdk'
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "https://pypi.org/pypi/pragma-sdk/${PACKAGE_VERSION}/json" > /dev/null; then
+              echo "pragma-sdk ${PACKAGE_VERSION} is on PyPI"; exit 0
+            fi
+            echo "waiting for pragma-sdk ${PACKAGE_VERSION} on PyPI ($i/30)"; sleep 20
+          done
+          echo "pragma-sdk ${PACKAGE_VERSION} never showed up on PyPI"; exit 1
 
       - name: Build and push pragma-sdk
         if: matrix.package == 'pragma-sdk'

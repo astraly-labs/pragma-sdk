@@ -33,7 +33,7 @@ class LpContract:
     _decimals: Optional[int] = None
 
     def __init__(
-        self, client: FullNodeClient, lp_address: Address, block_hash="pending"
+        self, client: FullNodeClient, lp_address: Address, block_hash="latest"
     ):
         self.contract = Contract(
             address=lp_address,

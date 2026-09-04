@@ -85,11 +85,15 @@ class EkuboFetcher(FetcherInterfaceT):
         Fetches the data from the fetcher and returns a list of Entry objects.
         """
         pairs: List[Tuple[Pair, bool, str]] = self._get_pairs_after_hop()
-        hop_prices = (
-            self._fixed_hop_prices()
-            if any([has_been_hopped for _, has_been_hopped, _ in pairs])
-            else None
-        )
+        hop_prices: Optional[Dict[Pair, float]] = None
+        hop_error: Optional[PublisherFetchError] = None
+        if any([has_been_hopped for _, has_been_hopped, _ in pairs]):
+            try:
+                hop_prices = await self.hop_handler.get_hop_prices(session)
+            except Exception as e:  # noqa: BLE001 - any failure must fail closed
+                hop_error = PublisherFetchError(
+                    f"No USD reference for hopped Ekubo pairs: {e}"
+                )
 
         # We make N calls per N unique quote assets. To do so, we group
         # the pairs by their quote currencies.
@@ -99,6 +103,9 @@ class EkuboFetcher(FetcherInterfaceT):
         for quote, base_currencies in groupped_pairs.items():
             if quote[0].starknet_address == 0:
                 entries.extend(self._get_no_quote_errors(quote, base_currencies))
+                continue
+            if quote[1] and hop_error is not None:
+                entries.extend(hop_error for _ in base_currencies)
                 continue
             quote_status = await self._get_quote_liquidity_status(quote[0])
             if quote_status != EkuboStatus.PRICE_AVAILABLE:
@@ -119,18 +126,6 @@ class EkuboFetcher(FetcherInterfaceT):
             entries.extend(new_entries)
 
         return entries  # type: ignore[call-overload]
-
-    def _fixed_hop_prices(self) -> Dict[Pair, float]:
-        """
-        Every hop target is a USD stablecoin, so we rebase at exactly 1.0 instead
-        of reading <stable>/USD from our own oracle. A stablecoin depeg costs a
-        few bps at most; a thin or poisoned on-chain median (USDT/USD at 2.04 on
-        2026-09-04) would instead get multiplied into every Ekubo entry.
-        """
-        return {
-            Pair.from_tickers(to_currency, from_currency): 1.0
-            for from_currency, to_currency in self.hop_handler.hopped_currencies.items()
-        }
 
     def _get_no_quote_errors(
         self, quote: Tuple[Currency, bool, str], base_currencies: List[Currency]
