@@ -97,8 +97,12 @@ FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
 # SURVIVOR/USD is excluded from Ekubo because Ekubo's on-chain PriceFetcher oracle
 # reads a mispriced/stale pool for it (~$0.125 vs ~$0.038 real market, confirmed
 # across every TWAP window), which would poison the published median.
+# STRK/USD is excluded from Bitstamp: the strkusd market is dead (zero volume,
+# `last` frozen ~30% above the market). The fetcher also rejects zero-volume
+# tickers, this keeps the pair out even if a stray trade briefly revives it.
 FETCHER_EXCLUDED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
     EkuboFetcher: frozenset({"SURVIVOR/USD"}),
+    BitstampFetcher: frozenset({"STRK/USD"}),
 }
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
