@@ -7,7 +7,7 @@ from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.onchain.types import Network
-from pragma_sdk.common.utils import add_sync_methods, str_to_felt
+from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.logging import get_pragma_sdk_logger
@@ -70,26 +70,13 @@ class FetcherInterfaceT(abc.ABC):
 
     async def get_stable_price(self, stable_asset: str) -> float:
         """
-        Query the PragmaOnChainClient for the price of the stable asset in USD
-        e.g get_stable_price("USDT") returns the price of USDT in USD
+        Price of the stable asset in USD, used only to rebase hopped pairs
+        (e.g. X/USDT -> X/USD).
 
-        This is only used to rebase hopped pairs (e.g. X/USDT -> X/USD). If the
-        on-chain call fails (RPC down, rate-limited, ...), we must NOT let the
-        whole fetcher crash: we degrade gracefully to 1.0 so that direct fiat
-        pairs (e.g. USDT/USD, which ignore this value) and the other pairs still
-        publish. The induced error on hopped pairs is bounded by the stablecoin
-        depeg (~0.06% while USDT≈1).
+        Deliberately fixed at 1.0: reading <stable>/USD from our own oracle made
+        every CEX entry depend on an on-chain median that can be thin or poisoned.
+        On 2026-09-04 USDT/USD went to 2.04 with two valid sources and every
+        USDT-quoted CEX price was published at -51%. A stablecoin depeg costs a
+        few bps at most; a bad median gets multiplied into every pair.
         """
-
-        pair_str = stable_asset + "/USD"
-        try:
-            entry = await self.client.get_spot(str_to_felt(pair_str))
-            return int(entry.price) / int(10 ** int(entry.decimals))
-        except Exception as e:
-            logger.warning(
-                "[⚠️ Fetcher] On-chain %s price unavailable (%s); "
-                "falling back to 1.0 for stable rebasing.",
-                pair_str,
-                type(e).__name__,
-            )
-            return 1.0
+        return 1.0

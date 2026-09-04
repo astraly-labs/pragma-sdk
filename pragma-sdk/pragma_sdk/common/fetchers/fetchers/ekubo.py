@@ -30,6 +30,15 @@ PRICE_FETCHER_CONTRACT: Dict[Network, str] = {
     "sepolia": "0x04613bee55d8a37adfa249b24c6b13451dedf7cf4f02d01de859579119de3add",
     "mainnet": "0x04946fb4ad5237d97bbb1256eba2080c4fe1de156da6a7f83e3b4823bb6d7da1",
 }
+# Every Ekubo oracle pool is <token>/<oracle token> (EKUBO on mainnet). The Price
+# Fetcher derives base/quote as (base/oracle_token) / (quote/oracle_token) and only
+# enforces `min_token` on the *base* leg, so a quote token whose oracle pool has
+# been drained (e.g. bridged USDC.e after native USDC launched) still returns a
+# "valid" but frozen price. We check the quote leg ourselves against this token.
+ORACLE_TOKEN: Dict[Network, str] = {
+    "sepolia": "0x01fad7c03b2ea7fbef306764e20977f8d4eae6191b3a54e4514cc5fc9d19e569",
+    "mainnet": "0x075afe6402ad5a5c20dd25e10ec3b3986acaa647b77e4ae24b0cbc9a54a27a87",
+}
 GET_PRICES_SELECTOR = get_selector_from_name("get_prices")
 PERIOD = 3600  # one hour
 MIN_TOKENS = int(1e18)
@@ -48,6 +57,7 @@ class EkuboFetcher(FetcherInterfaceT):
     pairs: List[Pair]
     publisher: str
     price_fetcher_contract: int
+    oracle_token: int
     hop_handler: HopHandler = HopHandler(
         hopped_currencies={"USD": "USDC", "USDPLUS": "USDC"}
     )
@@ -60,9 +70,11 @@ class EkuboFetcher(FetcherInterfaceT):
         network: Network = "mainnet",
     ):
         price_fetcher_contract = PRICE_FETCHER_CONTRACT.get(network)
-        if price_fetcher_contract is None:
+        oracle_token = ORACLE_TOKEN.get(network)
+        if price_fetcher_contract is None or oracle_token is None:
             raise ValueError(f"Ekubo Price Fetcher not available for {network}")
         self.price_fetcher_contract = int(price_fetcher_contract, 16)
+        self.oracle_token = int(oracle_token, 16)
         super().__init__(pairs, publisher, api_key, network)
 
     async def fetch(
@@ -74,7 +86,7 @@ class EkuboFetcher(FetcherInterfaceT):
         """
         pairs: List[Tuple[Pair, bool]] = self._get_pairs_after_hop()
         hop_prices = (
-            await self.hop_handler.get_hop_prices(self.client)
+            self._fixed_hop_prices()
             if any([has_been_hopped for _, has_been_hopped in pairs])
             else None
         )
@@ -88,6 +100,14 @@ class EkuboFetcher(FetcherInterfaceT):
             if quote[0].starknet_address == 0:
                 entries.extend(self._get_no_quote_errors(quote, base_currencies))
                 continue
+            quote_status = await self._get_quote_liquidity_status(quote[0])
+            if quote_status != EkuboStatus.PRICE_AVAILABLE:
+                entries.extend(
+                    self._get_quote_liquidity_errors(
+                        quote, base_currencies, quote_status
+                    )
+                )
+                continue
             response = await self._call_get_prices(quote, base_currencies)
             new_entries = await self._parse_response_into_entries(
                 quote=quote,
@@ -98,6 +118,18 @@ class EkuboFetcher(FetcherInterfaceT):
             entries.extend(new_entries)
 
         return entries  # type: ignore[call-overload]
+
+    def _fixed_hop_prices(self) -> Dict[Pair, float]:
+        """
+        Every hop target is a USD stablecoin, so we rebase at exactly 1.0 instead
+        of reading <stable>/USD from our own oracle. A stablecoin depeg costs a
+        few bps at most; a thin or poisoned on-chain median (USDT/USD at 2.04 on
+        2026-09-04) would instead get multiplied into every Ekubo entry.
+        """
+        return {
+            Pair.from_tickers(to_currency, from_currency): 1.0
+            for from_currency, to_currency in self.hop_handler.hopped_currencies.items()
+        }
 
     def _get_no_quote_errors(
         self, quote: Tuple[Currency, bool], base_currencies: List[Currency]
@@ -113,6 +145,47 @@ class EkuboFetcher(FetcherInterfaceT):
             for base in base_currencies
         ]
 
+    async def _get_quote_liquidity_status(self, quote: Currency) -> EkuboStatus:
+        """
+        Prices the quote token itself against the oracle token, which is the only
+        way to have the Price Fetcher apply its `min_token` liquidity check to the
+        quote leg. Anything but PRICE_AVAILABLE means every base/quote price would
+        be derived from a dead or frozen pool.
+        """
+        response = await self._call_price_fetcher(
+            quote_address=self.oracle_token,
+            base_addresses=[quote.starknet_address],
+        )
+        if len(response) < 2 or response[0] != 1:
+            logger.warning(
+                "Unexpected Ekubo Price Fetcher response for %s liquidity check: %s",
+                quote.id,
+                response,
+            )
+            return EkuboStatus.NOT_INITIALIZED
+        try:
+            return EkuboStatus(response[1])
+        except ValueError:
+            return EkuboStatus.NOT_INITIALIZED
+
+    def _get_quote_liquidity_errors(
+        self,
+        quote: Tuple[Currency, bool],
+        base_currencies: List[Currency],
+        status: EkuboStatus,
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        """
+        Returns errors for every pair sharing a quote whose oracle pool is unusable.
+        """
+        return [
+            PublisherFetchError(
+                f"No data found for {Pair(base, quote[0])} from Ekubo: "
+                f"quote {quote[0].id} has no usable liquidity in the Ekubo oracle "
+                f"({status.name})"
+            )
+            for base in base_currencies
+        ]
+
     async def _call_get_prices(
         self,
         quote: Tuple[Currency, bool],
@@ -122,20 +195,32 @@ class EkuboFetcher(FetcherInterfaceT):
         Calls the get_prices function from the Price Fetcher contract and returns
         the response.
         """
+        return await self._call_price_fetcher(
+            quote_address=quote[0].starknet_address,
+            base_addresses=[c.starknet_address for c in bases],
+        )
+
+    async def _call_price_fetcher(
+        self,
+        quote_address: int,
+        base_addresses: List[int],
+    ) -> List[int]:
         call = Call(
             to_addr=self.price_fetcher_contract,
             selector=GET_PRICES_SELECTOR,
             calldata=[
-                quote[0].starknet_address,
-                len(bases),
-                *[c.starknet_address for c in bases],
+                quote_address,
+                len(base_addresses),
+                *base_addresses,
                 PERIOD,
                 MIN_TOKENS,
             ],
         )
+        # "pending" was dropped from the RPC spec in 0.9: nodes answer
+        # "Invalid block id" and the whole fetcher fails.
         response: list[int] = await self.client.full_node_client.call_contract(
             call=call,
-            block_hash="pending",
+            block_number="latest",
         )
         return response
 
