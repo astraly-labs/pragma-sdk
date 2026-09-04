@@ -73,7 +73,7 @@ class OkxFetcher(FetcherInterfaceT):
         data = result["data"][0]
 
         timestamp = int(time.time())
-        price = float(data["last"]) / usdt_price
+        price = float(data["last"]) * usdt_price
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["volCcy24h"])
 

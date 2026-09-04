@@ -100,7 +100,7 @@ class MEXCFetcher(FetcherInterfaceT):
     ) -> SpotEntry:
         bid = float(result["bidPrice"])
         ask = float(result["askPrice"])
-        price = (bid + ask) / (2 * usdt_price)
+        price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result["bidPrice"])
             hop_ask = float(hop_result["askPrice"])

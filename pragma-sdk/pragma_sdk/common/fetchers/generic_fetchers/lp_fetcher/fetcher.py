@@ -1,5 +1,5 @@
-import time
 import asyncio
+import time
 
 from statistics import median
 from typing import Optional, List, Dict, Tuple
@@ -27,6 +27,11 @@ from pragma_sdk.onchain.types import Network
 # So we know that 10 data points means that we published for at least 30 minutes.
 # This is the minimum number of points decided so that the computations make sense.
 MINIMUM_DATA_POINTS = 10
+
+
+# Minimum quality of an on-chain underlying price before we build an LP price on it.
+MIN_UNDERLYING_SOURCES = 3
+MAX_UNDERLYING_AGE_SECONDS = 3600
 
 logger = get_pragma_sdk_logger()
 
@@ -298,6 +303,10 @@ class LPFetcher(FetcherInterfaceT):
             * the decimals of the USD price.
         """
         token_pair = await self._get_pair_usd_quoted(token)
+        # Guarded on-chain read. LP underlyings are Starknet-native tokens that
+        # often have no CEX reference, so the oracle median is the only option;
+        # we refuse to build on a median that is thin or stale (a two-source
+        # median is an average, not a median: USDT/USD printed 2.04 that way).
         oracle_response = await self.client.get_spot(
             pair_id=str_to_felt(token_pair),
             block_id=block_id,
@@ -305,6 +314,20 @@ class LPFetcher(FetcherInterfaceT):
         if oracle_response.price == 0 and oracle_response.last_updated_timestamp == 0:
             return PublisherFetchError(
                 f"No prices found for pair {token_pair}. Can't compute the LP price."
+            )
+        if oracle_response.num_sources_aggregated < MIN_UNDERLYING_SOURCES:
+            return PublisherFetchError(
+                f"{token_pair} has only {oracle_response.num_sources_aggregated} "
+                f"source(s) on-chain (min {MIN_UNDERLYING_SOURCES}). "
+                "Can't compute the LP price."
+            )
+        if (
+            time.time() - oracle_response.last_updated_timestamp
+            > MAX_UNDERLYING_AGE_SECONDS
+        ):
+            return PublisherFetchError(
+                f"{token_pair} on-chain price is older than "
+                f"{MAX_UNDERLYING_AGE_SECONDS}s. Can't compute the LP price."
             )
         token_decimals = await token.functions["decimals"].call()
         return (oracle_response.price, token_decimals[0], oracle_response.decimals)

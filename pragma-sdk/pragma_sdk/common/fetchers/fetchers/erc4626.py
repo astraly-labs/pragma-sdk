@@ -11,6 +11,7 @@ from aiohttp import ClientSession
 
 from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
+from pragma_sdk.common.fetchers.handlers.reference_price import ReferencePriceError
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.entry import Entry, SpotEntry
@@ -122,7 +123,16 @@ class ERC4626RateFetcher(FetcherInterfaceT):
 
         hop_prices: Optional[Dict[Pair, float]] = None
         if requires_hop:
-            hop_prices = await self.hop_handler.get_hop_prices(self.client)
+            try:
+                hop_prices = await self.hop_handler.get_hop_prices(session)
+            except ReferencePriceError as e:
+                # Hopped pairs fail closed below ("Missing hop prices"), the
+                # others are still published.
+                logger.warning(
+                    "[%s] No off-chain reference for hopped pairs: %s",
+                    self.__class__.__name__,
+                    e,
+                )
 
         tasks = [
             asyncio.ensure_future(

@@ -96,7 +96,7 @@ class KucoinFetcher(FetcherInterfaceT):
         hop_result: Optional[Any] = None,
         usdt_price: float = 1,
     ) -> SpotEntry:
-        price = float(result["data"]["price"]) / usdt_price
+        price = float(result["data"]["price"]) * usdt_price
         if hop_result is not None:
             hop_price = float(hop_result["data"]["price"])
             price = hop_price / price

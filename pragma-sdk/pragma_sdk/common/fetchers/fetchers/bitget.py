@@ -113,7 +113,7 @@ class BitgetFetcher(FetcherInterfaceT):
         result = result["data"][0]
         bid = float(result["bidPr"])
         ask = float(result["askPr"])
-        price = (bid + ask) / (2 * usdt_price)
+        price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result["bidPr"])
             hop_ask = float(hop_result["askPr"])

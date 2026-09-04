@@ -3,13 +3,16 @@ import asyncio
 from dataclasses import field
 
 from typing import Dict, Optional
+from aiohttp import ClientSession
 from pydantic.dataclasses import dataclass
 
 from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.configs.asset_config import AssetConfig
-
-from pragma_sdk.onchain.client import PragmaOnChainClient
+from pragma_sdk.common.fetchers.handlers.reference_price import (
+    ReferencePriceProvider,
+    get_reference_price_provider,
+)
 
 
 @dataclass
@@ -48,31 +51,29 @@ class HopHandler:
             Currency.from_asset_config(AssetConfig.from_ticker(new_currency_id)),
         )
 
-    async def get_hop_prices(self, client: PragmaOnChainClient) -> Dict[Pair, float]:
+    async def get_hop_prices(
+        self,
+        session: Optional[ClientSession] = None,
+        provider: Optional[ReferencePriceProvider] = None,
+    ) -> Dict[Pair, float]:
         """
-        For each hopped currencies, compute the price between the two currencies.
+        For each hopped currency, the price between the two currencies, taken
+        from independent off-chain references and never from Pragma's own
+        oracle (that would be a feedback loop, see reference_price.py).
 
-        For example, if our hopped currencies are:
-        {
-            "USD": "USDC",
-            "ETH": "STETH",
-        }
+        For example, with hopped currencies {"USD": "USDC"} and {"USD": "ETH"}
+        we return {Pair("USDC/USD"): 1.0, Pair("ETH/USD"): <cex median>}.
 
-        We will return:
-        {
-            Pair("USDC/USD"): price,
-            Pair("STETH/ETH"): price,
-        }
+        Raises ReferencePriceError when a reference cannot be established: the
+        caller must fail closed for its hopped pairs.
         """
+        provider = provider or get_reference_price_provider()
 
-        # Sub-task that will be ran asynchronously, fetching a price for a given
-        # couple (from, to) currencies.
         async def fetch_single_price(
             from_currency: str, to_currency: str
         ) -> tuple[Pair, float]:
             pair = Pair.from_tickers(to_currency, from_currency)
-            response = await client.get_spot(pair.id)
-            price = int(response.price) / int(10 ** int(response.decimals))
+            price = await provider.get_price(to_currency, from_currency, session)
             return pair, price
 
         tasks = [
@@ -83,9 +84,9 @@ class HopHandler:
 
         prices: Dict[Pair, float] = {}
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 raise result
-            pair, price = result  # type: ignore[misc]
+            pair, price = result
             prices[pair] = price
 
         return prices

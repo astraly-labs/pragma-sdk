@@ -103,7 +103,7 @@ class BybitFetcher(FetcherInterfaceT):
     ) -> SpotEntry:
         bid = float(result["result"]["list"][0]["bid1Price"])
         ask = float(result["result"]["list"][0]["ask1Price"])
-        price = (bid + ask) / (2 * usdt_price)
+        price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result["result"]["list"][0]["bid1Price"])
             hop_ask = float(hop_result["result"]["list"][0]["ask1Price"])
