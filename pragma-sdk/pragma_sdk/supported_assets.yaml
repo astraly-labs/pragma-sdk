@@ -32,7 +32,10 @@
   decimals: 6
   ticker: 'USDC'
   coingecko_id: 'circle-usd'
-  starknet_address: '0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8'
+  # Native USDC (Circle, live on Starknet since 2025-12-03). The bridged StarkGate
+  # USDC.e (0x053c9125...368a8) lost its on-chain liquidity and must not be used
+  # as an oracle quote anymore.
+  starknet_address: '0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb'
   ethereum_address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 
 - name: 'US Dollar'
