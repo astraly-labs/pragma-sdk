@@ -31,16 +31,21 @@ class LbankFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, usdt_price: float = 1
+        self, pair: Pair, session: ClientSession, usdt_price: Optional[float] = 1
     ) -> Entry | PublisherFetchError:
-        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        hop_pair = self.hop_handler.get_hop_pair(pair)
+        factor = self.rebase_factor(pair, hop_pair is not None, usdt_price)
+        if isinstance(factor, PublisherFetchError):
+            return factor
+        usdt_price = factor
+        new_pair = hop_pair or pair
         url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Lbank")
 
             result = await resp.json()
-            if result["msg"] != "Success":
+            if not isinstance(result, dict) or result.get("msg") != "Success":
                 return await self.operate_usdt_hop(pair, session)
             return self._construct(pair=pair, result=result, usdt_price=usdt_price)
 

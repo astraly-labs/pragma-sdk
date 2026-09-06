@@ -25,12 +25,20 @@ from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 logger = get_pragma_sdk_logger()
 
-# USD-pegged tickers are rebased at exactly 1.0. A depeg costs a few bps, a
-# poisoned oracle median gets multiplied into every pair. For USDT and USDC
-# the peg is verified against USD venues: a *material* depeg (beyond
-# STABLE_BAND) fails closed instead of being published as if 1.0 held.
+# Stablecoins are converted at their *measured* USD price, taken from USD
+# venues and never from Pragma's oracle. Around the peg that is 0.999..1.001,
+# so nothing changes day to day; during a depeg USDT-quoted markets are
+# converted correctly instead of being published 7% off "as if 1.0 held".
+# USD itself and USDPLUS have no market and stay at 1.0.
+#
+# Degradation when the peg cannot be measured (too few venues answering):
+#   1. last verified value if it is younger than STABLE_MAX_AGE_SECONDS,
+#   2. otherwise ReferencePriceError: callers must fail closed for the pairs
+#      that need the conversion, and only those.
 STABLE_TICKERS = frozenset({"USD", "USDT", "USDC", "DAI", "USDPLUS"})
-STABLE_BAND = 0.02
+CHECKED_STABLES = frozenset({"USDT", "USDC", "DAI"})
+STABLE_BAND = 0.02  # beyond this we log a depeg, the value is still used
+STABLE_MAX_AGE_SECONDS = 300
 
 # Kraken uses legacy codes for a few assets.
 _KRAKEN_ALIASES = {"BTC": "XBT", "DOGE": "XDG"}
@@ -72,6 +80,8 @@ async def _bitstamp(session: ClientSession, base: str) -> float:
         if resp.status != 200:
             raise ReferencePriceError(f"bitstamp {base}usd status {resp.status}")
         data = await resp.json()
+        if not isinstance(data, dict):
+            raise ReferencePriceError(f"bitstamp {base}usd is not a market")
         if float(data.get("volume", 0) or 0) <= 0:
             raise ReferencePriceError(f"bitstamp {base}usd has no volume")
         return (float(data["bid"]) + float(data["ask"])) / 2
@@ -172,6 +182,7 @@ class ReferencePriceProvider:
     quorum: int = 4
     stable_quorum: int = 2
     stable_band: float = STABLE_BAND
+    stable_max_age_seconds: float = STABLE_MAX_AGE_SECONDS
     max_deviation: float = 0.02
     timeout_seconds: float = 3.0
     cache_ttl_seconds: float = 10.0
@@ -179,13 +190,15 @@ class ReferencePriceProvider:
     # One lock per ticker: 20+ fetchers ask for ETH/USD at the same instant on
     # a cold cache, one HTTP round must serve them all.
     _locks: Dict[str, asyncio.Lock] = field(default_factory=dict)
+    # ticker -> (last verified stable price, monotonic time)
+    _last_verified: Dict[str, Tuple[float, float]] = field(default_factory=dict)
 
     async def get_price(
         self, base: str, quote: str = "USD", session: Optional[ClientSession] = None
     ) -> float:
         """
-        Price of one `base` in `quote`. Stables against USD are 1.0 by design;
-        anything else is base/USD divided by quote/USD.
+        Price of one `base` in `quote`: base/USD divided by quote/USD, where
+        USD and USDPLUS are 1.0 and every other ticker is measured on venues.
         """
         if session is None:
             async with aiohttp.ClientSession() as own_session:
@@ -195,7 +208,7 @@ class ReferencePriceProvider:
         return base_usd / quote_usd
 
     async def _usd_price(self, ticker: str, session: ClientSession) -> float:
-        if ticker in STABLE_TICKERS and ticker not in ("USDT", "USDC"):
+        if ticker in STABLE_TICKERS and ticker not in CHECKED_STABLES:
             return 1.0
         lock = self._locks.setdefault(ticker, asyncio.Lock())
         async with lock:
@@ -212,11 +225,15 @@ class ReferencePriceProvider:
 
     async def _checked_stable(self, ticker: str, session: ClientSession) -> float:
         """
-        USDT and USDC are rebased at exactly 1.0, but only while USD venues
-        confirm the peg. A depeg beyond `stable_band` raises: USDT-quoted
-        entries stop instead of being published at a wrong USD value. When too
-        few venues answer, we keep 1.0 (an API outage must not stop every CEX
-        fetcher) and say so in the logs.
+        Measured USD price of a stablecoin (USDT, USDC, DAI) from USD venues.
+
+        States, from the most common to the rarest:
+          1. measured, within the band: used as is (~1.0),
+          2. measured, outside the band: used as is, "depeg" logged,
+          3. unmeasurable, last verified value younger than
+             `stable_max_age_seconds`: that value is reused, logged,
+          4. unmeasurable for longer: ReferencePriceError, callers fail closed
+             for the pairs that need the conversion.
         """
         try:
             market = await self._query_sources(
@@ -226,16 +243,33 @@ class ReferencePriceProvider:
                 quorum=self.stable_quorum,
             )
         except ReferencePriceError as e:
-            logger.warning(
-                "[Reference] %s/USD peg unverified, assuming 1.0: %s", ticker, e
-            )
-            return 1.0
-        if abs(market - 1.0) > self.stable_band:
+            last = self._last_verified.get(ticker)
+            if last is not None:
+                price, at = last
+                age = time.monotonic() - at
+                if age <= self.stable_max_age_seconds:
+                    logger.warning(
+                        "[Reference] %s/USD unmeasurable (%s), reusing %.4f verified %.0fs ago",
+                        ticker,
+                        e,
+                        price,
+                        age,
+                    )
+                    return price
             raise ReferencePriceError(
-                f"{ticker}/USD trades at {market:.4f}, beyond the "
-                f"{self.stable_band:.0%} peg band: refusing to rebase at 1.0"
+                f"{ticker}/USD peg unmeasurable and no value verified in the last "
+                f"{self.stable_max_age_seconds:.0f}s: {e}"
+            ) from e
+        if abs(market - 1.0) > self.stable_band:
+            logger.warning(
+                "[Reference] DEPEG: %s/USD measured at %.4f, converting %s-quoted "
+                "markets at that rate",
+                ticker,
+                market,
+                ticker,
             )
-        return 1.0
+        self._last_verified[ticker] = (market, time.monotonic())
+        return market
 
     async def _query_sources(
         self,

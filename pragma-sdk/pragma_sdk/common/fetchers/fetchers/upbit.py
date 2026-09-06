@@ -25,7 +25,10 @@ class UpbitFetcher(FetcherInterfaceT):
             if resp.status == 404:
                 return PublisherFetchError(f"No data found for {pair} from Upbit")
             result = await resp.json()
-            return self._construct(pair, result)
+            try:
+                return self._construct(pair, result)
+            except (KeyError, IndexError, TypeError, ValueError):
+                return PublisherFetchError(f"No data found for {pair} from Upbit")
 
     async def fetch(
         self, session: ClientSession

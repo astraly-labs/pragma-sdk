@@ -10,6 +10,7 @@ from pragma_sdk.onchain.types import Network
 from pragma_sdk.common.utils import add_sync_methods
 from pragma_sdk.common.fetchers.handlers.hop_handler import HopHandler
 from pragma_sdk.common.fetchers.handlers.reference_price import (
+    ReferencePriceError,
     get_reference_price_provider,
 )
 from pragma_sdk.common.exceptions import PublisherFetchError
@@ -71,13 +72,43 @@ class FetcherInterfaceT(abc.ABC):
             self._client = PragmaOnChainClient(network=network)
         return self._client
 
-    async def get_stable_price(self, stable_asset: str) -> float:
+    async def get_stable_price(self, stable_asset: str) -> Optional[float]:
         """
-        Rebasing factor for hopped pairs (e.g. X/USDT -> X/USD): 1.0 while USD
-        venues confirm the peg, ReferencePriceError on a material depeg.
+        Conversion factor for hopped pairs (X/USDT -> X/USD): the measured
+        <stable>/USD price from independent USD venues, ~1.0 around the peg
+        and the real rate during a depeg. None when it cannot be established
+        (see reference_price.py): callers must then fail closed for hopped
+        pairs only and keep publishing direct pairs.
 
         Never read from our own oracle: on 2026-09-04 USDT/USD went to 2.04
         with two valid sources and every USDT-quoted CEX price was published
-        at -51%. See handlers/reference_price.py.
+        at -51%.
         """
-        return await get_reference_price_provider().get_price(stable_asset, "USD")
+        try:
+            return await get_reference_price_provider().get_price(stable_asset, "USD")
+        except ReferencePriceError as e:
+            logger.warning(
+                "[⚠️ Fetcher] %s: no %s/USD conversion factor, hopped pairs "
+                "will not be published: %s",
+                self.__class__.__name__,
+                stable_asset,
+                e,
+            )
+            return None
+
+    @staticmethod
+    def rebase_factor(
+        pair: Pair, hopped: bool, factor: Optional[float], stable: str = "USDT"
+    ) -> float | PublisherFetchError:
+        """
+        Factor to apply to a fetched price: 1 for a direct pair (USDT/USD is
+        already in USD), the stable's USD price for a hopped pair, and an
+        error when a hopped pair has no factor.
+        """
+        if not hopped:
+            return 1.0
+        if factor is None:
+            return PublisherFetchError(
+                f"No verified {stable}/USD conversion for {pair}, not publishing"
+            )
+        return factor

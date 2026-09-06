@@ -55,3 +55,16 @@ async def test_bitstamp_rejects_zero_volume_market():
     assert by_type[SpotEntry] == SpotEntry(
         "BTC/USD", int(81140.76 * 10**8), 12345, "BITSTAMP", PUBLISHER_NAME
     )
+
+
+@pytest.mark.asyncio
+async def test_bitstamp_unknown_market_answers_with_every_ticker():
+    # Bitstamp answers 200 with the list of all tickers for a market it does
+    # not have; that must be a clean error, not an AttributeError.
+    pair = Pair.from_tickers("LORDS", "USD")
+    fetcher = BitstampFetcher([pair], PUBLISHER_NAME)
+    with aioresponses() as mocked:
+        mocked.get(fetcher.format_url(pair), status=200, payload=[LIVE_BTC, DEAD_STRK])
+        async with aiohttp.ClientSession() as session:
+            [result] = await fetcher.fetch(session)
+    assert result == PublisherFetchError("No data found for LORDS/USD from Bitstamp")
