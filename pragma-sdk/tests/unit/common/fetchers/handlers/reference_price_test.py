@@ -133,8 +133,8 @@ async def test_stables_are_one_without_any_request():
     with aioresponses():
         # no mocked endpoint: any HTTP call would raise
         async with aiohttp.ClientSession() as session:
-            assert await provider.get_price("DAI", "USD", session) == 1.0
             assert await provider.get_price("USD", "USDPLUS", session) == 1.0
+            assert await provider.get_price("USDPLUS", "USD", session) == 1.0
 
 
 @pytest.mark.asyncio
@@ -209,33 +209,23 @@ def _mock_usdt(m, price: float):
     )
     m.get(USDT_COINBASE, payload={"data": {"amount": str(price)}})
     m.get(
-        USDT_BITSTAMP, payload={"bid": str(price), "ask": str(price), "volume": "1000"}
+        USDT_BITSTAMP,
+        payload={"bid": str(price), "ask": str(price), "volume": "1000"},
     )
     m.get(USDT_BITFINEX, payload=[price, 1.0, price, 1.0])
 
 
 @pytest.mark.asyncio
-async def test_stable_within_band_rebases_at_exactly_one():
+async def test_stable_is_converted_at_its_measured_price():
     provider = ReferencePriceProvider()
     with aioresponses() as m:
         _mock_usdt(m, 0.9985)
         async with aiohttp.ClientSession() as session:
-            assert await provider.get_price("USDT", "USD", session) == 1.0
+            assert await provider.get_price("USDT", "USD", session) == 0.9985
 
 
 @pytest.mark.asyncio
-async def test_material_depeg_fails_closed():
-    provider = ReferencePriceProvider()
-    with aioresponses() as m:
-        _mock_usdt(m, 0.93)
-        async with aiohttp.ClientSession() as session:
-            with pytest.raises(ReferencePriceError, match="peg band"):
-                await provider.get_price("USDT", "USD", session)
-
-
-@pytest.mark.asyncio
-async def test_unverifiable_peg_keeps_one_with_a_warning():
-    # Venue outage must not stop every USDT-quoted CEX fetcher.
+async def test_material_depeg_is_converted_not_hidden():
     from unittest import mock
 
     provider = ReferencePriceProvider()
@@ -245,12 +235,37 @@ async def test_unverifiable_peg_keeps_one_with_a_warning():
             "pragma_sdk.common.fetchers.handlers.reference_price.logger"
         ) as logger,
     ):
+        _mock_usdt(m, 0.93)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USDT", "USD", session) == 0.93
+    assert any("DEPEG" in str(c.args[0]) for c in logger.warning.call_args_list)
+
+
+@pytest.mark.asyncio
+async def test_unmeasurable_peg_reuses_a_fresh_verified_value():
+    provider = ReferencePriceProvider(cache_ttl_seconds=0)
+    with aioresponses() as m:
+        _mock_usdt(m, 0.9985)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USDT", "USD", session) == 0.9985
+    with aioresponses() as m:
+        m.get(USDT_KRAKEN, status=503)  # every venue down
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("USDT", "USD", session) == 0.9985
+
+
+@pytest.mark.asyncio
+async def test_unmeasurable_peg_with_no_fresh_value_fails_closed():
+    provider = ReferencePriceProvider(cache_ttl_seconds=0, stable_max_age_seconds=0)
+    with aioresponses() as m:
+        _mock_usdt(m, 0.9985)
+        async with aiohttp.ClientSession() as session:
+            await provider.get_price("USDT", "USD", session)
+    with aioresponses() as m:
         m.get(USDT_KRAKEN, status=503)
         async with aiohttp.ClientSession() as session:
-            assert await provider.get_price("USDT", "USD", session) == 1.0
-    assert any(
-        "peg unverified" in str(call.args[0]) for call in logger.warning.call_args_list
-    )
+            with pytest.raises(ReferencePriceError, match="unmeasurable"):
+                await provider.get_price("USDT", "USD", session)
 
 
 @pytest.mark.asyncio

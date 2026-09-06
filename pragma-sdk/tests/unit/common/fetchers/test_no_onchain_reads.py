@@ -46,6 +46,6 @@ def test_fetchers_never_read_pragma_oracle_prices():
 def test_allowlist_is_still_accurate():
     for rel in ALLOWED:
         text = (FETCHERS_DIR / rel).read_text()
-        assert ONCHAIN_READ.search(
-            text
-        ), f"{rel} no longer reads the oracle, remove it from ALLOWED"
+        assert ONCHAIN_READ.search(text), (
+            f"{rel} no longer reads the oracle, remove it from ALLOWED"
+        )

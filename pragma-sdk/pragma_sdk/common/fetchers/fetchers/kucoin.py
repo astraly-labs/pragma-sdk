@@ -28,9 +28,14 @@ class KucoinFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, usdt_price=1
+        self, pair: Pair, session: ClientSession, usdt_price: Optional[float] = 1
     ) -> SpotEntry | PublisherFetchError:
-        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        hop_pair = self.hop_handler.get_hop_pair(pair)
+        factor = self.rebase_factor(pair, hop_pair is not None, usdt_price)
+        if isinstance(factor, PublisherFetchError):
+            return factor
+        usdt_price = factor
+        new_pair = hop_pair or pair
         url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:
@@ -43,9 +48,12 @@ class KucoinFetcher(FetcherInterfaceT):
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
+        usdt_price = await self.get_stable_price("USDT")
         entries = []
         for pair in self.pairs:
-            entries.append(asyncio.ensure_future(self.fetch_pair(pair, session)))
+            entries.append(
+                asyncio.ensure_future(self.fetch_pair(pair, session, usdt_price))
+            )
         return list(await asyncio.gather(*entries, return_exceptions=True))
 
     def format_url(self, pair: Pair) -> str:

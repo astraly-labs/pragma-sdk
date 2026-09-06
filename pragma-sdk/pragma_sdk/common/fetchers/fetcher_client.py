@@ -52,7 +52,10 @@ class FetcherClient:
         await fc.fetch(timeout_duration=20)  # Denominated in seconds
     """
 
-    __fetchers: List[FetcherInterfaceT] = []
+    def __init__(self) -> None:
+        # Per instance: a class-level list is shared by every FetcherClient in
+        # the process (two clients would accumulate each other's fetchers).
+        self.__fetchers: List[FetcherInterfaceT] = []
 
     @property
     def fetchers(self) -> List[FetcherInterfaceT]:

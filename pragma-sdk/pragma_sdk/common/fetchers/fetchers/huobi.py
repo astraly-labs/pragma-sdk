@@ -27,9 +27,14 @@ class HuobiFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, usdt_price: float = 1
+        self, pair: Pair, session: ClientSession, usdt_price: Optional[float] = 1
     ) -> SpotEntry | PublisherFetchError:
-        new_pair = self.hop_handler.get_hop_pair(pair) or pair
+        hop_pair = self.hop_handler.get_hop_pair(pair)
+        factor = self.rebase_factor(pair, hop_pair is not None, usdt_price)
+        if isinstance(factor, PublisherFetchError):
+            return factor
+        usdt_price = factor
+        new_pair = hop_pair or pair
         url = self.format_url(new_pair)
         async with session.get(url) as resp:
             if resp.status == 404:

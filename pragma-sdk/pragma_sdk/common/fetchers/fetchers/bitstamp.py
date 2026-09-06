@@ -40,6 +40,9 @@ class BitstampFetcher(FetcherInterfaceT):
         return url
 
     def _construct(self, pair: Pair, result: Any) -> SpotEntry | PublisherFetchError:
+        if not isinstance(result, dict):
+            # Unknown market: Bitstamp answers 200 with the list of all tickers.
+            return PublisherFetchError(f"No data found for {pair} from Bitstamp")
         # Bitstamp keeps listing markets nobody trades anymore (e.g. strkusd):
         # the ticker still answers 200 with a stale `last` and a zero 24h volume.
         # STRK/USD sat 31% above the market that way. A market with no volume

@@ -1,7 +1,7 @@
 import asyncio
 import time
 import json
-from typing import Any, List
+from typing import Any, List, Optional
 
 from aiohttp import ClientSession
 
@@ -26,12 +26,13 @@ class OkxFetcher(FetcherInterfaceT):
     )
 
     async def fetch_pair(
-        self, pair: Pair, session: ClientSession, usdt_price: float = 1
+        self, pair: Pair, session: ClientSession, usdt_price: Optional[float] = 1
     ) -> SpotEntry | PublisherFetchError:
         hop_pair = self.hop_handler.get_hop_pair(pair)
-        if hop_pair is None:
-            # Direct fiat pair (e.g. USDT/USD): no USDT rebasing needed.
-            usdt_price = 1
+        factor = self.rebase_factor(pair, hop_pair is not None, usdt_price)
+        if isinstance(factor, PublisherFetchError):
+            return factor
+        usdt_price = factor
         new_pair = hop_pair or pair
         url = self.format_url(new_pair)
 
