@@ -1,11 +1,8 @@
-import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from aiohttp import ClientSession
 
-from pragma_sdk.common.configs.asset_config import AssetConfig
-from pragma_sdk.common.types.currency import Currency
 from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
 from pragma_sdk.common.exceptions import PublisherFetchError
@@ -77,7 +74,11 @@ ASSET_MAPPING: Dict[str, Any] = {
     "BLUR": ("eth", "0x5283d291dbcf85356a21ba090e6db59121208b44"),
     "DPI": ("eth", "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"),
     "MVI": ("eth", "0x72e364f2abdc788b7e918bc238b21f109cd634d7"),
-    "NSTR": ("eth", "0x610dbd98a28ebba525e9926b6aaf88f9159edbfd"),
+    # Nostra's token lives on Starknet; the eth address was an unrelated "NSTR".
+    "NSTR": (
+        "starknet-alpha",
+        "0x00c530f2c0aa4c16a0806365b0898499fba372e5df7a7172dc6fe9ba777e8007",
+    ),
     "BROTHER": (
         "starknet-alpha",
         "0x3b405a98c9e795d427fe82cdeeeed803f221b52471e3a757574a2b4180793ee",
@@ -89,127 +90,166 @@ ASSET_MAPPING: Dict[str, Any] = {
 }
 
 
+def _normalize(address: str) -> str:
+    """GeckoTerminal pads Starknet addresses (0x0124…) where our mapping does not."""
+    try:
+        return hex(int(address, 16))
+    except (TypeError, ValueError):
+        return address.lower()
+
+
 class GeckoTerminalFetcher(FetcherInterfaceT):
-    BASE_URL: str = (
-        "https://api.geckoterminal.com/api/v2/networks/{network}/tokens/{token_address}"
-    )
+    """
+    One request per network for every configured token (the public API
+    rate-limits after three calls in a burst, and a 429 payload has no data).
+    A token is only a price when GeckoTerminal sees real liquidity behind it:
+    MIN_RESERVE_USD across its pools and some 24h volume.
+    """
+
+    BASE_URL: str = "https://api.geckoterminal.com/api/v2/networks/{network}/tokens/multi/{addresses}"
     SOURCE: str = "GECKOTERMINAL"
+    MIN_RESERVE_USD: float = 20_000
+    MIN_VOLUME_24H_USD: float = 10
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
     ) -> SpotEntry | PublisherFetchError:
-        if pair.quote_currency.id not in ("USD", "USDPLUS"):
-            return await self.operate_usd_hop(pair, session)
-        pool = ASSET_MAPPING.get(pair.base_currency.id)
-        if pool is None:
-            return PublisherFetchError(
-                f"Unknown price pair, do not know how to query GeckoTerminal for {pair.base_currency}"
-            )
-        url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
-
-        async with session.get(url, headers=self.headers) as resp:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-            result = await resp.json()
-            if (
-                result.get("errors") is not None
-                and result["errors"][0]["title"] == "Not Found"
-            ):
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-
-        return self._construct(pair, result)
+        results = await self.fetch_pairs([pair], session)
+        return results[0]  # type: ignore[return-value]
 
     async def fetch(
         self, session: ClientSession
     ) -> List[Entry | PublisherFetchError | BaseException]:
-        entries = [
-            asyncio.ensure_future(self.fetch_pair(pair, session)) for pair in self.pairs
-        ]
-        return list(await asyncio.gather(*entries, return_exceptions=True))
+        return await self.fetch_pairs(self.pairs, session)
 
     def format_url(self, pair: Pair) -> str:
         pool = ASSET_MAPPING[pair.base_currency.id]
-        url = self.BASE_URL.format(network=pool[0], token_address=pool[1])
-        return url
+        return self.BASE_URL.format(network=pool[0], addresses=pool[1])
 
-    async def operate_usd_hop(
-        self, pair: Pair, session: ClientSession
-    ) -> SpotEntry | PublisherFetchError:
-        pool_1 = ASSET_MAPPING.get(pair.base_currency.id)
-        pool_2 = ASSET_MAPPING.get(pair.quote_currency.id)
-        if pool_1 is None or pool_2 is None:
+    async def fetch_pairs(
+        self, pairs: List[Pair], session: ClientSession
+    ) -> List[Entry | PublisherFetchError | BaseException]:
+        # tokens needed per network: the base, and the quote when it is not USD
+        needed: Dict[str, Dict[str, str]] = {}
+        unknown: Dict[int, PublisherFetchError] = {}
+        for idx, pair in enumerate(pairs):
+            for currency in self._tokens_for(pair):
+                pool = ASSET_MAPPING.get(currency)
+                if pool is None:
+                    unknown[idx] = PublisherFetchError(
+                        f"Unknown price pair, do not know how to query GeckoTerminal "
+                        f"for {pair.base_currency} to {pair.quote_currency}"
+                    )
+                    break
+                needed.setdefault(pool[0], {})[_normalize(pool[1])] = currency
+
+        quotes: Dict[str, Dict[str, Any] | PublisherFetchError] = {}
+        for network, addresses in needed.items():
+            quotes.update(await self._fetch_network(network, list(addresses), session))
+
+        entries: List[Entry | PublisherFetchError | BaseException] = []
+        for idx, pair in enumerate(pairs):
+            if idx in unknown:
+                entries.append(unknown[idx])
+                continue
+            entries.append(self._construct(pair, quotes))
+        return entries
+
+    @staticmethod
+    def _tokens_for(pair: Pair) -> List[str]:
+        tokens = [pair.base_currency.id]
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
+            tokens.append(pair.quote_currency.id)
+        return tokens
+
+    async def _fetch_network(
+        self, network: str, addresses: List[str], session: ClientSession
+    ) -> Dict[str, Dict[str, Any] | PublisherFetchError]:
+        """Price attributes per lowercase address, or one error for all of them."""
+        url = self.BASE_URL.format(network=network, addresses=",".join(addresses))
+        async with session.get(url, headers=self.headers) as resp:
+            try:
+                result = await resp.json()
+            except Exception:  # noqa: BLE001
+                result = None
+            if (
+                resp.status != 200
+                or not isinstance(result, dict)
+                or "data" not in result
+            ):
+                detail = (
+                    (result.get("status") or {}).get("error_message")
+                    if isinstance(result, dict)
+                    else None
+                )
+                error = PublisherFetchError(
+                    f"GeckoTerminal {network}: HTTP {resp.status}"
+                    + (f", {detail}" if detail else "")
+                )
+                return {address: error for address in addresses}
+        found: Dict[str, Dict[str, Any] | PublisherFetchError] = {}
+        for token in result.get("data") or []:
+            attributes = token.get("attributes") or {}
+            address = _normalize(str(attributes.get("address", "")))
+            if address:
+                found[address] = attributes
+        for address in addresses:
+            found.setdefault(
+                address,
+                PublisherFetchError(f"No data found for {address} from GeckoTerminal"),
+            )
+        return found
+
+    def _usd_price(
+        self, currency: str, quotes: Dict[str, Dict[str, Any] | PublisherFetchError]
+    ) -> float | PublisherFetchError:
+        pool = ASSET_MAPPING[currency]
+        attributes = quotes.get(_normalize(pool[1]))
+        if attributes is None:
             return PublisherFetchError(
-                f"Unknown price pair, do not know how to query GeckoTerminal for hop {pair.base_currency} to {pair.quote_currency}"
+                f"No data found for {currency} from GeckoTerminal"
             )
-
-        pair1_url = self.format_url(
-            Pair(
-                pair.base_currency,
-                Currency.from_asset_config(AssetConfig.from_ticker("USD")),
+        if isinstance(attributes, PublisherFetchError):
+            return attributes
+        try:
+            price = float(attributes["price_usd"])
+            reserve = float(attributes.get("total_reserve_in_usd") or 0)
+            volume = float((attributes.get("volume_usd") or {}).get("h24") or 0)
+        except (TypeError, ValueError, KeyError):
+            return PublisherFetchError(
+                f"No data found for {currency} from GeckoTerminal"
             )
-        )
-
-        async with session.get(pair1_url, headers=self.headers) as resp:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-            result = await resp.json()
-            if (
-                result.get("errors") is not None
-                and result["errors"][0]["title"] == "Not Found"
-            ):
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-
-        pair2_url = self.format_url(
-            Pair(
-                pair.quote_currency,
-                Currency.from_asset_config(AssetConfig.from_ticker("USD")),
+        if price <= 0:
+            return PublisherFetchError(f"No price for {currency} from GeckoTerminal")
+        if reserve < self.MIN_RESERVE_USD or volume < self.MIN_VOLUME_24H_USD:
+            return PublisherFetchError(
+                f"{currency} on GeckoTerminal is too thin to be a price: "
+                f"reserve ${reserve:,.0f} (min ${self.MIN_RESERVE_USD:,.0f}), "
+                f"24h volume ${volume:,.0f} (min ${self.MIN_VOLUME_24H_USD:,.0f})"
             )
-        )
-        async with session.get(pair2_url, headers=self.headers) as resp2:
-            if resp.status == 404:
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-            hop_result = await resp2.json()
-            if (
-                result.get("errors") is not None
-                and result["errors"][0]["title"] == "Not Found"
-            ):
-                return PublisherFetchError(
-                    f"No data found for {pair} from GeckoTerminal"
-                )
-        return self._construct(pair, result, hop_result)
+        return price
 
     def _construct(
-        self, pair: Pair, result: Any, hop_result: Optional[Any] = None
-    ) -> SpotEntry:
-        data = result["data"]["attributes"]
-        price = float(data["price_usd"])
-        decimals = pair.decimals()
-        if hop_result is not None:
-            hop_price = float(hop_result["data"]["attributes"]["price_usd"])
-            price_int = int(hop_price / price * 10**decimals)
-        else:
-            price_int = int(price * (10**decimals))
+        self, pair: Pair, quotes: Dict[str, Dict[str, Any] | PublisherFetchError]
+    ) -> SpotEntry | PublisherFetchError:
+        base = self._usd_price(pair.base_currency.id, quotes)
+        if isinstance(base, PublisherFetchError):
+            return base
+        price = base
+        if pair.quote_currency.id not in ("USD", "USDPLUS"):
+            quote = self._usd_price(pair.quote_currency.id, quotes)
+            if isinstance(quote, PublisherFetchError):
+                return quote
+            price = base / quote
 
-        volume = float(data["volume_usd"]["h24"])
-
-        timestamp = int(time.time())
-
+        attributes = quotes[_normalize(ASSET_MAPPING[pair.base_currency.id][1])]
+        volume = float((attributes.get("volume_usd") or {}).get("h24") or 0)  # type: ignore[union-attr]
+        price_int = int(price * (10 ** pair.decimals()))
         logger.debug("Fetched price %d for %s from GeckoTerminal", price_int, pair)
-
         return SpotEntry(
             pair_id=pair.id,
             price=price_int,
-            timestamp=timestamp,
+            timestamp=int(time.time()),
             source=self.SOURCE,
             publisher=self.publisher,
             volume=int(volume),
