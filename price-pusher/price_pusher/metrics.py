@@ -67,9 +67,12 @@ class PrometheusMetrics:
         )
         self.last_push = Gauge(
             "pragma_pusher_last_push_timestamp_seconds",
-            "Unix time of the last successful push",
+            "Unix time of the last successful push (process start until the first one)",
             registry=r,
         )
+        # A gauge exports 0 until set: "no push for 15m" would fire at every
+        # restart. Count from process start instead.
+        self.last_push.set(time.time())
 
     # --- FetcherMetrics protocol ---
     def entry(self, pair: str, source: str) -> None:

@@ -131,8 +131,11 @@ class FetcherClient:
                 by_pair.setdefault(pair_id, []).append(idx)
         out = list(values)
         for pair_id, idxs in by_pair.items():
-            if len(idxs) < 3:
+            if len(idxs) < 2:
                 continue
+            # the deviation is measured and exported from 2 sources on (the
+            # drift alert is the only net thinly covered pairs have); the
+            # rejection below still needs a consensus of 3 other sources.
             for idx in idxs:
                 entry = values[idx]
                 others = [values[j].price for j in idxs if j != idx]
