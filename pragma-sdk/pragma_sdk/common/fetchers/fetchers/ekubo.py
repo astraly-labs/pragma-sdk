@@ -41,7 +41,13 @@ ORACLE_TOKEN: Dict[Network, str] = {
 }
 GET_PRICES_SELECTOR = get_selector_from_name("get_prices")
 PERIOD = 3600  # one hour
-MIN_TOKENS = int(1e18)
+# Minimum liquidity of the base token's oracle pool, in oracle-token units
+# (EKUBO, 18 decimals). 1e18 was one EKUBO, fifty cents: the LORDS/EKUBO pool
+# passed it with $25 of liquidity and printed -12% for days. 1e20 (~$50) keeps
+# ETH, USDT, WBTC, STRK and EKUBO and drops the dust pools (LORDS, XSTRK,
+# SSTRK, BROTHER as of 2026-09); those pairs are served by other sources and,
+# for the LSTs, by the CONVERSION_* pairs.
+MIN_TOKENS = int(1e20)
 
 
 class EkuboStatus(IntEnum):

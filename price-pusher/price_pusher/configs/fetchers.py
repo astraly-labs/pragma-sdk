@@ -89,8 +89,21 @@ CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset(
 # (everything else in the config is hidden from it). Used to source a single
 # illiquid asset from one specific source without activating that fetcher for
 # all of its other supported assets.
+# GeckoTerminal also covers the Starknet-native pairs that lost Ekubo when its
+# liquidity floor went to ~$50 (dust oracle pools), so none of them loses a
+# source: LORDS and NSTR go to 3, XSTRK and BROTHER/USDPLUS keep 2, SSTRK 1
+# (its honest price is CONVERSION_SSTRK/USD anyway).
 FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
-    GeckoTerminalFetcher: frozenset({"SURVIVOR/USD"}),
+    GeckoTerminalFetcher: frozenset(
+        {
+            "SURVIVOR/USD",
+            "LORDS/USD",
+            "NSTR/USD",
+            "XSTRK/USD",
+            "SSTRK/USD",
+            "BROTHER/USDPLUS",
+        }
+    ),
 }
 
 # Per-fetcher denylist: a fetcher listed here NEVER fetches the given pairs.
