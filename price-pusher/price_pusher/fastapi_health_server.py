@@ -2,7 +2,9 @@ import time
 import logging
 from typing import Optional
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+
+from price_pusher.metrics import PrometheusMetrics
 import uvicorn
 
 logger = logging.getLogger(__name__)
@@ -14,7 +16,12 @@ class FastAPIHealthServer:
     Returns healthy status while warming up, then monitors push frequency.
     """
 
-    def __init__(self, port: int = 8080, max_seconds_without_push: int = 300):
+    def __init__(
+        self,
+        port: int = 8080,
+        max_seconds_without_push: int = 300,
+        metrics: PrometheusMetrics | None = None,
+    ):
         """
         Initialize the FastAPI health server.
 
@@ -27,6 +34,7 @@ class FastAPIHealthServer:
         self.max_seconds_without_push = max_seconds_without_push
         self.startup_time = time.time()
         self.total_pushes = 0
+        self.metrics = metrics or PrometheusMetrics()
         self.app = FastAPI(title="Price Pusher Health Server", version="1.0.0")
         self._setup_routes()
 
@@ -131,7 +139,14 @@ class FastAPIHealthServer:
 
         @self.app.get("/metrics")
         async def metrics():
-            """Basic metrics endpoint"""
+            """Prometheus exposition: fetcher rejections, deviations, reference
+            failures, stablecoin prices, pushes. Scraped by the PodMonitor."""
+            body, content_type = self.metrics.exposition()
+            return Response(content=body, media_type=content_type)
+
+        @self.app.get("/metrics/json")
+        async def metrics_json():
+            """Basic metrics endpoint (legacy JSON)"""
             current_time = time.time()
             return JSONResponse(
                 content={
@@ -152,6 +167,7 @@ class FastAPIHealthServer:
         """Called by pusher after successful push"""
         self.last_push_timestamp = time.time()
         self.total_pushes += 1
+        self.metrics.push_succeeded()
         logger.debug(f"FastAPI Health server: Push #{self.total_pushes} recorded")
 
     async def start(self) -> None:

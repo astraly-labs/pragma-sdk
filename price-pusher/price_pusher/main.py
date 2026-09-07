@@ -28,6 +28,8 @@ from price_pusher.orchestrator import Orchestrator
 from price_pusher.price_types import Network
 from price_pusher.health_server import HealthServer
 from price_pusher.fastapi_health_server import FastAPIHealthServer
+from price_pusher.metrics import PrometheusMetrics
+from pragma_sdk.common.fetchers.metrics import set_metrics_sink
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +85,14 @@ async def main(
     health_server = None
     if health_port:
         if health_server_type.lower() == "fastapi":
+            prometheus = PrometheusMetrics()
+            # every fetcher rejection, deviation and reference failure in the
+            # SDK lands in this registry, exposed on /metrics
+            set_metrics_sink(prometheus)
             health_server = FastAPIHealthServer(
                 port=health_port,
                 max_seconds_without_push=max_seconds_without_push or 300,
+                metrics=prometheus,
             )
         else:
             health_server = HealthServer(

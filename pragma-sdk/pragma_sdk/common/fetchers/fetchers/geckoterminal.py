@@ -102,14 +102,16 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
     """
     One request per network for every configured token (the public API
     rate-limits after three calls in a burst, and a 429 payload has no data).
-    A token is only a price when GeckoTerminal sees real liquidity behind it:
-    MIN_RESERVE_USD across its pools and some 24h volume.
+    A token is only a price when GeckoTerminal sees real liquidity behind it
+    (MIN_RESERVE_USD across its pools) and still trades at all (non-zero 24h
+    volume). The volume check is a dead-market check, nothing more: the API
+    aggregates volume over every pool while the price comes from the main one,
+    and 24h is slow. Freshness beyond that is the cross-source guard's job.
     """
 
     BASE_URL: str = "https://api.geckoterminal.com/api/v2/networks/{network}/tokens/multi/{addresses}"
     SOURCE: str = "GECKOTERMINAL"
     MIN_RESERVE_USD: float = 20_000
-    MIN_VOLUME_24H_USD: float = 10
 
     async def fetch_pair(
         self, pair: Pair, session: ClientSession
@@ -221,11 +223,11 @@ class GeckoTerminalFetcher(FetcherInterfaceT):
             )
         if price <= 0:
             return PublisherFetchError(f"No price for {currency} from GeckoTerminal")
-        if reserve < self.MIN_RESERVE_USD or volume < self.MIN_VOLUME_24H_USD:
+        if reserve < self.MIN_RESERVE_USD or volume <= 0:
             return PublisherFetchError(
                 f"{currency} on GeckoTerminal is too thin to be a price: "
                 f"reserve ${reserve:,.0f} (min ${self.MIN_RESERVE_USD:,.0f}), "
-                f"24h volume ${volume:,.0f} (min ${self.MIN_VOLUME_24H_USD:,.0f})"
+                f"24h volume ${volume:,.0f}"
             )
         return price
 

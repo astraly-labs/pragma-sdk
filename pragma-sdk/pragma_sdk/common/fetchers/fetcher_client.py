@@ -10,6 +10,7 @@ from pragma_sdk.common.types.entry import Entry
 from pragma_sdk.common.utils import add_sync_methods, felt_to_str
 from pragma_sdk.common.fetchers.interface import FetcherInterfaceT
 from pragma_sdk.common.exceptions import PublisherFetchError
+from pragma_sdk.common.fetchers.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
@@ -97,36 +98,73 @@ class FetcherClient:
                 pair_id,
                 source,
             )
+            metrics().rejected(pair_id, source, "zero_price")
             return PublisherFetchError(
                 f"Non-positive price {price} for {pair_id} from {source}"
             )
         return value
 
-    # Entries further than this from the cross-source median of their pair are
-    # logged (not dropped): the alert hook for dead or drifting markets.
+    # Cross-source deviation, measured per pair against the median of the
+    # *other* sources fetched in the same round.
+    #   * beyond DEVIATION_WARN_THRESHOLD: logged, the alert hook;
+    #   * beyond DEVIATION_REJECT_THRESHOLD with at least
+    #     DEVIATION_REJECT_MIN_SOURCES sources: the entry is replaced by an
+    #     error and never reaches the chain. A wrong entry left in storage is
+    #     half the price on the day the pair drops to two fresh sources.
+    # Thinly covered pairs (2-3 sources) are never rejected: two values cannot
+    # be told apart, and illiquid tokens legitimately spread a few percent.
     DEVIATION_WARN_THRESHOLD: float = 0.05
+    DEVIATION_REJECT_THRESHOLD: float = 0.10
+    DEVIATION_REJECT_MIN_SOURCES: int = 4
 
     @classmethod
-    def _warn_cross_source_deviation(cls, values: List[Entry | BaseException]) -> None:
+    def _guard_cross_source_deviation(
+        cls, values: List[Entry | BaseException]
+    ) -> List[Entry | BaseException]:
         by_pair: dict = {}
-        for value in values:
+        for idx, value in enumerate(values):
             price = getattr(value, "price", None)
             pair_id = getattr(value, "pair_id", None)
             if isinstance(price, (int, float)) and price > 0 and pair_id is not None:
-                by_pair.setdefault(pair_id, []).append(value)
-        for pair_id, entries in by_pair.items():
-            if len(entries) < 3:
+                by_pair.setdefault(pair_id, []).append(idx)
+        out = list(values)
+        for pair_id, idxs in by_pair.items():
+            if len(idxs) < 3:
                 continue
-            med = statistics.median(e.price for e in entries)
-            for e in entries:
-                dev = (e.price - med) / med
-                if abs(dev) > cls.DEVIATION_WARN_THRESHOLD:
+            for idx in idxs:
+                entry = values[idx]
+                others = [values[j].price for j in idxs if j != idx]
+                med = statistics.median(others)
+                if med <= 0:
+                    continue
+                dev = (entry.price - med) / med
+                source = felt_to_str(getattr(getattr(entry, "base", None), "source", 0))
+                metrics().deviation(felt_to_str(pair_id), source, dev)
+                if (
+                    abs(dev) > cls.DEVIATION_REJECT_THRESHOLD
+                    and len(idxs) >= cls.DEVIATION_REJECT_MIN_SOURCES
+                ):
+                    logger.warning(
+                        "[⚠️ Fetcher] Rejecting %s from %s: %+.1f%% off the median of "
+                        "%d other sources",
+                        felt_to_str(pair_id),
+                        source,
+                        dev * 100,
+                        len(others),
+                    )
+                    metrics().rejected(felt_to_str(pair_id), source, "deviation")
+                    out[idx] = PublisherFetchError(
+                        f"{felt_to_str(pair_id)} from {source} is {dev:+.1%} off the "
+                        f"median of {len(others)} other sources, not publishing"
+                    )
+                elif abs(dev) > cls.DEVIATION_WARN_THRESHOLD:
                     logger.warning(
                         "[⚠️ Fetcher] %s from %s is %+.1f%% off the cross-source median",
                         felt_to_str(pair_id),
-                        felt_to_str(getattr(getattr(e, "base", None), "source", 0)),
+                        source,
                         dev * 100,
                     )
+        return out
 
     async def fetch(
         self,
@@ -191,7 +229,13 @@ class FetcherClient:
             result = [r if isinstance(r, list) else [r] for r in result]
             result = [val for subl in result for val in subl]  # flatten
             result = [self._reject_zero_price(val) for val in result]
-            self._warn_cross_source_deviation(result)
+            result = self._guard_cross_source_deviation(result)
+            for val in result:
+                if getattr(val, "pair_id", None) is not None and hasattr(val, "price"):
+                    metrics().entry(
+                        felt_to_str(val.pair_id),
+                        felt_to_str(getattr(getattr(val, "base", None), "source", 0)),
+                    )
 
             if filter_exceptions:
                 result = [
