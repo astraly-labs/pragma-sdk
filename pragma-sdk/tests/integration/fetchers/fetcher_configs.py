@@ -5,7 +5,6 @@ from pragma_sdk.common.fetchers.fetchers import (
     CoinbaseFetcher,
     OkxFetcher,
     EkuboFetcher,
-    GeckoTerminalFetcher,
     DexscreenerFetcher,
 )
 from pragma_sdk.common.fetchers.future_fetchers import (
@@ -176,29 +175,6 @@ FUTURE_FETCHER_CONFIGS = {
 }
 
 ONCHAIN_FETCHER_CONFIGS = {
-    "GeckoTerminalFetcher": {
-        "mock_file": MOCK_DIR / "responses" / "gecko.json",
-        "fetcher_class": GeckoTerminalFetcher,
-        "name": "GeckoTerminal",
-        "expected_result": [
-            SpotEntry(
-                "LUSD/USD",
-                98898157,
-                12345,
-                "GECKOTERMINAL",
-                PUBLISHER_NAME,
-                volume=1264558,
-            ),
-            SpotEntry(
-                "WBTC/USD",
-                2580468000000,
-                12345,
-                "GECKOTERMINAL",
-                PUBLISHER_NAME,
-                volume=90241580,
-            ),
-        ],
-    },
     "DexscreenerFetcher": {
         "mock_file": MOCK_DIR / "responses" / "dexscreener.json",
         "fetcher_class": DexscreenerFetcher,
