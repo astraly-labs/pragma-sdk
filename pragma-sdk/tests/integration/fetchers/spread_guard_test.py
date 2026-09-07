@@ -14,7 +14,9 @@ from pragma_sdk.common.exceptions import PublisherFetchError
 from pragma_sdk.common.fetchers.fetchers import (
     BinanceFetcher,
     HuobiFetcher,
+    KucoinFetcher,
     LbankFetcher,
+    OkxFetcher,
 )
 from pragma_sdk.common.types.entry import SpotEntry
 from pragma_sdk.common.types.pair import Pair
@@ -90,3 +92,69 @@ async def test_lbank_payload_without_data_is_a_clean_error():
         async with aiohttp.ClientSession() as session:
             [result] = await fetcher.fetch(session)
     assert isinstance(result, PublisherFetchError)
+
+
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.asyncio
+async def test_okx_spread_guard_and_error_envelopes():
+    fetcher = OkxFetcher([STRK_USD], PUBLISHER_NAME)
+    url = fetcher.format_url(STRK_USDT)
+    cases = [
+        (
+            {
+                "code": "0",
+                "msg": "",
+                "data": [
+                    {
+                        "last": "0.03073",
+                        "bidPx": "0.03073",
+                        "askPx": "0.03074",
+                        "volCcy24h": "1",
+                    }
+                ],
+            },
+            True,
+        ),
+        (
+            {
+                "code": "0",
+                "msg": "",
+                "data": [
+                    {
+                        "last": "0.0301",
+                        "bidPx": "0.0298",
+                        "askPx": "0.0305",
+                        "volCcy24h": "1",
+                    }
+                ],
+            },
+            False,
+        ),
+        ({"code": "50011", "msg": "Too Many Requests", "data": []}, False),
+        ({"code": "51001", "data": [], "msg": "Instrument ID doesn't exist."}, False),
+    ]
+    for payload, ok in cases:
+        with aioresponses() as m:
+            m.get(url, payload=payload)
+            async with aiohttp.ClientSession() as session:
+                [result] = await fetcher.fetch(session)
+        assert isinstance(result, SpotEntry) is ok, payload
+        if not ok:
+            assert isinstance(result, PublisherFetchError)
+
+
+@mock.patch("time.time", mock.MagicMock(return_value=12345))
+@pytest.mark.asyncio
+async def test_kucoin_spread_guard():
+    fetcher = KucoinFetcher([STRK_USD], PUBLISHER_NAME)
+    url = fetcher.format_url(STRK_USDT)
+    for bid, ask, ok in [("0.03073", "0.03074", True), ("0.0298", "0.0305", False)]:
+        payload = {
+            "code": "200000",
+            "data": {"price": "0.0303", "bestBid": bid, "bestAsk": ask},
+        }
+        with aioresponses() as m:
+            m.get(url, payload=payload)
+            async with aiohttp.ClientSession() as session:
+                [result] = await fetcher.fetch(session)
+        assert isinstance(result, SpotEntry) is ok, (bid, ask)

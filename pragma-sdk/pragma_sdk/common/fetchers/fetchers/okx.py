@@ -48,10 +48,15 @@ class OkxFetcher(FetcherInterfaceT):
                 raise ValueError(f"OKX: Unexpected content type: {content_type}")
 
             if (
-                result["code"] == "51001"
-                or result["msg"] == "Instrument ID does not exist"
+                not isinstance(result, dict)
+                or result.get("code") != "0"
+                or not result.get("data")
             ):
-                return PublisherFetchError(f"No data found for {pair} from OKX")
+                # 51001 unknown instrument, 50011 rate limit, empty data...
+                return PublisherFetchError(
+                    f"No data found for {pair} from OKX: "
+                    f"{result.get('msg') if isinstance(result, dict) else result}"
+                )
 
             return self._construct(pair, result, usdt_price)
 
@@ -70,10 +75,17 @@ class OkxFetcher(FetcherInterfaceT):
         url = f"{self.BASE_URL}?instId={pair.base_currency.id}-{pair.quote_currency.id}-SWAP"
         return url
 
-    def _construct(self, pair: Pair, result: Any, usdt_price: float = 1) -> SpotEntry:
+    def _construct(
+        self, pair: Pair, result: Any, usdt_price: float = 1
+    ) -> SpotEntry | PublisherFetchError:
         data = result["data"][0]
 
         timestamp = int(time.time())
+        spread_error = self.reject_wide_spread(
+            pair, float(data["bidPx"]), float(data["askPx"])
+        )
+        if spread_error is not None:
+            return spread_error
         price = float(data["last"]) * usdt_price
         price_int = int(price * (10 ** pair.decimals()))
         volume = float(data["volCcy24h"])

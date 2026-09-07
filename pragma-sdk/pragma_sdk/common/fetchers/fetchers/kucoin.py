@@ -103,7 +103,12 @@ class KucoinFetcher(FetcherInterfaceT):
         result: Any,
         hop_result: Optional[Any] = None,
         usdt_price: float = 1,
-    ) -> SpotEntry:
+    ) -> SpotEntry | PublisherFetchError:
+        spread_error = self.reject_wide_spread(
+            pair, float(result["data"]["bestBid"]), float(result["data"]["bestAsk"])
+        )
+        if spread_error is not None:
+            return spread_error
         price = float(result["data"]["price"]) * usdt_price
         if hop_result is not None:
             hop_price = float(hop_result["data"]["price"])

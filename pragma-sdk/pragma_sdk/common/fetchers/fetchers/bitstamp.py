@@ -53,6 +53,11 @@ class BitstampFetcher(FetcherInterfaceT):
                 f"No data found for {pair} from Bitstamp: market has no 24h volume"
             )
         timestamp = int(time.time())
+        spread_error = self.reject_wide_spread(
+            pair, float(result["bid"]), float(result["ask"])
+        )
+        if spread_error is not None:
+            return spread_error
         price = float(result["last"])
         price_int = int(price * (10 ** pair.decimals()))
 
