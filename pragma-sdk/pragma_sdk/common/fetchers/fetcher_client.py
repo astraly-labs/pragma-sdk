@@ -106,16 +106,18 @@ class FetcherClient:
 
     # Cross-source deviation, measured per pair against the median of the
     # *other* sources fetched in the same round.
-    #   * beyond DEVIATION_WARN_THRESHOLD: logged, the alert hook;
-    #   * beyond DEVIATION_REJECT_THRESHOLD with at least
-    #     DEVIATION_REJECT_MIN_SOURCES sources: the entry is replaced by an
-    #     error and never reaches the chain. A wrong entry left in storage is
-    #     half the price on the day the pair drops to two fresh sources.
-    # Thinly covered pairs (2-3 sources) are never rejected: two values cannot
-    # be told apart, and illiquid tokens legitimately spread a few percent.
+    #   * beyond DEVIATION_WARN_THRESHOLD: logged and exported, the alert hook;
+    #   * beyond DEVIATION_REJECT_THRESHOLD *against a consensus*: the entry is
+    #     replaced by an error and never reaches the chain. A wrong entry left
+    #     in storage is half the price on the day the pair drops to two fresh
+    #     sources.
+    # A consensus is at least DEVIATION_CONSENSUS_MIN other sources that agree
+    # with each other (within the reject threshold of their median). Nothing
+    # is rejected without one: with 2 vs 2 nobody can tell which side is
+    # right, so everything is published and the drift alert fires instead.
     DEVIATION_WARN_THRESHOLD: float = 0.05
     DEVIATION_REJECT_THRESHOLD: float = 0.10
-    DEVIATION_REJECT_MIN_SOURCES: int = 4
+    DEVIATION_CONSENSUS_MIN: int = 3
 
     @classmethod
     def _guard_cross_source_deviation(
@@ -140,22 +142,25 @@ class FetcherClient:
                 dev = (entry.price - med) / med
                 source = felt_to_str(getattr(getattr(entry, "base", None), "source", 0))
                 metrics().deviation(felt_to_str(pair_id), source, dev)
+                consensus = sum(
+                    abs(p - med) / med <= cls.DEVIATION_REJECT_THRESHOLD for p in others
+                )
                 if (
                     abs(dev) > cls.DEVIATION_REJECT_THRESHOLD
-                    and len(idxs) >= cls.DEVIATION_REJECT_MIN_SOURCES
+                    and consensus >= cls.DEVIATION_CONSENSUS_MIN
                 ):
                     logger.warning(
-                        "[⚠️ Fetcher] Rejecting %s from %s: %+.1f%% off the median of "
+                        "[⚠️ Fetcher] Rejecting %s from %s: %+.1f%% off a consensus of "
                         "%d other sources",
                         felt_to_str(pair_id),
                         source,
                         dev * 100,
-                        len(others),
+                        consensus,
                     )
                     metrics().rejected(felt_to_str(pair_id), source, "deviation")
                     out[idx] = PublisherFetchError(
-                        f"{felt_to_str(pair_id)} from {source} is {dev:+.1%} off the "
-                        f"median of {len(others)} other sources, not publishing"
+                        f"{felt_to_str(pair_id)} from {source} is {dev:+.1%} off a "
+                        f"consensus of {consensus} other sources, not publishing"
                     )
                 elif abs(dev) > cls.DEVIATION_WARN_THRESHOLD:
                     logger.warning(
