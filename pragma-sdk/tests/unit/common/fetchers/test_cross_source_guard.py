@@ -52,10 +52,32 @@ def test_three_against_two_rejects_the_minority():
     assert [isinstance(v, SpotEntry) for v in out] == [True, True, True, False, False]
 
 
-def test_two_sources_are_never_rejected():
-    values = _entries("NSTR/USD", [0.0061, 0.0080])
-    out = FetcherClient._guard_cross_source_deviation(values)
+def test_two_sources_are_never_rejected_but_measured():
+    from pragma_sdk.common.fetchers import metrics as m
+
+    class Rec:
+        def __init__(self):
+            self.devs = []
+
+        def deviation(self, pair, source, deviation):
+            self.devs.append((pair, source, round(deviation, 3)))
+
+        def __getattr__(self, name):
+            return lambda *a, **k: None
+
+    rec = Rec()
+    m.set_metrics_sink(rec)
+    try:
+        values = _entries("NSTR/USD", [0.0061, 0.0080], ["DEFILLAMA", "GECKOTERMINAL"])
+        out = FetcherClient._guard_cross_source_deviation(values)
+    finally:
+        m.set_metrics_sink(None)
     assert all(isinstance(v, SpotEntry) for v in out)
+    # the drift alert is the only net these pairs have: it must see them
+    assert rec.devs == [
+        ("NSTR/USD", "DEFILLAMA", round(0.0061 / 0.0080 - 1, 3)),
+        ("NSTR/USD", "GECKOTERMINAL", round(0.0080 / 0.0061 - 1, 3)),
+    ]
 
 
 def test_pairs_are_judged_independently_and_errors_pass_through():
