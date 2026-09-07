@@ -39,6 +39,19 @@ def test_three_sources_are_never_rejected():
     assert all(isinstance(v, SpotEntry) for v in out)
 
 
+def test_two_against_two_rejects_nobody():
+    # no camp has three sources: nobody can tell which side is right
+    values = _entries("BTC/USD", [80000, 80010, 90000, 90100])
+    out = FetcherClient._guard_cross_source_deviation(values)
+    assert all(isinstance(v, SpotEntry) for v in out)
+
+
+def test_three_against_two_rejects_the_minority():
+    values = _entries("BTC/USD", [80000, 80010, 79990, 90000, 90100])
+    out = FetcherClient._guard_cross_source_deviation(values)
+    assert [isinstance(v, SpotEntry) for v in out] == [True, True, True, False, False]
+
+
 def test_two_sources_are_never_rejected():
     values = _entries("NSTR/USD", [0.0061, 0.0080])
     out = FetcherClient._guard_cross_source_deviation(values)
