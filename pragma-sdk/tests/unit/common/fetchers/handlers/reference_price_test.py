@@ -275,3 +275,40 @@ async def test_usd_and_usdplus_never_query_venues():
         async with aiohttp.ClientSession() as session:
             assert await provider.get_price("USD", "USD", session) == 1.0
             assert await provider.get_price("USDPLUS", "USD", session) == 1.0
+
+
+@pytest.mark.asyncio
+async def test_reference_reuses_a_fresh_verified_value_when_venues_fail():
+    # 5 of 9 venues timing out must not drop WSTETH/LBTC/... when ETH/USD
+    # was verified moments ago.
+    provider = three_venues(cache_ttl_seconds=0)
+    with aioresponses() as m:
+        m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
+        m.get(KRAKEN, payload=_kraken_payload("2447.34"))
+        m.get(BINANCE, payload={"price": "2448.32"})
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 2447.34
+    with aioresponses() as m:
+        m.get(COINBASE, status=503)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 2447.34
+
+
+@pytest.mark.asyncio
+async def test_venue_failures_are_logged_with_their_type():
+    from unittest import mock
+
+    provider = three_venues()
+    with (
+        aioresponses() as m,
+        mock.patch(
+            "pragma_sdk.common.fetchers.handlers.reference_price.logger"
+        ) as logger,
+    ):
+        m.get(COINBASE, exception=TimeoutError())
+        m.get(KRAKEN, payload=_kraken_payload("2447.34"))
+        m.get(BINANCE, payload={"price": "2448.32"})
+        async with aiohttp.ClientSession() as session:
+            await provider.get_price("ETH", "USD", session)
+    logged = [c.args for c in logger.warning.call_args_list]
+    assert any("TimeoutError" in str(args) for args in logged)

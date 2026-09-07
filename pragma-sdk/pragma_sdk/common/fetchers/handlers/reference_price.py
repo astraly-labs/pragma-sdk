@@ -39,6 +39,10 @@ STABLE_TICKERS = frozenset({"USD", "USDT", "USDC", "DAI", "USDPLUS"})
 CHECKED_STABLES = frozenset({"USDT", "USDC", "DAI"})
 STABLE_BAND = 0.02  # beyond this we log a depeg, the value is still used
 STABLE_MAX_AGE_SECONDS = 300
+# Same fallback for ETH/USD, BTC/USD...: a venue hiccup must not drop every
+# hopped pair (WSTETH, LBTC, UNIBTC, MRE7BTC) when a value was verified
+# moments ago.
+REFERENCE_MAX_AGE_SECONDS = 300
 
 # Kraken uses legacy codes for a few assets.
 _KRAKEN_ALIASES = {"BTC": "XBT", "DOGE": "XDG"}
@@ -183,8 +187,9 @@ class ReferencePriceProvider:
     stable_quorum: int = 2
     stable_band: float = STABLE_BAND
     stable_max_age_seconds: float = STABLE_MAX_AGE_SECONDS
+    reference_max_age_seconds: float = REFERENCE_MAX_AGE_SECONDS
     max_deviation: float = 0.02
-    timeout_seconds: float = 3.0
+    timeout_seconds: float = 6.0
     cache_ttl_seconds: float = 10.0
     _cache: Dict[str, Tuple[float, float]] = field(default_factory=dict)
     # One lock per ticker: 20+ fetchers ask for ETH/USD at the same instant on
@@ -219,9 +224,37 @@ class ReferencePriceProvider:
             if ticker in STABLE_TICKERS:
                 price = await self._checked_stable(ticker, session)
             else:
-                price = await self._query_sources(ticker, session)
+                price = await self._reference_with_fallback(ticker, session)
             self._cache[ticker] = (price, time.monotonic())
             return price
+
+    async def _reference_with_fallback(
+        self, ticker: str, session: ClientSession
+    ) -> float:
+        """
+        Venue median for a non-stable ticker; when the quorum cannot be met,
+        the last verified value is reused if younger than
+        `reference_max_age_seconds`, otherwise ReferencePriceError.
+        """
+        try:
+            price = await self._query_sources(ticker, session)
+        except ReferencePriceError as e:
+            last = self._last_verified.get(ticker)
+            if last is not None:
+                value, at = last
+                age = time.monotonic() - at
+                if age <= self.reference_max_age_seconds:
+                    logger.warning(
+                        "[Reference] %s/USD unmeasurable (%s), reusing %.6g verified %.0fs ago",
+                        ticker,
+                        e,
+                        value,
+                        age,
+                    )
+                    return value
+            raise
+        self._last_verified[ticker] = (price, time.monotonic())
+        return price
 
     async def _checked_stable(self, ticker: str, session: ClientSession) -> float:
         """
@@ -292,11 +325,13 @@ class ReferencePriceProvider:
         quotes: List[Tuple[str, float]] = []
         for name_source, result in zip(sources, results):
             if isinstance(result, BaseException):
+                # str(TimeoutError()) is empty: always name the exception type
                 logger.warning(
-                    "[Reference] %s unavailable for %s/USD: %s",
+                    "[Reference] %s unavailable for %s/USD: %s%s",
                     name_source[0],
                     ticker,
-                    result,
+                    type(result).__name__,
+                    f": {result}" if str(result) else "",
                 )
                 continue
             name, price = result

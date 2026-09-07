@@ -110,14 +110,25 @@ class LbankFetcher(FetcherInterfaceT):
         result: Any,
         hop_result: Optional[Any] = None,
         usdt_price: float = 1,
-    ) -> SpotEntry:
+    ) -> SpotEntry | PublisherFetchError:
+        if not isinstance(result, dict) or not isinstance(result.get("data"), dict):
+            return PublisherFetchError(f"No data found for {pair} from Lbank")
+        if hop_result is not None and not isinstance(hop_result.get("data"), dict):
+            return PublisherFetchError(f"No data found for {pair} from Lbank")
         result = result["data"]
         bid = float(result["bidPrice"])
         ask = float(result["askPrice"])
+        spread_error = self.reject_wide_spread(pair, bid, ask)
+        if spread_error is not None:
+            return spread_error
         price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
-            hop_bid = float(hop_result["bidPrice"])
-            hop_ask = float(hop_result["askPrice"])
+            # same envelope as the main market: {"data": {...}}
+            hop_bid = float(hop_result["data"]["bidPrice"])
+            hop_ask = float(hop_result["data"]["askPrice"])
+            spread_error = self.reject_wide_spread(pair, hop_bid, hop_ask)
+            if spread_error is not None:
+                return spread_error
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())
