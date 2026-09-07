@@ -80,7 +80,13 @@ async def test_direct_stable_pair_is_never_rebased(stub_reference_provider):
     stub_reference_provider.PRICES = {**stub_reference_provider.PRICES, "USDT": DEPEG}
     usdt_usd = Pair.from_tickers("USDT", "USD")
     fetcher = OkxFetcher([usdt_usd], PUBLISHER_NAME)
-    payload = {"code": "0", "msg": "", "data": [{"last": "0.9300", "volCcy24h": "10"}]}
+    payload = {
+        "code": "0",
+        "msg": "",
+        "data": [
+            {"last": "0.9300", "bidPx": "0.9299", "askPx": "0.9301", "volCcy24h": "10"}
+        ],
+    }
 
     with aioresponses() as m:
         m.get(fetcher.format_url(pair=usdt_usd), status=200, payload=payload)
@@ -102,7 +108,13 @@ async def test_without_a_factor_only_hopped_pairs_are_dropped(stub_reference_pro
         Pair.from_tickers("USDT", "USD"),
     )
     fetcher = OkxFetcher([btc_usd, usdt_usd], PUBLISHER_NAME)
-    payload = {"code": "0", "msg": "", "data": [{"last": "80000", "volCcy24h": "10"}]}
+    payload = {
+        "code": "0",
+        "msg": "",
+        "data": [
+            {"last": "80000", "bidPx": "79999", "askPx": "80001", "volCcy24h": "10"}
+        ],
+    }
 
     with aioresponses() as m:
         m.get(

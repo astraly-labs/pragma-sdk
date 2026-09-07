@@ -195,7 +195,13 @@ def test_cex_rebasing_multiplies_by_usdt_usd():
         pair, {"bidPrice": "80000", "askPrice": "80000"}, usdt_price=0.98
     )
     o = okx._construct(
-        pair, {"data": [{"last": "80000", "volCcy24h": "0"}]}, usdt_price=0.98
+        pair,
+        {
+            "data": [
+                {"last": "80000", "bidPx": "79999", "askPx": "80001", "volCcy24h": "0"}
+            ]
+        },
+        usdt_price=0.98,
     )
 
     assert b.price == int(80000 * 0.98 * 10**8)
