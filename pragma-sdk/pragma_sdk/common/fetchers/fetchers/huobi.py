@@ -101,13 +101,19 @@ class HuobiFetcher(FetcherInterfaceT):
         result: Any,
         hop_result: Optional[Any] = None,
         usdt_price: float = 1,
-    ) -> SpotEntry:
+    ) -> SpotEntry | PublisherFetchError:
         bid = float(result["tick"]["bid"][0])
         ask = float(result["tick"]["ask"][0])
+        spread_error = self.reject_wide_spread(pair, bid, ask)
+        if spread_error is not None:
+            return spread_error
         price = (bid + ask) / 2 * usdt_price
         if hop_result is not None:
             hop_bid = float(hop_result["tick"]["bid"][0])
             hop_ask = float(hop_result["tick"]["ask"][0])
+            spread_error = self.reject_wide_spread(pair, hop_bid, hop_ask)
+            if spread_error is not None:
+                return spread_error
             hop_price = (hop_bid + hop_ask) / 2
             price = hop_price / price
         timestamp = int(time.time())

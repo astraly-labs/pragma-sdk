@@ -96,6 +96,26 @@ class FetcherInterfaceT(abc.ABC):
             )
             return None
 
+    # A quote whose bid/ask spread is wider than this comes from a market too
+    # thin to be a price (Huobi STRK/USDT sat at 2-3% and printed -8%).
+    MAX_BID_ASK_SPREAD: float = 0.02
+
+    def reject_wide_spread(
+        self, pair: Pair, bid: float, ask: float
+    ) -> Optional[PublisherFetchError]:
+        if bid <= 0 or ask <= 0 or ask < bid:
+            return PublisherFetchError(
+                f"No usable order book for {pair} from {self.SOURCE}: "
+                f"bid={bid} ask={ask}"
+            )
+        spread = (ask - bid) / ((ask + bid) / 2)
+        if spread > self.MAX_BID_ASK_SPREAD:
+            return PublisherFetchError(
+                f"{self.SOURCE} {pair}: bid/ask spread {spread:.2%} above "
+                f"{self.MAX_BID_ASK_SPREAD:.0%}, market too thin"
+            )
+        return None
+
     @staticmethod
     def rebase_factor(
         pair: Pair, hopped: bool, factor: Optional[float], stable: str = "USDT"
