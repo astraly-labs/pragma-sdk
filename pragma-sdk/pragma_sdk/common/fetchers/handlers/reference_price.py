@@ -22,6 +22,7 @@ import aiohttp
 from aiohttp import ClientSession
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
+from pragma_sdk.common.fetchers.metrics import metrics
 
 logger = get_pragma_sdk_logger()
 
@@ -244,6 +245,7 @@ class ReferencePriceProvider:
                 value, at = last
                 age = time.monotonic() - at
                 if age <= self.reference_max_age_seconds:
+                    metrics().reference_failure(ticker, "stale_reuse")
                     logger.warning(
                         "[Reference] %s/USD unmeasurable (%s), reusing %.6g verified %.0fs ago",
                         ticker,
@@ -252,6 +254,7 @@ class ReferencePriceProvider:
                         age,
                     )
                     return value
+            metrics().reference_failure(ticker, "unmeasurable")
             raise
         self._last_verified[ticker] = (price, time.monotonic())
         return price
@@ -281,6 +284,7 @@ class ReferencePriceProvider:
                 price, at = last
                 age = time.monotonic() - at
                 if age <= self.stable_max_age_seconds:
+                    metrics().reference_failure(ticker, "stale_reuse")
                     logger.warning(
                         "[Reference] %s/USD unmeasurable (%s), reusing %.4f verified %.0fs ago",
                         ticker,
@@ -289,11 +293,14 @@ class ReferencePriceProvider:
                         age,
                     )
                     return price
+            metrics().reference_failure(ticker, "unmeasurable")
             raise ReferencePriceError(
                 f"{ticker}/USD peg unmeasurable and no value verified in the last "
                 f"{self.stable_max_age_seconds:.0f}s: {e}"
             ) from e
+        metrics().stable_price(ticker, market)
         if abs(market - 1.0) > self.stable_band:
+            metrics().reference_failure(ticker, "depeg")
             logger.warning(
                 "[Reference] DEPEG: %s/USD measured at %.4f, converting %s-quoted "
                 "markets at that rate",
@@ -325,6 +332,7 @@ class ReferencePriceProvider:
         quotes: List[Tuple[str, float]] = []
         for name_source, result in zip(sources, results):
             if isinstance(result, BaseException):
+                metrics().reference_venue_failure(ticker, name_source[0])
                 # str(TimeoutError()) is empty: always name the exception type
                 logger.warning(
                     "[Reference] %s unavailable for %s/USD: %s%s",
@@ -348,6 +356,8 @@ class ReferencePriceProvider:
             (n, p) for n, p in quotes if abs(p - median) / median <= self.max_deviation
         ]
         dropped = [(n, p) for n, p in quotes if (n, p) not in kept]
+        for name, _ in dropped:
+            metrics().reference_venue_failure(ticker, name)
         if dropped:
             logger.warning(
                 "[Reference] %s/USD: dropping outlier venue(s) %s (median %.6g)",
