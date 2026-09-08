@@ -11,6 +11,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     DefillamaFetcher,
     OkxFetcher,
     HuobiFetcher,
+    KrakenFetcher,
     KucoinFetcher,
     BybitFetcher,
     EkuboFetcher,
@@ -37,6 +38,7 @@ from pragma_sdk.common.fetchers.future_fetchers import (
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BitstampFetcher,
+    KrakenFetcher,
     DefillamaFetcher,
     OkxFetcher,
     HuobiFetcher,
