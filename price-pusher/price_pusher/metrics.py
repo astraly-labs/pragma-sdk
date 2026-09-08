@@ -3,7 +3,7 @@ Prometheus sink for the SDK's fetcher metrics, exposed by the health server
 on /metrics. Alert on these, they are the 2026-09-04 incident in numbers:
 
   pragma_fetcher_entries_total{pair,source}
-  pragma_fetcher_entries_rejected_total{pair,source,reason}   zero_price | deviation
+  pragma_fetcher_entries_rejected_total{pair,source,reason}   zero_price | deviation | source_not_whitelisted
   pragma_fetcher_cross_source_deviation{pair,source}          last signed deviation
   pragma_reference_failures_total{ticker,reason}              unmeasurable | stale_reuse | depeg
   pragma_reference_venue_failures_total{ticker,venue}
