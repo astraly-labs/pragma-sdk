@@ -11,6 +11,7 @@ from pragma_sdk.common.fetchers.fetchers import (
     DefillamaFetcher,
     OkxFetcher,
     HuobiFetcher,
+    KrakenFetcher,
     KucoinFetcher,
     BybitFetcher,
     EkuboFetcher,
@@ -37,6 +38,7 @@ from pragma_sdk.common.fetchers.future_fetchers import (
 
 ALL_SPOT_FETCHERS: List[FetcherInterfaceT] = [
     BitstampFetcher,
+    KrakenFetcher,
     DefillamaFetcher,
     OkxFetcher,
     HuobiFetcher,
@@ -93,6 +95,27 @@ CONVERSION_RATE_FETCHERS: FrozenSet[Type[FetcherInterfaceT]] = frozenset(
 # liquidity floor went to ~$50 (dust oracle pools), so none of them loses a
 # source: LORDS and NSTR go to 3, XSTRK and BROTHER/USDPLUS keep 2, SSTRK 1
 # (its honest price is CONVERSION_SSTRK/USD anyway).
+# Kraken is restricted to the Miden-only feeds for now: the KRAKEN source is
+# not whitelisted for any publisher in the Starknet PublisherRegistry, and one
+# non-whitelisted entry makes the oracle reject the whole publish_data_entries
+# batch it sits in (see the LIDO rollback of 2026-06-13). These pairs live in a
+# `miden_only` config group, which never reaches Starknet. To enable Kraken on
+# Starknet: PublisherRegistry.add_source_for_publisher(<publisher>, 'KRAKEN'),
+# then drop this entry.
+KRAKEN_MIDEN_ONLY_PAIRS: FrozenSet[str] = frozenset(
+    {
+        "ZEC/USD",
+        "XMR/USD",
+        "DASH/USD",
+        "XAUT/USD",
+        "PAXG/USD",
+        "LINK/USD",
+        "UNI/USD",
+        "AAVE/USD",
+        "MORPHO/USD",
+    }
+)
+
 FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
     GeckoTerminalFetcher: frozenset(
         {
@@ -104,6 +127,7 @@ FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
             "BROTHER/USDPLUS",
         }
     ),
+    KrakenFetcher: KRAKEN_MIDEN_ONLY_PAIRS,
 }
 
 # Per-fetcher denylist: a fetcher listed here NEVER fetches the given pairs.
