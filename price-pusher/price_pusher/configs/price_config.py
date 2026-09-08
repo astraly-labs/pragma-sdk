@@ -20,6 +20,9 @@ class PriceConfig(BaseModel):
     pairs: PairConfig
     time_difference: Annotated[int, Field(strict=True, gt=0)]
     price_deviation: Annotated[float, Field(strict=True, gt=0)]
+    # Polled by the fetchers (and forwarded to Miden) but never pushed to
+    # Starknet: no PriceListener is created for a miden_only group.
+    miden_only: bool = False
 
     @field_validator("pairs", mode="before")
     def validate_pairs(cls, value: PairConfig) -> PairConfig:

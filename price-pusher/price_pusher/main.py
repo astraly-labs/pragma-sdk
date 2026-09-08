@@ -146,6 +146,8 @@ def _create_listeners(
     """
     listeners: List[PriceListener] = []
     for price_config in price_configs:
+        if price_config.miden_only:
+            continue
         new_listener = PriceListener(
             request_handler=ChainRequestHandler(client=pragma_client),
             price_config=price_config,

@@ -32,3 +32,20 @@
       - SURVIVOR/USD
   time_difference: 1800
   price_deviation: 0.025
+
+# Miden-only feeds: polled by the fetchers and published to Miden, never
+# pushed to Starknet (see STARKNET_PAIR_TO_MIDEN_FAUCET for the faucet ids).
+- pairs:
+    spot:
+      - ZEC/USD
+      - XMR/USD
+      - DASH/USD
+      - XAUT/USD
+      - PAXG/USD
+      - LINK/USD
+      - UNI/USD
+      - AAVE/USD
+      - MORPHO/USD
+  time_difference: 1800
+  price_deviation: 0.01
+  miden_only: true

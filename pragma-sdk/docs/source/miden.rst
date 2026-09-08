@@ -71,7 +71,7 @@ After initialization, publish entries directly:
 
 When converting from a Pragma Starknet ``Entry`` via ``MidenEntry.from_starknet_entry``,
 the decimals are derived from the pair's currencies (``min(base.decimals, quote.decimals)``,
-which is **8** for all currently supported pairs). Don't hardcode 6 in new callers.
+which is **8** for most pairs but **6** for ``USDT/USD`` and ``XAUT/USD``). Don't hardcode it in new callers.
 
 Integrate with the price-pusher
 --------------------------------
@@ -121,6 +121,41 @@ Only pairs in the following mapping are published to Miden. Unsupported pairs ar
      - ``4:0``
    * - ``DAI/USD``
      - ``5:0``
+   * - ``ZEC/USD``
+     - ``6:0``
+   * - ``XMR/USD``
+     - ``7:0``
+   * - ``DASH/USD``
+     - ``8:0``
+   * - ``XAUT/USD``
+     - ``9:0``
+   * - ``PAXG/USD``
+     - ``10:0``
+   * - ``LINK/USD``
+     - ``11:0``
+   * - ``UNI/USD``
+     - ``12:0``
+   * - ``AAVE/USD``
+     - ``13:0``
+   * - ``MORPHO/USD``
+     - ``14:0``
+
+Miden-only feeds
+^^^^^^^^^^^^^^^^
+
+A price-pusher config group flagged ``miden_only: true`` is polled by the fetchers and
+forwarded to Miden, but no Starknet listener is created for it, so its pairs are never
+pushed to Starknet. ``6:0`` to ``14:0`` above are published this way:
+
+.. code-block:: yaml
+
+    - pairs:
+        spot:
+          - ZEC/USD
+          - XAUT/USD
+      time_difference: 1800
+      price_deviation: 0.01
+      miden_only: true
 
 To add a new pair, update ``STARKNET_PAIR_TO_MIDEN_FAUCET`` in ``pragma_sdk/miden/client.py`` and bump the ``pragma-sdk`` version.
 

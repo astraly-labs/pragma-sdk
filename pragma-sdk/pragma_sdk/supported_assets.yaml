@@ -405,3 +405,36 @@
   ticker: 'SURVIVOR'
   coingecko_id: 'survivor-2'
   starknet_address: '0x042DD777885AD2C116be96d4D634abC90A26A790ffB5871E037Dd5Ae7d2Ec86B'
+
+- name: 'Zcash'
+  decimals: 8
+  ticker: 'ZEC'
+  coingecko_id: 'zcash'
+
+- name: 'Monero'
+  decimals: 12
+  ticker: 'XMR'
+  coingecko_id: 'monero'
+
+- name: 'Dash'
+  decimals: 8
+  ticker: 'DASH'
+  coingecko_id: 'dash'
+
+- name: 'Tether Gold'
+  decimals: 6
+  ticker: 'XAUT'
+  coingecko_id: 'tether-gold'
+  ethereum_address: '0x68749665ff8d2d112fa859aa293f07a622782f38'
+
+- name: 'PAX Gold'
+  decimals: 18
+  ticker: 'PAXG'
+  coingecko_id: 'pax-gold'
+  ethereum_address: '0x45804880de22913dafe09f4980848ece6ecbaf78'
+
+- name: 'Morpho'
+  decimals: 18
+  ticker: 'MORPHO'
+  coingecko_id: 'morpho'
+  ethereum_address: '0x58d97b57bb95320f9a05dc918aef65434969c2b2'

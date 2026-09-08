@@ -113,9 +113,13 @@ FETCHER_RESTRICTED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
 # STRK/USD is excluded from Bitstamp: the strkusd market is dead (zero volume,
 # `last` frozen ~30% above the market). The fetcher also rejects zero-volume
 # tickers, this keeps the pair out even if a stray trade briefly revives it.
+# XMR/USD is excluded from Binance: XMR was delisted in 2024 but the API still
+# serves a phantom XMRUSDT ticker ~4x below the market (~$118 vs ~$520 on
+# Kraken/KuCoin/HTX/Bitfinex), which would poison the published median.
 FETCHER_EXCLUDED_PAIRS: Dict[Type[FetcherInterfaceT], FrozenSet[str]] = {
     EkuboFetcher: frozenset({"SURVIVOR/USD"}),
     BitstampFetcher: frozenset({"STRK/USD"}),
+    BinanceFetcher: frozenset({"XMR/USD"}),
 }
 
 ALL_FUTURE_FETCHERS: List[FetcherInterfaceT] = [
