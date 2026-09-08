@@ -38,6 +38,16 @@ STARKNET_PAIR_TO_MIDEN_FAUCET: dict[str, str] = {
     "WBTC/USD": "3:0",
     "USDT/USD": "4:0",
     "DAI/USD": "5:0",
+    # Miden-only feeds (config groups flagged `miden_only`, never pushed to Starknet).
+    "ZEC/USD": "6:0",
+    "XMR/USD": "7:0",
+    "DASH/USD": "8:0",
+    "XAUT/USD": "9:0",
+    "PAXG/USD": "10:0",
+    "LINK/USD": "11:0",
+    "UNI/USD": "12:0",
+    "AAVE/USD": "13:0",
+    "MORPHO/USD": "14:0",
 }
 
 
