@@ -122,6 +122,7 @@ async def main(
         client=pragma_client,
         on_successful_push=health_server.update_last_push if health_server else None,
         miden_client=miden_client,
+        publisher_name=publisher_name,
     )
     orchestrator = Orchestrator(
         poller=poller,
