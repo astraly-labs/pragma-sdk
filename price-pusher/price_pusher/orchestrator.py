@@ -163,6 +163,8 @@ class Orchestrator:
             start = time.monotonic()
             if self.last_polled_entries:
                 await self.pusher.publish_to_miden(self.last_polled_entries)
+                # Rate-limited inside the client; refills from the faucet when low.
+                await self.pusher.miden_client.maintain_fee_balance()
             elapsed = time.monotonic() - start
             await asyncio.sleep(max(0.0, self.miden_publish_interval - elapsed))
 

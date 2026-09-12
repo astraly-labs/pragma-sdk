@@ -32,6 +32,12 @@ class FetcherMetrics(Protocol):
     def stable_price(self, ticker: str, price: float) -> None:
         """Measured USD price of a stablecoin used for conversion."""
 
+    def miden_fee_balance(self, account: str, balance: int) -> None:
+        """Fee-asset balance (base units) of the Miden publisher account."""
+
+    def miden_refill(self, account: str, ok: bool) -> None:
+        """One faucet refill attempt of the Miden publisher account."""
+
 
 class NullMetrics:
     def entry(self, pair: str, source: str) -> None:
@@ -50,6 +56,12 @@ class NullMetrics:
         pass
 
     def stable_price(self, ticker: str, price: float) -> None:
+        pass
+
+    def miden_fee_balance(self, account: str, balance: int) -> None:
+        pass
+
+    def miden_refill(self, account: str, ok: bool) -> None:
         pass
 
 

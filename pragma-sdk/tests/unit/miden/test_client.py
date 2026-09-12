@@ -351,3 +351,60 @@ class TestMissingPmPublisher:
         with patch("pragma_sdk.miden.client.pm_publisher", None):
             with pytest.raises(ImportError, match=r"pip install pragma-sdk\[miden\]"):
                 PragmaMidenClient(network="testnet")
+
+
+class TestFeeRefill:
+    """maintain_fee_balance: poll the fee balance, refill from the faucet when low."""
+
+    @pytest.fixture
+    def mock_pm(self):
+        with patch("pragma_sdk.miden.client.pm_publisher") as mock:
+            mock.balance.return_value = 5_000_000
+            mock.fund.return_value = 100_000_000
+            yield mock
+
+    @pytest.fixture
+    def client(self, mock_pm, tmp_path):
+        c = PragmaMidenClient(
+            network="testnet",
+            storage_path=str(tmp_path),
+            keystore_path=str(tmp_path / "keystore"),
+            config_path=write_config(tmp_path),
+        )
+        c.is_initialized = True
+        c.publisher_id = "0x22a42798e8519c914214f1a63009c8"
+        return c
+
+    @pytest.mark.asyncio
+    async def test_above_threshold_does_not_refill(self, client, mock_pm):
+        assert await client.maintain_fee_balance(threshold=2_000_000) == 5_000_000
+        mock_pm.fund.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_below_threshold_refills(self, client, mock_pm):
+        mock_pm.balance.return_value = 1_000
+        assert await client.maintain_fee_balance(threshold=2_000_000) == 100_000_000
+        mock_pm.fund.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_refill_failure_is_swallowed(self, client, mock_pm):
+        mock_pm.balance.return_value = 1_000
+        mock_pm.fund.side_effect = ValueError("Fund failed: faucet 429")
+        assert await client.maintain_fee_balance(threshold=2_000_000) == 1_000
+
+    @pytest.mark.asyncio
+    async def test_balance_failure_is_swallowed(self, client, mock_pm):
+        mock_pm.balance.side_effect = ValueError("Balance failed: RPC error")
+        assert await client.maintain_fee_balance() is None
+        mock_pm.fund.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_check_is_rate_limited(self, client, mock_pm):
+        await client.maintain_fee_balance()
+        assert await client.maintain_fee_balance() is None
+        assert mock_pm.balance.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_old_binding_without_balance_is_a_noop(self, client, mock_pm):
+        del mock_pm.balance
+        assert await client.maintain_fee_balance() is None
