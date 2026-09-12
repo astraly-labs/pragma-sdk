@@ -6,6 +6,7 @@ from typing import Optional, List, Union
 
 from pragma_sdk.common.configs.asset_config import AssetConfig
 from pragma_sdk.common.exceptions import UnsupportedAssetError
+from pragma_sdk.common.fetchers.metrics import metrics
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.common.types.pair import Pair
 
@@ -25,6 +26,13 @@ INIT_TIMEOUT_S = 60
 PUBLISH_BATCH_TIMEOUT_S = 180
 GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
+# Miden 0.16 charges every transaction a fee in the chain's native asset. A
+# 14-entry publish_batch costs ~112 base units (6 decimals) on testnet, so
+# 2_000_000 is ~18k batches: ~15h of headroom at one batch every 3s.
+FEE_REFILL_THRESHOLD = 2_000_000
+FEE_CHECK_INTERVAL_S = 600
+# Faucet proof-of-work + note commitment + consume tx.
+FUND_TIMEOUT_S = 600
 
 # Mapping from Starknet pair_id (e.g. "BTC/USD") to Miden faucet_id (e.g. "1:0").
 # Only pairs published by the Starknet pusher are forwarded to Miden; the
@@ -150,6 +158,7 @@ class PragmaMidenClient:
         self.config_path = self._resolve_config_path(config_path, storage_path)
         self.publisher_id: Optional[str] = None
         self.is_initialized = False
+        self._last_fee_check = float("-inf")
 
     @classmethod
     def _resolve_config_path(
@@ -401,6 +410,72 @@ class PragmaMidenClient:
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             logger.error(f"Malformed get_entry payload for {pair}: {raw!r} ({e})")
             return None
+
+    # ------------------------------------------------------------------
+    # Fees
+    # ------------------------------------------------------------------
+    async def fee_balance(self) -> int:
+        """Fee-asset balance of the publisher account, in base units (syncs first)."""
+        balance = await asyncio.wait_for(
+            asyncio.to_thread(
+                pm_publisher.balance,
+                storage_path=self.storage_path,
+                keystore_path=self.keystore_path,
+                network=self.network,
+            ),
+            timeout=SYNC_TIMEOUT_S * 2,
+        )
+        metrics().miden_fee_balance(self.publisher_id or "", balance)
+        return balance
+
+    async def maintain_fee_balance(
+        self, threshold: int = FEE_REFILL_THRESHOLD
+    ) -> Optional[int]:
+        """
+        Keep the publisher funded: at most every ``FEE_CHECK_INTERVAL_S`` read
+        the fee balance and, below ``threshold``, ask the testnet faucet for a
+        refill. Never raises: a failed refill is logged and counted, the next
+        publish surfaces the real error if the account runs dry.
+        Returns the balance it observed (after the refill, if any), or None
+        when the check was skipped.
+        """
+        if not self.is_initialized or not hasattr(pm_publisher, "balance"):
+            return None
+        now = time.monotonic()
+        if now - self._last_fee_check < FEE_CHECK_INTERVAL_S:
+            return None
+        self._last_fee_check = now
+        account = self.publisher_id or ""
+        try:
+            balance = await self.fee_balance()
+        except Exception as e:
+            logger.warning(f"Miden fee balance check failed: {e}")
+            return None
+        if balance >= threshold:
+            return balance
+        logger.warning(
+            f"Miden fee balance {balance} < {threshold} for {account}; "
+            "requesting a faucet refill"
+        )
+        try:
+            balance = await asyncio.wait_for(
+                asyncio.to_thread(
+                    pm_publisher.fund,
+                    None,
+                    storage_path=self.storage_path,
+                    keystore_path=self.keystore_path,
+                    network=self.network,
+                ),
+                timeout=FUND_TIMEOUT_S,
+            )
+        except Exception as e:
+            metrics().miden_refill(account, False)
+            logger.error(f"Miden faucet refill failed for {account}: {e}")
+            return balance
+        metrics().miden_refill(account, True)
+        metrics().miden_fee_balance(account, balance)
+        logger.info(f"Miden faucet refill done for {account}: balance = {balance}")
+        return balance
 
     async def sync(self) -> None:
         """Sync the local store with the network."""

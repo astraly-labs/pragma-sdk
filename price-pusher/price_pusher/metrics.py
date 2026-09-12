@@ -9,6 +9,8 @@ on /metrics. Alert on these, they are the 2026-09-04 incident in numbers:
   pragma_reference_venue_failures_total{ticker,venue}
   pragma_stable_usd_price{ticker}                             measured USDT/USDC/DAI price
   pragma_pusher_pushes_total, pragma_pusher_last_push_timestamp_seconds
+  pragma_miden_fee_balance{account}                          fee asset left (base units)
+  pragma_miden_refills_total{account,result}                 faucet refills: ok | error
 """
 
 import time
@@ -70,6 +72,18 @@ class PrometheusMetrics:
             "Unix time of the last successful push (process start until the first one)",
             registry=r,
         )
+        self.miden_fee_balance_gauge = Gauge(
+            "pragma_miden_fee_balance",
+            "Fee-asset balance of the Miden publisher account (base units)",
+            ["account"],
+            registry=r,
+        )
+        self.miden_refills = Counter(
+            "pragma_miden_refills_total",
+            "Faucet refills of the Miden publisher account",
+            ["account", "result"],
+            registry=r,
+        )
         # A gauge exports 0 until set: "no push for 15m" would fire at every
         # restart. Count from process start instead.
         self.last_push.set(time.time())
@@ -92,6 +106,12 @@ class PrometheusMetrics:
 
     def stable_price(self, ticker: str, price: float) -> None:
         self.stable_prices.labels(ticker=ticker).set(price)
+
+    def miden_fee_balance(self, account: str, balance: int) -> None:
+        self.miden_fee_balance_gauge.labels(account=account).set(balance)
+
+    def miden_refill(self, account: str, ok: bool) -> None:
+        self.miden_refills.labels(account=account, result="ok" if ok else "error").inc()
 
     # --- pusher side ---
     def push_succeeded(self) -> None:
