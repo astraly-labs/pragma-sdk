@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple, Any, Set
 
 from starknet_py.contract import InvokeResult
 from starknet_py.net.client import Client, Call
-from starknet_py.net.client_models import EstimatedFee
+from starknet_py.net.client_models import EstimatedFee, PriceUnit
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account
 
@@ -105,6 +105,27 @@ class RandomnessMixin:
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
 
+    async def _fee_in_wei(self, estimate: EstimatedFee) -> int:
+        """
+        The VRF contract denominates `callback_fee_limit` and its refunds in
+        wei (ETH), but every transaction is a v3 transaction paid in STRK, so
+        the estimate comes back in FRI. Convert with the oracle's own STRK/USD
+        and ETH/USD medians before comparing (#328).
+        """
+        if estimate.unit == PriceUnit.WEI:
+            return estimate.overall_fee
+        strk, eth = await asyncio.gather(
+            self.get_spot("STRK/USD"),  # type: ignore[attr-defined]
+            self.get_spot("ETH/USD"),  # type: ignore[attr-defined]
+        )
+        strk_usd = strk.price / 10**strk.decimals
+        eth_usd = eth.price / 10**eth.decimals
+        if strk_usd <= 0 or eth_usd <= 0:
+            raise ValueError(
+                "cannot convert FRI to wei: oracle STRK/USD or ETH/USD is 0"
+            )
+        return int(estimate.overall_fee * strk_usd / eth_usd)
+
     async def _get_submit_or_refund_calls(
         self,
         request: VRFSubmitParams,
@@ -124,13 +145,14 @@ class RandomnessMixin:
             return [submit_call]
 
         estimate_fee = await submit_call.estimate_fee(block_number="pre_confirmed")
-        if estimate_fee.overall_fee <= request.callback_fee_limit:
+        estimated_wei = await self._fee_in_wei(estimate_fee)
+        if estimated_wei <= request.callback_fee_limit:
             return [submit_call]
 
         logger.error(
-            "Request %s is OUT OF GAS: %s > %s - cancelled & refunded.",
+            "Request %s is OUT OF GAS: %s wei > %s wei - cancelled & refunded.",
             request.request_id,
-            estimate_fee.overall_fee,
+            estimated_wei,
             request.callback_fee_limit,
         )
         update_status_call = self.randomness.functions[
