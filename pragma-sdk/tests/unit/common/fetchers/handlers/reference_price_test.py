@@ -38,29 +38,42 @@ def _mock_all_nine(m, eth: float, bitfinex: float | None = None):
     m.get(OKX, payload={"data": [{"last": str(eth)}]})
     m.get(BYBIT, payload={"result": {"list": [{"lastPrice": str(eth)}]}})
     m.get(KUCOIN, payload={"data": {"price": str(eth)}})
+    _mock_usdt(m, 1.0)
 
 
-def three_venues(**kwargs) -> ReferencePriceProvider:
-    """Coinbase, Kraken, Binance only, quorum 2: the compact fixture."""
+def four_venues(**kwargs) -> ReferencePriceProvider:
+    """Four distinct venues with the production minimum."""
     subset = tuple(
-        s for s in DEFAULT_SOURCES if s[0] in ("coinbase", "kraken", "binance")
+        s
+        for s in DEFAULT_SOURCES
+        if s[0] in ("coinbase", "kraken", "binance", "bitstamp")
     )
-    return ReferencePriceProvider(sources=subset, quorum=2, **kwargs)
+    return ReferencePriceProvider(sources=subset, **kwargs)
 
 
 def test_default_provider_has_nine_independent_venues():
     names = [name for name, _ in DEFAULT_SOURCES]
     assert len(names) == 9 and len(set(names)) == 9
     assert ReferencePriceProvider().quorum == 4
+    assert ReferencePriceProvider().stable_quorum == 4
+
+
+@pytest.mark.parametrize("field", ["quorum", "stable_quorum"])
+@pytest.mark.parametrize("minimum", [0, 2, 3])
+def test_reference_minimum_cannot_be_lowered_below_four(field, minimum):
+    with pytest.raises(ValueError, match="at least four sources"):
+        ReferencePriceProvider(**{field: minimum})
 
 
 @pytest.mark.asyncio
 async def test_median_of_independent_sources():
-    provider = three_venues()
+    provider = four_venues()
     with aioresponses() as m:
         m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
         m.get(KRAKEN, payload=_kraken_payload("2447.34"))
         m.get(BINANCE, payload={"price": "2448.32"})
+        m.get(BITSTAMP, payload={"bid": "2447.34", "ask": "2447.34", "volume": "100"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             price = await provider.get_price("ETH", "USD", session)
     assert price == 2447.34
@@ -87,7 +100,7 @@ async def test_outlier_venue_is_dropped_not_fatal():
 
 @pytest.mark.asyncio
 async def test_quorum_not_met_fails_closed():
-    provider = three_venues()
+    provider = four_venues()
     with aioresponses() as m:
         m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
         m.get(KRAKEN, status=503)
@@ -108,6 +121,7 @@ async def test_quorum_after_outlier_filtering_fails_closed():
         m.get(GEMINI, payload={"bid": "2445", "ask": "2445"})
         m.get(BINANCE, payload={"price": "2570"})
         m.get(OKX, payload={"data": [{"last": "2570"}]})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             with pytest.raises(ReferencePriceError, match="quorum"):
                 await provider.get_price("ETH", "USD", session)
@@ -122,6 +136,7 @@ async def test_dead_bitstamp_market_is_ignored():
         m.get(GEMINI, payload={"bid": "2445", "ask": "2445"})
         m.get(BINANCE, payload={"price": "2445"})
         m.get(BITSTAMP, payload={"bid": "0", "ask": "0", "volume": "0.0"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             # four healthy venues, bitstamp's zero-volume ticker is not a quote
             assert await provider.get_price("ETH", "USD", session) == 2445.0
@@ -139,12 +154,13 @@ async def test_stables_are_one_without_any_request():
 
 @pytest.mark.asyncio
 async def test_cross_quote_uses_both_usd_references():
-    provider = three_venues(cache_ttl_seconds=0)
+    provider = four_venues(cache_ttl_seconds=0)
     with aioresponses() as m:
         for url, payload in [
             (COINBASE, {"data": {"amount": "2000"}}),
             (KRAKEN, _kraken_payload("2000")),
             (BINANCE, {"price": "2000"}),
+            (BITSTAMP, {"bid": "2000", "ask": "2000", "volume": "100"}),
             (
                 "https://api.coinbase.com/v2/prices/BTC-USD/spot",
                 {"data": {"amount": "80000"}},
@@ -159,17 +175,25 @@ async def test_cross_quote_uses_both_usd_references():
             ),
         ]:
             m.get(url, payload=payload)
+        m.get(
+            "https://www.bitstamp.net/api/v2/ticker/btcusd/",
+            payload={"bid": "80000", "ask": "80000", "volume": "100"},
+        )
+        _mock_usdt(m, 1.0)
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             assert await provider.get_price("ETH", "BTC", session) == 0.025
 
 
 @pytest.mark.asyncio
 async def test_cache_shares_one_lookup():
-    provider = three_venues(cache_ttl_seconds=60)
+    provider = four_venues(cache_ttl_seconds=60)
     with aioresponses() as m:
         m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
         m.get(KRAKEN, payload=_kraken_payload("2447.34"))
         m.get(BINANCE, payload={"price": "2448.32"})
+        m.get(BITSTAMP, payload={"bid": "2447.34", "ask": "2447.34", "volume": "100"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             first = await provider.get_price("ETH", "USD", session)
             # endpoints are single-shot in aioresponses: a second HTTP round
@@ -182,11 +206,13 @@ async def test_cache_shares_one_lookup():
 async def test_concurrent_lookups_share_one_http_round():
     # 20+ fetchers ask for ETH/USD at the same instant on a cold cache; the
     # per-ticker lock must serialise them onto a single HTTP round.
-    provider = three_venues(cache_ttl_seconds=60)
+    provider = four_venues(cache_ttl_seconds=60)
     with aioresponses() as m:
         m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
         m.get(KRAKEN, payload=_kraken_payload("2447.34"))
         m.get(BINANCE, payload={"price": "2448.32"})
+        m.get(BITSTAMP, payload={"bid": "2447.34", "ask": "2447.34", "volume": "100"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             prices = await asyncio.gather(
                 *(provider.get_price("ETH", "USD", session) for _ in range(20))
@@ -242,6 +268,106 @@ async def test_material_depeg_is_converted_not_hidden():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("ticker", ["USDT", "USDC", "DAI", "ETH", "BTC"])
+@pytest.mark.parametrize(
+    "prices", [(1.0, 1.0), (1.0, 1.0, 1.0), (1.0,) * 4, (1.0, 1.0, 1.0, 1.2)]
+)
+async def test_four_sources_required_after_filtering_for_every_reference(
+    ticker, prices
+):
+    def source(price):
+        async def quote(session, base):
+            return price
+
+        return quote
+
+    sources = tuple((f"venue-{i}", source(price)) for i, price in enumerate(prices))
+    provider = ReferencePriceProvider(sources=sources, stable_sources=sources)
+    async with aiohttp.ClientSession() as session:
+        if prices == (1.0,) * 4:
+            assert await provider.get_price(ticker, "USD", session) == 1.0
+        else:
+            with pytest.raises(ReferencePriceError, match="quorum is 4"):
+                await provider.get_price(ticker, "USD", session)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("usdt_usd", [0.9, 1.1])
+async def test_mixed_usd_and_usdt_quotes_are_normalized_before_filtering(usdt_usd):
+    provider = ReferencePriceProvider()
+    eth_usdt = 2000.0
+    eth_usd = eth_usdt * usdt_usd
+    with aioresponses() as m:
+        # Three native USD quotes and four USDT quotes: filtering the raw
+        # mixture would discard the correct USD prices and accept the wrong median.
+        m.get(COINBASE, payload={"data": {"amount": str(eth_usd)}})
+        m.get(KRAKEN, payload=_kraken_payload(str(eth_usd)))
+        m.get(GEMINI, payload={"bid": str(eth_usd), "ask": str(eth_usd)})
+        m.get(BINANCE, payload={"price": str(eth_usdt)})
+        m.get(OKX, payload={"data": [{"last": str(eth_usdt)}]})
+        m.get(BYBIT, payload={"result": {"list": [{"lastPrice": str(eth_usdt)}]}})
+        m.get(KUCOIN, payload={"data": {"price": str(eth_usdt)}})
+        _mock_usdt(m, usdt_usd)
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == eth_usd
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("native_count", [3, 4])
+async def test_unverified_usdt_quotes_do_not_count_towards_usd_quorum(native_count):
+    provider = ReferencePriceProvider()
+    with aioresponses() as m:
+        m.get(COINBASE, payload={"data": {"amount": "2000"}})
+        m.get(KRAKEN, payload=_kraken_payload("2000"))
+        m.get(GEMINI, payload={"bid": "2000", "ask": "2000"})
+        if native_count == 4:
+            m.get(BITSTAMP, payload={"bid": "2000", "ask": "2000", "volume": "100"})
+        m.get(BINANCE, payload={"price": "2200"})
+        m.get(OKX, payload={"data": [{"last": "2200"}]})
+        m.get(BYBIT, payload={"result": {"list": [{"lastPrice": "2200"}]}})
+        m.get(KUCOIN, payload={"data": {"price": "2200"}})
+        # No verified USDT/USD conversion: none of these four quotes may count.
+        async with aiohttp.ClientSession() as session:
+            if native_count == 4:
+                assert await provider.get_price("ETH", "USD", session) == 2000.0
+            else:
+                with pytest.raises(ReferencePriceError, match="quorum is 4"):
+                    await provider.get_price("ETH", "USD", session)
+
+
+@pytest.mark.asyncio
+async def test_converted_reference_does_not_refresh_an_older_usdt_fallback(monkeypatch):
+    now = 1000.0
+    monkeypatch.setattr(
+        "pragma_sdk.common.fetchers.handlers.reference_price.time.monotonic",
+        lambda: now,
+    )
+    provider = ReferencePriceProvider(cache_ttl_seconds=0)
+    with aioresponses() as m:
+        _mock_usdt(m, 0.9)
+        async with aiohttp.ClientSession() as session:
+            await provider.get_price("USDT", "USD", session)
+
+    now += 200
+    with aioresponses() as m:
+        # Only USDT quotes answer; their conversion is already 200 seconds old.
+        m.get(BINANCE, payload={"price": "2000"})
+        m.get(OKX, payload={"data": [{"last": "2000"}]})
+        m.get(BYBIT, payload={"result": {"list": [{"lastPrice": "2000"}]}})
+        m.get(KUCOIN, payload={"data": {"price": "2000"}})
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 1800.0
+
+    now += 101
+    with aioresponses():
+        async with aiohttp.ClientSession() as session:
+            # ETH's cache must expire with its conversion, not 300 seconds
+            # after the converted ETH reference was constructed.
+            with pytest.raises(ReferencePriceError):
+                await provider.get_price("ETH", "USD", session)
+
+
+@pytest.mark.asyncio
 async def test_unmeasurable_peg_reuses_a_fresh_verified_value():
     provider = ReferencePriceProvider(cache_ttl_seconds=0)
     with aioresponses() as m:
@@ -281,11 +407,13 @@ async def test_usd_and_usdplus_never_query_venues():
 async def test_reference_reuses_a_fresh_verified_value_when_venues_fail():
     # 5 of 9 venues timing out must not drop WSTETH/LBTC/... when ETH/USD
     # was verified moments ago.
-    provider = three_venues(cache_ttl_seconds=0)
+    provider = four_venues(cache_ttl_seconds=0)
     with aioresponses() as m:
         m.get(COINBASE, payload={"data": {"amount": "2445.29"}})
         m.get(KRAKEN, payload=_kraken_payload("2447.34"))
         m.get(BINANCE, payload={"price": "2448.32"})
+        m.get(BITSTAMP, payload={"bid": "2447.34", "ask": "2447.34", "volume": "100"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             assert await provider.get_price("ETH", "USD", session) == 2447.34
     with aioresponses() as m:
@@ -298,7 +426,7 @@ async def test_reference_reuses_a_fresh_verified_value_when_venues_fail():
 async def test_venue_failures_are_logged_with_their_type():
     from unittest import mock
 
-    provider = three_venues()
+    provider = ReferencePriceProvider()
     with (
         aioresponses() as m,
         mock.patch(
@@ -306,8 +434,11 @@ async def test_venue_failures_are_logged_with_their_type():
         ) as logger,
     ):
         m.get(COINBASE, exception=TimeoutError())
+        m.get(GEMINI, payload={"bid": "2447.34", "ask": "2447.34"})
         m.get(KRAKEN, payload=_kraken_payload("2447.34"))
         m.get(BINANCE, payload={"price": "2448.32"})
+        m.get(BITSTAMP, payload={"bid": "2447.34", "ask": "2447.34", "volume": "100"})
+        _mock_usdt(m, 1.0)
         async with aiohttp.ClientSession() as session:
             await provider.get_price("ETH", "USD", session)
     logged = [c.args for c in logger.warning.call_args_list]

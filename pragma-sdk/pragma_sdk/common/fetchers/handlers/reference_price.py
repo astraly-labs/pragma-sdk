@@ -112,7 +112,8 @@ async def _bitfinex(session: ClientSession, base: str) -> float:
         return (float(data[0]) + float(data[2])) / 2
 
 
-# USDT-quoted venues, rebased at 1.0 like every other USDT hop in the SDK.
+# These adapters return USDT quotes. Normalize them before USD aggregation.
+USDT_QUOTED_SOURCES = frozenset({"binance", "okx", "bybit", "kucoin"})
 
 
 async def _binance(session: ClientSession, base: str) -> float:
@@ -152,7 +153,8 @@ async def _kucoin(session: ClientSession, base: str) -> float:
 
 
 # Five USD venues and four USDT venues. Independent operators, independent
-# APIs; the median tolerates any four of them being down or wrong at once.
+# APIs. At least four accepted quotes are required after USD normalization
+# and outlier filtering.
 DEFAULT_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
     ("coinbase", _coinbase),
     ("kraken", _kraken),
@@ -185,7 +187,7 @@ class ReferencePriceProvider:
     sources: Tuple[Tuple[str, ReferenceSource], ...] = DEFAULT_SOURCES
     stable_sources: Tuple[Tuple[str, ReferenceSource], ...] = STABLE_CHECK_SOURCES
     quorum: int = 4
-    stable_quorum: int = 2
+    stable_quorum: int = 4
     stable_band: float = STABLE_BAND
     stable_max_age_seconds: float = STABLE_MAX_AGE_SECONDS
     reference_max_age_seconds: float = REFERENCE_MAX_AGE_SECONDS
@@ -198,6 +200,10 @@ class ReferencePriceProvider:
     _locks: Dict[str, asyncio.Lock] = field(default_factory=dict)
     # ticker -> (last verified stable price, monotonic time)
     _last_verified: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.quorum < 4 or self.stable_quorum < 4:
+            raise ValueError("Reference prices require at least four sources")
 
     async def get_price(
         self, base: str, quote: str = "USD", session: Optional[ClientSession] = None
@@ -238,7 +244,7 @@ class ReferencePriceProvider:
         `reference_max_age_seconds`, otherwise ReferencePriceError.
         """
         try:
-            price = await self._query_sources(ticker, session)
+            price, verified_at = await self._query_sources(ticker, session)
         except ReferencePriceError as e:
             last = self._last_verified.get(ticker)
             if last is not None:
@@ -256,7 +262,7 @@ class ReferencePriceProvider:
                     return value
             metrics().reference_failure(ticker, "unmeasurable")
             raise
-        self._last_verified[ticker] = (price, time.monotonic())
+        self._last_verified[ticker] = (price, verified_at)
         return price
 
     async def _checked_stable(self, ticker: str, session: ClientSession) -> float:
@@ -272,7 +278,7 @@ class ReferencePriceProvider:
              for the pairs that need the conversion.
         """
         try:
-            market = await self._query_sources(
+            market, verified_at = await self._query_sources(
                 ticker,
                 session,
                 sources=self.stable_sources,
@@ -308,7 +314,7 @@ class ReferencePriceProvider:
                 market,
                 ticker,
             )
-        self._last_verified[ticker] = (market, time.monotonic())
+        self._last_verified[ticker] = (market, verified_at)
         return market
 
     async def _query_sources(
@@ -317,7 +323,7 @@ class ReferencePriceProvider:
         session: ClientSession,
         sources: Optional[Tuple[Tuple[str, ReferenceSource], ...]] = None,
         quorum: Optional[int] = None,
-    ) -> float:
+    ) -> Tuple[float, float]:
         sources = self.sources if sources is None else sources
         quorum = self.quorum if quorum is None else quorum
 
@@ -346,6 +352,30 @@ class ReferencePriceProvider:
             if price > 0:
                 quotes.append((name, price))
 
+        verified_at = time.monotonic()
+        usdt_verified_at = verified_at
+        if any(name in USDT_QUOTED_SOURCES for name, _ in quotes):
+            try:
+                usdt_usd = await self._usd_price("USDT", session)
+                usdt_verified_at = self._last_verified["USDT"][1]
+            except ReferencePriceError as e:
+                logger.warning(
+                    "[Reference] %s/USD: excluding USDT quotes without a verified "
+                    "conversion: %s",
+                    ticker,
+                    e,
+                )
+                quotes = [
+                    (name, price)
+                    for name, price in quotes
+                    if name not in USDT_QUOTED_SOURCES
+                ]
+            else:
+                quotes = [
+                    (name, price * usdt_usd if name in USDT_QUOTED_SOURCES else price)
+                    for name, price in quotes
+                ]
+
         if len(quotes) < quorum:
             raise ReferencePriceError(
                 f"{ticker}/USD: only {len(quotes)} reference source(s) answered, "
@@ -371,7 +401,11 @@ class ReferencePriceProvider:
                 f"{self.max_deviation:.0%} of the median {median:.6g}, "
                 f"quorum is {quorum}: {quotes}"
             )
-        return statistics.median(p for _, p in kept)
+        if any(name in USDT_QUOTED_SOURCES for name, _ in kept):
+            # Reusing a conversion must not restart its freshness window when
+            # the resulting ETH/BTC reference enters the fallback cache.
+            verified_at = min(verified_at, usdt_verified_at)
+        return statistics.median(p for _, p in kept), verified_at
 
 
 _default_provider: Optional[ReferencePriceProvider] = None
