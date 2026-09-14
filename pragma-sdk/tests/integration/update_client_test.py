@@ -1,5 +1,7 @@
 from typing import List
 
+import os
+
 import pytest
 import pytest_asyncio
 from unittest.mock import MagicMock
@@ -68,6 +70,10 @@ async def declare_oracle(forked_client: PragmaOnChainClient) -> DeclareResult:
         return None
 
 
+@pytest.mark.skipif(
+    not os.environ.get("FORK_RPC_URL"),
+    reason="forks mainnet: needs a keyed RPC in FORK_RPC_URL (public endpoints 429 under fork load)",
+)
 @pytest.mark.asyncio
 async def test_update_oracle(
     forked_client: PragmaOnChainClient, declare_oracle: DeclareResult
