@@ -60,7 +60,7 @@ async def declare_deploy_oracle(
     await declare_result_registry.wait_for_acceptance()
 
     # Deploy Publisher Registry
-    deploy_result_registry = await declare_result_registry.deploy_v1(
+    deploy_result_registry = await declare_result_registry.deploy_v3(
         constructor_args=[account.address], auto_estimate=True
     )
     await deploy_result_registry.wait_for_acceptance()
@@ -81,7 +81,7 @@ async def declare_deploy_oracle(
     currencies = [currency.to_dict() for currency in all_currencies]
     pairs = [pair.to_dict() for pair in all_pairs]
 
-    deploy_result = await declare_result.deploy_v1(
+    deploy_result = await declare_result.deploy_v3(
         constructor_args=[
             account.address,
             deploy_result_registry.deployed_contract.address,
@@ -185,12 +185,14 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
     publisher_address = pragma_client.account_address
 
     assert await pragma_client.is_currency_registered(
-        BTC_PAIR.base_currency.id, "pending"
+        BTC_PAIR.base_currency.id, "pre_confirmed"
     )
     assert await pragma_client.is_currency_registered(
-        BTC_PAIR.quote_currency.id, "pending"
+        BTC_PAIR.quote_currency.id, "pre_confirmed"
     )
-    assert not (await pragma_client.is_currency_registered("DONOTEXIST", "pending"))
+    assert not (
+        await pragma_client.is_currency_registered("DONOTEXIST", "pre_confirmed")
+    )
 
     await wait_for_acceptance(
         await pragma_client.add_publisher(publisher_name, publisher_address)
@@ -278,7 +280,8 @@ async def test_client_oracle_mixin_spot(pragma_client: PragmaOnChainClient):
             [spot_entry_future],
         )
         await invocations[-1].wait_for_acceptance()
-    except TransactionRevertedError as err:
+    # v3 + auto_estimate: the revert surfaces at fee estimation as a ClientError
+    except (TransactionRevertedError, ClientError) as err:
         err_msg = "Timestamp is in the future"
         if err_msg not in err.message:
             raise err
@@ -397,7 +400,8 @@ async def test_client_oracle_mixin_future(pragma_client: PragmaOnChainClient):
             [future_entry_future],
         )
         await invocations[-1].wait_for_acceptance()
-    except TransactionRevertedError as err:
+    # v3 + auto_estimate: the revert surfaces at fee estimation as a ClientError
+    except (TransactionRevertedError, ClientError) as err:
         err_msg = "Timestamp is in the future"
         if err_msg not in err.message:
             raise err

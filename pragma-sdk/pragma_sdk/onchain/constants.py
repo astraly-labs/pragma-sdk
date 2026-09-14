@@ -18,16 +18,20 @@ STARKSCAN_URLS: Dict[Network, str] = {
     "sepolia": "https://sepolia.starkscan.co",
 }
 
+# Fallback RPCs used when the configured one fails (rpc_monitor) and for
+# get_rpc_url(). JSON-RPC 0.10: Starknet 0.14.3 (2026-07) deprecated 0.8 and
+# 0.15 deprecates 0.9; the 0.8 URLs previously listed here are all dead
+# (Blast shut down, Pathfinder removed 0.8, Cartridge no longer serves the
+# `pending` tag). Public, keyless endpoints only: put your own keyed
+# endpoint in --rpc-url.
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
-        "https://starknet-mainnet.blastapi.io/d4c81751-861c-4970-bef5-9decd7f7aa39/rpc/v0_8",
-        "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_8",
-        "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/WrkE4HqPXT-zi7gQn8bUtH-TXgYYs3w1",
-        "https://rpc.pathfinder.equilibrium.co/mainnet/rpc/v0_8",
+        "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_10",
+        "https://free-rpc.nethermind.io/mainnet-juno/v0_10",
     ],
     "sepolia": [
-        "https://starknet-sepolia.public.blastapi.io/rpc/v0_8",
-        "https://api.cartridge.gg/x/starknet/sepolia/rpc/v0_8",
+        "https://api.cartridge.gg/x/starknet/sepolia/rpc/v0_10",
+        "https://free-rpc.nethermind.io/sepolia-juno/v0_10",
     ],
 }
 

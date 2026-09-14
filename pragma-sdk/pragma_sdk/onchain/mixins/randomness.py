@@ -99,9 +99,8 @@ class RandomnessMixin:
                 "Must set account.  You may do this by "
                 "invoking self._setup_account_client(private_key, account_contract_address)"
             )
-        prepared_call = self.randomness.functions["request_random"].prepare_invoke_v1(
+        prepared_call = self.randomness.functions["request_random"].prepare_invoke_v3(
             *vrf_request_params.to_list(),
-            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -118,14 +117,13 @@ class RandomnessMixin:
         If the caller is whitelisted, we don't check if there's enough fees for the call
         to work. We will pay for the fees if there isn't enough.
         """
-        submit_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
+        submit_call = self.randomness.functions["submit_random"].prepare_invoke_v3(
             *request.to_list(),
-            max_fee=self.execution_config.max_fee,
         )
         if is_whitelisted:
             return [submit_call]
 
-        estimate_fee = await submit_call.estimate_fee(block_number="pending")
+        estimate_fee = await submit_call.estimate_fee(block_number="pre_confirmed")
         if estimate_fee.overall_fee <= request.callback_fee_limit:
             return [submit_call]
 
@@ -137,16 +135,14 @@ class RandomnessMixin:
         )
         update_status_call = self.randomness.functions[
             "update_status"
-        ].prepare_invoke_v1(
+        ].prepare_invoke_v3(
             request.requestor_address,
             request.request_id,
             RequestStatus.OUT_OF_GAS.serialize(),
-            max_fee=self.execution_config.max_fee,
         )
-        refund_call = self.randomness.functions["refund_operation"].prepare_invoke_v1(
+        refund_call = self.randomness.functions["refund_operation"].prepare_invoke_v3(
             request.requestor_address,
             request.request_id,
-            max_fee=self.execution_config.max_fee,
         )
         return [update_status_call, refund_call]
 
@@ -214,9 +210,8 @@ class RandomnessMixin:
 
         vrf_submit_params.callback_fee = vrf_submit_params.callback_fee_limit
 
-        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v1(
+        prepared_call = self.randomness.functions["submit_random"].prepare_invoke_v3(
             *vrf_submit_params.to_list(),
-            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee
@@ -225,7 +220,7 @@ class RandomnessMixin:
         self,
         caller_address: Address,
         request_id: int,
-        block_id: Optional[BlockId] = "pending",
+        block_id: Optional[BlockId] = "pre_confirmed",
     ) -> RequestStatus:
         """
         Query the status of a request given the caller address and request ID.
@@ -348,9 +343,8 @@ class RandomnessMixin:
 
         prepared_call = self.randomness.functions[
             "cancel_random_request"
-        ].prepare_invoke_v1(
+        ].prepare_invoke_v3(
             *vrf_cancel_params.to_list(),
-            max_fee=self.execution_config.max_fee,
         )
         estimate_fee = await prepared_call.estimate_fee()
         return estimate_fee  # type: ignore[no-any-return]
@@ -384,7 +378,7 @@ class RandomnessMixin:
     async def _index_randomness_requests_events(
         self,
         from_block: int,
-        to_block: BlockId = "pending",
+        to_block: BlockId = "pre_confirmed",
         chunk_size: int = 512,
     ) -> List[RandomnessRequest]:
         """
@@ -449,7 +443,7 @@ class RandomnessMixin:
         if requests_events is None:
             events = await self._index_randomness_requests_events(
                 from_block=min_block,
-                to_block="pending",
+                to_block="pre_confirmed",
             )
         else:
             events = requests_events
@@ -465,7 +459,7 @@ class RandomnessMixin:
                 self.get_request_status(
                     event.caller_address,
                     event.request_id,
-                    block_id="pending",
+                    block_id="pre_confirmed",
                 )
                 for event in events
             )
@@ -517,7 +511,7 @@ class RandomnessMixin:
         Fetch the block_hash of all events in parallel.
         --
         TODO: Really not optimal but not a bottleneck at the moment.
-        We should be fetching only pending + latest and attribute that to
+        We should be fetching only pre_confirmed + latest and attribute that to
         the events, instead of doing N times (n = len of events).
         """
 
@@ -528,11 +522,11 @@ class RandomnessMixin:
             ):
                 return None
 
+            # RPC 0.9+: the pre_confirmed block carries no parent_hash, but
+            # its parent is by definition the latest block.
+            latest = await self.full_node_client.get_block(block_number="latest")
             is_pending = minimum_block_number == block_number + 1
-            block = await self.full_node_client.get_block(
-                block_number="pending" if is_pending else "latest"
-            )
-            return block.parent_hash  # type: ignore[no-any-return]
+            return latest.block_hash if is_pending else latest.parent_hash  # type: ignore[no-any-return]
 
         block_hashes = await asyncio.gather(
             *[get_block_hash(event.minimum_block_number) for event in events]

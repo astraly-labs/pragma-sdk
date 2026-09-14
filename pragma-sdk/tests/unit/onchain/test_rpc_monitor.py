@@ -10,9 +10,27 @@ from pragma_sdk.onchain.rpc_monitor import (
     RPC_HEALTH_CHECK_INTERVAL,
     MAX_RPC_FAILURES,
 )
-from pragma_sdk.onchain.constants import RPC_URLS
 
 logger = logging.getLogger(__name__)
+
+
+# The monitor picks fallbacks from the SDK's RPC_URLS table; the tests need a
+# stable pool of several URLs, independent of how many public 0.10 endpoints
+# exist in production.
+MOCK_RPC_URLS = {
+    "mainnet": [f"https://mock-rpc-{i}.io/rpc/v0_10" for i in range(4)],
+}
+
+
+@pytest.fixture(autouse=True)
+def _mock_rpc_urls(monkeypatch):
+    monkeypatch.setattr("pragma_sdk.onchain.rpc_monitor.RPC_URLS", MOCK_RPC_URLS)
+    # pick_random_rpc probes the URL over the network; the tests used to pass
+    # only because the production endpoints answered.
+    monkeypatch.setattr(
+        "pragma_sdk.onchain.rpc_monitor.pick_random_rpc",
+        lambda network, urls, timeout=5: urls[0],
+    )
 
 
 @pytest.fixture
@@ -20,7 +38,7 @@ def mock_client():
     client = MagicMock(spec=PragmaOnChainClient)
     client.network = "mainnet"
     client.full_node_client = AsyncMock()
-    client.full_node_client.url = RPC_URLS["mainnet"][0]
+    client.full_node_client.url = MOCK_RPC_URLS["mainnet"][0]
     client._create_full_node_client = MagicMock()
     return client
 
@@ -65,7 +83,7 @@ async def test_switch_rpc_success(rpc_monitor, mock_client):
 async def test_switch_rpc_all_failed(rpc_monitor, mock_client):
     """Test RPC switching behavior when all RPCs have failed"""
     # Mark all RPCs as failed
-    rpc_monitor.failed_rpcs.update(RPC_URLS["mainnet"])
+    rpc_monitor.failed_rpcs.update(MOCK_RPC_URLS["mainnet"])
 
     # Create a new mock client with URL property
     new_mock_client = AsyncMock()
