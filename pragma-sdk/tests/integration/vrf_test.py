@@ -185,7 +185,7 @@ async def test_client_setup(vrf_pragma_client: PragmaClient, account: Account):
 
 
 @pytest.mark.xfail(
-    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    reason="fees are paid in STRK since v3: the ETH balance deltas these tests encode no longer apply (#328)",
     strict=False,
 )
 @pytest.mark.asyncio
@@ -356,7 +356,7 @@ async def test_fails_gas_limit(
 
 
 @pytest.mark.xfail(
-    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    reason="fees are paid in STRK since v3: the ETH balance deltas these tests encode no longer apply (#328)",
     strict=False,
 )
 @pytest.mark.asyncio
@@ -478,7 +478,7 @@ async def test_balance_evolution(
 
 
 @pytest.mark.xfail(
-    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    reason="fees are paid in STRK since v3: the ETH balance deltas these tests encode no longer apply (#328)",
     strict=False,
 )
 @pytest.mark.asyncio
