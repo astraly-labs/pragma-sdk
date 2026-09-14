@@ -28,10 +28,12 @@ RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
         "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_10",
         "https://free-rpc.nethermind.io/mainnet-juno/v0_10",
+        "https://api.zan.top/starknet-mainnet/rpc/v0_10",
     ],
     "sepolia": [
         "https://api.cartridge.gg/x/starknet/sepolia/rpc/v0_10",
         "https://free-rpc.nethermind.io/sepolia-juno/v0_10",
+        "https://api.zan.top/starknet-sepolia/rpc/v0_10",
     ],
 }
 
