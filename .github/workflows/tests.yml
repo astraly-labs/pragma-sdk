@@ -63,32 +63,18 @@ jobs:
             # Use diff to compare the file with its counterpart in the SDK directory
             diff "$file" "pragma-sdk/pragma_sdk/onchain/abis$rel_path" || (echo "Error: $rel_path in pragma-oracle/target does not match with pragma-sdk/pragma_sdk/onchain/abis/" && exit 1)
           done
-      - name: Install rust
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source $HOME/.cargo/env
-
-      - name: Verify Rust and Cargo installation
-        run: |
-          rustc --version
-          cargo --version
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install LLVM 19
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 19
-          sudo apt-get install -y llvm-19-dev libclang-19-dev
-          echo "LLVM_SYS_190_PREFIX=/usr/lib/llvm-19" >> $GITHUB_ENV
-          echo "/usr/lib/llvm-19/bin" >> $GITHUB_PATH
-
+      # Prebuilt starknet-devnet: `cargo install starknet-devnet` needs Rust 1.98
+      # and LLVM and took ~15 min per matrix entry (and failed on the runner's
+      # rust-cache step in a repo with no Cargo.toml).
       - name: Install starknet-devnet
         run: |
-          export LLVM_SYS_190_PREFIX=/usr/lib/llvm-19
-          export PATH="/usr/lib/llvm-19/bin:$PATH"
-          cargo install starknet-devnet
+          curl -sSL -o devnet.tar.gz \
+            https://github.com/0xSpaceShard/starknet-devnet/releases/download/v${STARKNET_DEVNET_VERSION}/starknet-devnet-x86_64-unknown-linux-gnu.tar.gz
+          sudo tar -xzf devnet.tar.gz -C /usr/local/bin
+          starknet-devnet --version
+        env:
+          STARKNET_DEVNET_VERSION: "0.10.0"
+
       - name: Run tests
         run: |
           # TODO: The tests loop forever if we don't run them one by one for some packages.

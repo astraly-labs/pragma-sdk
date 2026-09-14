@@ -4,7 +4,6 @@ https://github.com/software-mansion/starknet.py/blob/0243f05ebbefc59e1e71d4aee38
 """
 
 import os
-import random
 import socket
 import subprocess
 import time
@@ -15,6 +14,7 @@ import pytest
 from dotenv import load_dotenv
 
 from pragma_sdk.onchain.constants import RPC_URLS
+from pragma_sdk.onchain.utils import pick_random_rpc
 
 load_dotenv()
 
@@ -85,8 +85,19 @@ def start_devnet_command_windows(devnet_port: int) -> List[str]:
     ]
 
 
+def fork_rpc_url() -> str:
+    """
+    Origin for the forked devnet. Forking hammers the origin with reads and the
+    public fallbacks answer 429 under that load, so a keyed endpoint can be
+    passed with FORK_RPC_URL; otherwise the first healthy public RPC is used.
+    """
+    return os.environ.get("FORK_RPC_URL") or pick_random_rpc(
+        "mainnet", RPC_URLS["mainnet"]
+    )
+
+
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
-    rpc_url = RPC_URLS["mainnet"][random.randint(0, len(RPC_URLS["mainnet"]) - 1)]
+    rpc_url = fork_rpc_url()
     command = [
         "starknet-devnet",
         "--chain-id",
@@ -107,7 +118,7 @@ def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
 
 
 def start_fork_devnet_command_windows(devnet_port: int) -> List[str]:
-    rpc_url = RPC_URLS["mainnet"][random.randint(0, len(RPC_URLS["mainnet"]) - 1)]
+    rpc_url = fork_rpc_url()
 
     return [
         "wsl",
