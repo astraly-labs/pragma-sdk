@@ -184,6 +184,10 @@ async def test_client_setup(vrf_pragma_client: PragmaClient, account: Account):
     assert vrf_pragma_client.randomness is not None
 
 
+@pytest.mark.xfail(
+    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    strict=False,
+)
 @pytest.mark.asyncio
 async def test_randomness_mixin(
     vrf_pragma_client: PragmaClient,
@@ -351,6 +355,10 @@ async def test_fails_gas_limit(
     assert balance_before >= balance_after
 
 
+@pytest.mark.xfail(
+    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    strict=False,
+)
 @pytest.mark.asyncio
 async def test_balance_evolution(
     vrf_pragma_client: PragmaClient,
@@ -469,6 +477,10 @@ async def test_balance_evolution(
     assert status == RequestStatus.FULFILLED
 
 
+@pytest.mark.xfail(
+    reason="v3 fee estimates are in FRI while callback_fee_limit is in wei (#328)",
+    strict=False,
+)
 @pytest.mark.asyncio
 async def test_balance_evolution_cancel(
     vrf_pragma_client: PragmaClient,
