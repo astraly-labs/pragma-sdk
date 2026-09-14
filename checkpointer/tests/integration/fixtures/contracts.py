@@ -32,7 +32,7 @@ async def declare_deploy_oracle(
     await declare_result_registry.wait_for_acceptance()
 
     # Deploy Publisher Registry
-    deploy_result_registry = await declare_result_registry.deploy_v1(
+    deploy_result_registry = await declare_result_registry.deploy_v3(
         constructor_args=[account.address], auto_estimate=True
     )
     await deploy_result_registry.wait_for_acceptance()
@@ -53,7 +53,7 @@ async def declare_deploy_oracle(
     currencies = [currency.to_dict() for currency in all_currencies]
     pairs = [pair.to_dict() for pair in all_pairs]
 
-    deploy_result = await declare_result.deploy_v1(
+    deploy_result = await declare_result.deploy_v3(
         constructor_args=[
             account.address,
             deploy_result_registry.deployed_contract.address,

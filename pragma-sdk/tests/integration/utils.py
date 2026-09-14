@@ -47,11 +47,11 @@ async def get_deploy_account_transaction(
         key_pair=key_pair,
         chain=StarknetChainId.SEPOLIA_TESTNET,
     )
-    return await account.sign_deploy_account_v1(
+    return await account.sign_deploy_account_v3(
         class_hash=class_hash,
         contract_address_salt=salt,
         constructor_calldata=[key_pair.public_key],
-        max_fee=int(1e16),
+        auto_estimate=True,
     )
 
 
@@ -110,8 +110,13 @@ class ExampleRandomnessMixin:
             )
         invocation = await self.example_randomness.functions[
             "request_random"
-        ].invoke_v1(
-            seed, callback_address, callback_fee_limit, publish_delay, num_words
+        ].invoke_v3(
+            seed,
+            callback_address,
+            callback_fee_limit,
+            publish_delay,
+            num_words,
+            auto_estimate=True,
         )
         return invocation
 

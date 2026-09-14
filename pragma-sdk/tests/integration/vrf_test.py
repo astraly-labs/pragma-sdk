@@ -81,13 +81,13 @@ async def declare_deploy_randomness(
     await declare_mock_oracle_result.wait_for_acceptance()
 
     # Deploy Mock Oracle
-    deploy_oracle_result = await declare_mock_oracle_result.deploy_v1(
+    deploy_oracle_result = await declare_mock_oracle_result.deploy_v3(
         constructor_args=[], auto_estimate=True
     )
     await deploy_oracle_result.wait_for_acceptance()
 
     # Deploy Randomness
-    deploy_result = await declare_result.deploy_v1(
+    deploy_result = await declare_result.deploy_v3(
         constructor_args=[
             account.address,
             account.signer.public_key,
@@ -99,7 +99,7 @@ async def declare_deploy_randomness(
     await deploy_result.wait_for_acceptance()
 
     # Deploy Randomness Example
-    deploy_example_result = await declare_example_result.deploy_v1(
+    deploy_example_result = await declare_example_result.deploy_v3(
         constructor_args=[
             deploy_result.deployed_contract.address,
         ],
@@ -159,7 +159,7 @@ async def vrf_pragma_client(
         cairo_version=0,
     )
     # Approve randomness contract to transfer fee tokens
-    await erc20_contract.functions["approve"].invoke_v1(
+    await erc20_contract.functions["approve"].invoke_v3(
         randomness.address, 0xFFFFFFFFFFFFFFFFFFFFFFFF, auto_estimate=True
     )
 
@@ -626,12 +626,12 @@ async def test_delayed_randomness_request(
     assert pending_reqs == [request_id]
     block_number_3 = await vrf_pragma_client.full_node_client.get_block_number()
     await wait_for_acceptance(
-        await erc20_contract.functions["approve"].invoke_v1(
+        await erc20_contract.functions["approve"].invoke_v3(
             example_randomness.address, 0xF, auto_estimate=True
         )
     )
     await wait_for_acceptance(
-        await erc20_contract.functions["approve"].invoke_v1(
+        await erc20_contract.functions["approve"].invoke_v3(
             example_randomness.address, 0xF, auto_estimate=True
         )
     )
