@@ -46,17 +46,11 @@ async def _multicall(
     # because two calls parallel can end up generating the same nonce.
     # We really want to avoid that.
     async with account_locks[account_address]:
-        transaction = (
-            await self.account.sign_invoke_v3(
-                calls=prepared_calls,
-                resource_bounds=execution_config.l1_resource_bounds,
-                auto_estimate=execution_config.auto_estimate,
-            )
-            if execution_config.enable_strk_fees
-            else await self.account.sign_invoke_v1(
-                calls=prepared_calls,
-                max_fee=execution_config.max_fee,
-            )
+        transaction = await self.account.sign_invoke_v3(
+            calls=prepared_calls,
+            resource_bounds=execution_config.l1_resource_bounds,
+            auto_estimate=execution_config.auto_estimate,
+            auto_estimate_tip=execution_config.auto_estimate_tip,
         )
 
     response = await self.client.send_transaction(transaction)
@@ -87,16 +81,8 @@ async def _invoke(
     This is useful for tracking the nonce changes
     """
 
-    prepared_call = (
-        self.prepare_invoke_v3(*args, **kwargs)
-        if execution_config.enable_strk_fees
-        else self.prepare_invoke_v1(*args, **kwargs)
-    )
-
     # transfer ownership to the prepared call
-    self = prepared_call
-    if execution_config.max_fee is not None:
-        self.max_fee = execution_config.max_fee
+    self = self.prepare_invoke_v3(*args, **kwargs)
 
     # Get or create a lock for this account
     account_address = str(self.get_account.address)
@@ -107,16 +93,11 @@ async def _invoke(
     # because two calls parallel can end up generating the same nonce.
     # We really want to avoid that.
     async with account_locks[account_address]:
-        transaction = (
-            await self.get_account.sign_invoke_v3(
-                calls=self,
-                resource_bounds=execution_config.l1_resource_bounds,
-                auto_estimate=execution_config.auto_estimate,
-            )
-            if execution_config.enable_strk_fees
-            else await self.get_account.sign_invoke_v1(
-                calls=self, max_fee=execution_config.max_fee
-            )
+        transaction = await self.get_account.sign_invoke_v3(
+            calls=self,
+            resource_bounds=execution_config.l1_resource_bounds,
+            auto_estimate=execution_config.auto_estimate,
+            auto_estimate_tip=execution_config.auto_estimate_tip,
         )
 
     response = await self._client.send_transaction(transaction)

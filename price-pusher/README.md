@@ -68,9 +68,11 @@ uv run price_pusher \
   -p plain:$PUBLISHER_PV_KEY \
   --publisher-name $PUBLISHER_NAME \
   --publisher-address $PUBLISHER_ADDRESS \
-  --rpc-url https://starknet-mainnet.example \
+  --rpc-url https://starknet-mainnet.example/rpc/v0_10 \
   --evm-rpc-url https://my.ethereum.node
 ```
+
+`--rpc-url` must be a Starknet **JSON-RPC 0.10** endpoint (`/rpc/v0_10`): since `pragma-sdk` 2.15 the pusher uses `pre_confirmed` and v3 transactions only, which 0.8 nodes reject, and 0.8 itself is deprecated on mainnet since Starknet 0.14.3. Without `--rpc-url` a public 0.10 endpoint from the SDK's fallback list is used.
 
 ### Docker
 
