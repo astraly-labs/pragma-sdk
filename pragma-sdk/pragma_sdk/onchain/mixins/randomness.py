@@ -145,7 +145,18 @@ class RandomnessMixin:
             return [submit_call]
 
         estimate_fee = await submit_call.estimate_fee(block_number="pre_confirmed")
-        estimated_wei = await self._fee_in_wei(estimate_fee)
+        try:
+            estimated_wei = await self._fee_in_wei(estimate_fee)
+        except Exception as e:
+            # No STRK/USD or ETH/USD on this oracle (devnet, fresh deployment):
+            # keep the historical raw comparison rather than refunding every
+            # request; the unit mismatch is logged so it is not silent.
+            logger.warning(
+                "Cannot convert the %s fee estimate to wei (%s); comparing raw values.",
+                estimate_fee.unit.value,
+                e,
+            )
+            estimated_wei = estimate_fee.overall_fee
         if estimated_wei <= request.callback_fee_limit:
             return [submit_call]
 
