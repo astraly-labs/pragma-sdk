@@ -66,8 +66,11 @@ def test_default_provider_has_nine_independent_venues():
     assert len(names) == 9 and len(set(names)) == 9
     assert ReferencePriceProvider().quorum == 4
     assert ReferencePriceProvider().stable_quorum == 4
-    stable = [name for name, _ in STABLE_CHECK_SOURCES]
-    assert len(stable) == 7 and not USDT_QUOTED_SOURCES & set(stable)
+    for ticker, venues in STABLE_CHECK_SOURCES.items():
+        names = [name for name, _ in venues]
+        assert len(names) == len(set(names)) and not USDT_QUOTED_SOURCES & set(names)
+    assert [len(v) for v in STABLE_CHECK_SOURCES.values()] == [7, 5, 2]
+    assert ReferencePriceProvider().stable_quorum_overrides == {"DAI": 2}
 
 
 @pytest.mark.asyncio
@@ -366,8 +369,9 @@ async def test_peg_needs_four_agreeing_venues():
 
 
 @pytest.mark.asyncio
-async def test_coinbase_par_quote_does_not_count_for_usdc():
-    # Coinbase returns a constant 1 for USDC-USD: it must not be a peg venue.
+async def test_usdc_peg_ignores_coinbase_and_needs_four_venues():
+    # Coinbase returns a constant 1 for USDC-USD: it is not a USDC peg venue,
+    # so three real venues at 0.97 plus that fake quote is not a quorum.
     provider = ReferencePriceProvider(cache_ttl_seconds=0, stable_max_age_seconds=0)
     with aioresponses() as m:
         m.get(
@@ -387,9 +391,25 @@ async def test_coinbase_par_quote_does_not_count_for_usdc():
         ]:
             m.get(url, payload=payload)
         async with aiohttp.ClientSession() as session:
-            # three real venues at 0.97 + coinbase's fake 1.0: not a quorum
             with pytest.raises(ReferencePriceError, match="quorum is 4"):
                 await provider.get_price("USDC", "USD", session)
+        assert not any("coinbase" in str(r) for r in m.requests if "USDC" in str(r))
+
+
+@pytest.mark.asyncio
+async def test_dai_peg_uses_its_two_usd_markets():
+    provider = ReferencePriceProvider(cache_ttl_seconds=0)
+    with aioresponses() as m:
+        m.get(
+            "https://api.kraken.com/0/public/Ticker?pair=DAIUSD",
+            payload={"error": [], "result": {"DAIUSD": {"c": ["0.999", "1"]}}},
+        )
+        m.get(
+            "https://api.gemini.com/v1/pubticker/daiusd",
+            payload={"bid": "0.999", "ask": "0.999"},
+        )
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("DAI", "USD", session) == 0.999
 
 
 @pytest.mark.asyncio
