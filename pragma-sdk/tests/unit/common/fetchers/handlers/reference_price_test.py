@@ -490,3 +490,72 @@ async def test_converted_reference_expires_with_its_usdt_conversion(monkeypatch)
             # the reused ETH/USD must age with the 301s-old USDT/USD it embeds
             with pytest.raises(ReferencePriceError):
                 await provider.get_price("ETH", "USD", session)
+
+
+def _mock_usd_venues(m, eth: str):
+    m.get(COINBASE, payload={"data": {"amount": eth}})
+    m.get(KRAKEN, payload=_kraken_payload(eth))
+    m.get(GEMINI, payload={"bid": eth, "ask": eth})
+    m.get(BITSTAMP, payload={"bid": eth, "ask": eth, "volume": "100"})
+    m.get(BITFINEX, payload=[float(eth), 1.0, float(eth), 1.0])
+
+
+def _mock_usdt_venues(m, eth: str):
+    m.get(BINANCE, payload={"price": eth})
+    m.get(OKX, payload={"data": [{"last": eth}]})
+    m.get(BYBIT, payload={"result": {"list": [{"lastPrice": eth}]}})
+    m.get(KUCOIN, payload={"data": {"price": eth}})
+
+
+@pytest.mark.asyncio
+async def test_usd_only_median_does_not_inherit_the_usdt_age(monkeypatch):
+    # USDT quotes rejected as outliers must not drag an old USDT timestamp
+    # onto a median built from fresh USD venues.
+    now = 1000.0
+    monkeypatch.setattr(
+        "pragma_sdk.common.fetchers.handlers.reference_price.time.monotonic",
+        lambda: now,
+    )
+    provider = ReferencePriceProvider(cache_ttl_seconds=0)
+    with aioresponses() as m:
+        _mock_usdt(m, 1.0)
+        async with aiohttp.ClientSession() as session:
+            await provider.get_price("USDT", "USD", session)
+
+    now += 290
+    with aioresponses() as m:
+        _mock_usd_venues(m, "2000")  # five USD venues carry the median
+        _mock_usdt_venues(m, "2200")  # four outliers once converted at 1.0
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 2000.0
+
+    now += 11  # the USDT rate is 301s old, the USD-only median is 11s old
+    with aioresponses():
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 2000.0
+
+
+@pytest.mark.asyncio
+async def test_cached_conversion_is_not_served_past_the_usdt_age(monkeypatch):
+    now = 1000.0
+    monkeypatch.setattr(
+        "pragma_sdk.common.fetchers.handlers.reference_price.time.monotonic",
+        lambda: now,
+    )
+    provider = ReferencePriceProvider()  # default 10s cache
+    with aioresponses() as m:
+        _mock_usdt(m, 0.9)
+        async with aiohttp.ClientSession() as session:
+            await provider.get_price("USDT", "USD", session)
+
+    now += 295
+    with aioresponses() as m:
+        _mock_usdt_venues(m, "2000")  # USD venues down: converted quotes only
+        async with aiohttp.ClientSession() as session:
+            assert await provider.get_price("ETH", "USD", session) == 1800.0
+
+    now += 7  # still inside the 10s cache, but the embedded USDT rate is 302s old
+    with aioresponses():
+        async with aiohttp.ClientSession() as session:
+            with pytest.raises(ReferencePriceError):
+                await provider.get_price("ETH", "USD", session)

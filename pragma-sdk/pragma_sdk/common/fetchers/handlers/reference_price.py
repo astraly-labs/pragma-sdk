@@ -286,7 +286,11 @@ class ReferencePriceProvider:
         async with lock:
             cached = self._cache.get(ticker)
             now = time.monotonic()
-            if cached is not None and now - cached[1] < self.cache_ttl_seconds:
+            if (
+                cached is not None
+                and now - cached[1] < self.cache_ttl_seconds
+                and self._verified_recently(ticker, now)
+            ):
                 return cached[0]
             if ticker in STABLE_TICKERS:
                 price = await self._checked_stable(ticker, session)
@@ -294,6 +298,22 @@ class ReferencePriceProvider:
                 price = await self._reference_with_fallback(ticker, session)
             self._cache[ticker] = (price, time.monotonic())
             return price
+
+    def _verified_recently(self, ticker: str, now: float) -> bool:
+        """
+        A cached value may embed an older verification (a converted ETH/USD
+        carries its USDT/USD's age): the short cache must not serve it past
+        the ticker's max age.
+        """
+        last = self._last_verified.get(ticker)
+        if last is None:
+            return True
+        max_age = (
+            self.stable_max_age_seconds
+            if ticker in STABLE_TICKERS
+            else self.reference_max_age_seconds
+        )
+        return now - last[1] <= max_age
 
     async def _reference_with_fallback(
         self, ticker: str, session: ClientSession
@@ -432,9 +452,10 @@ class ReferencePriceProvider:
                 quotes.append((name, price))
 
         verified_at = time.monotonic()
+        usdt_verified_at: Optional[float] = None
         if usdt_lookup is not None:
-            quotes, verified_at = await self._convert_usdt_quotes(
-                ticker, quotes, usdt_lookup, verified_at
+            quotes, usdt_verified_at = await self._convert_usdt_quotes(
+                ticker, quotes, usdt_lookup
             )
 
         if len(quotes) < quorum:
@@ -462,6 +483,12 @@ class ReferencePriceProvider:
                 f"{self.max_deviation:.0%} of the median {median:.6g}, "
                 f"quorum is {quorum}: {quotes}"
             )
+        # A median that still contains converted quotes is only as fresh as
+        # the USDT/USD behind them; one built on USD venues alone is not.
+        if usdt_verified_at is not None and any(
+            name in USDT_QUOTED_SOURCES for name, _ in kept
+        ):
+            verified_at = min(verified_at, usdt_verified_at)
         return statistics.median(p for _, p in kept), verified_at
 
     async def _convert_usdt_quotes(
@@ -469,12 +496,12 @@ class ReferencePriceProvider:
         ticker: str,
         quotes: List[Tuple[str, float]],
         usdt_lookup: "asyncio.Task[float]",
-        verified_at: float,
-    ) -> Tuple[List[Tuple[str, float]], float]:
+    ) -> Tuple[List[Tuple[str, float]], Optional[float]]:
         """
-        Express the USDT-quoted venues in USD at the measured USDT/USD. Without
-        a verified conversion those quotes are left out rather than taken at
-        par: mixing raw USDT and USD quotes lets a depeg outvote the USD venues.
+        Express the USDT-quoted venues in USD at the measured USDT/USD and
+        return the time that rate was verified. Without a verified conversion
+        those quotes are left out rather than taken at par (None): mixing raw
+        USDT and USD quotes lets a depeg outvote the USD venues.
         """
         try:
             usdt_usd = await usdt_lookup
@@ -487,12 +514,11 @@ class ReferencePriceProvider:
                 e,
                 len(quotes) - len(kept),
             )
-            return kept, verified_at
+            return kept, None
         converted = [
             (n, p * usdt_usd if n in USDT_QUOTED_SOURCES else p) for n, p in quotes
         ]
-        usdt_verified_at = self._last_verified.get("USDT", (usdt_usd, verified_at))[1]
-        return converted, min(verified_at, usdt_verified_at)
+        return converted, self._last_verified["USDT"][1]
 
 
 _default_provider: Optional[ReferencePriceProvider] = None
