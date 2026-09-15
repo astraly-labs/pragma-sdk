@@ -32,7 +32,9 @@ logger = get_pragma_sdk_logger()
 # converted correctly instead of being published 7% off "as if 1.0 held".
 # USD itself and USDPLUS have no market and stay at 1.0.
 #
-# Degradation when the peg cannot be measured (too few venues answering):
+# The peg is measured on USD-quoted markets only (never on a USDT-quoted one,
+# which would be circular) and needs `stable_quorum` agreeing venues out of
+# STABLE_CHECK_SOURCES. Degradation when it cannot be measured:
 #   1. last verified value if it is younger than STABLE_MAX_AGE_SECONDS,
 #   2. otherwise ReferencePriceError: callers must fail closed for the pairs
 #      that need the conversion, and only those.
@@ -58,6 +60,10 @@ ReferenceSource = Callable[[ClientSession, str], Awaitable[float]]
 
 
 async def _coinbase(session: ClientSession, base: str) -> float:
+    if base == "USDC":
+        # Coinbase treats USDC as USD: /prices/USDC-USD is a constant 1, not a
+        # market, and would anchor the peg check at par during a depeg.
+        raise ReferencePriceError("coinbase quotes USDC at par by construction")
     url = f"https://api.coinbase.com/v2/prices/{base}-USD/spot"
     async with session.get(url) as resp:
         if resp.status != 200:
@@ -112,7 +118,37 @@ async def _bitfinex(session: ClientSession, base: str) -> float:
         return (float(data[0]) + float(data[2])) / 2
 
 
-# USDT-quoted venues, rebased at 1.0 like every other USDT hop in the SDK.
+async def _bitget(session: ClientSession, base: str) -> float:
+    url = f"https://api.bitget.com/api/v2/spot/market/tickers?symbol={base}USD"
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"bitget {base}USD status {resp.status}")
+        data = await resp.json()
+        rows = data.get("data") or []
+        if data.get("code") != "00000" or not rows:
+            raise ReferencePriceError(f"bitget {base}USD: {data.get('msg')}")
+        return (float(rows[0]["bidPr"]) + float(rows[0]["askPr"])) / 2
+
+
+async def _cryptocom(session: ClientSession, base: str) -> float:
+    url = (
+        "https://api.crypto.com/exchange/v1/public/get-tickers"
+        f"?instrument_name={base}_USD"
+    )
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            raise ReferencePriceError(f"crypto.com {base}_USD status {resp.status}")
+        data = await resp.json()
+        rows = (data.get("result") or {}).get("data") or []
+        if data.get("code") != 0 or not rows:
+            raise ReferencePriceError(f"crypto.com {base}_USD: {data.get('message')}")
+        return (float(rows[0]["b"]) + float(rows[0]["k"])) / 2
+
+
+# These venues quote <asset>/USDT. Their quotes are converted with the
+# measured USDT/USD before they enter the USD median (see _query_sources);
+# they are never used to measure the peg itself.
+USDT_QUOTED_SOURCES = frozenset({"binance", "okx", "bybit", "kucoin"})
 
 
 async def _binance(session: ClientSession, base: str) -> float:
@@ -151,8 +187,9 @@ async def _kucoin(session: ClientSession, base: str) -> float:
         return float(data["data"]["price"])
 
 
-# Five USD venues and four USDT venues. Independent operators, independent
-# APIs; the median tolerates any four of them being down or wrong at once.
+# Five USD venues and four USDT venues (converted). Independent operators,
+# independent APIs; the median tolerates any five of them being down or wrong
+# at once, four when USDT/USD cannot be verified (USDT quotes are then left out).
 DEFAULT_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
     ("coinbase", _coinbase),
     ("kraken", _kraken),
@@ -165,27 +202,56 @@ DEFAULT_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
     ("kucoin", _kucoin),
 )
 
-# Venues quoting the stablecoins themselves in USD, used only for the peg check.
-STABLE_CHECK_SOURCES: Tuple[Tuple[str, ReferenceSource], ...] = (
-    ("kraken", _kraken),
-    ("coinbase", _coinbase),
-    ("bitstamp", _bitstamp),
-    ("bitfinex", _bitfinex),
-)
+# Venues quoting the stablecoins themselves in USD, used only for the peg
+# check, per ticker so that a venue is never asked for a market it does not
+# have (Coinbase's USDC-USD is a constant 1, Crypto.com has no USDC market,
+# only Kraken and Gemini quote DAI in USD). With `stable_quorum` at 4, USDT
+# survives three venues down and USDC one. DAI has two USD markets in total,
+# hence its own quorum of 2 (unchanged); no fetcher converts through DAI today.
+STABLE_CHECK_SOURCES: Dict[str, Tuple[Tuple[str, ReferenceSource], ...]] = {
+    "USDT": (
+        ("kraken", _kraken),
+        ("coinbase", _coinbase),
+        ("bitstamp", _bitstamp),
+        ("bitfinex", _bitfinex),
+        ("gemini", _gemini),
+        ("bitget", _bitget),
+        ("cryptocom", _cryptocom),
+    ),
+    "USDC": (
+        ("kraken", _kraken),
+        ("bitstamp", _bitstamp),
+        ("bitfinex", _bitfinex),
+        ("gemini", _gemini),
+        ("bitget", _bitget),
+    ),
+    "DAI": (
+        ("kraken", _kraken),
+        ("gemini", _gemini),
+    ),
+}
+STABLE_QUORUM_OVERRIDES: Dict[str, int] = {"DAI": 2}
 
 
 @dataclass
 class ReferencePriceProvider:
     """
-    Median of independent CEX quotes for <asset>/USD. Venues further than
-    `max_deviation` from the median are dropped as outliers, and at least
-    `quorum` venues must remain. Never reads the oracle.
+    Median of independent CEX quotes for <asset>/USD. USDT-quoted venues are
+    converted with the measured USDT/USD first (left out when it cannot be
+    verified), venues further than `max_deviation` from the median are
+    dropped as outliers, and at least `quorum` venues must remain. The same
+    quorum applies to the stablecoin peg checks. Never reads the oracle.
     """
 
     sources: Tuple[Tuple[str, ReferenceSource], ...] = DEFAULT_SOURCES
-    stable_sources: Tuple[Tuple[str, ReferenceSource], ...] = STABLE_CHECK_SOURCES
+    stable_sources: Dict[str, Tuple[Tuple[str, ReferenceSource], ...]] = field(
+        default_factory=lambda: dict(STABLE_CHECK_SOURCES)
+    )
     quorum: int = 4
-    stable_quorum: int = 2
+    stable_quorum: int = 4
+    stable_quorum_overrides: Dict[str, int] = field(
+        default_factory=lambda: dict(STABLE_QUORUM_OVERRIDES)
+    )
     stable_band: float = STABLE_BAND
     stable_max_age_seconds: float = STABLE_MAX_AGE_SECONDS
     reference_max_age_seconds: float = REFERENCE_MAX_AGE_SECONDS
@@ -238,7 +304,7 @@ class ReferencePriceProvider:
         `reference_max_age_seconds`, otherwise ReferencePriceError.
         """
         try:
-            price = await self._query_sources(ticker, session)
+            price, verified_at = await self._query_sources(ticker, session)
         except ReferencePriceError as e:
             last = self._last_verified.get(ticker)
             if last is not None:
@@ -256,7 +322,7 @@ class ReferencePriceProvider:
                     return value
             metrics().reference_failure(ticker, "unmeasurable")
             raise
-        self._last_verified[ticker] = (price, time.monotonic())
+        self._last_verified[ticker] = (price, verified_at)
         return price
 
     async def _checked_stable(self, ticker: str, session: ClientSession) -> float:
@@ -272,11 +338,11 @@ class ReferencePriceProvider:
              for the pairs that need the conversion.
         """
         try:
-            market = await self._query_sources(
+            market, verified_at = await self._query_sources(
                 ticker,
                 session,
-                sources=self.stable_sources,
-                quorum=self.stable_quorum,
+                sources=self.stable_sources.get(ticker, ()),
+                quorum=self.stable_quorum_overrides.get(ticker, self.stable_quorum),
             )
         except ReferencePriceError as e:
             last = self._last_verified.get(ticker)
@@ -308,7 +374,7 @@ class ReferencePriceProvider:
                 market,
                 ticker,
             )
-        self._last_verified[ticker] = (market, time.monotonic())
+        self._last_verified[ticker] = (market, verified_at)
         return market
 
     async def _query_sources(
@@ -317,18 +383,37 @@ class ReferencePriceProvider:
         session: ClientSession,
         sources: Optional[Tuple[Tuple[str, ReferenceSource], ...]] = None,
         quorum: Optional[int] = None,
-    ) -> float:
+    ) -> Tuple[float, float]:
+        """
+        (median, verified_at): the monotonic time the value is good from. A
+        median built on converted USDT quotes inherits the age of that
+        conversion, so a reused ETH/USD cannot outlive the USDT/USD it embeds.
+        """
         sources = self.sources if sources is None else sources
         quorum = self.quorum if quorum is None else quorum
+
+        # The USDT/USD needed to convert USDT-quoted venues is looked up in
+        # parallel with the venues themselves: sequentially, a cold cache could
+        # take two venue timeouts (12s) and overrun the fetchers' 10s budget.
+        usdt_lookup: Optional[asyncio.Task[float]] = None
+        if any(name in USDT_QUOTED_SOURCES for name, _ in sources):
+            usdt_lookup = asyncio.create_task(self._usd_price("USDT", session))
 
         async def one(name: str, source: ReferenceSource) -> Tuple[str, float]:
             async with asyncio.timeout(self.timeout_seconds):
                 return name, await source(session, ticker)
 
-        results = await asyncio.gather(
-            *(one(name, source) for name, source in sources),
-            return_exceptions=True,
-        )
+        try:
+            results = await asyncio.gather(
+                *(one(name, source) for name, source in sources),
+                return_exceptions=True,
+            )
+        except BaseException:
+            # A cancelled caller (fetcher timeout) must not leave the USDT
+            # lookup running unobserved.
+            if usdt_lookup is not None and not usdt_lookup.done():
+                usdt_lookup.cancel()
+            raise
         quotes: List[Tuple[str, float]] = []
         for name_source, result in zip(sources, results):
             if isinstance(result, BaseException):
@@ -346,9 +431,15 @@ class ReferencePriceProvider:
             if price > 0:
                 quotes.append((name, price))
 
+        verified_at = time.monotonic()
+        if usdt_lookup is not None:
+            quotes, verified_at = await self._convert_usdt_quotes(
+                ticker, quotes, usdt_lookup, verified_at
+            )
+
         if len(quotes) < quorum:
             raise ReferencePriceError(
-                f"{ticker}/USD: only {len(quotes)} reference source(s) answered, "
+                f"{ticker}/USD: only {len(quotes)} usable reference source(s), "
                 f"quorum is {quorum}"
             )
         median = statistics.median(p for _, p in quotes)
@@ -371,7 +462,37 @@ class ReferencePriceProvider:
                 f"{self.max_deviation:.0%} of the median {median:.6g}, "
                 f"quorum is {quorum}: {quotes}"
             )
-        return statistics.median(p for _, p in kept)
+        return statistics.median(p for _, p in kept), verified_at
+
+    async def _convert_usdt_quotes(
+        self,
+        ticker: str,
+        quotes: List[Tuple[str, float]],
+        usdt_lookup: "asyncio.Task[float]",
+        verified_at: float,
+    ) -> Tuple[List[Tuple[str, float]], float]:
+        """
+        Express the USDT-quoted venues in USD at the measured USDT/USD. Without
+        a verified conversion those quotes are left out rather than taken at
+        par: mixing raw USDT and USD quotes lets a depeg outvote the USD venues.
+        """
+        try:
+            usdt_usd = await usdt_lookup
+        except ReferencePriceError as e:
+            kept = [(n, p) for n, p in quotes if n not in USDT_QUOTED_SOURCES]
+            logger.warning(
+                "[Reference] %s/USD: USDT/USD unverifiable (%s), leaving out %d "
+                "USDT-quoted venue(s)",
+                ticker,
+                e,
+                len(quotes) - len(kept),
+            )
+            return kept, verified_at
+        converted = [
+            (n, p * usdt_usd if n in USDT_QUOTED_SOURCES else p) for n, p in quotes
+        ]
+        usdt_verified_at = self._last_verified.get("USDT", (usdt_usd, verified_at))[1]
+        return converted, min(verified_at, usdt_verified_at)
 
 
 _default_provider: Optional[ReferencePriceProvider] = None
