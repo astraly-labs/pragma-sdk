@@ -178,3 +178,16 @@ async def test_sigterm_sets_the_stop_event():
         loop = asyncio.get_running_loop()
         loop.remove_signal_handler(signal.SIGTERM)
         loop.remove_signal_handler(signal.SIGINT)
+
+
+def test_readiness_threshold_derives_from_the_config_unless_given():
+    from price_pusher.main import _default_max_seconds_without_push, cli_entrypoint
+
+    assert _default_max_seconds_without_push([]) == 300
+    assert _default_max_seconds_without_push([MagicMock(time_difference=1800)]) == 3660
+
+    # The click option must not carry a default, or the derived value never applies.
+    option = next(
+        p for p in cli_entrypoint.params if p.name == "max_seconds_without_push"
+    )
+    assert option.default is None

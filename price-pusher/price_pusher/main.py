@@ -396,7 +396,7 @@ def _create_client(
     "--max-seconds-without-push",
     type=click.IntRange(min=60),
     required=False,
-    default=300,
+    default=None,
     help="Readiness: maximum seconds without push before /ready reports not ready. "
     "Defaults to twice the longest time_difference of the config (at least 300 seconds).",
 )
