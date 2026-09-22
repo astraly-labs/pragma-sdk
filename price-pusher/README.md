@@ -48,9 +48,16 @@ Options:
                                   to 8080. Set to 0 to disable.
 
   --max-seconds-without-push INTEGER
-                                  Maximum seconds without push before
-                                  unhealthy. Default to 300 seconds (5
-                                  minutes).
+                                  Readiness: maximum seconds without push
+                                  before /ready reports not ready. Defaults
+                                  to twice the longest time_difference of
+                                  the config (at least 300 seconds).
+
+  --max-seconds-without-poll INTEGER
+                                  Liveness: maximum seconds without a
+                                  completed poll round before /health
+                                  reports unhealthy. Default to 300 seconds
+                                  (5 minutes).
 
   --evm-rpc-url TEXT              Ethereum RPC URL used by on-chain fetchers
                                   (can be passed multiple times)
@@ -92,6 +99,25 @@ docker run --rm \
 ```
 
 If you omit `--evm-rpc-url`, the fetchers automatically fall back to the default public Ethereum RPC list bundled with the SDK.
+
+### Health endpoints and Kubernetes probes
+
+The health server binds port 8080 (`--health-port`) in the first seconds of the process, before the fetchers are built, and shuts down cleanly on `SIGTERM`.
+
+- `/health` (also `/healthz`, `/`) is **liveness**: `200` while starting and as long as the poll loop completes rounds, `503` once no poll completed for `--max-seconds-without-poll`. It never depends on pushes: a publisher whose entries are fresh on-chain only pushes on deviation, and can legitimately go a long time without pushing.
+- `/ready` is **readiness**: `503` until the first push and whenever the last push is older than `--max-seconds-without-push`.
+- `/metrics` is the Prometheus exposition.
+
+```yaml
+livenessProbe:
+  httpGet: { path: /health, port: 8080 }
+  periodSeconds: 30
+  failureThreshold: 5
+readinessProbe:
+  httpGet: { path: /ready, port: 8080 }
+  periodSeconds: 30
+terminationGracePeriodSeconds: 60
+```
 
 ## Architecture
 

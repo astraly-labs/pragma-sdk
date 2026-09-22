@@ -24,7 +24,11 @@ WORKDIR /opt/price-pusher
 RUN uv sync --all-extras
 
 FROM base AS final
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y tini && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=builder /opt /opt
 VOLUME price-pusher/config /opt/price-pusher/config/
 WORKDIR /opt/price-pusher
-ENTRYPOINT ["/opt/price-pusher/.venv/bin/python3.12", "price_pusher/main.py"]
+# tini forwards SIGTERM to the pusher (which handles it) and reaps zombies.
+ENTRYPOINT ["/usr/bin/tini", "--", "/opt/price-pusher/.venv/bin/python3.12", "price_pusher/main.py"]

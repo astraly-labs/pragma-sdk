@@ -18,6 +18,12 @@ from pragma_sdk.common.logging import get_pragma_sdk_logger
 
 logger = get_pragma_sdk_logger()
 
+# One read-only on-chain client per network, shared by every fetcher. Building
+# a PragmaOnChainClient parses three contract ABIs (seconds of CPU each time),
+# and the price pusher instantiates dozens of fetchers back to back on the
+# event loop: one client per fetcher meant minutes of silent, blocking startup.
+_shared_clients: Dict[str, PragmaOnChainClient] = {}
+
 
 # TODO(akhercha): FetcherInterfaceT should take as parameter the client instead of creating it
 # Abstract base class for all fetchers
@@ -27,8 +33,6 @@ class FetcherInterfaceT(abc.ABC):
     publisher: str
     headers: Dict[Any, Any]
     hop_handler: Optional[HopHandler] = None
-
-    _client = None
 
     def __init__(
         self,
@@ -68,9 +72,10 @@ class FetcherInterfaceT(abc.ABC):
         ...
 
     def get_client(self, network: Network = "mainnet") -> PragmaOnChainClient:
-        if self._client is None:
-            self._client = PragmaOnChainClient(network=network)
-        return self._client
+        client = _shared_clients.get(network)
+        if client is None:
+            client = _shared_clients[network] = PragmaOnChainClient(network=network)
+        return client
 
     async def get_stable_price(self, stable_asset: str) -> Optional[float]:
         """
