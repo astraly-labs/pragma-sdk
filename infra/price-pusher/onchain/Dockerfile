@@ -26,10 +26,11 @@ RUN uv sync --all-extras
 
 FROM base as final
 
-# Install curl for health checks
+# curl for the healthcheck, tini to forward signals and reap zombies
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     curl \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt /opt
@@ -43,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://0.0.0.0:8080/health || exit 1
 
 WORKDIR /opt/price-pusher
-ENTRYPOINT ["bash","/opt/price-pusher/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "bash", "/opt/price-pusher/entrypoint.sh"]
