@@ -12,7 +12,7 @@ from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.price_types import LatestOrchestratorPairPrices
-from price_pusher.health_server import HealthServer
+from price_pusher.health import HealthStatus
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +40,19 @@ class Orchestrator:
         pusher: PricePusher,
         poller_refresh_interval: int = 5,
         miden_publish_interval: int = 3,
-        health_server: Optional[HealthServer] = None,
+        health: Optional[HealthStatus] = None,
+        stop_event: Optional[asyncio.Event] = None,
+        miden_shutdown_timeout: float = 30.0,
     ) -> None:
         self.poller = poller
         self.listeners = listeners
         self.pusher = pusher
-        self.health_server = health_server
+        self.health = health
+
+        # Set (by a signal handler, or `request_stop`) to shut down cleanly.
+        self._stop_event = stop_event or asyncio.Event()
+        # How long to let an in-flight Miden tick finish before cancelling it.
+        self.miden_shutdown_timeout = miden_shutdown_timeout
 
         # Time between poller refresh
         self.poller_refresh_interval = poller_refresh_interval
@@ -73,6 +80,9 @@ class Orchestrator:
         for listener in self.listeners:
             listener.set_orchestrator_prices(self.latest_prices)
 
+    def request_stop(self) -> None:
+        self._stop_event.set()
+
     async def run_forever(self) -> None:
         """
         Starts asynchronously the services responsible for the price updates.
@@ -81,24 +91,59 @@ class Orchestrator:
               from different sources,
             - the listener, that listen our oracle and push an event when the
               data is outdated and needs new entries,
-            - the pusher, that pushes entries to our oracle.
-            - the health server (if configured), that provides health status.
-        """
-        tasks = [
-            self._poller_service(),
-            self._listener_services(),
-            self._pusher_service(),
-        ]
+            - the pusher, that pushes entries to our oracle,
+            - the Miden publish loop (if enabled).
 
+        Returns once the stop event is set (SIGTERM/SIGINT) after the
+        services have been shut down. A service that dies takes the whole
+        orchestration down with its exception, so the process restarts.
+        """
+        if self.health:
+            self.health.orchestration_started()
+
+        services = {
+            "poller": asyncio.create_task(self._poller_service()),
+            "listeners": asyncio.create_task(self._listener_services()),
+            "pusher": asyncio.create_task(self._pusher_service()),
+        }
         # Decoupled Miden publish loop — only when Miden publishing is enabled.
         if self.pusher.miden_client is not None:
-            tasks.append(self._miden_service())
+            services["miden"] = asyncio.create_task(self._miden_service())
 
-        # Start health server if configured
-        if self.health_server:
-            tasks.append(self._health_server_service())
+        stopping = asyncio.create_task(self._stop_event.wait())
+        try:
+            done, _ = await asyncio.wait(
+                [*services.values(), stopping], return_when=asyncio.FIRST_COMPLETED
+            )
+        finally:
+            stopping.cancel()
+            await self._shutdown(services)
 
-        await asyncio.gather(*tasks)
+        for task in done:
+            if task is not stopping:
+                task.result()  # re-raise the crashed service's exception
+
+    async def _shutdown(self, services: Dict[str, asyncio.Task]) -> None:
+        """
+        Stop the Starknet services at once, then give the Miden loop a bounded
+        time to finish its current tick: a pm_publisher call runs in a worker
+        thread and writes the local SQLite store, it must not be cut mid-way.
+        """
+        logger.info("🛑 Orchestration stopping...")
+        miden = services.pop("miden", None)
+        for task in services.values():
+            task.cancel()
+        await asyncio.gather(*services.values(), return_exceptions=True)
+
+        if miden is not None and not miden.done():
+            await asyncio.wait({miden}, timeout=self.miden_shutdown_timeout)
+            if not miden.done():
+                logger.warning(
+                    f"🌐 Miden tick still running after {self.miden_shutdown_timeout}s, cancelling it"
+                )
+                miden.cancel()
+                await asyncio.gather(miden, return_exceptions=True)
+        logger.info("🛑 Orchestration stopped")
 
     async def _poller_service(self) -> None:
         """
@@ -106,6 +151,8 @@ class Orchestrator:
         """
         while True:
             await self.poller.poll_prices()
+            if self.health:
+                self.health.record_poll()
             # Wait some time before requerying public APIs (rate limits).
             await asyncio.sleep(self.poller_refresh_interval)
 
@@ -159,14 +206,22 @@ class Orchestrator:
         `miden_publish_interval` seconds; if a publish takes longer, the next
         starts immediately (calls are awaited serially, so they never overlap).
         """
-        while True:
+        while not self._stop_event.is_set():
             start = time.monotonic()
             if self.last_polled_entries:
                 await self.pusher.publish_to_miden(self.last_polled_entries)
                 # Rate-limited inside the client; refills from the faucet when low.
                 await self.pusher.miden_client.maintain_fee_balance()
             elapsed = time.monotonic() - start
-            await asyncio.sleep(max(0.0, self.miden_publish_interval - elapsed))
+            await self._sleep_unless_stopping(
+                max(0.0, self.miden_publish_interval - elapsed)
+            )
+
+    async def _sleep_unless_stopping(self, seconds: float) -> None:
+        try:
+            await asyncio.wait_for(self._stop_event.wait(), timeout=seconds)
+        except asyncio.TimeoutError:
+            pass
 
     def _flush_entries_for_assets(
         self, pairs_per_type: Dict[DataTypes, List[Pair]]
@@ -240,13 +295,3 @@ class Orchestrator:
                     if source not in self.latest_prices[pair_id][data_type]:
                         self.latest_prices[pair_id][data_type][source] = {}
                     self.latest_prices[pair_id][data_type][source][expiry] = entry
-
-    async def _health_server_service(self) -> None:
-        """
-        Start the health check HTTP server.
-        """
-        if self.health_server:
-            await self.health_server.start()
-            # Keep the service running
-            while True:
-                await asyncio.sleep(3600)  # Sleep for an hour

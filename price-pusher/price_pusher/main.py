@@ -1,6 +1,7 @@
 import asyncio
 import click
 import logging
+import signal
 
 from typing import Optional, List, Sequence
 
@@ -48,6 +49,7 @@ async def main(
     health_port: Optional[int] = None,
     health_server_type: str = "fastapi",
     max_seconds_without_push: Optional[int] = None,
+    max_seconds_without_poll: int = 300,
     evm_rpc_urls: Optional[List[str]] = None,
     miden_publish_interval: int = 3,
     miden_network: Optional[str] = None,
@@ -60,6 +62,69 @@ async def main(
     Main function of the price pusher.
     Create the parts that are then fed to the orchestrator for the main loop.
     """
+    stop = asyncio.Event()
+    _install_signal_handlers(stop)
+
+    # The health server binds before anything slow so liveness probes get an
+    # answer from the first seconds of the container's life.
+    health_server = _create_health_server(
+        health_port=health_port,
+        health_server_type=health_server_type,
+        max_seconds_without_push=max_seconds_without_push
+        or _default_max_seconds_without_push(price_configs),
+        max_seconds_without_poll=max_seconds_without_poll,
+    )
+    if health_server:
+        await health_server.start()
+
+    try:
+        await _run(
+            price_configs=price_configs,
+            network=network,
+            private_key=private_key,
+            publisher_name=publisher_name,
+            publisher_address=publisher_address,
+            poller_refresh_interval=poller_refresh_interval,
+            rpc_url=rpc_url,
+            max_fee=max_fee,
+            pagination=pagination,
+            enable_strk_fees=enable_strk_fees,
+            evm_rpc_urls=evm_rpc_urls,
+            miden_publish_interval=miden_publish_interval,
+            miden_network=miden_network,
+            miden_oracle_id=miden_oracle_id,
+            miden_config_path=miden_config_path,
+            miden_storage_path=miden_storage_path,
+            miden_keystore_path=miden_keystore_path,
+            health_server=health_server,
+            stop=stop,
+        )
+    finally:
+        if health_server:
+            await health_server.stop()
+
+
+async def _run(
+    price_configs: List[PriceConfig],
+    network: Network,
+    private_key: PrivateKey,
+    publisher_name: str,
+    publisher_address: str,
+    poller_refresh_interval: int,
+    rpc_url: Optional[str],
+    max_fee: Optional[int],
+    pagination: Optional[int],
+    enable_strk_fees: Optional[bool],
+    evm_rpc_urls: Optional[List[str]],
+    miden_publish_interval: int,
+    miden_network: Optional[str],
+    miden_oracle_id: Optional[str],
+    miden_config_path: Optional[str],
+    miden_storage_path: Optional[str],
+    miden_keystore_path: Optional[str],
+    health_server: Optional[HealthServer | FastAPIHealthServer],
+    stop: asyncio.Event,
+) -> None:
     logger.info("🔨 Creating Pragma client...")
     pragma_client = _create_client(
         network=network,
@@ -79,26 +144,11 @@ async def main(
         evm_rpc_urls=evm_rpc_urls,
     )
 
-    logger.info("⏳ Starting orchestration...")
+    if stop.is_set():
+        logger.info("🛑 Stop requested during startup, exiting")
+        return
 
-    # Create health server if configured
-    health_server = None
-    if health_port:
-        if health_server_type.lower() == "fastapi":
-            prometheus = PrometheusMetrics()
-            # every fetcher rejection, deviation and reference failure in the
-            # SDK lands in this registry, exposed on /metrics
-            set_metrics_sink(prometheus)
-            health_server = FastAPIHealthServer(
-                port=health_port,
-                max_seconds_without_push=max_seconds_without_push or 300,
-                metrics=prometheus,
-            )
-        else:
-            health_server = HealthServer(
-                port=health_port,
-                max_seconds_without_push=max_seconds_without_push or 300,
-            )
+    logger.info("⏳ Starting orchestration...")
 
     miden_client: Optional[PragmaMidenClient] = None
     if miden_network:
@@ -130,11 +180,66 @@ async def main(
         miden_publish_interval=miden_publish_interval,
         listeners=_create_listeners(price_configs, pragma_client),
         pusher=pusher,
-        health_server=health_server,
+        health=health_server.status if health_server else None,
+        stop_event=stop,
     )
 
     logger.info("🚀 Orchestration starting 🚀")
     await orchestrator.run_forever()
+
+
+def _create_health_server(
+    health_port: Optional[int],
+    health_server_type: str,
+    max_seconds_without_push: int,
+    max_seconds_without_poll: int,
+) -> Optional[HealthServer | FastAPIHealthServer]:
+    if not health_port:
+        return None
+    if health_server_type.lower() == "fastapi":
+        prometheus = PrometheusMetrics()
+        # every fetcher rejection, deviation and reference failure in the
+        # SDK lands in this registry, exposed on /metrics
+        set_metrics_sink(prometheus)
+        return FastAPIHealthServer(
+            port=health_port,
+            max_seconds_without_push=max_seconds_without_push,
+            max_seconds_without_poll=max_seconds_without_poll,
+            metrics=prometheus,
+        )
+    return HealthServer(
+        port=health_port,
+        max_seconds_without_push=max_seconds_without_push,
+        max_seconds_without_poll=max_seconds_without_poll,
+    )
+
+
+def _default_max_seconds_without_push(price_configs: List[PriceConfig]) -> int:
+    """
+    A publisher whose entries are still fresh on-chain only pushes on
+    deviation, so "no push" is normal for a whole time_difference and more.
+    Readiness must not flap over that.
+    """
+    longest = max((config.time_difference for config in price_configs), default=0)
+    return max(300, 2 * longest + 60)
+
+
+def _install_signal_handlers(stop: asyncio.Event) -> None:
+    """
+    Without a handler a SIGTERM sent to PID 1 is dropped and the container
+    only dies at the end of the grace period, by SIGKILL.
+    """
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            loop.add_signal_handler(sig, _on_signal, sig, stop)
+        except NotImplementedError:  # not supported on Windows
+            pass
+
+
+def _on_signal(sig: signal.Signals, stop: asyncio.Event) -> None:
+    logger.info(f"🛑 Received {signal.Signals(sig).name}, shutting down...")
+    stop.set()
 
 
 def _create_listeners(
@@ -292,7 +397,16 @@ def _create_client(
     type=click.IntRange(min=60),
     required=False,
     default=300,
-    help="Maximum seconds without push before unhealthy. Default to 300 seconds (5 minutes).",
+    help="Readiness: maximum seconds without push before /ready reports not ready. "
+    "Defaults to twice the longest time_difference of the config (at least 300 seconds).",
+)
+@click.option(
+    "--max-seconds-without-poll",
+    type=click.IntRange(min=60),
+    required=False,
+    default=300,
+    help="Liveness: maximum seconds without a completed poll round before /health "
+    "reports unhealthy. Default to 300 seconds (5 minutes).",
 )
 @click.option(
     "--evm-rpc-url",
@@ -360,6 +474,7 @@ def cli_entrypoint(
     health_port: Optional[int],
     health_server_type: str,
     max_seconds_without_push: Optional[int],
+    max_seconds_without_poll: int,
     evm_rpc_url: Sequence[str],
     miden_publish_interval: int,
     miden_network: Optional[str],
@@ -407,6 +522,7 @@ def cli_entrypoint(
             health_port=health_port,
             health_server_type=health_server_type,
             max_seconds_without_push=max_seconds_without_push,
+            max_seconds_without_poll=max_seconds_without_poll,
             evm_rpc_urls=evm_rpc_urls,
             miden_publish_interval=miden_publish_interval,
             miden_network=miden_network,

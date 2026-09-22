@@ -90,6 +90,10 @@ async def _add_one_fetcher(
     publisher_name: str,
     evm_rpc_urls: Optional[Sequence[str]],
 ):
+    # Constructors are synchronous: yield between them so the health server
+    # keeps answering probes while the fetchers are being built.
+    await asyncio.sleep(0)
+
     # Filter out conversion-rate-only pairs from market rate fetchers
     if fetcher not in CONVERSION_RATE_FETCHERS:
         pairs = {p for p in pairs if str(p) not in CONVERSION_RATE_ONLY_PAIRS}
