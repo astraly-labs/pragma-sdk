@@ -1249,11 +1249,11 @@ wheels = [
 
 [[package]]
 name = "pm-publisher"
-version = "0.1.0a12"
+version = "0.1.0a13"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/6f/8ddacb2edae99e9b598fe1a708afd13b522a72ec585d88102ddfa83275da/pm_publisher-0.1.0a12-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:7bf0c061b4f1134896c8be0a88d9ea9536d1d4e0942a1c427d84bd6feaaff1c6", size = 15253986, upload-time = "2026-09-12T13:37:45.068Z" },
-    { url = "https://files.pythonhosted.org/packages/12/f0/ec0e6e7a0659479b305d4dc64c8e7d36aff2334da89cae7e140eab006e8c/pm_publisher-0.1.0a12-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b3f80d2ff2e5dd3848fa650ea3569d074c5bd02a110219336820aa7405ad3073", size = 16521065, upload-time = "2026-09-12T13:37:47.668Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/8f/dd6d66069a951eb2bbb01c3d6fc0d475abb17f19e328b0ffe4e9e6426fdd/pm_publisher-0.1.0a13-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:678237b7b8b839f3be0527a3f5df9b008c3d9a838482d79be1cc2b1ad52861d8", size = 14205315, upload-time = "2026-10-06T19:58:48.637Z" },
+    { url = "https://files.pythonhosted.org/packages/58/c3/e31dd09965b8af62cb128676aa016f4d68c425c732047439df360d1caaad/pm_publisher-0.1.0a13-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a02a091ce25cac1f9853f3ea4d11c275f8b02c65cfe58233f9113b24734ffa0", size = 15845403, upload-time = "2026-10-06T19:58:51.354Z" },
 ]
 
 [[package]]
@@ -1369,7 +1369,7 @@ requires-dist = [
     { name = "moto", extras = ["s3", "secretsmanager"], marker = "extra == 'dev'", specifier = ">=4.2.5" },
     { name = "mypy", marker = "extra == 'typing'", specifier = ">=1.10" },
     { name = "pallets-sphinx-themes", marker = "extra == 'docs'", specifier = ">=2.1.3" },
-    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a12" },
+    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a13" },
     { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.21.1" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2.2" },
