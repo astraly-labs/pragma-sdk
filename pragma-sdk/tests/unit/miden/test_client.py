@@ -8,6 +8,9 @@ from pragma_sdk.miden.client import (
     PragmaMidenClient,
     MidenEntry,
     STARKNET_PAIR_TO_MIDEN_FAUCET,
+    FEE_CHECK_INTERVAL_S,
+    FEE_REFILL_BACKOFF_S,
+    FEE_REFILL_THRESHOLD,
 )
 
 
@@ -401,6 +404,40 @@ class TestFeeRefill:
         mock_pm.balance.return_value = 1_000
         mock_pm.fund.side_effect = ValueError("Fund failed: faucet 429")
         assert await client.maintain_fee_balance(threshold=2_000_000) == 1_000
+
+    @pytest.mark.asyncio
+    async def test_failed_refill_backs_off_while_funded(self, client, mock_pm):
+        # Faucet down but the account can still pay: don't stall publishing by
+        # retrying (and waiting on the faucet) at every check.
+        mock_pm.balance.return_value = 20_000
+        mock_pm.fund.side_effect = ValueError("Fund failed: faucet 503")
+        assert await client.maintain_fee_balance() == 20_000
+        client._last_fee_check -= FEE_CHECK_INTERVAL_S
+        assert await client.maintain_fee_balance() is None
+        client._last_fee_check -= FEE_REFILL_BACKOFF_S
+        assert await client.maintain_fee_balance() == 20_000
+        assert mock_pm.balance.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_failed_refill_retries_at_normal_interval_when_empty(
+        self, client, mock_pm
+    ):
+        mock_pm.balance.return_value = 14
+        mock_pm.fund.side_effect = ValueError("Fund failed: faucet 503")
+        assert await client.maintain_fee_balance() == 14
+        client._last_fee_check -= FEE_CHECK_INTERVAL_S
+        assert await client.maintain_fee_balance() == 14
+        assert mock_pm.fund.call_count == 2
+
+    def test_default_policy_matches_the_faucet_limits(self):
+        # Faucet: <= 10_000 base units per request, one request per 30s.
+        # Worst case: a ~110-unit batch every 3s (the --miden-publish-interval
+        # default). The threshold must cover several check intervals of
+        # spending, and one refill per check must outpace it.
+        batch_cost, publish_interval_s, faucet_max = 110, 3, 10_000
+        spent_per_check = batch_cost * FEE_CHECK_INTERVAL_S / publish_interval_s
+        assert spent_per_check < faucet_max
+        assert FEE_REFILL_THRESHOLD >= 5 * spent_per_check
 
     @pytest.mark.asyncio
     async def test_balance_failure_is_swallowed(self, client, mock_pm):
