@@ -56,6 +56,9 @@ STARKNET_PAIR_TO_MIDEN_FAUCET: dict[str, str] = {
     "UNI/USD": "12:0",
     "AAVE/USD": "13:0",
     "MORPHO/USD": "14:0",
+    # Also pushed to Starknet (regular config group, not miden_only). Stand-in
+    # price for USDCx: the Miden oracle has no USDCx market of its own.
+    "USDC/USD": "15:0",
 }
 
 
