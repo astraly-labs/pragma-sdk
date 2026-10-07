@@ -9,6 +9,7 @@ from pragma_sdk.miden.client import (
     MidenEntry,
     STARKNET_PAIR_TO_MIDEN_FAUCET,
     FEE_CHECK_INTERVAL_S,
+    FEE_EMPTY_BALANCE,
     FEE_REFILL_BACKOFF_S,
     FEE_REFILL_THRESHOLD,
 )
@@ -409,14 +410,26 @@ class TestFeeRefill:
     async def test_failed_refill_backs_off_while_funded(self, client, mock_pm):
         # Faucet down but the account can still pay: don't stall publishing by
         # retrying (and waiting on the faucet) at every check.
-        mock_pm.balance.return_value = 20_000
+        mock_pm.balance.return_value = 60_000
         mock_pm.fund.side_effect = ValueError("Fund failed: faucet 503")
-        assert await client.maintain_fee_balance() == 20_000
+        assert await client.maintain_fee_balance() == 60_000
         client._last_fee_check -= FEE_CHECK_INTERVAL_S
         assert await client.maintain_fee_balance() is None
         client._last_fee_check -= FEE_REFILL_BACKOFF_S
-        assert await client.maintain_fee_balance() == 20_000
+        assert await client.maintain_fee_balance() == 60_000
         assert mock_pm.balance.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_failed_refill_retries_at_normal_interval_when_runway_is_short(
+        self, client, mock_pm
+    ):
+        # Below FEE_EMPTY_BALANCE the account would not outlast the back-off.
+        mock_pm.balance.return_value = FEE_EMPTY_BALANCE - 1
+        mock_pm.fund.side_effect = ValueError("Fund failed: faucet 503")
+        assert await client.maintain_fee_balance() == FEE_EMPTY_BALANCE - 1
+        client._last_fee_check -= FEE_CHECK_INTERVAL_S
+        assert await client.maintain_fee_balance() == FEE_EMPTY_BALANCE - 1
+        assert mock_pm.fund.call_count == 2
 
     @pytest.mark.asyncio
     async def test_failed_refill_retries_at_normal_interval_when_empty(
@@ -441,6 +454,10 @@ class TestFeeRefill:
         # And ride out a faucet outage of at least half an hour.
         spent_per_min = batch_cost * 60 / publish_interval_s
         assert FEE_REFILL_THRESHOLD / spent_per_min >= 30
+        # A back-off after a failed refill must be outlasted by the balance
+        # that allows it, and that balance must be below the threshold.
+        assert FEE_EMPTY_BALANCE >= spent_per_min * FEE_REFILL_BACKOFF_S / 60
+        assert FEE_EMPTY_BALANCE < FEE_REFILL_THRESHOLD
 
     @pytest.mark.asyncio
     async def test_balance_failure_is_swallowed(self, client, mock_pm):

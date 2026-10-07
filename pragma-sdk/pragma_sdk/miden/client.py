@@ -40,9 +40,12 @@ FEE_REFILL_THRESHOLD = 100_000
 FEE_CHECK_INTERVAL_S = 120
 # After a failed refill (faucet down) retry later, so a dead faucet doesn't
 # stall publishing every check while the account can still pay for batches.
-# An (almost) empty account keeps retrying at the normal interval.
+# The back-off is only safe if the balance outlasts it: at ~2_200 units/min
+# (15-entry batch every 3s) 10 minutes cost ~22_000, so below
+# FEE_EMPTY_BALANCE the publisher keeps retrying at the normal interval.
+# (A 5_000 mark let a 40_000 balance drain to ~17_000 during one back-off.)
 FEE_REFILL_BACKOFF_S = 600
-FEE_EMPTY_BALANCE = 5_000
+FEE_EMPTY_BALANCE = 30_000
 # Faucet proof-of-work + note commitment + consume tx.
 FUND_TIMEOUT_S = 120
 
