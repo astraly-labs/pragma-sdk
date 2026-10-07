@@ -30,11 +30,13 @@ SYNC_TIMEOUT_S = 30
 # 14-entry publish_batch costs ~110 base units (6 decimals) on testnet.
 # The 0.17 public faucet hands out at most 10_000 base units (~90 batches) per
 # request, one request per account every 30s, and is sometimes unavailable
-# (503). A refill can't be big, so refill early and often: 40_000 is ~350
-# batches of headroom and a check every 2 minutes tops up well before the
-# account runs dry (the 10-minute check of the 0.16 faucet, 100 tokens per
-# request, starved it after ~3h).
-FEE_REFILL_THRESHOLD = 40_000
+# (503). A refill can't be big, so refill early and often: a check every 2
+# minutes tops up well before the account runs dry (the 10-minute check of the
+# 0.16 faucet, 100 tokens per request, starved it after ~3h). Measured in prod:
+# a 15-entry batch every 3s spends ~2_200 units/min, so 100_000 is ~45 minutes
+# of runway if the faucet goes down (a 3.5h outage on 2026-10-07 drained the
+# 40_000 buffer in ~18 min).
+FEE_REFILL_THRESHOLD = 100_000
 FEE_CHECK_INTERVAL_S = 120
 # After a failed refill (faucet down) retry later, so a dead faucet doesn't
 # stall publishing every check while the account can still pay for batches.
