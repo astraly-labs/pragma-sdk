@@ -68,6 +68,15 @@ class TestFromStarknetEntry:
         assert result is not None
         assert result.decimals == 8
 
+    def test_usdc_usd_is_published_on_15_with_6_decimals(self):
+        # USDC has 6 decimals, USD 8 -> min == 6 (same as USDT/USD)
+        entry = make_starknet_entry("USDC/USD", 1_000_120)
+        result = MidenEntry.from_starknet_entry(entry)
+        assert result is not None
+        assert result.pair == "15:0"
+        assert result.price == 1_000_120
+        assert result.decimals == 6
+
     def test_unsupported_pair_returns_none(self):
         entry = make_starknet_entry("WSTETH/USD", 2500_000000)
         result = MidenEntry.from_starknet_entry(entry)
@@ -114,6 +123,7 @@ class TestMapping:
             "UNI/USD",
             "AAVE/USD",
             "MORPHO/USD",
+            "USDC/USD",
         }
         assert expected == set(STARKNET_PAIR_TO_MIDEN_FAUCET.keys())
 
