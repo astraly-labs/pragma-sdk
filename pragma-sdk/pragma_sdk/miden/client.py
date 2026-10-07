@@ -26,13 +26,23 @@ INIT_TIMEOUT_S = 60
 PUBLISH_BATCH_TIMEOUT_S = 180
 GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
-# Miden 0.16 charges every transaction a fee in the chain's native asset. A
-# 14-entry publish_batch costs ~112 base units (6 decimals) on testnet, so
-# 2_000_000 is ~18k batches: ~15h of headroom at one batch every 3s.
-FEE_REFILL_THRESHOLD = 2_000_000
-FEE_CHECK_INTERVAL_S = 600
+# Miden charges every transaction a fee in the chain's native asset: a
+# 14-entry publish_batch costs ~110 base units (6 decimals) on testnet.
+# The 0.17 public faucet hands out at most 10_000 base units (~90 batches) per
+# request, one request per account every 30s, and is sometimes unavailable
+# (503). A refill can't be big, so refill early and often: 40_000 is ~350
+# batches of headroom and a check every 2 minutes tops up well before the
+# account runs dry (the 10-minute check of the 0.16 faucet, 100 tokens per
+# request, starved it after ~3h).
+FEE_REFILL_THRESHOLD = 40_000
+FEE_CHECK_INTERVAL_S = 120
+# After a failed refill (faucet down) retry later, so a dead faucet doesn't
+# stall publishing every check while the account can still pay for batches.
+# An (almost) empty account keeps retrying at the normal interval.
+FEE_REFILL_BACKOFF_S = 600
+FEE_EMPTY_BALANCE = 5_000
 # Faucet proof-of-work + note commitment + consume tx.
-FUND_TIMEOUT_S = 600
+FUND_TIMEOUT_S = 120
 
 # Mapping from Starknet pair_id (e.g. "BTC/USD") to Miden faucet_id (e.g. "1:0").
 # Only pairs published by the Starknet pusher are forwarded to Miden; the
@@ -474,6 +484,10 @@ class PragmaMidenClient:
         except Exception as e:
             metrics().miden_refill(account, False)
             logger.error(f"Miden faucet refill failed for {account}: {e}")
+            if balance >= FEE_EMPTY_BALANCE:
+                self._last_fee_check = time.monotonic() + (
+                    FEE_REFILL_BACKOFF_S - FEE_CHECK_INTERVAL_S
+                )
             return balance
         metrics().miden_refill(account, True)
         metrics().miden_fee_balance(account, balance)
