@@ -438,6 +438,9 @@ class TestFeeRefill:
         spent_per_check = batch_cost * FEE_CHECK_INTERVAL_S / publish_interval_s
         assert spent_per_check < faucet_max
         assert FEE_REFILL_THRESHOLD >= 5 * spent_per_check
+        # And ride out a faucet outage of at least half an hour.
+        spent_per_min = batch_cost * 60 / publish_interval_s
+        assert FEE_REFILL_THRESHOLD / spent_per_min >= 30
 
     @pytest.mark.asyncio
     async def test_balance_failure_is_swallowed(self, client, mock_pm):
