@@ -1,0 +1,41 @@
+# Miden pair indices: APPEND-ONLY registry.
+#
+# An index ("N:0") is the on-chain key of a pair on the Miden oracle and in every
+# publisher's storage. Consumers pin it, and an entry written under an index stays
+# readable for 1 hour (MAX_ENTRY_AGE_SECONDS), so changing what an index means
+# serves one asset's price under another asset's name.
+#
+# Rules (enforced by tests/unit/miden/test_pair_indices.py):
+#   - an index is never reassigned and never reused, even after its pair is dropped;
+#   - to stop publishing a pair, move it from `active` to `retired` (the index stays
+#     reserved forever); new pairs always take the next free index (max + 1);
+#   - this file and STARKNET_PAIR_TO_MIDEN_FAUCET in client.py must say the same thing.
+active:
+  "1:0": BTC/USD
+  "2:0": ETH/USD
+  "3:0": WBTC/USD
+  "4:0": USDT/USD
+  "5:0": DAI/USD
+  "6:0": ZEC/USD
+  "7:0": XMR/USD
+  "8:0": DASH/USD
+  "9:0": XAUT/USD
+  "10:0": PAXG/USD
+  "11:0": LINK/USD
+  "12:0": UNI/USD
+  "13:0": AAVE/USD
+  "14:0": MORPHO/USD
+  "15:0": USDC/USD
+
+# index -> pair, still reserved. Empty today.
+retired: {}
+
+# Reassignments that happened BEFORE this registry existed (kept for the record, not
+# enforced): any consumer or deployment that predates the "until" date read these
+# indices with their old meaning. They must not happen again.
+legacy_reassignments:
+  - {index: "3:0", pair: SOL/USD, until: 2026-05-11}
+  - {index: "4:0", pair: BNB/USD, until: 2026-05-11}
+  - {index: "5:0", pair: XRP/USD, until: 2026-05-11}
+  - {index: "6:0", pair: HYPE/USD, until: 2026-09-08}
+  - {index: "7:0", pair: POL/USD, until: 2026-09-08}
