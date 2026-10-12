@@ -233,6 +233,7 @@ class PricePusher(IPricePusher):
                 price=int(median(m.price for m in mes)),
                 decimals=mes[0].decimals,
                 timestamp=max(m.timestamp for m in mes),
+                num_sources=len(mes),
             )
             for pair, mes in per_pair.items()
         ]
