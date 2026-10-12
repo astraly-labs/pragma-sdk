@@ -28,14 +28,14 @@ GET_ENTRY_TIMEOUT_S = 15
 SYNC_TIMEOUT_S = 30
 # Miden charges every transaction a fee in the chain's native asset: a
 # 14-entry publish_batch costs ~110 base units (6 decimals) on testnet.
-# The 0.17 public faucet hands out at most 10_000 base units (~90 batches) per
-# request, one request per account every 30s, and is sometimes unavailable
-# (503). A refill can't be big, so refill early and often: a check every 2
-# minutes tops up well before the account runs dry (the 10-minute check of the
-# 0.16 faucet, 100 tokens per request, starved it after ~3h). Measured in prod:
-# a 15-entry batch every 3s spends ~2_200 units/min, so 100_000 is ~45 minutes
-# of runway if the faucet goes down (a 3.5h outage on 2026-10-07 drained the
-# 40_000 buffer in ~18 min).
+# The public faucet caps the amount per request and per account, and is
+# sometimes unavailable (503); its limits have changed before (10_000 units per
+# request on 2026-10-07, much more since), so the refill logic must not depend
+# on them. Refill early and often: a check every 2 minutes tops up well before
+# the account runs dry (the 10-minute check of the 0.16 faucet, 100 tokens per
+# request, starved it after ~3h). Measured in prod: a 15-entry batch every 3s
+# spends ~2_200 units/min, so 100_000 is ~45 minutes of runway if the faucet
+# goes down (a 3.5h outage on 2026-10-07 drained the 40_000 buffer in ~18 min).
 FEE_REFILL_THRESHOLD = 100_000
 FEE_CHECK_INTERVAL_S = 120
 # After a failed refill (faucet down) retry later, so a dead faucet doesn't
@@ -86,11 +86,14 @@ class MidenEntry:
         price: int,
         decimals: int,
         timestamp: Optional[int] = None,
+        num_sources: int = 0,
     ):
         self.pair = pair
         self.price = price
         self.decimals = decimals
         self.timestamp = timestamp or int(time.time())
+        # Exchanges aggregated into the price, 0 when unknown.
+        self.num_sources = num_sources
 
     @classmethod
     def from_starknet_entry(cls, entry: object) -> Optional["MidenEntry"]:
@@ -330,6 +333,7 @@ class PragmaMidenClient:
                     storage_path=self.storage_path,
                     keystore_path=self.keystore_path,
                     network=self.network,
+                    num_sources=[e.num_sources for e in entries],
                 ),
                 timeout=PUBLISH_BATCH_TIMEOUT_S,
             )

@@ -184,6 +184,16 @@ class TestPublishEntries:
             ("1:0", 6819900000000, 8, entries[0].timestamp),
             ("2:0", 215000000000, 8, entries[1].timestamp),
         ]
+        assert mock_pm.publish_batch.call_args.kwargs["num_sources"] == [0, 0]
+
+    @pytest.mark.asyncio
+    async def test_publish_forwards_num_sources_per_entry(self, client, mock_pm):
+        entries = [
+            MidenEntry(pair="1:0", price=6819900000000, decimals=8, num_sources=5),
+            MidenEntry(pair="2:0", price=215000000000, decimals=8, num_sources=3),
+        ]
+        await client.publish_entries(entries)
+        assert mock_pm.publish_batch.call_args.kwargs["num_sources"] == [5, 3]
 
     @pytest.mark.asyncio
     async def test_publish_empty_returns_empty(self, client, mock_pm):
