@@ -104,7 +104,7 @@ Miden only
 ^^^^^^^^^^
 
 To publish to Miden without a Starknet account, pass ``--miden-only`` instead of the Starknet options
-(``--network``, ``--private-key`` and ``--publisher-address`` are then not needed, and refused nowhere):
+(``--network``, ``--private-key`` and ``--publisher-address`` are then not needed):
 there is no Starknet client and no Starknet push, and every configured pair of ``MIDEN_PAIRS`` is
 forwarded to Miden, whether its group is flagged ``miden_only`` or not.
 
