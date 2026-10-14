@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from pragma_sdk.miden.client import (
     PragmaMidenClient,
     MidenEntry,
-    STARKNET_PAIR_TO_MIDEN_FAUCET,
+    MIDEN_PAIRS,
     FEE_CHECK_INTERVAL_S,
     FEE_EMPTY_BALANCE,
     FEE_REFILL_BACKOFF_S,
@@ -55,7 +55,7 @@ class TestFromStarknetEntry:
         entry = make_starknet_entry("BTC/USD", 6819900000000)
         result = MidenEntry.from_starknet_entry(entry)
         assert result is not None
-        assert result.pair == "1:0"
+        assert result.pair == "BTC/USD"
         assert result.price == 6819900000000
 
     def test_decimals_resolved_from_pair_currencies(self):
@@ -77,7 +77,7 @@ class TestFromStarknetEntry:
         entry = make_starknet_entry("USDC/USD", 1_000_120)
         result = MidenEntry.from_starknet_entry(entry)
         assert result is not None
-        assert result.pair == "15:0"
+        assert result.pair == "USDC/USD"
         assert result.price == 1_000_120
         assert result.decimals == 6
 
@@ -106,11 +106,11 @@ class TestFromStarknetEntry:
 
 
 # ---------------------------------------------------------------------------
-# STARKNET_PAIR_TO_MIDEN_FAUCET mapping
+# MIDEN_PAIRS
 # ---------------------------------------------------------------------------
 
 
-class TestMapping:
+class TestMidenPairs:
     def test_all_expected_pairs_present(self):
         expected = {
             "BTC/USD",
@@ -129,19 +129,15 @@ class TestMapping:
             "MORPHO/USD",
             "USDC/USD",
         }
-        assert expected == set(STARKNET_PAIR_TO_MIDEN_FAUCET.keys())
+        assert expected == set(MIDEN_PAIRS)
+        assert len(MIDEN_PAIRS) == len(expected)
 
-    def test_faucet_ids_are_unique(self):
-        values = list(STARKNET_PAIR_TO_MIDEN_FAUCET.values())
-        assert len(values) == len(set(values))
-
-    def test_faucet_id_format(self):
-        for pair, faucet_id in STARKNET_PAIR_TO_MIDEN_FAUCET.items():
-            parts = faucet_id.split(":")
-            assert len(parts) == 2, f"Invalid faucet_id format for {pair}: {faucet_id}"
-            assert all(
-                p.isdigit() for p in parts
-            ), f"Non-numeric faucet_id for {pair}: {faucet_id}"
+    def test_pair_names_are_what_the_oracle_derives_its_key_from(self):
+        # BASE/QUOTE, upper case, alphanumeric assets: anything else is refused by pair_key.
+        for pair in MIDEN_PAIRS:
+            base, quote = pair.split("/")
+            assert pair == pair.upper()
+            assert base.isalnum() and quote.isalnum(), pair
 
 
 # ---------------------------------------------------------------------------
@@ -172,8 +168,8 @@ class TestPublishEntries:
     @pytest.mark.asyncio
     async def test_publish_all_success_uses_single_batch_call(self, client, mock_pm):
         entries = [
-            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
-            MidenEntry(pair="2:0", price=215000000000, decimals=8),
+            MidenEntry(pair="BTC/USD", price=6819900000000, decimals=8),
+            MidenEntry(pair="ETH/USD", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [True, True]
@@ -181,16 +177,16 @@ class TestPublishEntries:
         assert mock_pm.publish_batch.call_count == 1
         positional = mock_pm.publish_batch.call_args.args[0]
         assert positional == [
-            ("1:0", 6819900000000, 8, entries[0].timestamp),
-            ("2:0", 215000000000, 8, entries[1].timestamp),
+            ("BTC/USD", 6819900000000, 8, entries[0].timestamp),
+            ("ETH/USD", 215000000000, 8, entries[1].timestamp),
         ]
         assert mock_pm.publish_batch.call_args.kwargs["num_sources"] == [0, 0]
 
     @pytest.mark.asyncio
     async def test_publish_forwards_num_sources_per_entry(self, client, mock_pm):
         entries = [
-            MidenEntry(pair="1:0", price=6819900000000, decimals=8, num_sources=5),
-            MidenEntry(pair="2:0", price=215000000000, decimals=8, num_sources=3),
+            MidenEntry(pair="BTC/USD", price=6819900000000, decimals=8, num_sources=5),
+            MidenEntry(pair="ETH/USD", price=215000000000, decimals=8, num_sources=3),
         ]
         await client.publish_entries(entries)
         assert mock_pm.publish_batch.call_args.kwargs["num_sources"] == [5, 3]
@@ -206,9 +202,9 @@ class TestPublishEntries:
         """Batch is atomic — one failure means none of the entries landed."""
         mock_pm.publish_batch.side_effect = Exception("network error")
         entries = [
-            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
-            MidenEntry(pair="2:0", price=215000000000, decimals=8),
-            MidenEntry(pair="3:0", price=8500000000, decimals=8),
+            MidenEntry(pair="BTC/USD", price=6819900000000, decimals=8),
+            MidenEntry(pair="ETH/USD", price=215000000000, decimals=8),
+            MidenEntry(pair="WBTC/USD", price=8500000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [False, False, False]
@@ -225,8 +221,8 @@ class TestPublishEntries:
 
         mock_pm.publish_batch.side_effect = slow_publish_batch
         entries = [
-            MidenEntry(pair="1:0", price=6819900000000, decimals=8),
-            MidenEntry(pair="2:0", price=215000000000, decimals=8),
+            MidenEntry(pair="BTC/USD", price=6819900000000, decimals=8),
+            MidenEntry(pair="ETH/USD", price=215000000000, decimals=8),
         ]
         results = await client.publish_entries(entries)
         assert results == [False, False]
@@ -254,15 +250,15 @@ class TestGetEntry:
     async def test_get_entry_parses_json_payload(self, client, mock_pm):
         mock_pm.get_entry.return_value = json.dumps(
             {
-                "faucet_id": "1:0",
+                "pair": "BTC/USD",
                 "price": 6819900000000,
                 "decimals": 8,
                 "timestamp": 1700000000,
             }
         )
-        entry = await client.get_entry("1:0")
+        entry = await client.get_entry("BTC/USD")
         assert entry is not None
-        assert entry.pair == "1:0"
+        assert entry.pair == "BTC/USD"
         assert entry.price == 6819900000000
         assert entry.decimals == 8
         assert entry.timestamp == 1700000000
@@ -270,12 +266,12 @@ class TestGetEntry:
     @pytest.mark.asyncio
     async def test_get_entry_returns_none_on_malformed_payload(self, client, mock_pm):
         mock_pm.get_entry.return_value = "not json"
-        assert await client.get_entry("1:0") is None
+        assert await client.get_entry("BTC/USD") is None
 
     @pytest.mark.asyncio
     async def test_get_entry_returns_none_on_exception(self, client, mock_pm):
         mock_pm.get_entry.side_effect = Exception("rpc down")
-        assert await client.get_entry("1:0") is None
+        assert await client.get_entry("BTC/USD") is None
 
 
 # ---------------------------------------------------------------------------
@@ -409,6 +405,39 @@ class TestFeeRefill:
         mock_pm.balance.return_value = 1_000
         assert await client.maintain_fee_balance(threshold=2_000_000) == 100_000_000
         mock_pm.fund.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_notes_waiting_for_the_account_are_opened_before_the_balance_is_read(
+        self, client, mock_pm
+    ):
+        order = []
+        mock_pm.consume_notes.side_effect = lambda *a, **k: order.append("consume") or [
+            "0xnote"
+        ]
+        mock_pm.balance.side_effect = lambda *a, **k: order.append("balance") or 5_000_000
+        assert await client.maintain_fee_balance(threshold=2_000_000) == 5_000_000
+        assert order == ["consume", "balance"]
+        mock_pm.fund.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_failed_consume_does_not_stop_the_check(self, client, mock_pm):
+        mock_pm.consume_notes.side_effect = ValueError("Consume failed")
+        assert await client.maintain_fee_balance(threshold=2_000_000) == 5_000_000
+
+    @pytest.mark.asyncio
+    async def test_no_faucet_outside_testnet(self, mock_pm, tmp_path):
+        c = PragmaMidenClient(
+            network="mainnet",
+            storage_path=str(tmp_path),
+            keystore_path=str(tmp_path / "keystore"),
+            config_path=write_config(tmp_path, network="mainnet"),
+        )
+        c.is_initialized = True
+        c.publisher_id = "0x22a42798e8519c914214f1a63009c8"
+        mock_pm.balance.return_value = 1_000
+        assert await c.maintain_fee_balance(threshold=2_000_000) == 1_000
+        mock_pm.consume_notes.assert_called_once()
+        mock_pm.fund.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_refill_failure_is_swallowed(self, client, mock_pm):

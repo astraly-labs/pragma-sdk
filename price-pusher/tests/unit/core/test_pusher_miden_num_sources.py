@@ -30,5 +30,5 @@ async def test_miden_entry_carries_the_number_of_aggregated_sources():
     )
 
     published = {e.pair: e for e in miden_client.publish_entries.call_args.args[0]}
-    assert (published["1:0"].price, published["1:0"].num_sources) == (200, 3)
-    assert (published["2:0"].price, published["2:0"].num_sources) == (60, 2)
+    assert (published["BTC/USD"].price, published["BTC/USD"].num_sources) == (200, 3)
+    assert (published["ETH/USD"].price, published["ETH/USD"].num_sources) == (60, 2)

@@ -5,7 +5,7 @@ import yaml
 from price_pusher.configs import PriceConfig
 from price_pusher.main import _create_listeners
 
-from pragma_sdk.miden.client import STARKNET_PAIR_TO_MIDEN_FAUCET
+from pragma_sdk.miden.client import MIDEN_PAIRS
 
 MIDEN_ONLY_PAIRS = [
     "ZEC/USD",
@@ -53,18 +53,14 @@ def test_miden_only_group_gets_no_starknet_listener(tmp_path):
     assert listened == {"BTC/USD", "ETH/USD"}
 
 
-def test_miden_only_pairs_are_mapped_to_faucets():
-    faucets = [STARKNET_PAIR_TO_MIDEN_FAUCET[p] for p in MIDEN_ONLY_PAIRS]
-    assert faucets == [f"{i}:0" for i in range(6, 15)]
-    assert len(set(STARKNET_PAIR_TO_MIDEN_FAUCET.values())) == len(
-        STARKNET_PAIR_TO_MIDEN_FAUCET
-    )
+def test_miden_only_pairs_are_published_on_miden():
+    assert set(MIDEN_ONLY_PAIRS) <= set(MIDEN_PAIRS)
 
 
-def test_mainnet_config_miden_group_matches_faucet_mapping():
+def test_mainnet_config_miden_group_matches_the_miden_pairs():
     configs = PriceConfig.from_yaml("../infra/price-pusher/config/config.mainnet.yaml")
     miden_groups = [c for c in configs if c.miden_only]
     assert len(miden_groups) == 1
     pairs = {str(p) for p in miden_groups[0].pairs.spot}
     assert pairs == set(MIDEN_ONLY_PAIRS)
-    assert pairs <= STARKNET_PAIR_TO_MIDEN_FAUCET.keys()
+    assert pairs <= set(MIDEN_PAIRS)
