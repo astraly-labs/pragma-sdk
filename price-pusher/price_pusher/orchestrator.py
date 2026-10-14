@@ -162,6 +162,10 @@ class Orchestrator:
         for a group of pair.
         """
         tasks = [self._start_listener(listener) for listener in self.listeners]
+        if not tasks:
+            # Miden-only: nothing to listen to, but returning would count as a dead
+            # service and take the whole orchestration down.
+            await asyncio.Event().wait()
         await asyncio.gather(*tasks)
 
     async def _start_listener(self, listener: PriceListener) -> None:

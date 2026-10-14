@@ -37,11 +37,12 @@ logger = logging.getLogger(__name__)
 
 async def main(
     price_configs: List[PriceConfig],
-    network: Network,
-    private_key: PrivateKey,
+    network: Optional[Network],
+    private_key: Optional[PrivateKey],
     publisher_name: str,
-    publisher_address: str,
+    publisher_address: Optional[str],
     poller_refresh_interval: int,
+    miden_only: bool = False,
     rpc_url: Optional[str] = None,
     max_fee: Optional[int] = None,
     pagination: Optional[int] = None,
@@ -84,6 +85,7 @@ async def main(
             private_key=private_key,
             publisher_name=publisher_name,
             publisher_address=publisher_address,
+            miden_only=miden_only,
             poller_refresh_interval=poller_refresh_interval,
             rpc_url=rpc_url,
             max_fee=max_fee,
@@ -106,10 +108,11 @@ async def main(
 
 async def _run(
     price_configs: List[PriceConfig],
-    network: Network,
-    private_key: PrivateKey,
+    network: Optional[Network],
+    private_key: Optional[PrivateKey],
     publisher_name: str,
-    publisher_address: str,
+    publisher_address: Optional[str],
+    miden_only: bool,
     poller_refresh_interval: int,
     rpc_url: Optional[str],
     max_fee: Optional[int],
@@ -125,16 +128,19 @@ async def _run(
     health_server: Optional[HealthServer | FastAPIHealthServer],
     stop: asyncio.Event,
 ) -> None:
-    logger.info("🔨 Creating Pragma client...")
-    pragma_client = _create_client(
-        network=network,
-        publisher_address=publisher_address,
-        private_key=private_key,
-        rpc_url=rpc_url,
-        max_fee=max_fee,
-        pagination=pagination,
-        enable_strk_fees=enable_strk_fees,
-    )
+    pragma_client: Optional[PragmaClient] = None
+    if not miden_only:
+        logger.info("🔨 Creating Pragma client...")
+        assert network and private_key and publisher_address
+        pragma_client = _create_client(
+            network=network,
+            publisher_address=publisher_address,
+            private_key=private_key,
+            rpc_url=rpc_url,
+            max_fee=max_fee,
+            pagination=pagination,
+            enable_strk_fees=enable_strk_fees,
+        )
 
     logger.info("🪚 Creating Fetcher client & adding fetchers...")
     fetcher_client = await add_all_fetchers(
@@ -178,7 +184,9 @@ async def _run(
         poller=poller,
         poller_refresh_interval=poller_refresh_interval,
         miden_publish_interval=miden_publish_interval,
-        listeners=_create_listeners(price_configs, pragma_client),
+        listeners=[]
+        if pragma_client is None
+        else _create_listeners(price_configs, pragma_client),
         pusher=pusher,
         health=health_server.status if health_server else None,
         stop_event=stop,
@@ -310,9 +318,9 @@ def _create_client(
 @click.option(
     "-n",
     "--network",
-    required=True,
+    required=False,
     type=click.Choice(["sepolia", "mainnet"], case_sensitive=False),
-    help="At which network the price corresponds.",
+    help="At which network the price corresponds (Starknet). Required unless --miden-only.",
 )
 @click.option(
     "--rpc-url",
@@ -325,9 +333,9 @@ def _create_client(
     "--private-key",
     "raw_private_key",
     type=click.STRING,
-    required=True,
+    required=False,
     help=(
-        "Private key of the signer. Format: "
+        "Private key of the Starknet signer (required unless --miden-only). Format: "
         "aws:secret_name, "
         "plain:private_key, "
         "env:ENV_VAR_NAME, "
@@ -350,8 +358,15 @@ def _create_client(
 @click.option(
     "--publisher-address",
     type=click.STRING,
-    required=True,
-    help="Your publisher address.",
+    required=False,
+    help="Your Starknet publisher address (required unless --miden-only).",
+)
+@click.option(
+    "--miden-only",
+    is_flag=True,
+    default=False,
+    help="Publish to Miden only: no Starknet client, no Starknet push, every configured pair "
+    "is forwarded to Miden. Needs --miden-network.",
 )
 @click.option(
     "--max-fee",
@@ -461,12 +476,13 @@ def _create_client(
 def cli_entrypoint(
     config_file: str,
     log_level: str,
-    network: str,
+    network: Optional[str],
     rpc_url: Optional[str],
-    raw_private_key: str,
+    raw_private_key: Optional[str],
     aws_region: str,
     publisher_name: str,
-    publisher_address: str,
+    publisher_address: Optional[str],
+    miden_only: bool,
     max_fee: Optional[int],
     pagination: Optional[int],
     enable_strk_fees: Optional[bool],
@@ -497,8 +513,24 @@ def cli_entrypoint(
     sdk_logger = get_pragma_sdk_logger()
     sdk_logger.setLevel(log_level)
 
+    if miden_only:
+        if not miden_network:
+            raise click.UsageError("⛔ --miden-only needs --miden-network.")
+    else:
+        for name, value in (
+            ("--network", network),
+            ("--private-key", raw_private_key),
+            ("--publisher-address", publisher_address),
+        ):
+            if not value:
+                raise click.UsageError(f"⛔ {name} is required unless --miden-only.")
+
     setup_logging(logger, log_level)
-    private_key = load_private_key_from_cli_arg(raw_private_key, aws_region=aws_region)
+    private_key = (
+        load_private_key_from_cli_arg(raw_private_key, aws_region=aws_region)
+        if raw_private_key and not miden_only
+        else None
+    )
     price_configs: List[PriceConfig] = PriceConfig.from_yaml(config_file)
 
     # Disable health server if port is 0
@@ -514,6 +546,7 @@ def cli_entrypoint(
             private_key=private_key,
             publisher_name=publisher_name.upper(),
             publisher_address=publisher_address,
+            miden_only=miden_only,
             rpc_url=rpc_url,
             max_fee=max_fee,
             pagination=pagination,
