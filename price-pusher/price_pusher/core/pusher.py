@@ -29,7 +29,7 @@ ALLOWED_SOURCES_TTL_S = 600
 
 
 class IPricePusher(ABC):
-    client: PragmaClient
+    client: Optional[PragmaClient]
     consecutive_push_error: int
     onchain_lock: asyncio.Lock
 
@@ -40,7 +40,7 @@ class IPricePusher(ABC):
 class PricePusher(IPricePusher):
     def __init__(
         self,
-        client: PragmaClient,
+        client: Optional[PragmaClient],
         on_successful_push: Optional[Callable[[], None]] = None,
         miden_client: Optional[PragmaMidenClient] = None,
         publisher_name: Optional[str] = None,
