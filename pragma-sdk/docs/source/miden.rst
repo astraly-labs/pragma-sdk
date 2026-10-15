@@ -62,8 +62,8 @@ After initialization, publish entries directly:
         client = PragmaMidenClient(network="testnet")
         await client.initialize()  # reuses existing config if present
         results = await client.publish_entries([
-            MidenEntry(pair="1:0", price=6819900000000, decimals=8),  # BTC/USD
-            MidenEntry(pair="2:0", price=215000000000,  decimals=8),  # ETH/USD
+            MidenEntry(pair="BTC/USD", price=6819900000000, decimals=8),
+            MidenEntry(pair="ETH/USD", price=215000000000,  decimals=8),
         ])
         print(results)  # [True, True]
 
@@ -100,54 +100,42 @@ freeze the Starknet pusher.
 The ``--miden-config-path`` / ``--miden-storage-path`` / ``--miden-keystore-path`` flags
 are optional — if omitted, paths are resolved relative to the pusher's working directory.
 
+Miden only
+^^^^^^^^^^
+
+To publish to Miden without a Starknet account, pass ``--miden-only`` instead of the Starknet options
+(``--network``, ``--private-key`` and ``--publisher-address`` are then not needed):
+there is no Starknet client and no Starknet push, and every configured pair of ``MIDEN_PAIRS`` is
+forwarded to Miden, whether its group is flagged ``miden_only`` or not.
+
+.. code-block:: bash
+
+    price-pusher \
+      --config-file config.yaml \
+      --publisher-name MY_PUBLISHER \
+      --miden-only \
+      --miden-network testnet \
+      --miden-config-path /path/to/pragma_miden.json \
+      --miden-storage-path /path/to/miden_storage \
+      --miden-keystore-path /path/to/keystore
+
 Supported pairs
 ---------------
 
-Only pairs in the following mapping are published to Miden. Unsupported pairs are silently skipped.
+Only the pairs of ``MIDEN_PAIRS`` (``pragma_sdk/miden/client.py``) are published to Miden. Unsupported pairs
+are silently skipped. A pair is identified on chain by its name: the oracle derives the storage key from
+``BASE/QUOTE`` (``pm_publisher.pair_key("BTC/USD")``), so there is no index to register or keep stable.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 20 20
-
-   * - Starknet pair_id
-     - Miden faucet_id
-   * - ``BTC/USD``
-     - ``1:0``
-   * - ``ETH/USD``
-     - ``2:0``
-   * - ``WBTC/USD``
-     - ``3:0``
-   * - ``USDT/USD``
-     - ``4:0``
-   * - ``DAI/USD``
-     - ``5:0``
-   * - ``ZEC/USD``
-     - ``6:0``
-   * - ``XMR/USD``
-     - ``7:0``
-   * - ``DASH/USD``
-     - ``8:0``
-   * - ``XAUT/USD``
-     - ``9:0``
-   * - ``PAXG/USD``
-     - ``10:0``
-   * - ``LINK/USD``
-     - ``11:0``
-   * - ``UNI/USD``
-     - ``12:0``
-   * - ``AAVE/USD``
-     - ``13:0``
-   * - ``MORPHO/USD``
-     - ``14:0``
-   * - ``USDC/USD``
-     - ``15:0``
+``BTC/USD`` (8 decimals), ``ETH/USD`` (8), ``WBTC/USD`` (8), ``USDT/USD`` (6), ``DAI/USD`` (8), ``ZEC/USD`` (8),
+``XMR/USD`` (8), ``DASH/USD`` (8), ``XAUT/USD`` (6), ``PAXG/USD`` (8), ``LINK/USD`` (8), ``UNI/USD`` (8),
+``AAVE/USD`` (8), ``MORPHO/USD`` (8), ``USDC/USD`` (6).
 
 Miden-only feeds
 ^^^^^^^^^^^^^^^^
 
 A price-pusher config group flagged ``miden_only: true`` is polled by the fetchers and
 forwarded to Miden, but no Starknet listener is created for it, so its pairs are never
-pushed to Starknet. ``6:0`` to ``14:0`` above are published this way (``15:0``, ``USDC/USD``, is a regular pair that is pushed to both chains):
+pushed to Starknet. ``ZEC/USD`` to ``MORPHO/USD`` above are published this way (``USDC/USD`` is a regular pair that is pushed to both chains):
 
 .. code-block:: yaml
 
@@ -159,7 +147,7 @@ pushed to Starknet. ``6:0`` to ``14:0`` above are published this way (``15:0``, 
       price_deviation: 0.01
       miden_only: true
 
-To add a new pair, update ``STARKNET_PAIR_TO_MIDEN_FAUCET`` in ``pragma_sdk/miden/client.py`` and bump the ``pragma-sdk`` version.
+To add a new pair, add it to ``MIDEN_PAIRS`` in ``pragma_sdk/miden/client.py`` and bump the ``pragma-sdk`` version.
 
 API reference
 -------------
@@ -182,7 +170,7 @@ API reference
         async def sync(self) -> None: ...
 
     class MidenEntry:
-        pair: str       # Miden faucet_id, e.g. "1:0"
+        pair: str       # pair name, e.g. "BTC/USD"
         price: int      # integer scaled by 10**decimals
         decimals: int
         timestamp: int  # unix timestamp, defaults to now

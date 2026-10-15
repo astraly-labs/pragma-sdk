@@ -49,32 +49,34 @@ FEE_EMPTY_BALANCE = 30_000
 # Faucet proof-of-work + note commitment + consume tx.
 FUND_TIMEOUT_S = 120
 
-# Mapping from Starknet pair_id (e.g. "BTC/USD") to Miden faucet_id (e.g. "1:0").
-# Only pairs published by the Starknet pusher are forwarded to Miden; the
-# rest are silently skipped at conversion time. Faucet IDs are arbitrary
-# identifiers — no on-chain deployment needed, just pick a unique key per
-# pair and the publisher contract will store entries under that key in
-# its storage map.
-STARKNET_PAIR_TO_MIDEN_FAUCET: dict[str, str] = {
-    "BTC/USD": "1:0",
-    "ETH/USD": "2:0",
-    "WBTC/USD": "3:0",
-    "USDT/USD": "4:0",
-    "DAI/USD": "5:0",
+# Pairs forwarded to Miden, by their Starknet pair id (e.g. "BTC/USD"). Only these are published;
+# the rest are silently skipped at conversion time. The pair name is the on-chain identity: the
+# oracle derives the storage key from it (pm_publisher.pair_key), so there is nothing to register
+# and no index to keep stable.
+MIDEN_PAIRS: tuple[str, ...] = (
+    "BTC/USD",
+    "ETH/USD",
+    "WBTC/USD",
+    "USDT/USD",
+    "DAI/USD",
     # Miden-only feeds (config groups flagged `miden_only`, never pushed to Starknet).
-    "ZEC/USD": "6:0",
-    "XMR/USD": "7:0",
-    "DASH/USD": "8:0",
-    "XAUT/USD": "9:0",
-    "PAXG/USD": "10:0",
-    "LINK/USD": "11:0",
-    "UNI/USD": "12:0",
-    "AAVE/USD": "13:0",
-    "MORPHO/USD": "14:0",
+    "ZEC/USD",
+    "XMR/USD",
+    "DASH/USD",
+    "XAUT/USD",
+    "PAXG/USD",
+    "LINK/USD",
+    "UNI/USD",
+    "AAVE/USD",
+    "MORPHO/USD",
     # Also pushed to Starknet (regular config group, not miden_only). Stand-in
     # price for USDCx: the Miden oracle has no USDCx market of its own.
-    "USDC/USD": "15:0",
-}
+    "USDC/USD",
+)
+
+# Networks where the public faucet is the fee source. Elsewhere (mainnet) the account is funded by
+# a transfer: the client opens the notes that arrive and only reports a low balance.
+FAUCET_NETWORKS = frozenset({"testnet"})
 
 
 class MidenEntry:
@@ -104,8 +106,7 @@ class MidenEntry:
         wrong-scaled price).
         """
         pair_id = entry.get_pair_id()  # type: ignore[attr-defined]
-        faucet_id = STARKNET_PAIR_TO_MIDEN_FAUCET.get(pair_id)
-        if faucet_id is None:
+        if pair_id not in MIDEN_PAIRS:
             return None
 
         decimals = _resolve_pair_decimals(pair_id)
@@ -113,7 +114,7 @@ class MidenEntry:
             return None
 
         return cls(
-            pair=faucet_id,
+            pair=pair_id,
             price=entry.price,  # type: ignore[attr-defined]
             decimals=decimals,
             timestamp=entry.base.timestamp,  # type: ignore[attr-defined]
@@ -424,10 +425,11 @@ class PragmaMidenClient:
         try:
             data = json.loads(raw)
             return MidenEntry(
-                pair=data["faucet_id"],
+                pair=data["pair"],
                 price=int(data["price"]),
                 decimals=int(data["decimals"]),
                 timestamp=int(data["timestamp"]),
+                num_sources=int(data.get("num_sources", 0)),
             )
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             logger.error(f"Malformed get_entry payload for {pair}: {raw!r} ({e})")
@@ -450,14 +452,37 @@ class PragmaMidenClient:
         metrics().miden_fee_balance(self.publisher_id or "", balance)
         return balance
 
+    async def consume_pending_notes(self) -> list[str]:
+        """
+        Open the notes waiting for the publisher account: fee tokens sent from another wallet
+        only reach the vault once the account consumes the note. Returns the consumed note ids
+        (hex), empty when none waited or the installed wheel predates ``consume_notes``.
+        """
+        if not hasattr(pm_publisher, "consume_notes"):
+            return []
+        consumed = await asyncio.wait_for(
+            asyncio.to_thread(
+                pm_publisher.consume_notes,
+                None,
+                storage_path=self.storage_path,
+                keystore_path=self.keystore_path,
+                network=self.network,
+            ),
+            timeout=FUND_TIMEOUT_S,
+        )
+        if consumed:
+            logger.info(f"Miden: consumed {len(consumed)} note(s) funding the account")
+        return consumed
+
     async def maintain_fee_balance(
         self, threshold: int = FEE_REFILL_THRESHOLD
     ) -> Optional[int]:
         """
-        Keep the publisher funded: at most every ``FEE_CHECK_INTERVAL_S`` read
-        the fee balance and, below ``threshold``, ask the testnet faucet for a
-        refill. Never raises: a failed refill is logged and counted, the next
-        publish surfaces the real error if the account runs dry.
+        Keep the publisher funded: at most every ``FEE_CHECK_INTERVAL_S`` open the notes waiting
+        for the account, read the fee balance and, below ``threshold``, ask the testnet faucet
+        for a refill. Elsewhere (mainnet) there is no faucet: a low balance is only reported,
+        the operator funds the account by a transfer. Never raises: a failed refill is logged
+        and counted, the next publish surfaces the real error if the account runs dry.
         Returns the balance it observed (after the refill, if any), or None
         when the check was skipped.
         """
@@ -469,11 +494,21 @@ class PragmaMidenClient:
         self._last_fee_check = now
         account = self.publisher_id or ""
         try:
+            await self.consume_pending_notes()
+        except Exception as e:
+            logger.warning(f"Miden: consuming the pending notes failed: {e}")
+        try:
             balance = await self.fee_balance()
         except Exception as e:
             logger.warning(f"Miden fee balance check failed: {e}")
             return None
         if balance >= threshold:
+            return balance
+        if self.network not in FAUCET_NETWORKS:
+            logger.warning(
+                f"Miden fee balance {balance} < {threshold} for {account} on "
+                f"{self.network}: no faucet here, send fee tokens to the account"
+            )
             return balance
         logger.warning(
             f"Miden fee balance {balance} < {threshold} for {account}; "

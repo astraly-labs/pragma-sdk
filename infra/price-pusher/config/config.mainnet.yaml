@@ -34,7 +34,7 @@
   price_deviation: 0.025
 
 # Miden-only feeds: polled by the fetchers and published to Miden, never
-# pushed to Starknet (see STARKNET_PAIR_TO_MIDEN_FAUCET for the faucet ids).
+# pushed to Starknet (see MIDEN_PAIRS).
 - pairs:
     spot:
       - ZEC/USD
