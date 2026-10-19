@@ -149,7 +149,7 @@ class PragmaMidenClient:
     ``asyncio.to_thread`` and bounded by ``asyncio.wait_for``, so the
     event loop is never stuck on Miden.
 
-    :param network: "testnet", "devnet", or "local"
+    :param network: "testnet", "mainnet", "devnet", or "local"
     :param oracle_id: Oracle account ID (can be omitted if already initialized)
     :param storage_path: Directory where the Miden SQLite store is kept
     :param keystore_path: Directory where the Miden keystore is kept

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import yaml
 
 from price_pusher.configs import PriceConfig
-from price_pusher.main import _create_listeners
+from price_pusher.main import _create_listeners, cli_entrypoint
 
 from pragma_sdk.miden.client import MIDEN_PAIRS
 
@@ -64,3 +64,8 @@ def test_mainnet_config_miden_group_matches_the_miden_pairs():
     pairs = {str(p) for p in miden_groups[0].pairs.spot}
     assert pairs == set(MIDEN_ONLY_PAIRS)
     assert pairs <= set(MIDEN_PAIRS)
+
+
+def test_miden_network_option_accepts_every_network():
+    option = next(p for p in cli_entrypoint.params if p.name == "miden_network")
+    assert set(option.type.choices) == {"testnet", "mainnet", "devnet", "local"}
