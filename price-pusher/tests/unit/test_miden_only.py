@@ -69,3 +69,9 @@ def test_mainnet_config_miden_group_matches_the_miden_pairs():
 def test_miden_network_option_accepts_every_network():
     option = next(p for p in cli_entrypoint.params if p.name == "miden_network")
     assert set(option.type.choices) == {"testnet", "mainnet", "devnet", "local"}
+
+
+def test_miden_mainnet_config_publishes_every_miden_pair_and_nothing_else():
+    configs = PriceConfig.from_yaml("../infra/price-pusher/config/config.miden-mainnet.yaml")
+    assert len(configs) == 1 and configs[0].miden_only
+    assert {str(p) for p in configs[0].pairs.spot} == set(MIDEN_PAIRS)

@@ -1,0 +1,22 @@
+# Pairs published by a Miden-only price-pusher (`--miden-only`): the 15 pairs of the Pragma oracle v1.
+# One miden_only group, so nothing is pushed to Starknet and no Starknet key is needed.
+- pairs:
+    spot:
+      - BTC/USD
+      - ETH/USD
+      - WBTC/USD
+      - USDT/USD
+      - DAI/USD
+      - ZEC/USD
+      - XMR/USD
+      - DASH/USD
+      - XAUT/USD
+      - PAXG/USD
+      - LINK/USD
+      - UNI/USD
+      - AAVE/USD
+      - MORPHO/USD
+      - USDC/USD
+  time_difference: 1800
+  price_deviation: 0.01
+  miden_only: true
