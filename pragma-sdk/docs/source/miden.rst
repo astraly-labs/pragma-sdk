@@ -157,7 +157,7 @@ API reference
     class PragmaMidenClient:
         def __init__(
             self,
-            network: str = "testnet",         # "testnet" | "devnet" | "local"
+            network: str = "testnet",         # "testnet" | "mainnet" | "devnet" | "local"
             oracle_id: str | None = None,     # read from pragma_miden.json if omitted
             storage_path: str | None = None,
             keystore_path: str | None = None,

@@ -431,10 +431,10 @@ def _create_client(
 )
 @click.option(
     "--miden-network",
-    type=click.Choice(["testnet", "devnet", "local"], case_sensitive=False),
+    type=click.Choice(["testnet", "mainnet", "devnet", "local"], case_sensitive=False),
     required=False,
     default=None,
-    help="Enable Miden publishing. Specify network: testnet, devnet, or local.",
+    help="Enable Miden publishing. Specify network: testnet, mainnet, devnet, or local.",
 )
 @click.option(
     "--miden-publish-interval",
