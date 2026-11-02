@@ -1,4 +1,4 @@
-# Pairs published by a Miden-only price-pusher (`--miden-only`): the 15 pairs of the Pragma oracle v1.
+# Pairs published by a Miden-only price-pusher (`--miden-only`): the 16 pairs of the Pragma oracle v1.
 # One miden_only group, so nothing is pushed to Starknet and no Starknet key is needed.
 - pairs:
     spot:
@@ -16,6 +16,7 @@
       - UNI/USD
       - AAVE/USD
       - MORPHO/USD
+      - SOL/USD
       - USDC/USD
   time_difference: 1800
   price_deviation: 0.01
