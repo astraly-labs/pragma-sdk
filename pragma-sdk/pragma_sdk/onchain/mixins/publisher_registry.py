@@ -6,7 +6,7 @@ from starknet_py.net.client import Client
 
 from pragma_sdk.onchain.types import Contract
 from pragma_sdk.onchain.types.execution_config import ExecutionConfig
-from pragma_sdk.common.utils import str_to_felt
+from pragma_sdk.common.utils import publisher_to_felt, str_to_felt
 
 
 class PublisherRegistryMixin:
@@ -38,7 +38,7 @@ class PublisherRegistryMixin:
 
         (address,) = await self.publisher_registry.functions[
             "get_publisher_address"
-        ].call(publisher)
+        ].call(publisher_to_felt(publisher))
 
         return address  # type: ignore[no-any-return]
 
@@ -52,7 +52,7 @@ class PublisherRegistryMixin:
 
         (sources,) = await self.publisher_registry.functions[
             "get_publisher_sources"
-        ].call(publisher)
+        ].call(publisher_to_felt(publisher))
 
         return sources  # type: ignore[no-any-return]
 
@@ -71,7 +71,7 @@ class PublisherRegistryMixin:
         :return: The invocation result.
         """
         invocation = await self.publisher_registry.functions["add_publisher"].invoke(
-            str_to_felt(publisher),
+            publisher_to_felt(publisher),
             publisher_address,
             execution_config=self.execution_config,
         )
@@ -94,7 +94,7 @@ class PublisherRegistryMixin:
         invocation = await self.publisher_registry.functions[
             "add_source_for_publisher"
         ].invoke(
-            str_to_felt(publisher),
+            publisher_to_felt(publisher),
             str_to_felt(source),
             execution_config=self.execution_config,
         )
@@ -117,7 +117,7 @@ class PublisherRegistryMixin:
         invocation = await self.publisher_registry.functions[
             "add_sources_for_publisher"
         ].invoke(
-            str_to_felt(publisher),
+            publisher_to_felt(publisher),
             [str_to_felt(source) for source in sources],
             execution_config=self.execution_config,
         )
@@ -140,7 +140,7 @@ class PublisherRegistryMixin:
         invocation = await self.publisher_registry.functions[
             "update_publisher_address"
         ].invoke(
-            str_to_felt(publisher),
+            publisher_to_felt(publisher),
             publisher_address,
             execution_config=self.execution_config,
         )

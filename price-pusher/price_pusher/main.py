@@ -544,7 +544,9 @@ def cli_entrypoint(
             price_configs=price_configs,
             network=network,
             private_key=private_key,
-            publisher_name=publisher_name.upper(),
+            publisher_name=publisher_name
+            if publisher_name.lower().startswith("0x")
+            else publisher_name.upper(),
             publisher_address=publisher_address,
             miden_only=miden_only,
             rpc_url=rpc_url,

@@ -22,6 +22,7 @@ jobs:
             vrf-listener,
             checkpointer,
             lp-pricer,
+            validator-publisher,
           ]
       fail-fast: false
     steps:

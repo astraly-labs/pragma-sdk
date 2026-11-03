@@ -8,7 +8,7 @@ from starknet_py.net.account.account import Account
 from starknet_py.net.client import Client
 
 from pragma_sdk.common.logging import get_pragma_sdk_logger
-from pragma_sdk.common.utils import felt_to_str, str_to_felt
+from pragma_sdk.common.utils import felt_to_str, publisher_to_felt, str_to_felt
 from pragma_sdk.common.types.entry import Entry, FutureEntry, SpotEntry, GenericEntry
 from pragma_sdk.common.types.types import AggregationMode
 from pragma_sdk.common.types.asset import Asset
@@ -609,7 +609,7 @@ class OracleMixin:
         entries = [
             entry
             for entry in all_entries
-            if entry.base.publisher == str_to_felt(publisher)
+            if entry.base.publisher == publisher_to_felt(publisher)
         ]
 
         if len(entries) == 0:

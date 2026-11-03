@@ -1103,11 +1103,11 @@ wheels = [
 
 [[package]]
 name = "pm-publisher"
-version = "0.1.0a13"
+version = "0.1.0a20"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/8f/dd6d66069a951eb2bbb01c3d6fc0d475abb17f19e328b0ffe4e9e6426fdd/pm_publisher-0.1.0a13-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:678237b7b8b839f3be0527a3f5df9b008c3d9a838482d79be1cc2b1ad52861d8", size = 14205315, upload-time = "2026-10-06T19:58:48.637Z" },
-    { url = "https://files.pythonhosted.org/packages/58/c3/e31dd09965b8af62cb128676aa016f4d68c425c732047439df360d1caaad/pm_publisher-0.1.0a13-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a02a091ce25cac1f9853f3ea4d11c275f8b02c65cfe58233f9113b24734ffa0", size = 15845403, upload-time = "2026-10-06T19:58:51.354Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/1c/0d1e78618500276965d0e08a6c4a7b3700a914a01e267ae59c18b8905e4b/pm_publisher-0.1.0a20-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:9f9e2e1150d60280834efcecc2a471dba9e78a81e03aa971402b046622596a82", size = 14257127, upload-time = "2026-10-23T14:45:43.938Z" },
+    { url = "https://files.pythonhosted.org/packages/72/31/106ed154842a787fabdfc0584de89ad7dc6e862577eb5280b940e4ee4c70/pm_publisher-0.1.0a20-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95b7feff07772f7957f0d1b8d85f1287d8a05bd8715c6ae97ba6e95dcd34f9c1", size = 15920276, upload-time = "2026-10-23T14:45:46.441Z" },
 ]
 
 [[package]]
@@ -1196,7 +1196,7 @@ requires-dist = [
     { name = "moto", extras = ["s3", "secretsmanager"], marker = "extra == 'dev'", specifier = ">=4.2.5" },
     { name = "mypy", marker = "extra == 'typing'", specifier = ">=1.10" },
     { name = "pallets-sphinx-themes", marker = "extra == 'docs'", specifier = ">=2.1.3" },
-    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a13" },
+    { name = "pm-publisher", marker = "extra == 'miden'", specifier = ">=0.1.0a20" },
     { name = "poethepoet", marker = "extra == 'dev'", specifier = ">=0.21.1" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2.2" },
@@ -1262,11 +1262,16 @@ dependencies = [
     { name = "asgiref" },
     { name = "click" },
     { name = "fastapi" },
-    { name = "pragma-sdk", extra = ["miden"] },
+    { name = "pragma-sdk" },
     { name = "pragma-utils" },
     { name = "prometheus-client" },
     { name = "pydantic" },
     { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+miden = [
+    { name = "pragma-sdk", extra = ["miden"] },
 ]
 
 [package.dev-dependencies]
@@ -1312,12 +1317,14 @@ requires-dist = [
     { name = "asgiref", specifier = ">=3.4.1" },
     { name = "click", specifier = ">=8.1.0" },
     { name = "fastapi", specifier = ">=0.104.0" },
-    { name = "pragma-sdk", extras = ["miden"], directory = "../pragma-sdk" },
+    { name = "pragma-sdk", directory = "../pragma-sdk" },
+    { name = "pragma-sdk", extras = ["miden"], marker = "extra == 'miden'", directory = "../pragma-sdk" },
     { name = "pragma-utils", directory = "../pragma-utils" },
     { name = "prometheus-client", specifier = ">=0.20" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "uvicorn", specifier = ">=0.24.0" },
 ]
+provides-extras = ["miden"]
 
 [package.metadata.requires-dev]
 dev = [

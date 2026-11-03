@@ -1,4 +1,6 @@
 import asyncio
+
+from typing import List, Optional
 from starknet_py.net.client_errors import ClientError
 from requests.exceptions import RequestException
 
@@ -34,17 +36,22 @@ class RPCHealthMonitor:
                 # Retry operation...
     """
 
-    def __init__(self, client: PragmaOnChainClient):
+    def __init__(
+        self, client: PragmaOnChainClient, rpc_urls: Optional[List[str]] = None
+    ):
         """
         Initialize the RPC health monitor.
 
         Args:
             client: The PragmaOnChainClient instance to monitor
+            rpc_urls: RPCs it may switch to, defaults to the public RPCs of the
+                network. A single URL pins the client to that node.
         """
         self.client = client
         self.current_rpc_failures = 0
         self.failed_rpcs: set[str] = set()
         self.network = client.network
+        self.rpc_urls = list(rpc_urls) if rpc_urls is not None else None
 
     def record_failure(self) -> None:
         """Record an RPC failure."""
@@ -80,13 +87,13 @@ class RPCHealthMonitor:
         self.failed_rpcs.add(current_rpc)
 
         available_rpcs = [
-            url for url in RPC_URLS[self.network] if url not in self.failed_rpcs
+            url for url in self._candidates() if url not in self.failed_rpcs
         ]
         if not available_rpcs:
             # If all RPCs have failed, clear all except current one and try again
             self.failed_rpcs = {current_rpc}  # Keep current RPC in failed list
             available_rpcs = [
-                url for url in RPC_URLS[self.network] if url not in self.failed_rpcs
+                url for url in self._candidates() if url not in self.failed_rpcs
             ]
 
         try:
@@ -99,6 +106,9 @@ class RPCHealthMonitor:
         except ValueError as e:
             logger.error(f"Failed to switch RPC: {str(e)}")
             return False
+
+    def _candidates(self) -> List[str]:
+        return self.rpc_urls if self.rpc_urls is not None else RPC_URLS[self.network]
 
     async def monitor_rpc_health(self):
         """

@@ -9,7 +9,12 @@ from enum import StrEnum
 
 from pragma_sdk.common.types.types import DataTypes, UnixTimestamp
 from pragma_sdk.common.types.pair import Pair
-from pragma_sdk.common.utils import felt_to_str, str_to_felt
+from pragma_sdk.common.utils import (
+    felt_to_str,
+    publisher_to_felt,
+    publisher_to_str,
+    str_to_felt,
+)
 from pragma_sdk.onchain.types.types import OracleResponse
 from pragma_sdk.schema import entries_pb2
 
@@ -82,8 +87,7 @@ class BaseEntry:
         source: str | int,
         publisher: str | int,
     ):
-        if isinstance(publisher, str):
-            publisher = str_to_felt(publisher)
+        publisher = publisher_to_felt(publisher)
 
         if isinstance(source, str):
             source = str_to_felt(source)
@@ -118,8 +122,7 @@ class SpotEntry(Entry):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
 
-        if isinstance(publisher, str):
-            publisher = str_to_felt(publisher)
+        publisher = publisher_to_felt(publisher)
 
         if isinstance(source, str):
             source = str_to_felt(source)
@@ -242,7 +245,7 @@ class SpotEntry(Entry):
             f'SpotEntry(pair_id="{felt_to_str(self.pair_id)}", '
             f"price={self.price}, timestamp={self.base.timestamp}, "
             f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}", volume={self.volume}))'
+            f'publisher="{publisher_to_str(self.base.publisher)}", volume={self.volume}))'
         )
 
     def __hash__(self) -> int:
@@ -342,8 +345,7 @@ class FutureEntry(Entry):
         if isinstance(pair_id, str):
             pair_id = str_to_felt(pair_id)
 
-        if isinstance(publisher, str):
-            publisher = str_to_felt(publisher)
+        publisher = publisher_to_felt(publisher)
 
         if isinstance(source, str):
             source = str_to_felt(source)
@@ -418,7 +420,7 @@ class FutureEntry(Entry):
             f"price={self.price}, "
             f"timestamp={self.base.timestamp}, "
             f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}, '
+            f'publisher="{publisher_to_str(self.base.publisher)}, '
             f"volume={self.volume}, "
             f'expiry_timestamp={self.expiry_timestamp})")'
         )
@@ -585,8 +587,7 @@ class GenericEntry(Entry):
     ):
         if isinstance(key, str):
             key = str_to_felt(key)
-        if isinstance(publisher, str):
-            publisher = str_to_felt(publisher)
+        publisher = publisher_to_felt(publisher)
         if isinstance(source, str):
             source = str_to_felt(source)
 
@@ -643,7 +644,7 @@ class GenericEntry(Entry):
             f'value="{self.value}", '
             f'timestamp="{self.base.timestamp}", '
             f'source="{felt_to_str(self.base.source)}", '
-            f'publisher="{felt_to_str(self.base.publisher)}")'
+            f'publisher="{publisher_to_str(self.base.publisher)}")'
         )
 
     def __hash__(self) -> int:
