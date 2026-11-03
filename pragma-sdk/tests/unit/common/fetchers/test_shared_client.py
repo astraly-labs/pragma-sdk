@@ -26,3 +26,18 @@ def test_fetchers_share_one_client_per_network():
     assert a.client is b.client
     assert c.client is not a.client
     assert ctor.call_count == 2
+
+
+def test_injected_client_serves_every_fetcher():
+    """A validator routes the fetchers' chain reads through its own node."""
+    pairs = [Pair.from_tickers("BTC", "USD")]
+    node_client = object()
+    with (
+        mock.patch.dict(interface._shared_clients, {}, clear=True),
+        mock.patch.object(interface, "PragmaOnChainClient") as ctor,
+    ):
+        interface.set_shared_client("mainnet", node_client)
+        fetcher = OkxFetcher(pairs, "TEST")
+
+    assert fetcher.client is node_client
+    ctor.assert_not_called()

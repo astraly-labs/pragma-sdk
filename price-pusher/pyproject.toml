@@ -16,7 +16,7 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "pragma-sdk[miden]",
+    "pragma-sdk",
     "pragma-utils",
     "click>=8.1.0",
     "pydantic>=2.7.4",
@@ -28,6 +28,10 @@ dependencies = [
 ]
 
 dynamic = ["version"]
+
+[project.optional-dependencies]
+# Miden publishing; every image installs it with `uv sync --all-extras`.
+miden = ["pragma-sdk[miden]"]
 
 [project.urls]
 homepage = "https://pragma.build"

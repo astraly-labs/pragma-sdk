@@ -30,6 +30,18 @@ def str_to_felt(text: str) -> int:
     return int.from_bytes(b_text, "big")
 
 
+def publisher_to_felt(publisher: str | int) -> int:
+    """
+    Convert a publisher id to a felt: a short string ("PRAGMA"), or a hex
+    address for validator publishers, identified by their staker address.
+    """
+    if isinstance(publisher, int):
+        return publisher
+    if publisher.lower().startswith("0x"):
+        return int(publisher, 16)
+    return str_to_felt(publisher)
+
+
 def felt_to_str(felt: int) -> str:
     """
     Convert a felt to a string.
@@ -37,6 +49,17 @@ def felt_to_str(felt: int) -> str:
     num_bytes = (felt.bit_length() + 7) // 8
     bytes_ = felt.to_bytes(num_bytes, "big")
     return bytes_.decode("utf-8")
+
+
+def publisher_to_str(publisher: int) -> str:
+    """
+    Readable form of a publisher felt: its short string, or hex for an address.
+    """
+    try:
+        text = felt_to_str(publisher)
+    except UnicodeDecodeError:
+        return hex(publisher)
+    return text if text.isprintable() else hex(publisher)
 
 
 def currency_pair_to_pair_id(base: str, quote: str) -> str:

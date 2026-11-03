@@ -44,6 +44,7 @@ class PricePusher(IPricePusher):
         on_successful_push: Optional[Callable[[], None]] = None,
         miden_client: Optional[PragmaMidenClient] = None,
         publisher_name: Optional[str] = None,
+        rpc_urls: Optional[List[str]] = None,
     ):
         self.client = client
         self.consecutive_push_error = 0
@@ -57,7 +58,7 @@ class PricePusher(IPricePusher):
 
         # Setup RPC health monitoring if using onchain client
         if isinstance(self.client, PragmaOnChainClient):
-            self.rpc_monitor = RPCHealthMonitor(self.client)
+            self.rpc_monitor = RPCHealthMonitor(self.client, rpc_urls=rpc_urls)
             asyncio.create_task(self.rpc_monitor.monitor_rpc_health())
 
     @property

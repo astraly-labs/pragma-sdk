@@ -25,6 +25,14 @@ logger = get_pragma_sdk_logger()
 _shared_clients: Dict[str, PragmaOnChainClient] = {}
 
 
+def set_shared_client(network: Network, client: PragmaOnChainClient) -> None:
+    """
+    Route every fetcher's reads on `network` through `client`, e.g. a
+    validator's own node instead of a public RPC. Call before adding fetchers.
+    """
+    _shared_clients[network] = client
+
+
 # TODO(akhercha): FetcherInterfaceT should take as parameter the client instead of creating it
 # Abstract base class for all fetchers
 @add_sync_methods

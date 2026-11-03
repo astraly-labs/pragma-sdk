@@ -239,3 +239,33 @@ async def test_error_handling_in_monitor(rpc_monitor, mock_client):
             await monitor_task
     # If we reach here without crashing, error handling works as expected.
     assert True
+
+
+def _pick_first_or_fail(network, urls, timeout=5):
+    if not urls:
+        raise ValueError(f"No working RPC endpoints found for network: {network}")
+    return urls[0]
+
+
+@pytest.mark.asyncio
+async def test_pinned_node_never_falls_back_to_public_rpcs(mock_client, monkeypatch):
+    """A validator publishes through its own node only, even when it fails."""
+    monkeypatch.setattr(
+        "pragma_sdk.onchain.rpc_monitor.pick_random_rpc", _pick_first_or_fail
+    )
+    node = "http://pathfinder:9545/rpc/v0_10"
+    mock_client.full_node_client.url = node
+    monitor = RPCHealthMonitor(mock_client, rpc_urls=[node])
+
+    assert await monitor.switch_rpc() is False
+    mock_client._create_full_node_client.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_custom_rpc_list_replaces_public_rpcs(mock_client):
+    own = ["https://node-a.example/rpc/v0_10", "https://node-b.example/rpc/v0_10"]
+    mock_client.full_node_client.url = own[0]
+    monitor = RPCHealthMonitor(mock_client, rpc_urls=own)
+
+    assert await monitor.switch_rpc() is True
+    mock_client._create_full_node_client.assert_called_once_with(own[1])
