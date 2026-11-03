@@ -415,7 +415,9 @@ class TestFeeRefill:
         mock_pm.consume_notes.side_effect = lambda *a, **k: order.append("consume") or [
             "0xnote"
         ]
-        mock_pm.balance.side_effect = lambda *a, **k: order.append("balance") or 5_000_000
+        mock_pm.balance.side_effect = (
+            lambda *a, **k: order.append("balance") or 5_000_000
+        )
         assert await client.maintain_fee_balance(threshold=2_000_000) == 5_000_000
         assert order == ["consume", "balance"]
         mock_pm.fund.assert_not_called()

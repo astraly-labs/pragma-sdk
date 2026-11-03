@@ -63,9 +63,7 @@ def test_miden_only_needs_a_miden_network(config_file):
         (["-n", "sepolia", "-p", "plain:0x1"], "--publisher-address"),
     ],
 )
-def test_starknet_options_stay_required_without_miden_only(
-    config_file, given, missing
-):
+def test_starknet_options_stay_required_without_miden_only(config_file, given, missing):
     result, _ = run_cli(config_file, *given)
     assert result.exit_code != 0
     assert missing in result.output
