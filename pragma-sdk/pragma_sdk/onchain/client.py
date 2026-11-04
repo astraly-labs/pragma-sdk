@@ -147,7 +147,10 @@ class PragmaOnChainClient(  # type: ignore[misc]
             return KeyPair.from_private_key(private_key)
         elif isinstance(private_key, tuple):
             path, password = private_key
-            return KeyPair.from_keystore(path, password)
+            # eth-keyfile >= 0.9 needs the password as bytes, starknet.py forwards it as is
+            if isinstance(password, str):
+                password = password.encode()
+            return KeyPair.from_keystore(path, password)  # type: ignore[arg-type]
         elif isinstance(private_key, str):
             return KeyPair.from_private_key(int(private_key, 16))
 
