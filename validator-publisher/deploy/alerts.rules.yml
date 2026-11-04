@@ -1,0 +1,80 @@
+# Prometheus rules for validator-publisher, shipped with each release.
+# Load with `rule_files: [alerts.rules.yml]` and scrape the publisher on :8080/metrics.
+groups:
+  - name: validator-publisher
+    rules:
+      - alert: ValidatorPublisherDown
+        expr: absent(validator_publisher_build_info)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "validator-publisher is not exposing metrics"
+          description: "The container is down or Prometheus cannot reach :8080/metrics."
+
+      # Pushes happen at least every time_difference (1800s by default) plus
+      # the listener poll; 40 minutes without one means publishing is stuck.
+      - alert: ValidatorPublisherNoPush
+        expr: (time() - pragma_pusher_last_push_timestamp_seconds > 2400) or absent(pragma_pusher_last_push_timestamp_seconds)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No successful on-chain push for 40 minutes"
+          description: "Run `pragma-validator status` and `pragma-validator preflight`; check the node and the signer balance."
+
+      - alert: ValidatorPublisherNotActive
+        expr: validator_publisher_registry_status{status!="ACTIVE"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Registry status is {{ $labels.status }}, entries are rejected"
+          description: "NOT_BOUND: run register and have the staker bind. EXITING / NOT_STAKER: the staker left staking. LOW_SELF_STAKE: top up the self-stake. KEY_REUSED: the oracle signer became the operational or reward address. SUSPENDED / PAUSED: contact Pragma."
+
+      - alert: ValidatorPublisherLowBalance
+        expr: validator_publisher_signer_balance_strk < 50
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Oracle signer has {{ $value | humanize }} STRK left"
+
+      - alert: ValidatorPublisherBalanceCritical
+        expr: validator_publisher_signer_balance_strk < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Oracle signer has {{ $value | humanize }} STRK left, pushes will fail"
+
+      - alert: PragmaFetcherEntryRejected
+        expr: sum by (pair, source, reason) (increase(pragma_fetcher_entries_rejected_total[15m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.source }} rejected on {{ $labels.pair }} ({{ $labels.reason }})"
+
+      - alert: PragmaFetcherSourceDrifting
+        expr: abs(pragma_fetcher_cross_source_deviation) > 0.05
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.source }} is {{ $value | humanizePercentage }} off the other sources on {{ $labels.pair }}"
+
+      - alert: PragmaReferenceUnmeasurable
+        expr: sum by (ticker) (increase(pragma_reference_failures_total{reason="unmeasurable"}[10m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Reference {{ $labels.ticker }}/USD unmeasurable, hopped pairs are not published"
+
+      - alert: PragmaStablecoinDepeg
+        expr: abs(pragma_stable_usd_price - 1) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.ticker }} trades at {{ $value }} USD"

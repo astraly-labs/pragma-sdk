@@ -40,7 +40,11 @@ class PilotDeployment:
 
 # Filled in by the release that ships each deployment.
 PILOT_DEPLOYMENTS: Dict[str, Optional[PilotDeployment]] = {
-    "sepolia": None,
+    # pragma-oracle deployments/sepolia/validator_pilot.json, 2026-11-04
+    "sepolia": PilotDeployment(
+        oracle=0x0417C6079B630414C223B2567C3D786C2ABE9FA189E11C8CB3455F602044F658,
+        validator_registry=0x056F2C0121BBD89983DE8E6A300966115C7B7692A1BA38546D6CC2036B92AB58,
+    ),
     "mainnet": None,
 }
 

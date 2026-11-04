@@ -60,9 +60,16 @@ def test_rpc_url_must_be_http():
         ValidatorConfig(**_config(rpc_url="ws://node:9545"))
 
 
-def test_release_has_no_deployment_yet():
-    with pytest.raises(ValueError, match="not deployed on sepolia"):
-        ValidatorConfig(**_config()).deployment()
+def test_release_pins_the_sepolia_pilot():
+    addresses = ValidatorConfig(**_config()).deployment().contract_addresses()
+    assert addresses.oracle_proxy_addresss == int(
+        "0x0417c6079b630414c223b2567c3d786c2abe9fa189e11c8cb3455f602044f658", 16
+    )
+
+
+def test_release_has_no_mainnet_deployment_yet():
+    with pytest.raises(ValueError, match="not deployed on mainnet"):
+        ValidatorConfig(**_config(network="mainnet")).deployment()
 
 
 def test_contracts_override_for_testing():
