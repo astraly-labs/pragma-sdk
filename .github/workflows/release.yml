@@ -9,6 +9,8 @@ on:
 jobs:
   python_package_publish:
     name: Publish python package
+    # validator-publisher has its own release workflow and tags
+    if: ${{ !startsWith(github.event.release.tag_name, 'validator-publisher-') }}
     uses: ./.github/workflows/publish.yml
 
   docker_release_build:
