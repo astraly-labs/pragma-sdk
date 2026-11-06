@@ -162,5 +162,6 @@ Run `revoke`, stop the container, and move the STRK left on the oracle signer.
 - **`signer balance`**: send STRK to the oracle signer.
 - **`registration: declared, waiting for the staker's bind`**: the staker has not signed `bind_oracle_signer` yet.
 - **`registration: staker is bound to another signer`**: the config has the wrong oracle signer. Use the bound one, or rotate.
-- **`<pair> sources`**: fewer than 4 allowed sources answered. Check outbound HTTPS from the host. The publisher withholds the pair rather than publish it on too few sources.
+- **`<pair> sources`**: fewer than 4 allowed sources answered. Check outbound HTTPS from the host.
+- **`<pair> withheld` in the logs, `ValidatorPublisherPairWithheld` alert**: while running, a pair is published only when at least 4 allowed sources answered in the same poll. Below that it is withheld, not published on fewer sources, and resumes on its own once they answer. `validator_publisher_pair_sources` shows the count per pair.
 - **`feedback loop`**: never expected. Report it to Pragma with the logs.

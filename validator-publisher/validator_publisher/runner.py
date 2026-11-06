@@ -29,11 +29,11 @@ from price_pusher.main import (
     _default_max_seconds_without_push,
     _install_signal_handlers,
 )
-from price_pusher.orchestrator import Orchestrator
 
 from validator_publisher import __version__
 from validator_publisher.chain import PilotChain
 from validator_publisher.config import ValidatorConfig
+from validator_publisher.quorum import QuorumOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,16 @@ class ValidatorMetrics:
             "STRK left on the oracle signer account",
             registry=registry,
         )
+        self.pair_sources = Gauge(
+            "validator_publisher_pair_sources",
+            "Allowed sources that answered in the last poll, below 4 the pair is withheld",
+            ["pair"],
+            registry=registry,
+        )
+
+    def record_sources(self, pair: str, count: int) -> None:
+        if self.enabled:
+            self.pair_sources.labels(pair=pair).set(count)
 
     async def refresh_forever(self, config: ValidatorConfig, chain: PilotChain) -> None:
         if not self.enabled:
@@ -144,6 +154,7 @@ async def run(config: ValidatorConfig) -> None:
         chain = build_chain(config)
         metrics = ValidatorMetrics(health_server, config)
         fetcher_client = await build_fetcher_client(config)
+        allowed_sources = set(await chain.allowed_sources())
         if stop.is_set():
             return
 
@@ -160,7 +171,10 @@ async def run(config: ValidatorConfig) -> None:
             price_config=price_config,
             polling_frequency_in_s=LISTENER_POLLING_S,
         )
-        orchestrator = Orchestrator(
+        orchestrator = QuorumOrchestrator(
+            pairs=config.pairs,
+            allowed_sources=allowed_sources,
+            on_quorum=metrics.record_sources,
             poller=PricePoller(fetcher_client=fetcher_client),
             listeners=[listener],
             pusher=pusher,
@@ -168,14 +182,18 @@ async def run(config: ValidatorConfig) -> None:
             health=health_server.status if health_server else None,
             stop_event=stop,
         )
-        status_task = asyncio.create_task(metrics.refresh_forever(config, chain))
+        background = [
+            asyncio.create_task(metrics.refresh_forever(config, chain)),
+            asyncio.create_task(orchestrator.refresh_allowed_sources_forever(chain)),
+        ]
         try:
             logger.info(
                 f"🚀 validator-publisher {__version__} publishing for {config.staker_address}"
             )
             await orchestrator.run_forever()
         finally:
-            status_task.cancel()
+            for task in background:
+                task.cancel()
     finally:
         if health_server:
             await health_server.stop()

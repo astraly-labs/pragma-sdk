@@ -23,8 +23,8 @@ from pragma_sdk.onchain.mixins.oracle import OracleMixin
 
 from validator_publisher.chain import PilotChain
 from validator_publisher.config import ValidatorConfig
+from validator_publisher.quorum import MIN_SOURCES_PER_PAIR
 
-MIN_SOURCES_PER_PAIR = 4
 MAX_SYNC_LAG_BLOCKS = 10
 MAX_CLOCK_SKEW_S = 30
 MAX_REFERENCE_DEVIATION = 0.02
