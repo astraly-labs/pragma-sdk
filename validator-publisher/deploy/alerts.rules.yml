@@ -48,6 +48,15 @@ groups:
         annotations:
           summary: "Oracle signer has {{ $value | humanize }} STRK left, pushes will fail"
 
+      - alert: ValidatorPublisherPairWithheld
+        expr: validator_publisher_pair_sources < 4
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.pair }} withheld: {{ $value }} allowed source(s) answered, 4 required"
+          description: "The pair is not published below 4 sources and resumes on its own once they answer. Check outbound HTTPS from the host and the fetcher logs."
+
       - alert: PragmaFetcherEntryRejected
         expr: sum by (pair, source, reason) (increase(pragma_fetcher_entries_rejected_total[15m])) > 0
         labels:
