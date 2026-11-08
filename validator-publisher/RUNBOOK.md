@@ -114,6 +114,14 @@ The first push happens within a minute: a new publisher has no entries yet. Afte
   - `validator_publisher_signer_balance_strk`
   - `pragma_pusher_last_push_timestamp_seconds`
   - `validator_publisher_build_info{version,config_hash}`
+  - `validator_publisher_pair_sources{pair}`: allowed sources that answered in the last poll
+- Read the pilot feed the way a consumer does:
+
+  ```bash
+  pragma-validator feed-status --network sepolia --rpc-url <node url>
+  ```
+
+  For each pair it prints `VALID` with the price, `WITHHELD`, or `STALE`, with the number of markets and of publishers behind it. A pair is `VALID` only with at least 4 markets holding a fresh entry (under 40 min), counted across every operator. Only entries of `ACTIVE` operators on sources the registry allows count, so a revoked operator drops out at once. The command exits with 1 if any pair is not `VALID`.
 - Keep ports 8080 (publisher), 3000, 9090 and the node's RPC off the public internet.
 
 ## 8. Upgrade and rollback
@@ -163,5 +171,5 @@ Run `revoke`, stop the container, and move the STRK left on the oracle signer.
 - **`registration: declared, waiting for the staker's bind`**: the staker has not signed `bind_oracle_signer` yet.
 - **`registration: staker is bound to another signer`**: the config has the wrong oracle signer. Use the bound one, or rotate.
 - **`<pair> sources`**: fewer than 4 allowed sources answered. Check outbound HTTPS from the host.
-- **`<pair> withheld` in the logs, `ValidatorPublisherPairWithheld` alert**: while running, a pair is published only when at least 4 allowed sources answered in the same poll. Below that it is withheld, not published on fewer sources, and resumes on its own once they answer. `validator_publisher_pair_sources` shows the count per pair.
+- **`only N allowed source(s) answered` in the logs, `ValidatorPublisherLowSourceCoverage` alert**: your publisher still publishes the sources that answered. The 4-market quorum applies to the feed, across all operators, not to each publisher. Check outbound HTTPS from the host and the fetcher logs. If the same source is missing for every operator, that is a shared upstream failure: report it to Pragma.
 - **`feedback loop`**: never expected. Report it to Pragma with the logs.

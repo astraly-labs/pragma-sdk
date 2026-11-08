@@ -33,7 +33,7 @@ from price_pusher.main import (
 from validator_publisher import __version__
 from validator_publisher.chain import PilotChain
 from validator_publisher.config import ValidatorConfig
-from validator_publisher.quorum import QuorumOrchestrator
+from validator_publisher.source_coverage import CoverageOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ class ValidatorMetrics:
         )
         self.pair_sources = Gauge(
             "validator_publisher_pair_sources",
-            "Allowed sources that answered in the last poll, below 4 the pair is withheld",
+            "Allowed sources that answered in the last poll for this pair",
             ["pair"],
             registry=registry,
         )
@@ -171,10 +171,10 @@ async def run(config: ValidatorConfig) -> None:
             price_config=price_config,
             polling_frequency_in_s=LISTENER_POLLING_S,
         )
-        orchestrator = QuorumOrchestrator(
+        orchestrator = CoverageOrchestrator(
             pairs=config.pairs,
             allowed_sources=allowed_sources,
-            on_quorum=metrics.record_sources,
+            on_coverage=metrics.record_sources,
             poller=PricePoller(fetcher_client=fetcher_client),
             listeners=[listener],
             pusher=pusher,

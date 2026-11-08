@@ -12,7 +12,7 @@ from pragma_utils.logger import setup_logging
 from validator_publisher import __version__
 from validator_publisher.chain import PilotChain
 from validator_publisher.config import SCHEMA_VERSION, ValidatorConfig
-from validator_publisher.deployments import PILOT_PAIRS
+from validator_publisher.deployments import PILOT_PAIRS, get_deployment
 from validator_publisher.preflight import (
     Check,
     blocking_failures,
@@ -20,7 +20,7 @@ from validator_publisher.preflight import (
     check_staker,
     run_preflight,
 )
-from validator_publisher import runner
+from validator_publisher import feed, runner
 
 CONFIG_OPTION = click.option(
     "-c",
@@ -215,6 +215,44 @@ def status(config_file: str):
         click.echo(f"config:    {runner.config_hash(config)}")
 
     asyncio.run(_run())
+
+
+@cli.command()
+@click.option("--network", type=click.Choice(["mainnet", "sepolia"]), required=True)
+@click.option("--rpc-url", required=True, help="JSON-RPC 0.10 URL.")
+@click.option("--pair", "pairs", multiple=True, help="Default: every pilot pair.")
+@click.option("--max-age", default=feed.MAX_ENTRY_AGE_S, show_default=True)
+def feed_status(network: str, rpc_url: str, pairs: List[str], max_age: int):
+    """The pilot feed as a consumer reads it: quorum in markets, freshness."""
+    deployment = get_deployment(network)
+    chain = PilotChain(
+        rpc_url,
+        network,
+        registry=deployment.validator_registry,
+        oracle=deployment.oracle,
+    )
+
+    async def _run() -> bool:
+        all_valid = True
+        for pair in pairs or PILOT_PAIRS:
+            try:
+                reading = await feed.read_pilot_feed(chain, pair, max_age)
+            except Exception as e:
+                click.echo(f"{pair:<9} ERROR    {e}")
+                all_valid = False
+                continue
+            price = "-" if reading.price is None else f"{reading.price:.8g}"
+            age = "-" if reading.newest_age_s is None else f"{reading.newest_age_s}s"
+            click.echo(
+                f"{pair:<9} {reading.status:<8} price {price:<12} "
+                f"markets {reading.markets}  publishers {reading.publishers}  "
+                f"newest {age}  excluded {reading.excluded}"
+            )
+            all_valid &= reading.status == feed.FeedStatus.VALID
+        return all_valid
+
+    if not asyncio.run(_run()):
+        sys.exit(1)
 
 
 @cli.command()

@@ -1,7 +1,9 @@
 """
-Source quorum: a spot pair is published only when at least MIN_SOURCES_PER_PAIR
-sources allowed by the registry answered in the same poll. Below that the pair
-is withheld, never published on fewer sources.
+Source coverage of this publisher: how many sources allowed by the registry
+answered in each poll. Every source that answered is published. The quorum of
+MIN_SOURCES_PER_PAIR is counted on the feed, in markets across all operators
+(see `validator_publisher.feed`), never per publisher: withholding here would
+turn one source outage shared by every operator into a stale feed.
 """
 
 import asyncio
@@ -32,27 +34,21 @@ def count_allowed_sources(
     return {pair: len(found) for pair, found in sources.items()}
 
 
-class QuorumOrchestrator(Orchestrator):
-    """
-    After each poll, drops the pending prices of every pair short of the
-    quorum. The listener then sees no data for it and asks for no push, and no
-    batch carries it, not even prices kept from an earlier poll.
-    """
+class CoverageOrchestrator(Orchestrator):
+    """Reports the allowed sources of each poll, logging when a pair degrades."""
 
     def __init__(
         self,
         *args,
         pairs: Iterable[str],
         allowed_sources: Set[int],
-        min_sources: int = MIN_SOURCES_PER_PAIR,
-        on_quorum: Optional[Callable[[str, int], None]] = None,
+        on_coverage: Optional[Callable[[str, int], None]] = None,
         **kwargs,
     ) -> None:
         self.pairs = list(pairs)
         self.allowed_sources = allowed_sources
-        self.min_sources = min_sources
-        self.on_quorum = on_quorum
-        self.withheld: Set[str] = set()
+        self.on_coverage = on_coverage
+        self.degraded: Set[str] = set()
         super().__init__(*args, **kwargs)
 
     def callback_update_prices(self, entries: List[Entry]) -> None:
@@ -60,29 +56,19 @@ class QuorumOrchestrator(Orchestrator):
         counts = count_allowed_sources(entries, self.allowed_sources)
         for pair in self.pairs:
             found = counts.get(pair, 0)
-            if self.on_quorum:
-                self.on_quorum(pair, found)
-            if found >= self.min_sources:
-                if pair in self.withheld:
-                    self.withheld.discard(pair)
-                    logger.info(f"✅ {pair}: {found} allowed sources, publishing again")
-                continue
-            self._drop_pending(pair)
-            if pair not in self.withheld:
-                self.withheld.add(pair)
+            if self.on_coverage:
+                self.on_coverage(pair, found)
+            if found >= MIN_SOURCES_PER_PAIR:
+                if pair in self.degraded:
+                    self.degraded.discard(pair)
+                    logger.info(f"✅ {pair}: {found} allowed sources answered again")
+            elif pair not in self.degraded:
+                self.degraded.add(pair)
                 logger.warning(
-                    f"⛔ {pair} withheld: {found} allowed source(s) answered, "
-                    f"{self.min_sources} required"
+                    f"⚠️ {pair}: only {found} allowed source(s) answered, "
+                    f"publishing them; the feed needs {MIN_SOURCES_PER_PAIR} markets "
+                    "across operators"
                 )
-
-    def _drop_pending(self, pair: str) -> None:
-        pending = self.latest_prices.get(pair)
-        if pending is None:
-            return
-        pending.pop(DataTypes.SPOT, None)
-        if not pending:
-            # the listeners hold this dict: mutate it, never rebind it
-            del self.latest_prices[pair]
 
     async def refresh_allowed_sources_forever(self, chain: PilotChain) -> None:
         while True:
