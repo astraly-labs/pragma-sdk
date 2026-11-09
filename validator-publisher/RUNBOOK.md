@@ -6,12 +6,16 @@ Pragma prices for the validator publishing pilot. It signs with a dedicated
 published on-chain in shadow: no protocol reads them, they are compared with
 Pragma's production oracle.
 
+Current release: [`validator-publisher-v0.1.1`](https://github.com/astraly-labs/pragma-sdk/releases/tag/validator-publisher-v0.1.1), image
+`ghcr.io/astraly-labs/pragma-sdk/validator-publisher@sha256:ba9e4178a832615d66c4fd22df4832bb15d076e276c4f19e8d014926788e8a2d`.
+Verify it before the first run (section 8, step 1).
+
 Commands below use the image; `pragma-validator` is its entrypoint:
 
 ```bash
 alias pragma-validator='docker run --rm -it --env-file ./oracle-signer.env \
   -v "$PWD/validator-publisher:/config" --network pathfinder_net \
-  ghcr.io/astraly-labs/pragma-sdk/validator-publisher@sha256:<digest>'
+  ghcr.io/astraly-labs/pragma-sdk/validator-publisher@sha256:ba9e4178a832615d66c4fd22df4832bb15d076e276c4f19e8d014926788e8a2d'
 ```
 
 ## 1. Requirements
@@ -95,7 +99,7 @@ pragma-validator register -c /config/validator-publisher.yaml
 
 ## 6. Run
 
-Add `deploy/docker-compose.yaml` to your node's compose file, with the image digest from the release notes, then:
+Add `deploy/docker-compose.yaml` to your node's compose file (it pins the current release), then:
 
 ```bash
 docker compose up -d validator-publisher
@@ -128,12 +132,20 @@ The first push happens within a minute: a new publisher has no entries yet. Afte
 
 Releases are tagged `validator-publisher-vX.Y.Z`. Each image is signed (cosign, keyless), with an SBOM and build provenance. Rollouts are staged: Pragma's validator first, then waves of operators. Upgrade when your wave is announced.
 
-1. Verify the new image with the `cosign verify` command in the release notes.
+1. Verify the new image with the `cosign verify` command in the release notes. Without cosign, the GitHub CLI checks the build provenance:
+
+   ```bash
+   gh attestation verify oci://ghcr.io/astraly-labs/pragma-sdk/validator-publisher@<digest> --repo astraly-labs/pragma-sdk
+   ```
 2. Run `preflight` with the new image.
 3. Replace the digest in your compose file and run `docker compose up -d validator-publisher`.
 4. Check `/ready` and `status`.
 
 Rollback: put the previous digest back and run `docker compose up -d validator-publisher`. Config files stay compatible with the previous release, and no on-chain action is needed.
+
+Changes per release:
+
+- **0.1.1**: `feed-status`, metric `validator_publisher_pair_sources{pair}`, alert `ValidatorPublisherLowSourceCoverage`. Reload `deploy/alerts.rules.yml`. No config change.
 
 ## 9. Rotate the oracle signer
 
