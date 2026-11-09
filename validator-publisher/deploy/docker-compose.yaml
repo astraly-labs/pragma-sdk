@@ -1,8 +1,9 @@
 # Add this service to the compose file of your staking node.
-# Replace the digest with the one in the release notes (never a mutable tag).
+# Pinned to the current release; on upgrade, use the digest from the release
+# notes (never a mutable tag).
 services:
   validator-publisher:
-    image: ghcr.io/astraly-labs/pragma-sdk/validator-publisher@sha256:<digest-from-the-release-notes>
+    image: ghcr.io/astraly-labs/pragma-sdk/validator-publisher@sha256:ba9e4178a832615d66c4fd22df4832bb15d076e276c4f19e8d014926788e8a2d  # validator-publisher-v0.1.1
     restart: unless-stopped
     # ORACLE_SIGNER_PRIVATE_KEY=0x..., file readable by the node operator only (chmod 600)
     env_file: ./oracle-signer.env
