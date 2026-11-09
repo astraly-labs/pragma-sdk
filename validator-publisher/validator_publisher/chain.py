@@ -12,11 +12,34 @@ from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client_models import Call
 from starknet_py.net.full_node_client import FullNodeClient
 
-from pragma_sdk.common.utils import felt_to_str
+from pragma_sdk.common.utils import felt_to_str, str_to_felt
 
 from validator_publisher.deployments import STAKING_CONTRACTS, STRK_TOKEN
 
 OPTION_SOME = 0
+SPOT_VARIANT = 0
+# variant, base (timestamp, source, publisher), price, pair_id, volume
+SPOT_ENTRY_FELTS = 7
+
+
+@dataclass(frozen=True)
+class OracleSpotEntry:
+    timestamp: int
+    source: int
+    publisher: int
+    price: int
+
+
+def decode_spot_entries(result: List[int]) -> List[OracleSpotEntry]:
+    """Decode `get_data_entries -> Span<PossibleEntries>` for a spot pair."""
+    entries, idx = [], 1
+    for _ in range(result[0]):
+        if result[idx] != SPOT_VARIANT:
+            raise ValueError(f"not a spot entry: variant {result[idx]}")
+        timestamp, source, publisher, price = result[idx + 1 : idx + 5]
+        entries.append(OracleSpotEntry(timestamp, source, publisher, price))
+        idx += SPOT_ENTRY_FELTS
+    return entries
 
 
 @dataclass(frozen=True)
@@ -87,6 +110,24 @@ class PilotChain:
     async def allowed_sources(self) -> List[int]:
         result = await self._read(self.registry, "get_allowed_sources", [])
         return list(result[1 : 1 + result[0]])
+
+    async def spot_entries(self, pair: str) -> List[OracleSpotEntry]:
+        """Every publisher's entry per source, as the pilot Oracle aggregates them."""
+        return decode_spot_entries(
+            await self._read(
+                self.oracle, "get_data_entries", [SPOT_VARIANT, str_to_felt(pair)]
+            )
+        )
+
+    async def decimals(self, pair: str) -> int:
+        (decimals,) = await self._read(
+            self.oracle, "get_decimals", [SPOT_VARIANT, str_to_felt(pair)]
+        )
+        return decimals
+
+    async def block_timestamp(self) -> int:
+        block = await self.client.get_block(block_number="latest")
+        return block.timestamp  # type: ignore[no-any-return]
 
     async def min_self_stake(self) -> int:
         (amount,) = await self._read(self.registry, "get_min_self_stake", [])

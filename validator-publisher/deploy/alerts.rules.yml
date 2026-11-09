@@ -48,6 +48,17 @@ groups:
         annotations:
           summary: "Oracle signer has {{ $value | humanize }} STRK left, pushes will fail"
 
+      # This publisher still publishes what answered; the 4-market quorum is
+      # counted on the feed, across operators (`pragma-validator feed-status`).
+      - alert: ValidatorPublisherLowSourceCoverage
+        expr: validator_publisher_pair_sources < 4
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.pair }}: only {{ $value }} allowed source(s) answered"
+          description: "Check outbound HTTPS from the host and the fetcher logs. If every operator misses the same source, it is a shared upstream failure."
+
       - alert: PragmaFetcherEntryRejected
         expr: sum by (pair, source, reason) (increase(pragma_fetcher_entries_rejected_total[15m])) > 0
         labels:
