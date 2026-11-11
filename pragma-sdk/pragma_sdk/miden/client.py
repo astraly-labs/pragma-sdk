@@ -70,6 +70,7 @@ MIDEN_PAIRS: tuple[str, ...] = (
     "AAVE/USD",
     "MORPHO/USD",
     "SOL/USD",
+    "NEAR/USD",
     # Also pushed to Starknet (regular config group, not miden_only). Stand-in
     # price for USDCx: the Miden oracle has no USDCx market of its own.
     "USDC/USD",

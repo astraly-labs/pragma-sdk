@@ -128,6 +128,7 @@ class TestMidenPairs:
             "AAVE/USD",
             "MORPHO/USD",
             "SOL/USD",
+            "NEAR/USD",
             "USDC/USD",
         }
         assert expected == set(MIDEN_PAIRS)
