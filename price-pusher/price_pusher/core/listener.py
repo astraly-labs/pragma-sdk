@@ -242,6 +242,11 @@ class PriceListener(IPriceListener):
             return False
 
         if len(self.oracle_prices.keys()) == 0:
+            # Own-entry handlers return nothing for a pair the poller has not
+            # (re)filled yet, e.g. right after another group flushed it as a
+            # linked pair: there is nothing to push, it is not an oracle error.
+            if not self._has_polled_pairs():
+                return False
             logging.error(
                 f"LISTENER {self.id} have no oracle prices at all... Sending notification."
             )
@@ -294,6 +299,13 @@ class PriceListener(IPriceListener):
                         ):
                             return True
         return False
+
+    def _has_polled_pairs(self) -> bool:
+        return any(
+            data_type in self.orchestrator_prices.get(str(pair), {})
+            for data_type, pairs in self.data_config.items()
+            for pair in pairs
+        )
 
     def _does_oracle_spot_entry_needs_update(
         self,
