@@ -15,7 +15,10 @@ from pragma_sdk.common.utils import str_to_felt
 
 from price_pusher.configs import PriceConfig
 from price_pusher.core.listener import PriceListener
-from price_pusher.core.request_handlers.publisher import PublisherRequestHandler
+from price_pusher.core.request_handlers.publisher import (
+    BulkPublisherRequestHandler,
+    PublisherRequestHandler,
+)
 
 from tests.constants import BTC_USD_PAIR
 
@@ -186,3 +189,91 @@ async def test_listener_stays_quiet_when_own_entries_are_fresh():
     await listener._fetch_all_oracle_prices()
 
     assert not await listener._does_oracle_needs_update()
+
+
+def _bulk_client(entries: list[SpotEntry]):
+    client = SimpleNamespace(get_spot_entries=AsyncMock(return_value=entries))
+    client.get_publisher_sources = AsyncMock(
+        return_value=[str_to_felt(s) for s in ("BINANCE", "OKX", "BYBIT")]
+    )
+    return client
+
+
+@pytest.mark.asyncio
+async def test_bulk_reads_own_entries_in_one_call():
+    other = "0x0123"
+    client = _bulk_client(
+        [
+            _own("BINANCE", 100, 1_000),
+            _own("OKX", 102, 900),
+            SpotEntry("BTC/USD", 500, 2_000, "OKX", other),
+            SpotEntry("BTC/USD", 500, 2_000, "BYBIT", other),
+        ]
+    )
+    handler = BulkPublisherRequestHandler(client, STAKER)
+
+    (entry,) = await handler.fetch_latest_entries(
+        BTC_USD_PAIR, DataTypes.SPOT, ["BINANCE", "OKX"]
+    )
+
+    assert entry.price == 101
+    assert entry.get_timestamp() == 900
+    client.get_spot_entries.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_bulk_source_only_published_by_others_counts_as_missing():
+    client = _bulk_client(
+        [
+            _own("BINANCE", 100, 1_000),
+            SpotEntry("BTC/USD", 500, 2_000, "OKX", "0x0123"),
+        ]
+    )
+    handler = BulkPublisherRequestHandler(client, STAKER)
+
+    (entry,) = await handler.fetch_latest_entries(
+        BTC_USD_PAIR, DataTypes.SPOT, ["BINANCE", "OKX"]
+    )
+
+    assert entry.price == 100
+    assert entry.get_timestamp() == 0
+
+
+@pytest.mark.asyncio
+async def test_outvoted_push_does_not_retrigger():
+    """
+    2026-11-15: own entries fresh at 1775, others stale at 1743, aggregated
+    median stuck at 1743. Against own entries there is nothing left to push.
+    """
+    own = [_own(s, 1775, 1_000) for s in ("BINANCE", "OKX", "BYBIT")]
+    stale = [SpotEntry("BTC/USD", 1743, 400, s, "0x0123") for s in ("BINANCE", "OKX")]
+    handler = BulkPublisherRequestHandler(_bulk_client(own + stale), STAKER)
+    config = PriceConfig(
+        pairs={"spot": ["BTC/USD"]}, time_difference=1800, price_deviation=0.01
+    )
+    listener = PriceListener(handler, config, polling_frequency_in_s=20)
+    listener.set_orchestrator_prices(
+        {
+            "BTC/USD": {
+                DataTypes.SPOT: {
+                    s: SpotEntry("BTC/USD", 1776, 1_010, s, STAKER)
+                    for s in ("BINANCE", "OKX", "BYBIT")
+                }
+            }
+        }
+    )
+
+    await listener._fetch_all_oracle_prices()
+
+    assert not await listener._does_oracle_needs_update()
+
+
+@pytest.mark.asyncio
+async def test_read_right_after_a_flush_reuses_the_last_polled_sources():
+    client = _client({"BINANCE": _own("BINANCE", 100, 1_000)})
+    handler = PublisherRequestHandler(client, STAKER)
+    await handler.fetch_latest_entries(BTC_USD_PAIR, DataTypes.SPOT, ["BINANCE"])
+
+    (entry,) = await handler.fetch_latest_entries(BTC_USD_PAIR, DataTypes.SPOT, [])
+
+    assert entry.price == 100

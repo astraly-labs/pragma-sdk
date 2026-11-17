@@ -16,6 +16,8 @@ from pragma_sdk.onchain.rpc_monitor import RPCHealthMonitor
 
 from pragma_sdk.miden.client import PragmaMidenClient, MidenEntry
 
+from price_pusher.linked_pairs import largest_linked_batch, linked_first
+
 logger = logging.getLogger(__name__)
 
 CONSECUTIVES_PUSH_ERRORS_LIMIT = 10
@@ -141,6 +143,18 @@ class PricePusher(IPricePusher):
         if len(entries) == 0:
             logger.warning("⚠️ PUSHER: nothing left to push after the source whitelist")
             return None
+
+        entries = linked_first(entries)
+        pagination = getattr(
+            getattr(self.client, "execution_config", None), "pagination", None
+        )
+        if isinstance(pagination, int) and 0 < pagination < largest_linked_batch(
+            entries
+        ):
+            logger.warning(
+                f"⚠️ PUSHER: {largest_linked_batch(entries)} linked entries exceed "
+                f"the pagination ({pagination}): they will span several transactions"
+            )
 
         logger.info(f"📨 PUSHER: processing {len(entries)} new asset(s) to push...")
 

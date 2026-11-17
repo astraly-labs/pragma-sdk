@@ -3,7 +3,7 @@ import logging
 import statistics
 import time
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pragma_sdk.common.types.entry import Entry, SpotEntry
 from pragma_sdk.common.types.pair import Pair
@@ -37,6 +37,9 @@ class PublisherRequestHandler(IRequestHandler):
         self.publisher = publisher_to_felt(publisher)
         self._allowed_sources: Optional[set[int]] = None
         self._allowed_sources_at = 0.0
+        # sources last polled per pair: the listener re-reads right after a
+        # push, when the orchestrator has just flushed the pair's prices
+        self._last_sources: Dict[int, List[str]] = {}
 
     async def fetch_latest_entries(
         self,
@@ -48,18 +51,21 @@ class PublisherRequestHandler(IRequestHandler):
             logger.warning(f"Own entries are only tracked for spot pairs, not {pair}")
             return []
 
+        if sources:
+            self._last_sources[pair.id] = list(sources)
+        else:
+            sources = self._last_sources.get(pair.id, [])
+
         allowed = await self._get_allowed_sources()
         sources = [
             source
-            for source in sources or []
+            for source in sources
             if allowed is None or str_to_felt(source) in allowed
         ]
         if not sources:
             return []
 
-        own_entries = await asyncio.gather(
-            *(self._get_own_entry(pair, source) for source in sources)
-        )
+        own_entries = await self._get_own_entries(pair, sources)
         found = [entry for entry in own_entries if entry is not None]
         if not found:
             return []
@@ -78,6 +84,13 @@ class PublisherRequestHandler(IRequestHandler):
                 publisher=self.publisher,
             )
         ]
+
+    async def _get_own_entries(
+        self, pair: Pair, sources: List[str]
+    ) -> List[Optional[SpotEntry]]:
+        return await asyncio.gather(
+            *(self._get_own_entry(pair, source) for source in sources)
+        )
 
     async def _get_own_entry(self, pair: Pair, source: str) -> Optional[SpotEntry]:
         try:
@@ -109,3 +122,27 @@ class PublisherRequestHandler(IRequestHandler):
         except Exception as e:
             logger.warning(f"Could not read the whitelisted sources: {e}")
         return self._allowed_sources
+
+
+class BulkPublisherRequestHandler(PublisherRequestHandler):
+    """
+    Same decision as PublisherRequestHandler, from one get_data_entries_for_sources
+    call per pair instead of one get_data_entry per source: a publisher with
+    ~10 sources per pair keeps the RPC load of the aggregated read.
+
+    The Oracle only returns entries less than an hour older than the pair's
+    newest one: an own entry older than that counts as missing, so as stale.
+    """
+
+    async def _get_own_entries(
+        self, pair: Pair, sources: List[str]
+    ) -> List[Optional[SpotEntry]]:
+        entries = await self.client.get_spot_entries(
+            pair.id, sources=sources, block_id="pre_confirmed"
+        )
+        own = {
+            entry.base.source: entry
+            for entry in entries
+            if entry.base.publisher == self.publisher
+        }
+        return [own.get(str_to_felt(source)) for source in sources]

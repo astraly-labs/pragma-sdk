@@ -47,7 +47,7 @@ def test_miden_only_defaults_to_false(tmp_path):
 
 def test_miden_only_group_gets_no_starknet_listener(tmp_path):
     configs = _configs(tmp_path)
-    listeners = _create_listeners(configs, MagicMock())
+    listeners = _create_listeners(configs, MagicMock(), "PRAGMA")
     assert len(listeners) == 1
     listened = {str(p) for p in listeners[0].price_config.pairs.spot}
     assert listened == {"BTC/USD", "ETH/USD"}

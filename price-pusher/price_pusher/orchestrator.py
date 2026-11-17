@@ -13,6 +13,7 @@ from price_pusher.core.listener import PriceListener
 from price_pusher.core.pusher import PricePusher
 from price_pusher.price_types import LatestOrchestratorPairPrices
 from price_pusher.health import HealthStatus
+from price_pusher.linked_pairs import with_linked_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,13 @@ class Orchestrator:
 
         # Entities communication.
         self.poller.set_update_prices_callback(self.callback_update_prices)
+        # Spot pairs pushed on Starknet, to flush linked pairs with each other.
+        self.known_spot_pairs: Dict[str, Pair] = {
+            str(pair): pair
+            for listener in self.listeners
+            for pair in listener.data_config.get(DataTypes.SPOT, [])
+        }
+
         # Send a reference to the orchestration newest prices to the listeners.
         # NOTE: the listeners will never mutate the orchestrator prices. Only read.
         for listener in self.listeners:
@@ -188,7 +196,9 @@ class Orchestrator:
                 "Sending entries into queue for: "
                 f"{listener.data_config}"
             )
-            entries_to_push = self._flush_entries_for_assets(listener.data_config)
+            entries_to_push = self._flush_entries_for_assets(
+                with_linked_pairs(listener.data_config, self.known_spot_pairs)
+            )
             if len(entries_to_push) > 0:
                 await self.push_queue.put(entries_to_push)
                 await self.push_queue.join()  # Wait for the entries to be processed

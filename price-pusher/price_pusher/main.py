@@ -19,7 +19,7 @@ from pragma_utils.cli import load_private_key_from_cli_arg
 
 from price_pusher.core.poller import PricePoller
 from price_pusher.core.listener import PriceListener
-from price_pusher.core.request_handlers.chain import ChainRequestHandler
+from price_pusher.core.request_handlers.publisher import BulkPublisherRequestHandler
 from price_pusher.core.pusher import PricePusher
 from price_pusher.core.fetchers import add_all_fetchers
 from price_pusher.configs.price_config import (
@@ -186,7 +186,7 @@ async def _run(
         miden_publish_interval=miden_publish_interval,
         listeners=[]
         if pragma_client is None
-        else _create_listeners(price_configs, pragma_client),
+        else _create_listeners(price_configs, pragma_client, publisher_name),
         pusher=pusher,
         health=health_server.status if health_server else None,
         stop_event=stop,
@@ -253,17 +253,23 @@ def _on_signal(sig: signal.Signals, stop: asyncio.Event) -> None:
 def _create_listeners(
     price_configs: List[PriceConfig],
     pragma_client: PragmaClient,
+    publisher_name: str,
 ) -> List[PriceListener]:
     """
     Create a listener for each price configuration. They will be used to monitor a group
     of pairs during the orchestration.
+
+    Listeners compare against this publisher's own entries, not the aggregated
+    median: a push that other publishers' stale entries outvote leaves the
+    median unchanged, and comparing against it re-pushed the whole group every
+    poll (~18s on 2026-11-15, 02:07-02:16 UTC).
     """
     listeners: List[PriceListener] = []
     for price_config in price_configs:
         if price_config.miden_only:
             continue
         new_listener = PriceListener(
-            request_handler=ChainRequestHandler(client=pragma_client),
+            request_handler=BulkPublisherRequestHandler(pragma_client, publisher_name),
             price_config=price_config,
             polling_frequency_in_s=20,
         )
