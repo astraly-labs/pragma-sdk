@@ -7,7 +7,7 @@ from requests.exceptions import RequestException
 from pragma_sdk.common.logging import get_pragma_sdk_logger
 from pragma_sdk.onchain.client import PragmaOnChainClient
 from pragma_sdk.onchain.constants import RPC_URLS
-from pragma_sdk.onchain.utils import pick_random_rpc
+from pragma_sdk.onchain.utils import pick_rpc
 
 logger = get_pragma_sdk_logger()
 
@@ -97,7 +97,7 @@ class RPCHealthMonitor:
             ]
 
         try:
-            new_rpc = pick_random_rpc(self.network, available_rpcs)
+            new_rpc = pick_rpc(self.network, available_rpcs)
             logger.info(f"Switching to new RPC: {new_rpc}")
             new_client = self.client._create_full_node_client(new_rpc)
             self.client.full_node_client = self.client.client = new_client

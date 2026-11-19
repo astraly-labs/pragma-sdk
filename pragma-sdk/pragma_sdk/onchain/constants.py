@@ -24,10 +24,13 @@ STARKSCAN_URLS: Dict[Network, str] = {
 # (Blast shut down, Pathfinder removed 0.8, Cartridge no longer serves the
 # `pending` tag). Public, keyless endpoints only: put your own keyed
 # endpoint in --rpc-url. Measured 2026-09-14 (20 calls): Cartridge 20/20 ~175ms,
-# ZAN 20/20 ~270ms, Nethermind free tier intermittently unreachable (kept last;
-# pick_random_rpc probes before use).
+# ZAN 20/20 ~270ms, Nethermind free tier intermittently unreachable (kept last).
+# Ordered by preference, pick_rpc takes the first healthy one: the Starknet
+# Foundation node comes first at SNF's request, after publishers went down on
+# unresponsive public RPCs (2026-11).
 RPC_URLS: Dict[Network, List[str]] = {
     "mainnet": [
+        "https://mainnet.nodes.starknet.org/rpc/v0_10",
         "https://api.cartridge.gg/x/starknet/mainnet/rpc/v0_10",
         "https://api.zan.top/starknet-mainnet/rpc/v0_10",
         "https://free-rpc.nethermind.io/mainnet-juno/v0_10",
