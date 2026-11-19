@@ -91,9 +91,7 @@ def fork_rpc_url() -> str:
     public fallbacks answer 429 under that load, so a keyed endpoint can be
     passed with FORK_RPC_URL; otherwise the first healthy public RPC is used.
     """
-    return os.environ.get("FORK_RPC_URL") or pick_rpc(
-        "mainnet", RPC_URLS["mainnet"]
-    )
+    return os.environ.get("FORK_RPC_URL") or pick_rpc("mainnet", RPC_URLS["mainnet"])
 
 
 def start_fork_devnet_command_unix(devnet_port: int) -> List[str]:
