@@ -25,10 +25,10 @@ MOCK_RPC_URLS = {
 @pytest.fixture(autouse=True)
 def _mock_rpc_urls(monkeypatch):
     monkeypatch.setattr("pragma_sdk.onchain.rpc_monitor.RPC_URLS", MOCK_RPC_URLS)
-    # pick_random_rpc probes the URL over the network; the tests used to pass
+    # pick_rpc probes the URL over the network; the tests used to pass
     # only because the production endpoints answered.
     monkeypatch.setattr(
-        "pragma_sdk.onchain.rpc_monitor.pick_random_rpc",
+        "pragma_sdk.onchain.rpc_monitor.pick_rpc",
         lambda network, urls, timeout=5: urls[0],
     )
 
@@ -251,7 +251,7 @@ def _pick_first_or_fail(network, urls, timeout=5):
 async def test_pinned_node_never_falls_back_to_public_rpcs(mock_client, monkeypatch):
     """A validator publishes through its own node only, even when it fails."""
     monkeypatch.setattr(
-        "pragma_sdk.onchain.rpc_monitor.pick_random_rpc", _pick_first_or_fail
+        "pragma_sdk.onchain.rpc_monitor.pick_rpc", _pick_first_or_fail
     )
     node = "http://pathfinder:9545/rpc/v0_10"
     mock_client.full_node_client.url = node

@@ -14,7 +14,7 @@ import pytest
 from dotenv import load_dotenv
 
 from pragma_sdk.onchain.constants import RPC_URLS
-from pragma_sdk.onchain.utils import pick_random_rpc
+from pragma_sdk.onchain.utils import pick_rpc
 
 load_dotenv()
 
@@ -91,7 +91,7 @@ def fork_rpc_url() -> str:
     public fallbacks answer 429 under that load, so a keyed endpoint can be
     passed with FORK_RPC_URL; otherwise the first healthy public RPC is used.
     """
-    return os.environ.get("FORK_RPC_URL") or pick_random_rpc(
+    return os.environ.get("FORK_RPC_URL") or pick_rpc(
         "mainnet", RPC_URLS["mainnet"]
     )
 
