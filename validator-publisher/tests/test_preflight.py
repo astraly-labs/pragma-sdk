@@ -211,6 +211,24 @@ async def test_fewer_than_four_allowed_sources_fails():
 
 
 @pytest.mark.asyncio
+async def test_allowed_source_off_the_pair_is_not_counted():
+    with patch.object(
+        preflight,
+        "get_reference_price_provider",
+        return_value=SimpleNamespace(get_price=AsyncMock(return_value=80_000.0)),
+    ):
+        checks = await preflight.check_fetch(
+            _config(),
+            FakeChain(allowed=SOURCES[:3] + ["UPBIT"]),
+            _fetcher(_entries(SOURCES[:3] + ["UPBIT"])),
+        )
+    failed = _failed(checks)
+    assert "3 allowed source(s)" in failed["BTC/USD sources"]
+    assert "UPBIT" in failed["BTC/USD feed sources"]
+    assert "BTC/USD whitelist" not in failed
+
+
+@pytest.mark.asyncio
 async def test_oracle_read_by_a_fetcher_fails():
     with patch.object(
         preflight,

@@ -23,6 +23,7 @@ from pragma_sdk.onchain.mixins.oracle import OracleMixin
 
 from validator_publisher.chain import PilotChain
 from validator_publisher.config import ValidatorConfig
+from validator_publisher.deployments import pair_sources
 from validator_publisher.source_coverage import MIN_SOURCES_PER_PAIR
 
 MAX_SYNC_LAG_BLOCKS = 10
@@ -184,7 +185,8 @@ async def check_fetch(
     allowed: Set[int] = set(await chain.allowed_sources())
     for pair in config.pairs:
         found = by_pair.get(pair, [])
-        usable = {e.base.source for e in found if e.base.source in allowed}
+        counted = allowed & pair_sources(pair)
+        usable = {e.base.source for e in found if e.base.source in counted}
         checks.append(
             _ok(f"{pair} sources", f"{len(usable)} allowed source(s)")
             if len(usable) >= MIN_SOURCES_PER_PAIR
@@ -194,9 +196,20 @@ async def check_fetch(
             )
         )
         dropped = sorted(
-            {felt_to_str(e.base.source) for e in found}
+            {felt_to_str(e.base.source) for e in found if e.base.source not in allowed}
+        )
+        ignored = sorted(
+            {felt_to_str(e.base.source) for e in found if e.base.source in allowed}
             - {felt_to_str(s) for s in usable}
         )
+        if ignored:
+            checks.append(
+                _fail(
+                    f"{pair} feed sources",
+                    f"not counted by the feed for this pair: {', '.join(ignored)}",
+                    blocking=False,
+                )
+            )
         if dropped:
             checks.append(
                 _fail(
