@@ -1,6 +1,6 @@
 """
-Source coverage of this publisher: how many sources allowed by the registry
-answered in each poll. Every source that answered is published. The quorum of
+Source coverage of this publisher: how many sources allowed by the registry,
+among those the feed counts for the pair, answered in each poll. Every source that answered is published. The quorum of
 MIN_SOURCES_PER_PAIR is counted on the feed, in markets across all operators
 (see `validator_publisher.feed`), never per publisher: withholding here would
 turn one source outage shared by every operator into a stale feed.
@@ -17,6 +17,7 @@ from pragma_sdk.common.types.types import DataTypes
 from price_pusher.orchestrator import Orchestrator
 
 from validator_publisher.chain import PilotChain
+from validator_publisher.deployments import pair_sources
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,11 @@ def count_allowed_sources(
 ) -> Dict[str, int]:
     sources: Dict[str, Set[int]] = collections.defaultdict(set)
     for entry in entries:
-        if entry.get_asset_type() == DataTypes.SPOT and entry.base.source in allowed:
-            sources[entry.get_pair_id()].add(entry.base.source)
+        if entry.get_asset_type() != DataTypes.SPOT:
+            continue
+        pair = entry.get_pair_id()
+        if entry.base.source in allowed & pair_sources(pair):
+            sources[pair].add(entry.base.source)
     return {pair: len(found) for pair, found in sources.items()}
 
 

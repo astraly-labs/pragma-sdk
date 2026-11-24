@@ -4,17 +4,33 @@ release: an operator never points the client at other contracts by mistake.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, FrozenSet, Optional, Tuple
 
+from pragma_sdk.common.utils import str_to_felt
 from pragma_sdk.onchain.types import ContractAddresses
 
-PILOT_PAIRS: Tuple[str, ...] = (
-    "BTC/USD",
-    "ETH/USD",
-    "STRK/USD",
-    "USDC/USD",
-    "USDT/USD",
+_CEX = frozenset(
+    {"BINANCE", "BITGET", "BYBIT", "GATEIO", "HUOBI", "KUCOIN", "LBANK", "OKX"}
 )
+
+# Markets that quote each pair, as the operators' fetchers return them. The
+# source of an entry is a label its publisher writes and the chain cannot
+# verify, so the feed only counts these: a label the registry allows on no
+# real market of the pair is free for anyone to fill.
+PAIR_SOURCES: Dict[str, FrozenSet[str]] = {
+    "BTC/USD": _CEX | {"BITSTAMP"},
+    "ETH/USD": _CEX | {"BITSTAMP", "EKUBO"},
+    "STRK/USD": _CEX | {"EKUBO"},
+    "USDC/USD": _CEX | {"BITSTAMP"},
+    "USDT/USD": frozenset({"BINANCE", "BITGET", "BITSTAMP", "BYBIT", "EKUBO", "UPBIT"}),
+}
+
+PILOT_PAIRS: Tuple[str, ...] = tuple(PAIR_SOURCES)
+
+
+def pair_sources(pair: str) -> FrozenSet[int]:
+    return frozenset(str_to_felt(s) for s in PAIR_SOURCES.get(pair, ()))
+
 
 STRK_TOKEN = 0x04718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D
 

@@ -118,14 +118,20 @@ The first push happens within a minute: a new publisher has no entries yet. Afte
   - `validator_publisher_signer_balance_strk`
   - `pragma_pusher_last_push_timestamp_seconds`
   - `validator_publisher_build_info{version,config_hash}`
-  - `validator_publisher_pair_sources{pair}`: allowed sources that answered in the last poll
+  - `validator_publisher_pair_sources{pair}`: sources that answered in the last poll, among those the feed counts for the pair
 - Read the pilot feed the way a consumer does:
 
   ```bash
   pragma-validator feed-status --network sepolia --rpc-url <node url>
   ```
 
-  For each pair it prints `VALID` with the price, `WITHHELD`, or `STALE`, with the number of markets and of publishers behind it. A pair is `VALID` only with at least 4 markets holding a fresh entry (under 40 min), counted across every operator. Only entries of `ACTIVE` operators on sources the registry allows count, so a revoked operator drops out at once. The command exits with 1 if any pair is not `VALID`.
+  For each pair it prints `VALID` with the price, `WITHHELD (operators)`, `WITHHELD (markets)`, or `STALE`, then the counts behind it:
+  - `operators`: `ACTIVE` operators with a fresh entry (under 40 min) on the pair;
+  - `markets`: markets published by a strict majority of those operators;
+  - `minority`: markets dropped because fewer operators publish them;
+  - `excluded`: entries of operators that are not `ACTIVE`, or on sources the registry does not allow or that do not quote the pair.
+
+  A pair is `VALID` only with at least 3 operators and 4 markets. The source of an entry is a name its operator writes and the chain cannot check, so these rules stop one operator from adding markets of its own. A revoked operator drops out at once. The command exits with 1 if any pair is not `VALID`. `--min-operators 1` reads a test deployment with a single operator.
 - Keep ports 8080 (publisher), 3000, 9090 and the node's RPC off the public internet.
 
 ## 8. Upgrade and rollback
@@ -146,6 +152,7 @@ Rollback: put the previous digest back and run `docker compose up -d validator-p
 Changes per release:
 
 - **0.1.1**: `feed-status`, metric `validator_publisher_pair_sources{pair}`, alert `ValidatorPublisherLowSourceCoverage`. Reload `deploy/alerts.rules.yml`. No config change.
+- **0.1.2** (unreleased): `feed-status` counts only the sources that quote each pair, markets published by a strict majority of operators, and requires 3 operators. `validator_publisher_pair_sources{pair}` and `preflight` count the same sources. No config change.
 
 ## 9. Rotate the oracle signer
 

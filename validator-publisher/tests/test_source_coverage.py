@@ -40,6 +40,12 @@ def test_count_ignores_disallowed_and_duplicate_sources():
     assert count_allowed_sources(entries, ALLOWED) == {"BTC/USD": 2}
 
 
+def test_count_ignores_allowed_sources_off_the_pair():
+    allowed = ALLOWED | {str_to_felt("UPBIT")}
+    entries = _entries("BTC/USD", "BINANCE", "UPBIT") + _entries("USDT/USD", "UPBIT")
+    assert count_allowed_sources(entries, allowed) == {"BTC/USD": 1, "USDT/USD": 1}
+
+
 def test_sources_that_answered_are_still_published():
     orchestrator = _orchestrator(pairs=["BTC/USD"])
     orchestrator.callback_update_prices(_entries("BTC/USD", "BINANCE", "OKX"))

@@ -222,8 +222,16 @@ def status(config_file: str):
 @click.option("--rpc-url", required=True, help="JSON-RPC 0.10 URL.")
 @click.option("--pair", "pairs", multiple=True, help="Default: every pilot pair.")
 @click.option("--max-age", default=feed.MAX_ENTRY_AGE_S, show_default=True)
-def feed_status(network: str, rpc_url: str, pairs: List[str], max_age: int):
-    """The pilot feed as a consumer reads it: quorum in markets, freshness."""
+@click.option(
+    "--min-operators",
+    default=feed.MIN_OPERATORS_PER_PAIR,
+    show_default=True,
+    help="Lower it only to test with fewer operators.",
+)
+def feed_status(
+    network: str, rpc_url: str, pairs: List[str], max_age: int, min_operators: int
+):
+    """The pilot feed as a consumer reads it: operator and market quorums, freshness."""
     deployment = get_deployment(network)
     chain = PilotChain(
         rpc_url,
@@ -236,17 +244,21 @@ def feed_status(network: str, rpc_url: str, pairs: List[str], max_age: int):
         all_valid = True
         for pair in pairs or PILOT_PAIRS:
             try:
-                reading = await feed.read_pilot_feed(chain, pair, max_age)
+                reading = await feed.read_pilot_feed(
+                    chain, pair, max_age, min_operators
+                )
             except Exception as e:
                 click.echo(f"{pair:<9} ERROR    {e}")
                 all_valid = False
                 continue
             price = "-" if reading.price is None else f"{reading.price:.8g}"
             age = "-" if reading.newest_age_s is None else f"{reading.newest_age_s}s"
+            reason = f" ({reading.withheld_reason})" if reading.withheld_reason else ""
             click.echo(
-                f"{pair:<9} {reading.status:<8} price {price:<12} "
-                f"markets {reading.markets}  publishers {reading.publishers}  "
-                f"newest {age}  excluded {reading.excluded}"
+                f"{pair:<9} {reading.status + reason:<20} price {price:<12} "
+                f"operators {reading.publishers}  markets {reading.markets}  "
+                f"minority {reading.minority_markets}  newest {age}  "
+                f"excluded {reading.excluded}"
             )
             all_valid &= reading.status == feed.FeedStatus.VALID
         return all_valid
