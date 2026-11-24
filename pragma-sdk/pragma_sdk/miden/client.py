@@ -115,6 +115,13 @@ class MidenEntry:
         if decimals is None:
             return None
 
+        # A zero price would enter the on-chain median as a real quote.
+        if entry.price <= 0:  # type: ignore[attr-defined]
+            logger.warning(
+                f"Refusing to publish {pair_id}: non-positive price {entry.price}"  # type: ignore[attr-defined]
+            )
+            return None
+
         return cls(
             pair=pair_id,
             price=entry.price,  # type: ignore[attr-defined]
