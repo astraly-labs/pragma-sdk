@@ -12,6 +12,7 @@ from pragma_sdk.miden.client import (
     FEE_EMPTY_BALANCE,
     FEE_REFILL_BACKOFF_S,
     FEE_REFILL_THRESHOLD,
+    _resolve_pair_decimals,
 )
 
 
@@ -96,6 +97,11 @@ class TestFromStarknetEntry:
             result = MidenEntry.from_starknet_entry(entry)
         assert result is None
 
+    @pytest.mark.parametrize("price", [0, -1])
+    def test_non_positive_price_returns_none(self, price):
+        entry = make_starknet_entry("BTC/USD", price)
+        assert MidenEntry.from_starknet_entry(entry) is None
+
     def test_timestamp_is_copied_from_entry(self):
         ts = 1700000000
         entry = make_starknet_entry("ETH/USD", 215000000000)
@@ -133,6 +139,14 @@ class TestMidenPairs:
         }
         assert expected == set(MIDEN_PAIRS)
         assert len(MIDEN_PAIRS) == len(expected)
+
+    def test_published_decimals_are_frozen(self):
+        # Consumers read the decimals next to the price: a config change that silently moved a pair
+        # from 8 to 6 decimals (or the reverse) would publish a wrongly scaled price. Mixed decimals
+        # across publishers also make the on-chain median meaningless.
+        six = {"USDT/USD", "XAUT/USD", "USDC/USD"}
+        for pair in MIDEN_PAIRS:
+            assert _resolve_pair_decimals(pair) == (6 if pair in six else 8), pair
 
     def test_pair_names_are_what_the_oracle_derives_its_key_from(self):
         # BASE/QUOTE, upper case, alphanumeric assets: anything else is refused by pair_key.
